@@ -12,6 +12,9 @@ site/
 preferences.json
 theme-defaults.json
 
+# Secrets
+.env
+
 # Python
 __pycache__/
 *.pyc
