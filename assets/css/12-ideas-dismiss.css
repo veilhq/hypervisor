@@ -1,0 +1,43 @@
+/* ─── Ideas Dismiss Button ─────────────────────────────────────────────────── */
+/* Shows a check-circle button on idea list items to mark them as implemented. */
+
+.todo-list li {
+  position: relative;
+}
+
+.idea-dismiss-btn {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 0.25rem;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s, border-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.idea-dismiss-btn svg {
+  width: 14px;
+  height: 14px;
+  stroke: var(--text-muted);
+  transition: stroke 0.2s;
+}
+
+.doc-list li:hover .idea-dismiss-btn,
+.todo-list li:hover .idea-dismiss-btn {
+  opacity: 1;
+}
+
+.idea-dismiss-btn:hover {
+  border-color: var(--accent);
+}
+
+.idea-dismiss-btn:hover svg {
+  stroke: var(--accent);
+}

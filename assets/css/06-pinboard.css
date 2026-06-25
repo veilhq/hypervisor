@@ -1,0 +1,273 @@
+﻿/* ---- Pinboard page ---- */
+.pinboard-page h1 {
+  color: var(--text-bright);
+  text-transform: uppercase;
+  font-size: 1.4rem;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.pinboard-page h1 .section-icon {
+  width: 20px;
+  height: 20px;
+  color: var(--warm);
+}
+.pinboard-intro {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin-bottom: 2rem;
+}
+.pinboard-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+  color: var(--text-dim);
+  border: 1px dashed var(--border-strong);
+}
+.pinboard-empty-icon {
+  width: 48px;
+  height: 48px;
+  color: var(--text-dim);
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+.pinboard-empty p {
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
+}
+.pinboard-empty-hint {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+.pinboard-empty-hint strong {
+  color: var(--text-muted);
+}
+
+/* ---- Pin card grid ---- */
+.pin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 2px;
+}
+
+/* ---- Individual pin card ---- */
+.pin-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  padding: 1.25rem 1.5rem 1rem;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  cursor: pointer;
+  transition: border-color 0.2s var(--ease), box-shadow 0.25s var(--ease),
+              transform 0.2s var(--ease), opacity 0.2s var(--ease);
+  opacity: 0;
+  animation: cardIn 0.4s var(--ease) both;
+}
+.pin-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  background: var(--warm);
+  opacity: 0.6;
+  transition: opacity 0.2s var(--ease);
+}
+.pin-card:hover {
+  border-color: var(--warm);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), 0 0 1px rgba(255, 176, 0, 0.15);
+  transform: translateY(-1px);
+}
+.pin-card:hover::before {
+  opacity: 1;
+}
+.pin-card-removing {
+  opacity: 0;
+  transform: scale(0.95) translateY(4px);
+}
+
+/* Pin card header (indicator + category + type + remove) */
+.pin-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.1rem;
+}
+.pin-card-indicator {
+  display: flex;
+  align-items: center;
+}
+.pin-card-pin-icon {
+  width: 12px;
+  height: 12px;
+  color: var(--warm);
+  fill: var(--warm);
+}
+.pin-card-category {
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+}
+.pin-card-work-id {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+  border: 1px solid var(--accent-border);
+  padding: 0.05rem 0.3rem;
+}
+.pin-card-remove {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  background: none;
+  border: 1px solid transparent;
+  color: var(--text-dim);
+  padding: 0;
+  opacity: 0;
+  transition: opacity 0.15s var(--ease), color 0.15s var(--ease), border-color 0.15s var(--ease);
+}
+.pin-card:hover .pin-card-remove {
+  opacity: 1;
+}
+.pin-card-remove:hover {
+  color: var(--comp);
+  border-color: var(--comp);
+}
+.pin-card-remove i {
+  width: 12px;
+  height: 12px;
+}
+
+/* Pin card title */
+.pin-card-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-bright);
+  text-decoration: none;
+  line-height: 1.4;
+  transition: color 0.15s var(--ease);
+  border: none !important;
+}
+.pin-card-title:hover {
+  color: var(--warm);
+  border: none !important;
+}
+
+/* Pin card snippet */
+.pin-card-snippet {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Pin card footer (path + date) */
+.pin-card-footer {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: auto;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border);
+}
+.pin-card-path {
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.pin-card-date {
+  font-size: 0.6rem;
+  color: var(--text-dim);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Pin card tags */
+.pin-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.2rem;
+}
+.pin-card-tag {
+  font-size: 0.55rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.1rem 0.35rem;
+  border: 1px solid var(--border-strong);
+  color: var(--text-dim);
+  transition: color 0.15s var(--ease), border-color 0.15s var(--ease);
+}
+.pin-card:hover .pin-card-tag {
+  color: var(--text-muted);
+  border-color: var(--border-strong);
+}
+
+/* Pin type badges (in card header) */
+.pin-type-idea  { color: var(--cool);   border-color: var(--cool); }
+.pin-type-story { color: var(--warm);   border-color: var(--warm); }
+.pin-type-pr    { color: var(--accent); border-color: var(--accent); }
+
+/* ---- Pin button (actions drawer) ---- */
+.pin-btn.pinned .action-icon {
+  fill: var(--warm);
+}
+
+/* ---- Pinboard dock item (homepage) ---- */
+.dock-item-pins .dock-icon {
+  color: var(--warm);
+}
+.dock-item-pins:hover .dock-icon {
+  color: var(--warm);
+  filter: brightness(1.2);
+}
+.dock-item-pins:hover .dock-label {
+  color: var(--warm);
+}
+.dock-item-pins:hover {
+  border-bottom-color: var(--warm);
+}
+
+/* ---- Pin remove button (pinboard list) ---- */
+.pin-remove-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background: none;
+  border: 1px solid transparent;
+  color: var(--text-dim);
+  padding: 0;
+  transition: color 0.15s var(--ease), border-color 0.15s var(--ease);
+}
+.pin-remove-btn:hover {
+  color: var(--comp);
+  border-color: var(--comp);
+}
+.pin-remove-btn i {
+  width: 12px;
+  height: 12px;
+}

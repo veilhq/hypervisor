@@ -1,0 +1,170 @@
+{
+  "portal": {
+    "category": "application",
+    "description": "The main cyber-portal application"
+  },
+  "portal-cms": {
+    "category": "application",
+    "description": "The CMS application (portal-cms repo)"
+  },
+  "hypervisor": {
+    "category": "application",
+    "description": "The hyperspace static site generator"
+  },
+  "range": {
+    "category": "application",
+    "description": "CYBER Range VM infrastructure"
+  },
+  "django": {
+    "category": "technology",
+    "description": "Django/DRF backend framework"
+  },
+  "react": {
+    "category": "technology",
+    "description": "React frontend library"
+  },
+  "nextjs": {
+    "category": "technology",
+    "description": "Next.js framework"
+  },
+  "mantine": {
+    "category": "technology",
+    "description": "Mantine UI component library"
+  },
+  "terraform": {
+    "category": "technology",
+    "description": "Terraform infrastructure as code"
+  },
+  "python": {
+    "category": "technology",
+    "description": "Python language"
+  },
+  "javascript": {
+    "category": "technology",
+    "description": "JavaScript/TypeScript language"
+  },
+  "mysql": {
+    "category": "technology",
+    "description": "MySQL database"
+  },
+  "aws": {
+    "category": "technology",
+    "description": "Amazon Web Services"
+  },
+  "git": {
+    "category": "technology",
+    "description": "Git version control"
+  },
+  "mcp": {
+    "category": "technology",
+    "description": "Model Context Protocol"
+  },
+  "kiro": {
+    "category": "technology",
+    "description": "Kiro AI development environment"
+  },
+  "artillery": {
+    "category": "technology",
+    "description": "Artillery.io load testing"
+  },
+  "guacamole": {
+    "category": "technology",
+    "description": "Apache Guacamole remote desktop"
+  },
+  "ux": {
+    "category": "domain",
+    "description": "User experience and interface design"
+  },
+  "architecture": {
+    "category": "domain",
+    "description": "System design and architecture"
+  },
+  "database": {
+    "category": "domain",
+    "description": "Database design and operations"
+  },
+  "infrastructure": {
+    "category": "domain",
+    "description": "Cloud infra and deployment"
+  },
+  "devops": {
+    "category": "domain",
+    "description": "CI/CD, pipelines, and operations"
+  },
+  "security": {
+    "category": "domain",
+    "description": "Security and access control"
+  },
+  "permissions": {
+    "category": "domain",
+    "description": "Authorization, RBAC, and access control"
+  },
+  "performance": {
+    "category": "domain",
+    "description": "Performance optimization and load testing"
+  },
+  "accessibility": {
+    "category": "domain",
+    "description": "WCAG/508 compliance"
+  },
+  "education": {
+    "category": "domain",
+    "description": "Educational content and curriculum"
+  },
+  "devtools": {
+    "category": "domain",
+    "description": "Developer tooling and productivity"
+  },
+  "code-review": {
+    "category": "domain",
+    "description": "Pull request and code review"
+  },
+  "api": {
+    "category": "domain",
+    "description": "API design and integration"
+  },
+  "frontend": {
+    "category": "domain",
+    "description": "Frontend patterns and components"
+  },
+  "analytics": {
+    "category": "domain",
+    "description": "Data analytics and dashboards"
+  },
+  "search": {
+    "category": "domain",
+    "description": "Search functionality"
+  },
+  "migration": {
+    "category": "domain",
+    "description": "Data and schema migrations"
+  },
+  "licensing": {
+    "category": "domain",
+    "description": "Organization and user licensing"
+  },
+  "ai": {
+    "category": "domain",
+    "description": "AI and machine learning"
+  },
+  "registration": {
+    "category": "domain",
+    "description": "User registration, onboarding, and account creation workflows"
+  },
+  "validation": {
+    "category": "domain",
+    "description": "Input validation, data integrity checks, and form validation logic"
+  },
+  "desktop-app": {
+    "category": "application",
+    "description": "Hypervisor PyWebView desktop application features and UI"
+  },
+  "hyperagent": {
+    "category": "application",
+    "description": "The standalone AI chat desktop app (.hyperspace/.hyperagent/)"
+  },
+  "playwright": {
+    "category": "technology",
+    "description": "Playwright E2E browser testing framework"
+  }
+}

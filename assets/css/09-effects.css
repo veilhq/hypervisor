@@ -1,0 +1,213 @@
+/* ===== Effects: Cursor Box, Keyboard Shortcuts ===== */
+
+/* ---- Cursor companion box ---- */
+.cursor-box {
+  position: fixed;
+  width: 8px;
+  height: 8px;
+  border: 1px solid var(--cool);
+  background: transparent;
+  pointer-events: none;
+  z-index: 9998;
+  opacity: 0;
+  transition: opacity 0.15s var(--ease), background 0.1s var(--ease);
+}
+.cursor-box.visible {
+  opacity: 1;
+}
+.cursor-box.blink {
+  animation: cursorBoxBlink 0.3s ease-out 1;
+}
+@keyframes cursorBoxBlink {
+  0%, 30%  { background: var(--cool); }
+  50%      { background: transparent; }
+  70%, 100% { background: var(--cool); }
+}
+
+/* ---- Keyboard shortcuts overlay ---- */
+.shortcuts-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s var(--ease);
+}
+.shortcuts-overlay.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+.shortcuts-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border-strong);
+  width: 340px;
+  max-width: 90vw;
+  transform: translateY(8px);
+  transition: transform 0.25s var(--ease);
+}
+.shortcuts-overlay.visible .shortcuts-panel {
+  transform: translateY(0);
+}
+.shortcuts-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+.shortcuts-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.shortcuts-close {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 1.1rem;
+  cursor: pointer;
+  font-family: var(--font);
+  padding: 0 0.2rem;
+  transition: color 0.15s var(--ease);
+}
+.shortcuts-close:hover {
+  color: var(--comp);
+}
+.shortcuts-body {
+  padding: 0.75rem 1rem;
+}
+.shortcut-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.4rem 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+}
+.shortcut-row:last-child {
+  border-bottom: none;
+}
+.shortcut-row kbd {
+  display: inline-block;
+  font-family: var(--font);
+  font-size: 0.65rem;
+  color: var(--text-bright);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+  padding: 0.15rem 0.4rem;
+  min-width: 1.4rem;
+  text-align: center;
+  letter-spacing: 0.04em;
+}
+.shortcut-row span {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+}
+
+/* ---- Screensaver overlay ---- */
+.screensaver-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 600;
+  background: var(--bg);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.6s var(--ease);
+}
+.screensaver-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+.screensaver-overlay canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.screensaver-hint {
+  position: absolute;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font);
+  font-size: 0.6rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0;
+  transition: opacity 0.4s var(--ease);
+}
+.screensaver-overlay.active .screensaver-hint {
+  opacity: 1;
+  transition-delay: 1.5s;
+}
+.screensaver-clock {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--font);
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--bg);
+  background: var(--comp);
+  padding: 0.35rem 1rem;
+  letter-spacing: 0.1em;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.8s var(--ease);
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: unset;
+}
+.screensaver-overlay.active .screensaver-clock {
+  opacity: 0.85;
+  transition-delay: 0.8s;
+}
+
+/* ---- Toast notifications (bottom-right fixed) ---- */
+.hv-toast-container {
+  position: fixed;
+  bottom: 3.5rem;
+  right: 1.5rem;
+  z-index: 200;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 0.5rem;
+  pointer-events: none;
+}
+
+.hv-toast {
+  font-family: var(--font);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--bg);
+  background: var(--accent);
+  border: none;
+  padding: 0.4rem 1rem;
+  max-width: 360px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.25s var(--ease), transform 0.25s var(--ease);
+  pointer-events: auto;
+}
+
+.hv-toast-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.hv-toast-exit {
+  opacity: 0;
+  transform: translateY(8px);
+}

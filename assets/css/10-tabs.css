@@ -1,0 +1,118 @@
+/* ===== Tab Bar ===== */
+
+.tab-bar {
+  display: none;
+  position: sticky;
+  top: calc(3.75rem + 1px); /* below topbar */
+  z-index: 95;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0;
+  padding-left: var(--site-nav-width, 0px);
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  gap: 0;
+  height: calc(0.8rem + 0.9rem * 1.7); /* match clock flag: padding + font × line-height */
+}
+
+.tab-bar.visible {
+  display: flex;
+}
+
+/* ---- Sliding highlight ---- */
+.tab-highlight {
+  position: absolute;
+  top: 0;
+  left: var(--tab-hl-left, 0);
+  width: var(--tab-hl-width, 0);
+  height: 100%;
+  background: var(--accent);
+  transition: left 0.25s var(--ease), width 0.25s var(--ease);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.tab-bar::-webkit-scrollbar { height: 2px; }
+.tab-bar::-webkit-scrollbar-track { background: var(--bg-surface); }
+.tab-bar::-webkit-scrollbar-thumb { background: var(--border-strong); }
+
+/* ---- Individual tab ---- */
+.tab-item {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0 1rem;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: color 0.2s var(--ease);
+  flex-shrink: 0;
+}
+
+.tab-item:hover {
+  color: var(--text-bright);
+}
+
+.tab-item.active {
+  color: var(--bg);
+}
+
+/* ---- Content crossfade on tab switch ---- */
+.tab-fade-out {
+  opacity: 0;
+  transition: opacity 0.08s ease-out;
+}
+.tab-fade-in {
+  opacity: 1;
+  transition: opacity 0.12s ease-in;
+}
+
+/* ---- Tab title ---- */
+.tab-title {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---- Close button ---- */
+.tab-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  opacity: 1;
+  color: var(--text-dim);
+  font-size: 0.7rem;
+  line-height: 1;
+  transition: opacity 0.15s var(--ease), color 0.15s var(--ease);
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-family: var(--font);
+}
+
+.tab-close:hover {
+  color: var(--comp);
+}
+
+/* ---- Stale indicator (comp-color square, top-right) ---- */
+.tab-item.tab-stale::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  background: var(--comp);
+}
+
+/* ---- Accessibility: hide indicators ---- */
+.a11y-hide-indicators .tab-item.tab-stale::after {
+  display: none !important;
+}

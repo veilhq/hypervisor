@@ -1,0 +1,25 @@
+# Generated site output (rebuilt from source)
+site/
+
+# PyWebView browser data (machine-specific cache, cookies, etc.)
+.webview_data/
+
+# Runtime state (ephemeral)
+.app_running
+.build_cache.json
+
+# User preferences (machine-specific, not portable)
+preferences.json
+theme-defaults.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Windows shortcuts (machine-specific paths)
+*.lnk
+
+# MCP dependency (requires kiro-cli to function)
+# Tracked for reference but note: mcp-server.py and hv_mcp/ only run under kiro
+# They're still valid Python source worth version-controlling

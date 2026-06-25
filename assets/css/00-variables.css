@@ -1,0 +1,405 @@
+/* ===== Variables, Fonts, Resets ===== */
+
+@import url('https://db.onlinewebfonts.com/c/4571adf8e6d8270ea61a4f43a3ef31d2?family=Departure+Mono');
+
+:root {
+  --bg:            #000000;
+  --bg-surface:    #050505;
+  --bg-card:       #0a0a0a;
+  --bg-card-hover: #111111;
+  --bg-elevated:   #0e0e0e;
+  --border:        #222222;
+  --border-strong: #333333;
+  --text:          #c0c0c0;
+  --text-bright:   #e0e0e0;
+  --text-muted:    #909090;
+  --text-dim:      #666666;
+  --accent:        #00ff41;
+  --accent-dim:     #00cc33;
+  --accent-glow:    rgba(0, 255, 65, 0.06);
+  --accent-border:  rgba(0, 255, 65, 0.15);
+  --warm:         #ffb000;
+  --comp:           #ff3333;
+  --cool:          #00cccc;
+  --font:          'Departure Mono', 'JetBrains Mono', 'Cascadia Code', 'Fira Code', 'Courier New', monospace;
+  --ease:          cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-bounce:   cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 14px; scroll-behavior: smooth; overflow-x: hidden; overscroll-behavior: none; }
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.7;
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: unset;
+}
+
+::selection { background: var(--accent); color: var(--bg); }
+
+/* ---- Scrollbar styling ---- */
+/* WebKit (Chrome, Edge, Safari) */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border: 1px solid var(--bg);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-dim);
+}
+::-webkit-scrollbar-corner {
+  background: var(--bg);
+}
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) var(--bg);
+}
+
+/* ---- Shared keyframes ---- */
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ---- Focus ring (accessibility) ---- */
+:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 600px) {
+  .topbar-inner { padding: 0.5rem 0.75rem; flex-wrap: wrap; }
+  .search-wrap { width: 100%; order: 10; }
+  #search:focus { width: 100%; }
+  .search-results { width: 100%; }
+  .page { padding: 1.5rem 0.75rem 3rem; }
+  .card-grid { grid-template-columns: 1fr; }
+}
+
+/* ---- Custom cursor (Lucide mouse-pointer-2) ---- */
+body, body:active {
+  cursor: none;
+}
+body.a11y-cursors-active, body.a11y-cursors-active:active {
+  cursor: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2300ff41' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M4.037 4.688a.495.495 0 0 1 .651-.651l16 6.5a.5.5 0 0 1-.063.947l-6.124 1.58a2 2 0 0 0-1.438 1.435l-1.579 6.126a.5.5 0 0 1-.947.063z'/></svg>") 2 2, auto;
+  cursor: var(--cursor-default, url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2300ff41' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M4.037 4.688a.495.495 0 0 1 .651-.651l16 6.5a.5.5 0 0 1-.063.947l-6.124 1.58a2 2 0 0 0-1.438 1.435l-1.579 6.126a.5.5 0 0 1-.947.063z'/></svg>") 2 2, auto);
+}
+/* ---- Blanket native-cursor suppression ----
+   Forces every element to use the custom default SVG cursor, preventing native
+   pointer/hand/text cursors from leaking through component-level CSS.
+   The more-specific interactive and text-input rules below override this. */
+body.a11y-cursors-active * {
+  cursor: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2300ff41' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M4.037 4.688a.495.495 0 0 1 .651-.651l16 6.5a.5.5 0 0 1-.063.947l-6.124 1.58a2 2 0 0 0-1.438 1.435l-1.579 6.126a.5.5 0 0 1-.947.063z'/></svg>") 2 2, auto !important;
+  cursor: var(--cursor-default, url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2300ff41' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M4.037 4.688a.495.495 0 0 1 .651-.651l16 6.5a.5.5 0 0 1-.063.947l-6.124 1.58a2 2 0 0 0-1.438 1.435l-1.579 6.126a.5.5 0 0 1-.947.063z'/></svg>") 2 2, auto) !important;
+}
+/* Interactive elements — filled pointer SVG (appears AFTER the universal rule to win via source order) */
+body.a11y-cursors-active a,
+body.a11y-cursors-active button,
+body.a11y-cursors-active [role="button"],
+body.a11y-cursors-active input[type="color"],
+body.a11y-cursors-active .card,
+body.a11y-cursors-active .pin-card,
+body.a11y-cursors-active .swatch,
+body.a11y-cursors-active .palette-mode-btn,
+body.a11y-cursors-active .code-copy,
+body.a11y-cursors-active .sr-tag,
+body.a11y-cursors-active .ref-menu-btn,
+body.a11y-cursors-active .util-menu-btn,
+body.a11y-cursors-active .width-toggle,
+body.a11y-cursors-active .scroll-top,
+body.a11y-cursors-active .shortcuts-close,
+body.a11y-cursors-active .tag-filter-clear,
+body.a11y-cursors-active .pw-generate,
+body.a11y-cursors-active .pw-copy,
+body.a11y-cursors-active .pw-history-clear,
+body.a11y-cursors-active .pw-history-copy,
+body.a11y-cursors-active .quiz-option,
+body.a11y-cursors-active .quiz-btn,
+body.a11y-cursors-active .quiz-domain-label,
+body.a11y-cursors-active .quiz-tab,
+body.a11y-cursors-active .guide-nav-btn,
+body.a11y-cursors-active .a11y-menu-btn,
+body.a11y-cursors-active .a11y-toggle,
+body.a11y-cursors-active .a11y-panel-close,
+body.a11y-cursors-active .a11y-reset,
+body.a11y-cursors-active .cell-copyable,
+body.a11y-cursors-active .section-copy,
+body.a11y-cursors-active .zoom-level,
+body.a11y-cursors-active .export-btn,
+body.a11y-cursors-active .edit-btn,
+body.a11y-cursors-active .action-item,
+body.a11y-cursors-active .actions-trigger,
+body.a11y-cursors-active label[style*="cursor"],
+body.a11y-cursors-active input[type="range"],
+body.a11y-cursors-active input[type="checkbox"],
+body.a11y-cursors-active [style*="cursor: pointer"],
+body.a11y-cursors-active [style*="cursor:pointer"] {
+  cursor: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='%2300ff41' stroke='%2300ff41' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><path d='M4.037 4.688a.495.495 0 0 1 .651-.651l16 6.5a.5.5 0 0 1-.063.947l-6.124 1.58a2 2 0 0 0-1.438 1.435l-1.579 6.126a.5.5 0 0 1-.947.063z'/></svg>") 2 2, pointer !important;
+  cursor: var(--cursor-pointer, url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='%2300ff41' stroke='%2300ff41' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><path d='M4.037 4.688a.495.495 0 0 1 .651-.651l16 6.5a.5.5 0 0 1-.063.947l-6.124 1.58a2 2 0 0 0-1.438 1.435l-1.579 6.126a.5.5 0 0 1-.947.063z'/></svg>") 2 2, pointer) !important;
+}
+/* Text inputs — custom I-beam cursor */
+body.a11y-cursors-active input[type="text"],
+body.a11y-cursors-active input[type="search"],
+body.a11y-cursors-active input[type="email"],
+body.a11y-cursors-active input[type="password"],
+body.a11y-cursors-active input[type="url"],
+body.a11y-cursors-active input[type="number"],
+body.a11y-cursors-active textarea,
+body.a11y-cursors-active [contenteditable="true"] {
+  cursor: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2300ff41' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M17 22h-1a4 4 0 0 1-4-4V6a4 4 0 0 1 4-4h1'/><path d='M7 22h1a4 4 0 0 0 4-4V6a4 4 0 0 0-4-4H7'/></svg>") 10 10, text !important;
+  cursor: var(--cursor-text, url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2300ff41' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M17 22h-1a4 4 0 0 1-4-4V6a4 4 0 0 1 4-4h1'/><path d='M7 22h1a4 4 0 0 0 4-4V6a4 4 0 0 0-4-4H7'/></svg>") 10 10, text) !important;
+}
+/* Disabled elements — dim circle-slash */
+body.a11y-cursors-active *:disabled,
+body.a11y-cursors-active *.disabled {
+  cursor: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23666666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'/><path d='m4.9 4.9 14.2 14.2'/></svg>") 10 10, not-allowed !important;
+}
+
+/* ---- Custom tooltips ---- */
+[data-tooltip] {
+  position: relative;
+}
+[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-family: var(--font);
+  font-size: 0.6rem;
+  color: var(--accent);
+  background: var(--bg);
+  border: 1px solid var(--accent-border);
+  padding: 0.25rem 0.5rem;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s var(--ease);
+  z-index: 200;
+}
+[data-tooltip]:hover::after {
+  opacity: 1;
+}
+
+/* ---- Badge base (shared by all badge variants) ---- */
+.hv-badge {
+  display: inline-block;
+  font-family: var(--font);
+  font-size: 0.55rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.1rem 0.4rem;
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--text-muted);
+  white-space: nowrap;
+  text-align: center;
+  line-height: 1.4;
+}
+
+/* Badge color variants — outline style (text + border, no fill) */
+.hv-badge-accent  { color: var(--accent); border-color: var(--accent); }
+.hv-badge-warm    { color: var(--warm);   border-color: var(--warm); }
+.hv-badge-cool    { color: var(--cool);   border-color: var(--cool); }
+.hv-badge-comp    { color: var(--comp);   border-color: var(--comp); }
+.hv-badge-muted   { color: var(--text-muted); border-color: var(--border-strong); }
+
+/* ---- Topbar icon button base (shared by all 32×32 topbar buttons) ---- */
+.hv-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  background: var(--bg);
+  border: 1px solid var(--border-strong);
+  color: var(--text-dim);
+  font-family: var(--font);
+  padding: 0;
+  cursor: pointer;
+  transition: color 0.2s var(--ease), border-color 0.2s var(--ease), transform 0.15s var(--ease);
+}
+.hv-icon-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  transform: scale(1.05);
+}
+.hv-icon-btn.active {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.hv-icon-btn-icon {
+  width: 15px;
+  height: 15px;
+}
+
+/* ---- Topbar text button base (icon + word label) ---- */
+.hv-text-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  height: 32px;
+  flex-shrink: 0;
+  background: var(--bg);
+  border: 1px solid var(--border-strong);
+  color: var(--text-dim);
+  font-family: var(--font);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  padding: 0 0.75rem;
+  cursor: pointer;
+  transition: color 0.2s var(--ease), border-color 0.2s var(--ease), transform 0.15s var(--ease);
+}
+.hv-text-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  transform: scale(1.05);
+}
+.hv-text-btn.active {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.hv-text-btn-icon {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+}
+
+/* ---- Panel header base (shared by dropdown/sidebar headers) ---- */
+.hv-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ---- Dropdown base (shared by ref-menu, util-menu, etc.) ---- */
+.hv-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border-strong);
+  max-height: 0;
+  overflow: hidden;
+  z-index: 100;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: max-height 0.25s var(--ease), opacity 0.2s var(--ease), transform 0.2s var(--ease);
+}
+.hv-dropdown.open {
+  max-height: 420px;
+  overflow-y: auto;
+  opacity: 1;
+  transform: translateY(0);
+}
+.hv-dropdown::-webkit-scrollbar { width: 3px; }
+.hv-dropdown::-webkit-scrollbar-track { background: var(--bg-card); }
+.hv-dropdown::-webkit-scrollbar-thumb { background: var(--border-strong); }
+
+/* ---- Section panel base (bordered content sections) ---- */
+.hv-section {
+  margin-bottom: 2rem;
+  padding: 1.25rem 1.25rem 0.5rem;
+  border: 1px solid var(--border);
+  border-left: 2px solid var(--accent);
+  background: var(--bg-surface);
+  animation: fadeSlideIn 0.4s var(--ease) 0.1s both;
+}
+.hv-section > h2,
+.markdown-body .hv-section > h2 {
+  margin-top: 0;
+  padding-top: 0;
+  font-size: 0.9rem;
+  border-bottom: none;
+  margin-bottom: 0.5rem;
+}
+
+/* ---- Confirm dialog (custom replacement for window.confirm) ---- */
+.hv-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.8);
+  opacity: 0;
+  transition: opacity 0.15s var(--ease);
+}
+.hv-confirm-overlay.visible {
+  opacity: 1;
+}
+.hv-confirm-box {
+  background: var(--bg-card);
+  border: 1px solid var(--border-strong);
+  border-top: 2px solid var(--comp);
+  padding: 1.5rem 2rem;
+  max-width: 400px;
+  width: 90%;
+  animation: fadeSlideIn 0.2s var(--ease) both;
+}
+.hv-confirm-message {
+  font-size: 0.85rem;
+  color: var(--text-bright);
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+.hv-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+.hv-confirm-btn {
+  font-family: var(--font);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.4rem 1rem;
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.hv-confirm-btn:hover {
+  color: var(--text-bright);
+  border-color: var(--text-muted);
+}
+.hv-confirm-btn-danger {
+  color: var(--comp);
+  border-color: var(--comp);
+}
+.hv-confirm-btn-danger:hover {
+  background: var(--comp);
+  color: var(--bg);
+}

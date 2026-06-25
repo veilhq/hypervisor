@@ -1,0 +1,9 @@
+# Hypervisor MCP Server dependencies
+# Install with: pip install -r requirements-mcp.txt
+#
+# Base dependencies (markdown + pygments) are still needed — install those first:
+#   pip install markdown pygments
+
+mcp>=1.0
+watchdog>=4.0
+rapidfuzz>=3.0

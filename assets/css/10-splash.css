@@ -1,0 +1,55 @@
+/* === Splash Screen === */
+
+/* Suppress scrollbars while splash is active */
+html.hv-splash-active,
+html.hv-splash-active body {
+  overflow: hidden;
+}
+
+.hv-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: #000000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 1;
+  transition: opacity 0.6s ease;
+  pointer-events: all;
+}
+
+.hv-splash.hv-splash-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.hv-splash-flag {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: var(--comp, #ff3333);
+  opacity: 0;
+  animation: splash-fade-in 0.3s ease 0.1s forwards;
+}
+
+.hv-splash-eye {
+  width: 24px;
+  height: 24px;
+  color: var(--bg, #000000);
+}
+
+@keyframes splash-fade-in {
+  from { opacity: 0; transform: scale(0.8); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* Respect reduced-motion */
+.a11y-reduce-motion .hv-splash,
+.a11y-reduce-motion .hv-splash-flag {
+  animation: none;
+  opacity: 1;
+  transition: opacity 0.1s ease;
+}

@@ -1,0 +1,1523 @@
+<style>
+/* ===== ADO Dashboard Utility ===== */
+.dash {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  padding: 0.5rem 0;
+}
+.dash-full { grid-column: 1 / -1; }
+.dash-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.dash-card-title {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.dash-card-title i { width: 12px; height: 12px; }
+.dash-kpi-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+.dash-header {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0;
+}
+.dash-header h1 {
+  font-size: 1.1rem;
+  color: var(--text-bright);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.dash-header h1 i { width: 20px; height: 20px; color: var(--accent); }
+.dash-meta {
+  font-size: 0.6rem;
+  color: var(--text-dim);
+  text-align: right;
+}
+.dash-meta span { display: block; }
+
+/* Metadata strip below header */
+.dash-meta-strip {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem 1.2rem;
+  padding: 0.5rem 0;
+  margin-bottom: 0.5rem;
+  font-size: 0.65rem;
+  color: var(--text-muted);
+}
+.dash-meta-strip-item {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  white-space: nowrap;
+}
+.dash-meta-strip-item i { width: 11px; height: 11px; color: var(--text-dim); }
+.dash-meta-strip-value {
+  color: var(--accent);
+  font-weight: 700;
+}
+.dash-meta-strip-sep {
+  color: var(--border);
+}
+
+/* Refresh button */
+.dash-refresh-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-family: var(--font);
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.3rem 0.6rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  transition: color 0.2s, border-color 0.2s;
+}
+.dash-refresh-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.dash-refresh-btn:active {
+  opacity: 0.7;
+}
+.dash-refresh-btn i { width: 12px; height: 12px; }
+.dash-refresh-btn.is-loading {
+  pointer-events: none;
+  opacity: 0.5;
+}
+.dash-refresh-btn.is-loading i {
+  animation: dash-spin 1s linear infinite;
+}
+@keyframes dash-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Bar chart */
+.dash-bars { display: flex; flex-direction: column; gap: 0.4rem; }
+.dash-bar-row {
+  display: grid;
+  grid-template-columns: 90px 1fr 40px;
+  align-items: center;
+  gap: 0.5rem;
+}
+.dash-bar-label {
+  font-size: 0.7rem;
+  color: var(--text);
+  text-align: right;
+  white-space: nowrap;
+}
+.dash-bar-track {
+  height: 20px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  position: relative;
+}
+.dash-bar-fill {
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 0.85;
+  transition: width 0.4s var(--ease);
+}
+.dash-bar-val {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+/* Stacked bar */
+.dash-stacked {
+  height: 28px;
+  display: flex;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.dash-stacked-seg {
+  height: 100%;
+  opacity: 0.85;
+  transition: width 0.4s var(--ease);
+}
+.dash-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.2rem;
+  margin-top: 0.5rem;
+}
+.dash-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.65rem;
+  color: var(--text-muted);
+}
+.dash-legend-swatch {
+  width: 10px;
+  height: 10px;
+  opacity: 0.85;
+}
+
+/* Team grid */
+.dash-team { display: flex; flex-direction: column; gap: 0.9rem; flex: 1; justify-content: center; }
+.dash-team-row {
+  display: grid;
+  grid-template-columns: 120px 1fr 50px;
+  align-items: center;
+  gap: 0.6rem;
+}
+.dash-team-name {
+  font-size: 0.7rem;
+  color: var(--text-bright);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dash-team-bar {
+  height: 24px;
+  display: flex;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.dash-team-seg {
+  height: 100%;
+  opacity: 0.85;
+}
+.dash-team-pts {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  text-align: right;
+}
+
+/* PR list */
+.dash-pr-list { display: flex; flex-direction: column; gap: 0.3rem; }
+.dash-pr-item {
+  display: grid;
+  grid-template-columns: 40px 1fr 80px 50px;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0.5rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  font-size: 0.7rem;
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.2s;
+}
+.dash-pr-item:hover {
+  border-color: var(--accent);
+}
+.dash-pr-id { color: var(--accent); }
+.dash-pr-title {
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dash-pr-repo { color: var(--text-dim); font-size: 0.6rem; }
+.dash-pr-age { text-align: right; }
+.dash-pr-age-fresh { color: var(--accent); }
+.dash-pr-age-mid { color: var(--warm); }
+.dash-pr-age-old { color: var(--comp); }
+
+/* Risks */
+.dash-risks { display: flex; flex-direction: column; gap: 0.3rem; }
+.dash-risk {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.7rem;
+  color: var(--text);
+  border-left: 3px solid var(--comp);
+  background: var(--bg-surface);
+}
+.dash-risk-tag {
+  font-size: 0.55rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--comp);
+  white-space: nowrap;
+}
+
+/* Burndown chart */
+.dash-burndown {
+  position: relative;
+  width: 100%;
+  height: 180px;
+  overflow: hidden;
+}
+.dash-burndown canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+.dash-burndown-legend {
+  display: flex;
+  gap: 1.2rem;
+  margin-top: 0.5rem;
+  font-size: 0.6rem;
+  color: var(--text-muted);
+}
+.dash-burndown-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.dash-burndown-legend-line {
+  width: 16px;
+  height: 2px;
+}
+.dash-burndown-legend-line-dashed {
+  width: 16px;
+  height: 0;
+  border-top: 2px dashed var(--text-dim);
+}
+
+/* Sparkline */
+.dash-sparkline-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.dash-sparkline {
+  flex: 1;
+  height: 120px;
+  position: relative;
+}
+.dash-sparkline canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+.dash-sparkline-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.55rem;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+/* Responsive */
+@media (max-width: 700px) {
+  .dash { grid-template-columns: 1fr; }
+  .dash-bar-row { grid-template-columns: 70px 1fr 30px; }
+}
+
+/* Work Request items — wider assigned column */
+.dash-wr-item {
+  display: grid;
+  grid-template-columns: 40px 1fr 80px 100px;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0.5rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  font-size: 0.7rem;
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.2s;
+}
+.dash-wr-item:hover {
+  border-color: var(--accent);
+}
+
+/* Work Request filters */
+.dash-wr-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-bottom: 0.5rem;
+}
+.dash-wr-filter {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-family: var(--font);
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.2rem 0.5rem;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+.dash-wr-filter:hover {
+  color: var(--text-bright);
+  border-color: var(--text-muted);
+}
+.dash-wr-filter.is-active {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+</style>
+
+<div class="dash">
+  <!-- Header -->
+  <div class="dash-header">
+    <h1><i data-lucide="bar-chart-3"></i> Sprint Dashboard</h1>
+    <div style="display:flex;align-items:center;gap:0.5rem;">
+      <button class="dash-refresh-btn" id="dash-report-btn" title="Generate sprint report">
+        <i data-lucide="file-text"></i> Report
+      </button>
+      <button class="dash-refresh-btn" id="dash-refresh-btn" title="Refresh data from Azure DevOps">
+        <i data-lucide="refresh-cw"></i> Refresh
+      </button>
+    </div>
+  </div>
+
+  <!-- Metadata strip -->
+  <div class="dash-meta-strip">
+    <span class="dash-meta-strip-item"><i data-lucide="flag"></i> <span class="dash-meta-strip-value" id="dash-sprint">—</span></span>
+    <span class="dash-meta-strip-sep">|</span>
+    <span class="dash-meta-strip-item"><i data-lucide="calendar"></i> <span id="dash-dates">—</span></span>
+    <span class="dash-meta-strip-sep">|</span>
+    <span class="dash-meta-strip-item"><i data-lucide="target"></i> <span class="dash-meta-strip-value" id="kpi-total-pts">—</span> pts committed</span>
+    <span class="dash-meta-strip-sep">|</span>
+    <span class="dash-meta-strip-item"><i data-lucide="flame"></i> <span class="dash-meta-strip-value" id="kpi-remaining-pts">—</span> remaining <span id="kpi-pct-label"></span></span>
+    <span class="dash-meta-strip-sep">|</span>
+    <span class="dash-meta-strip-item"><i data-lucide="calendar-clock"></i> <span class="dash-meta-strip-value" id="kpi-days-left">—</span> days left</span>
+    <span class="dash-meta-strip-sep">|</span>
+    <span class="dash-meta-strip-item"><i data-lucide="git-pull-request"></i> <span class="dash-meta-strip-value" id="kpi-prs">—</span> active PRs</span>
+    <span class="dash-meta-strip-sep">|</span>
+    <span class="dash-meta-strip-item"><i data-lucide="clock"></i> <span id="dash-generated">never</span></span>
+  </div>
+
+  <!-- Velocity Sparkline -->
+  <div class="dash-card dash-full">
+    <div class="dash-card-title"><i data-lucide="activity"></i> Velocity (last 6 sprints)</div>
+    <div class="dash-sparkline-wrap">
+      <div class="dash-sparkline">
+        <canvas id="velocity-canvas"></canvas>
+      </div>
+    </div>
+    <div class="dash-kpi-label">avg 54 pts/sprint — current pace: 63 committed</div>
+  </div>
+
+  <div class="dash-card dash-full">
+    <div class="dash-card-title"><i data-lucide="trending-up"></i> Sprint Progress</div>
+    <div class="dash-stacked" id="progress-bar">
+      <div class="dash-stacked-seg" style="width:35%;background:var(--accent)"></div>
+      <div class="dash-stacked-seg" style="width:25%;background:var(--warm)"></div>
+      <div class="dash-stacked-seg" style="width:20%;background:var(--cool)"></div>
+      <div class="dash-stacked-seg" style="width:10%;background:var(--text-muted)"></div>
+      <div class="dash-stacked-seg" style="width:10%;background:var(--comp)"></div>
+    </div>
+    <div class="dash-legend" id="progress-legend">
+      <div class="dash-legend-item"><div class="dash-legend-swatch" style="background:var(--accent)"></div>Closed (7)</div>
+      <div class="dash-legend-item"><div class="dash-legend-swatch" style="background:var(--warm)"></div>Review (5)</div>
+      <div class="dash-legend-item"><div class="dash-legend-swatch" style="background:var(--cool)"></div>In Progress (4)</div>
+      <div class="dash-legend-item"><div class="dash-legend-swatch" style="background:var(--text-muted)"></div>Ready (2)</div>
+      <div class="dash-legend-item"><div class="dash-legend-swatch" style="background:var(--comp)"></div>Hold/Bug (2)</div>
+    </div>
+  </div>
+
+  <!-- Burndown Chart -->
+  <div class="dash-card dash-full">
+    <div class="dash-card-title"><i data-lucide="trending-down"></i> Burndown</div>
+    <div class="dash-burndown">
+      <canvas id="burndown-canvas"></canvas>
+    </div>
+    <div class="dash-burndown-legend">
+      <div class="dash-burndown-legend-item">
+        <div class="dash-burndown-legend-line" style="background:var(--accent)"></div>
+        Actual
+      </div>
+      <div class="dash-burndown-legend-item">
+        <div class="dash-burndown-legend-line-dashed"></div>
+        Ideal
+      </div>
+    </div>
+  </div>
+
+  <!-- State Breakdown -->
+  <div class="dash-card">
+    <div class="dash-card-title"><i data-lucide="bar-chart"></i> By State</div>
+    <div class="dash-bars" id="state-bars">
+      <div class="dash-bar-row">
+        <span class="dash-bar-label">Closed</span>
+        <div class="dash-bar-track"><div class="dash-bar-fill" style="width:100%;background:var(--accent)"></div></div>
+        <span class="dash-bar-val">7</span>
+      </div>
+      <div class="dash-bar-row">
+        <span class="dash-bar-label">Review</span>
+        <div class="dash-bar-track"><div class="dash-bar-fill" style="width:71%;background:var(--warm)"></div></div>
+        <span class="dash-bar-val">5</span>
+      </div>
+      <div class="dash-bar-row">
+        <span class="dash-bar-label">In Progress</span>
+        <div class="dash-bar-track"><div class="dash-bar-fill" style="width:57%;background:var(--cool)"></div></div>
+        <span class="dash-bar-val">4</span>
+      </div>
+      <div class="dash-bar-row">
+        <span class="dash-bar-label">Ready</span>
+        <div class="dash-bar-track"><div class="dash-bar-fill" style="width:29%;background:var(--text-muted)"></div></div>
+        <span class="dash-bar-val">2</span>
+      </div>
+      <div class="dash-bar-row">
+        <span class="dash-bar-label">Hold</span>
+        <div class="dash-bar-track"><div class="dash-bar-fill" style="width:14%;background:var(--comp)"></div></div>
+        <span class="dash-bar-val">1</span>
+      </div>
+      <div class="dash-bar-row">
+        <span class="dash-bar-label">Active Bug</span>
+        <div class="dash-bar-track"><div class="dash-bar-fill" style="width:14%;background:var(--comp)"></div></div>
+        <span class="dash-bar-val">1</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Team Workload -->
+  <div class="dash-card">
+    <div class="dash-card-title"><i data-lucide="users"></i> Team Workload</div>
+    <div class="dash-team" id="team-grid">
+      <div class="dash-team-row">
+        <span class="dash-team-name">Adam Toepfer</span>
+        <div class="dash-team-bar">
+          <div class="dash-team-seg" style="width:33%;background:var(--accent)"></div>
+          <div class="dash-team-seg" style="width:33%;background:var(--warm)"></div>
+          <div class="dash-team-seg" style="width:34%;background:var(--cool)"></div>
+        </div>
+        <span class="dash-team-pts">18 pts</span>
+      </div>
+      <div class="dash-team-row">
+        <span class="dash-team-name">Josh Wooten</span>
+        <div class="dash-team-bar">
+          <div class="dash-team-seg" style="width:67%;background:var(--warm)"></div>
+          <div class="dash-team-seg" style="width:33%;background:var(--cool)"></div>
+        </div>
+        <span class="dash-team-pts">15 pts</span>
+      </div>
+      <div class="dash-team-row">
+        <span class="dash-team-name">Kennedy Ford</span>
+        <div class="dash-team-bar">
+          <div class="dash-team-seg" style="width:47%;background:var(--accent)"></div>
+          <div class="dash-team-seg" style="width:27%;background:var(--warm)"></div>
+          <div class="dash-team-seg" style="width:26%;background:var(--cool)"></div>
+        </div>
+        <span class="dash-team-pts">18 pts</span>
+      </div>
+      <div class="dash-team-row">
+        <span class="dash-team-name">Matt Kinmon</span>
+        <div class="dash-team-bar">
+          <div class="dash-team-seg" style="width:33%;background:var(--accent)"></div>
+          <div class="dash-team-seg" style="width:25%;background:var(--warm)"></div>
+          <div class="dash-team-seg" style="width:25%;background:var(--text-muted)"></div>
+          <div class="dash-team-seg" style="width:17%;background:var(--cool)"></div>
+        </div>
+        <span class="dash-team-pts">12 pts</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pull Requests -->
+  <div class="dash-card dash-full">
+    <div class="dash-card-title"><i data-lucide="git-pull-request"></i> Active Pull Requests</div>
+    <div class="dash-pr-list" id="pr-list">
+      <div class="dash-pr-item">
+        <span class="dash-pr-id">#844</span>
+        <span class="dash-pr-title">REST API Restructure Wave 5 — Classrooms & Participants</span>
+        <span class="dash-pr-repo">cyber-portal</span>
+        <span class="dash-pr-age dash-pr-age-fresh">1d</span>
+      </div>
+      <div class="dash-pr-item">
+        <span class="dash-pr-id">#843</span>
+        <span class="dash-pr-title">Portal UI Modernization - Phase 2</span>
+        <span class="dash-pr-repo">cyber-portal</span>
+        <span class="dash-pr-age dash-pr-age-fresh">1d</span>
+      </div>
+      <div class="dash-pr-item">
+        <span class="dash-pr-id">#841</span>
+        <span class="dash-pr-title">CMS: License-Specific Courses</span>
+        <span class="dash-pr-repo">portal-cms</span>
+        <span class="dash-pr-age dash-pr-age-fresh">2d</span>
+      </div>
+      <div class="dash-pr-item">
+        <span class="dash-pr-id">#839</span>
+        <span class="dash-pr-title">Portal UI Modernization - Phase 1</span>
+        <span class="dash-pr-repo">cyber-portal</span>
+        <span class="dash-pr-age dash-pr-age-mid">7d</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Work Requests -->
+  <div class="dash-card dash-full">
+    <div class="dash-card-title"><i data-lucide="inbox"></i> Outstanding Work Requests <span id="wr-count" style="color:var(--accent);margin-left:0.4rem;"></span></div>
+    <div class="dash-wr-filters" id="wr-filters"></div>
+    <div class="dash-pr-list" id="wr-list">
+      <div style="font-size:0.7rem;color:var(--text-muted)">Click refresh to load work requests</div>
+    </div>
+  </div>
+
+  <!-- Risks -->
+  <div class="dash-card dash-full">
+    <div class="dash-card-title"><i data-lucide="alert-triangle"></i> Risks & Blockers</div>
+    <div class="dash-risks" id="risks">
+      <div class="dash-risk">
+        <span class="dash-risk-tag">hold</span>
+        Range Performance Hardening (5219) — on hold, assigned to Adam
+      </div>
+      <div class="dash-risk">
+        <span class="dash-risk-tag">carryover</span>
+        Guacamole Load Balancing SPIKE (5279) — tagged as likely carryover
+      </div>
+      <div class="dash-risk">
+        <span class="dash-risk-tag">bug</span>
+        Portal Login for Friday Institute (5544) — active, needs investigation
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  // Set generation timestamp
+  var genEl = document.getElementById('dash-generated');
+  if (genEl) genEl.textContent = 'generated: ' + new Date().toLocaleString();
+
+  // --- Burndown Chart ---
+  // All burndown state is populated on refresh from live ADO data.
+  // No hardcoded sprint data — chart renders only after first refresh.
+  var sprintStart = null;
+  var sprintFinish = null;
+
+  function getWorkingDays(startStr, finishStr) {
+    var days = [];
+    if (!startStr || !finishStr) return days;
+    var cur = new Date(startStr + 'T00:00:00');
+    var end = new Date(finishStr + 'T00:00:00');
+    var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    while (cur <= end) {
+      var dow = cur.getDay();
+      if (dow !== 0 && dow !== 6) {
+        days.push(months[cur.getMonth()] + ' ' + cur.getDate());
+      }
+      cur.setDate(cur.getDate() + 1);
+    }
+    return days;
+  }
+
+  function getWorkingDateStrings(startStr, finishStr) {
+    var days = [];
+    if (!startStr || !finishStr) return days;
+    var cur = new Date(startStr + 'T00:00:00');
+    var end = new Date(finishStr + 'T00:00:00');
+    while (cur <= end) {
+      var dow = cur.getDay();
+      if (dow !== 0 && dow !== 6) {
+        days.push(cur.toISOString().slice(0, 10));
+      }
+      cur.setDate(cur.getDate() + 1);
+    }
+    return days;
+  }
+
+  // Burndown history stored in localStorage keyed by sprint date range
+  function getBurndownStorageKey() {
+    return 'hv-burndown-' + sprintStart + '-' + sprintFinish;
+  }
+
+  function loadBurndownHistory() {
+    if (!sprintStart || !sprintFinish) return {};
+    try {
+      var raw = localStorage.getItem(getBurndownStorageKey());
+      return raw ? JSON.parse(raw) : {};
+    } catch (e) { return {}; }
+  }
+
+  function saveBurndownSnapshot(dateStr, remaining) {
+    if (!sprintStart || !sprintFinish) return;
+    var history = loadBurndownHistory();
+    history[dateStr] = remaining;
+    try { localStorage.setItem(getBurndownStorageKey(), JSON.stringify(history)); } catch (e) {}
+  }
+
+  function buildActualSeries() {
+    var history = loadBurndownHistory();
+    var workingDates = getWorkingDateStrings(sprintStart, sprintFinish);
+    var series = [];
+    // Only plot up to the last date that has real recorded data
+    var lastRealIdx = -1;
+    for (var i = workingDates.length - 1; i >= 0; i--) {
+      if (history[workingDates[i]] !== undefined && history[workingDates[i]] !== null) {
+        lastRealIdx = i;
+        break;
+      }
+    }
+    if (lastRealIdx < 0) return series; // no data at all
+    for (var i = 0; i <= lastRealIdx; i++) {
+      var val = history[workingDates[i]];
+      if (val !== undefined && val !== null) {
+        series.push(val);
+      } else if (series.length > 0) {
+        // Gap between two real points — carry forward
+        series.push(series[series.length - 1]);
+      } else {
+        break; // no data at start yet
+      }
+    }
+    return series;
+  }
+
+  var sprintDays = [];
+  var actual = [];
+  var totalPoints = 0;
+  var totalDays = 0;
+
+  function drawBurndown() {
+    var canvas = document.getElementById('burndown-canvas');
+    if (!canvas) return;
+    var container = canvas.parentElement;
+    var dpr = window.devicePixelRatio || 1;
+    var w = container.offsetWidth;
+    var h = container.offsetHeight || 180;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+
+    var ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    // Get theme colors from CSS
+    var styles = getComputedStyle(document.documentElement);
+    var accent = styles.getPropertyValue('--accent').trim() || '#00ff41';
+    var textDim = styles.getPropertyValue('--text-dim').trim() || '#666666';
+    var textMuted = styles.getPropertyValue('--text-muted').trim() || '#909090';
+    var border = styles.getPropertyValue('--border').trim() || '#222222';
+    var font = '10px ' + (styles.getPropertyValue('--font').trim() || 'monospace');
+
+    // No sprint data yet — show placeholder
+    if (!sprintStart || !sprintFinish || sprintDays.length === 0) {
+      ctx.fillStyle = textMuted;
+      ctx.font = font;
+      ctx.textAlign = 'center';
+      ctx.fillText('click refresh to load sprint data', w / 2, h / 2);
+      return;
+    }
+
+    var padLeft = 40;
+    var padRight = 12;
+    var padTop = 16;
+    var padBottom = 34;
+    var chartW = w - padLeft - padRight;
+    var chartH = h - padTop - padBottom;
+
+    // Y-axis: full range 0 to totalPoints
+    var yMin = 0;
+    var yMax = totalPoints || 1;  // prevent division by zero
+    var yRange = yMax - yMin;
+
+    // Grid lines — auto-step based on total (aim for 4-6 lines)
+    ctx.strokeStyle = border;
+    ctx.lineWidth = 1;
+    var yStep = Math.ceil(yMax / 5 / 5) * 5; // round to nearest 5
+    if (yStep < 5) yStep = 5;
+    for (var val = 0; val <= yMax; val += yStep) {
+      var y = padTop + chartH * (1 - val / yRange);
+      ctx.beginPath();
+      ctx.moveTo(padLeft, y);
+      ctx.lineTo(padLeft + chartW, y);
+      ctx.stroke();
+
+      ctx.fillStyle = textDim;
+      ctx.font = font;
+      ctx.textAlign = 'right';
+      ctx.fillText(val, padLeft - 6, y + 4);
+    }
+
+    // X-axis labels
+    ctx.textAlign = 'center';
+    ctx.fillStyle = textDim;
+    for (var i = 0; i < sprintDays.length; i++) {
+      var x = padLeft + (chartW / (sprintDays.length - 1)) * i;
+      ctx.fillText(sprintDays[i].split(' ')[1], x, padTop + chartH + 14);
+    }
+
+    // Axis titles
+    ctx.fillStyle = textMuted;
+    ctx.font = '9px ' + (styles.getPropertyValue('--font').trim() || 'monospace');
+    // Y-axis title (rotated)
+    ctx.save();
+    ctx.translate(10, padTop + chartH / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.textAlign = 'center';
+    ctx.fillText('remaining points', 0, 0);
+    ctx.restore();
+    // X-axis title
+    ctx.textAlign = 'center';
+    ctx.fillText('sprint day', padLeft + chartW / 2, h - 2);
+
+    // Ideal line (dashed) — linear from totalPoints to 0 over full sprint
+    ctx.strokeStyle = textMuted;
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([6, 4]);
+    ctx.beginPath();
+    var idealStartY = padTop + chartH * (1 - totalPoints / yRange);
+    var idealEndY = padTop + chartH;  // 0 points at the end
+    ctx.moveTo(padLeft, idealStartY);
+    ctx.lineTo(padLeft + chartW, idealEndY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Actual burndown line — only plot days that have data
+    var actualCount = actual.length;
+    if (actualCount > 0) {
+      ctx.strokeStyle = accent;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      for (var i = 0; i < actualCount; i++) {
+        var x = padLeft + (chartW / (sprintDays.length - 1)) * i;
+        var y = padTop + chartH * (1 - actual[i] / yRange);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+
+      // Data points
+      for (var i = 0; i < actualCount; i++) {
+        var x = padLeft + (chartW / (sprintDays.length - 1)) * i;
+        var y = padTop + chartH * (1 - actual[i] / yRange);
+        ctx.fillStyle = accent;
+        ctx.fillRect(x - 3, y - 3, 6, 6); // square dots, no border-radius
+      }
+
+      // "Today" marker — positioned at the current date within the sprint
+      var now = new Date();
+      var todayStr = now.toISOString().slice(0, 10);
+      var workingDatesForMarker = getWorkingDateStrings(sprintStart, sprintFinish);
+      var todayIdx = -1;
+      // Find the working day index for today (or nearest past working day)
+      for (var i = workingDatesForMarker.length - 1; i >= 0; i--) {
+        if (workingDatesForMarker[i] <= todayStr) {
+          todayIdx = i;
+          break;
+        }
+      }
+      // Only show marker if today falls within the sprint
+      if (todayIdx >= 0 && todayStr <= sprintFinish) {
+        var todayX = padLeft + (chartW / (sprintDays.length - 1)) * todayIdx;
+        ctx.strokeStyle = accent;
+        ctx.lineWidth = 1;
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath();
+        ctx.moveTo(todayX, padTop);
+        ctx.lineTo(todayX, padTop + chartH);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.fillStyle = accent;
+        ctx.font = '9px ' + (styles.getPropertyValue('--font').trim() || 'monospace');
+        ctx.textAlign = 'center';
+        ctx.fillText('today', todayX, padTop - 2);
+      }
+    } else {
+      // No data yet — show hint
+      ctx.fillStyle = textMuted;
+      ctx.font = '10px ' + (styles.getPropertyValue('--font').trim() || 'monospace');
+      ctx.textAlign = 'center';
+      ctx.fillText('refresh to collect burndown data', padLeft + chartW / 2, padTop + chartH / 2);
+    }
+  }
+
+  drawBurndown();
+  // Redraw on resize for responsiveness
+  window.addEventListener('resize', drawBurndown);
+
+  // --- Velocity Sparkline ---
+  var velocityData = [48, 52, 55, 58, 51, 58]; // points completed per sprint
+  var velocityLabels = ['2026-04','2026-05','2026-06','2026-07','2026-08','2026-09'];
+
+  function drawSparkline() {
+    var canvas = document.getElementById('velocity-canvas');
+    if (!canvas) return;
+    var container = canvas.parentElement;
+    var dpr = window.devicePixelRatio || 1;
+    var w = container.offsetWidth;
+    var h = container.offsetHeight || 120;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+
+    var ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    var styles = getComputedStyle(document.documentElement);
+    var accent = styles.getPropertyValue('--accent').trim() || '#00ff41';
+    var border = styles.getPropertyValue('--border').trim() || '#222222';
+    var textDim = styles.getPropertyValue('--text-dim').trim() || '#666666';
+    var textMuted = styles.getPropertyValue('--text-muted').trim() || '#909090';
+    var fontFam = styles.getPropertyValue('--font').trim() || 'monospace';
+
+    var padLeft = 12;
+    var padRight = 12;
+    var padTop = 20;   // room for value labels above points
+    var padBottom = 18; // room for sprint labels below
+    var chartW = w - padLeft - padRight;
+    var chartH = h - padTop - padBottom;
+
+    var minV = Math.min.apply(null, velocityData) - 3;
+    var maxV = Math.max.apply(null, velocityData) + 3;
+    var range = maxV - minV;
+
+    // Average baseline
+    var avg = velocityData.reduce(function(a, b) { return a + b; }, 0) / velocityData.length;
+    var avgY = padTop + chartH * (1 - (avg - minV) / range);
+    ctx.strokeStyle = border;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(padLeft, avgY);
+    ctx.lineTo(padLeft + chartW, avgY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // "avg" label
+    ctx.fillStyle = textDim;
+    ctx.font = '9px ' + fontFam;
+    ctx.textAlign = 'left';
+    ctx.fillText('avg ' + Math.round(avg), padLeft + chartW + 2, avgY + 3);
+
+    // Line
+    ctx.strokeStyle = accent;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (var i = 0; i < velocityData.length; i++) {
+      var x = padLeft + (chartW / (velocityData.length - 1)) * i;
+      var y = padTop + chartH * (1 - (velocityData[i] - minV) / range);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // Points and value labels
+    ctx.font = '10px ' + fontFam;
+    ctx.textAlign = 'center';
+    for (var i = 0; i < velocityData.length; i++) {
+      var x = padLeft + (chartW / (velocityData.length - 1)) * i;
+      var y = padTop + chartH * (1 - (velocityData[i] - minV) / range);
+
+      // Square dot
+      ctx.fillStyle = accent;
+      ctx.fillRect(x - 3, y - 3, 6, 6);
+
+      // Value above
+      ctx.fillStyle = textMuted;
+      ctx.fillText(velocityData[i], x, y - 10);
+    }
+
+    // Sprint labels below
+    ctx.fillStyle = textDim;
+    ctx.font = '9px ' + fontFam;
+    for (var i = 0; i < velocityLabels.length; i++) {
+      var x = padLeft + (chartW / (velocityLabels.length - 1)) * i;
+      ctx.fillText(velocityLabels[i], x, h - 2);
+    }
+  }
+
+  drawSparkline();
+  window.addEventListener('resize', drawSparkline);
+
+  // --- Refresh Button ---
+  var STATE_COLORS = {
+    'Closed': 'var(--accent)',
+    'Review': 'var(--warm)',
+    'In Progress': 'var(--cool)',
+    'Ready': 'var(--text-muted)',
+    'Hold': 'var(--comp)',
+    'Active': 'var(--comp)',
+    'New': 'var(--text-dim)'
+  };
+
+  function getStateColor(state) {
+    return STATE_COLORS[state] || 'var(--text-dim)';
+  }
+
+  function formatDate(isoStr) {
+    if (!isoStr) return '';
+    var d = new Date(isoStr);
+    var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return months[d.getMonth()] + ' ' + d.getDate();
+  }
+
+  function workingDaysLeft(finishStr) {
+    if (!finishStr) return 0;
+    var now = new Date();
+    var end = new Date(finishStr);
+    var count = 0;
+    var cur = new Date(now);
+    cur.setHours(0,0,0,0);
+    end.setHours(0,0,0,0);
+    while (cur <= end) {
+      var day = cur.getDay();
+      if (day !== 0 && day !== 6) count++;
+      cur.setDate(cur.getDate() + 1);
+    }
+    return count;
+  }
+
+  function renderDashboard(data) {
+    // Metadata strip
+    var kpiTotal = document.getElementById('kpi-total-pts');
+    var kpiRemaining = document.getElementById('kpi-remaining-pts');
+    var kpiPctLabel = document.getElementById('kpi-pct-label');
+    var kpiDays = document.getElementById('kpi-days-left');
+    var kpiPrs = document.getElementById('kpi-prs');
+    var sprintEl = document.getElementById('dash-sprint');
+    var datesEl = document.getElementById('dash-dates');
+
+    if (kpiTotal) kpiTotal.textContent = data.kpis.total_points;
+    if (kpiRemaining) kpiRemaining.textContent = data.kpis.remaining_points;
+    if (kpiPctLabel) kpiPctLabel.textContent = '(' + data.kpis.pct_burned + '%)';
+    if (kpiDays) kpiDays.textContent = workingDaysLeft(data.sprint.finish);
+    if (kpiPrs) kpiPrs.textContent = data.kpis.active_prs;
+    if (sprintEl) sprintEl.textContent = data.sprint.name;
+    if (datesEl) datesEl.textContent = formatDate(data.sprint.start) + ' – ' + formatDate(data.sprint.finish);
+
+    // Sprint Progress stacked bar
+    var progressBar = document.getElementById('progress-bar');
+    var progressLegend = document.getElementById('progress-legend');
+    if (progressBar && data.states) {
+      var totalItems = 0;
+      var stateOrder = ['Closed','Review','In Progress','Ready','Hold','Active'];
+      var stateEntries = [];
+      // Collect all states
+      for (var s in data.states) { totalItems += data.states[s]; }
+      stateOrder.forEach(function(st) {
+        if (data.states[st]) stateEntries.push({state: st, count: data.states[st]});
+      });
+      // Add any states not in the predefined order
+      for (var s in data.states) {
+        if (stateOrder.indexOf(s) === -1) stateEntries.push({state: s, count: data.states[s]});
+      }
+
+      progressBar.innerHTML = '';
+      progressLegend.innerHTML = '';
+      stateEntries.forEach(function(entry) {
+        var pct = (entry.count / totalItems * 100).toFixed(1);
+        var seg = document.createElement('div');
+        seg.className = 'dash-stacked-seg';
+        seg.style.width = pct + '%';
+        seg.style.background = getStateColor(entry.state);
+        progressBar.appendChild(seg);
+
+        var legend = document.createElement('div');
+        legend.className = 'dash-legend-item';
+        legend.innerHTML = '<div class="dash-legend-swatch" style="background:' + getStateColor(entry.state) + '"></div>' + entry.state + ' (' + entry.count + ')';
+        progressLegend.appendChild(legend);
+      });
+    }
+
+    // State Breakdown bars
+    var stateBars = document.getElementById('state-bars');
+    if (stateBars && data.states) {
+      var maxCount = 0;
+      for (var s in data.states) { if (data.states[s] > maxCount) maxCount = data.states[s]; }
+      stateBars.innerHTML = '';
+      var stateOrder2 = ['Closed','Review','In Progress','Ready','Hold','Active'];
+      var allStates = [];
+      stateOrder2.forEach(function(st) { if (data.states[st]) allStates.push({state: st, count: data.states[st]}); });
+      for (var s in data.states) { if (stateOrder2.indexOf(s) === -1) allStates.push({state: s, count: data.states[s]}); }
+      allStates.sort(function(a, b) { return b.count - a.count; });
+
+      allStates.forEach(function(entry) {
+        var pct = (entry.count / maxCount * 100).toFixed(0);
+        var row = document.createElement('div');
+        row.className = 'dash-bar-row';
+        row.innerHTML = '<span class="dash-bar-label">' + entry.state + '</span>' +
+          '<div class="dash-bar-track"><div class="dash-bar-fill" style="width:' + pct + '%;background:' + getStateColor(entry.state) + '"></div></div>' +
+          '<span class="dash-bar-val">' + entry.count + '</span>';
+        stateBars.appendChild(row);
+      });
+    }
+
+    // Team Workload
+    var teamGrid = document.getElementById('team-grid');
+    if (teamGrid && data.team) {
+      teamGrid.innerHTML = '';
+      data.team.sort(function(a, b) { return b.points - a.points; });
+      data.team.forEach(function(member) {
+        if (member.points === 0) return;
+        var row = document.createElement('div');
+        row.className = 'dash-team-row';
+        var barHtml = '';
+        var totalPts = member.points || 1;
+        for (var st in member.states) {
+          var segPct = (member.states[st] / totalPts * 100).toFixed(0);
+          barHtml += '<div class="dash-team-seg" style="width:' + segPct + '%;background:' + getStateColor(st) + '"></div>';
+        }
+        row.innerHTML = '<span class="dash-team-name">' + member.name + '</span>' +
+          '<div class="dash-team-bar">' + barHtml + '</div>' +
+          '<span class="dash-team-pts">' + member.points + ' pts</span>';
+        teamGrid.appendChild(row);
+      });
+    }
+
+    // Pull Requests
+    var prList = document.getElementById('pr-list');
+    if (prList && data.prs) {
+      prList.innerHTML = '';
+      var baseUrl = data.ado_base_url || '';
+      data.prs.forEach(function(pr) {
+        var ageClass = 'dash-pr-age-fresh';
+        if (pr.age_days > 7) ageClass = 'dash-pr-age-old';
+        else if (pr.age_days > 2) ageClass = 'dash-pr-age-mid';
+        var item = document.createElement('a');
+        item.className = 'dash-pr-item';
+        if (baseUrl && pr.repo) {
+          item.href = baseUrl + '/_git/' + pr.repo + '/pullrequest/' + pr.id;
+          item.target = '_blank';
+        }
+        item.innerHTML = '<span class="dash-pr-id">#' + pr.id + '</span>' +
+          '<span class="dash-pr-title">' + pr.title + '</span>' +
+          '<span class="dash-pr-repo">' + pr.repo + '</span>' +
+          '<span class="dash-pr-age ' + ageClass + '">' + pr.age_days + 'd</span>';
+        prList.appendChild(item);
+      });
+    }
+
+    // Risks
+    var risksEl = document.getElementById('risks');
+    if (risksEl && data.risks) {
+      risksEl.innerHTML = '';
+      if (data.risks.length === 0) {
+        risksEl.innerHTML = '<div style="font-size:0.7rem;color:var(--text-muted)">No risks detected</div>';
+      } else {
+        data.risks.forEach(function(risk) {
+          var item = document.createElement('div');
+          item.className = 'dash-risk';
+          item.innerHTML = '<span class="dash-risk-tag">' + risk.type + '</span>' +
+            risk.title + ' (' + risk.id + ')' + (risk.assigned ? ' — ' + risk.assigned : '');
+          risksEl.appendChild(item);
+        });
+      }
+    }
+
+    // Work Requests
+    var wrList = document.getElementById('wr-list');
+    var wrCount = document.getElementById('wr-count');
+    var wrFilters = document.getElementById('wr-filters');
+    if (wrList && data.work_requests) {
+      // Store for filtering
+      window.__wrData = data.work_requests;
+      window.__wrFilter = 'uncompleted';
+      window.__wrBaseUrl = data.ado_base_url || '';
+
+      // Build filter buttons from unique states
+      var wrStates = {};
+      var completedStates = ['Completed', 'Done', 'Closed'];
+      var uncompletedCount = 0;
+      data.work_requests.forEach(function(wr) {
+        wrStates[wr.state] = (wrStates[wr.state] || 0) + 1;
+        if (completedStates.indexOf(wr.state) === -1) uncompletedCount++;
+      });
+      if (wrFilters) {
+        wrFilters.innerHTML = '';
+        // Uncompleted (default)
+        var uncBtn = document.createElement('button');
+        uncBtn.className = 'dash-wr-filter is-active';
+        uncBtn.textContent = 'Open (' + uncompletedCount + ')';
+        uncBtn.setAttribute('data-filter', 'uncompleted');
+        wrFilters.appendChild(uncBtn);
+        // All
+        var allBtn = document.createElement('button');
+        allBtn.className = 'dash-wr-filter';
+        allBtn.textContent = 'All (' + data.work_requests.length + ')';
+        allBtn.setAttribute('data-filter', 'all');
+        wrFilters.appendChild(allBtn);
+        var stateNames = Object.keys(wrStates).sort();
+        stateNames.forEach(function(st) {
+          var btn = document.createElement('button');
+          btn.className = 'dash-wr-filter';
+          btn.textContent = st + ' (' + wrStates[st] + ')';
+          btn.setAttribute('data-filter', st);
+          wrFilters.appendChild(btn);
+        });
+        wrFilters.addEventListener('click', function(e) {
+          var btn = e.target.closest('.dash-wr-filter');
+          if (!btn) return;
+          wrFilters.querySelectorAll('.dash-wr-filter').forEach(function(b) { b.classList.remove('is-active'); });
+          btn.classList.add('is-active');
+          window.__wrFilter = btn.getAttribute('data-filter');
+          renderWorkRequests();
+        });
+      }
+
+      renderWorkRequests();
+    }
+
+    function renderWorkRequests() {
+      var wrList = document.getElementById('wr-list');
+      var wrCount = document.getElementById('wr-count');
+      if (!wrList || !window.__wrData) return;
+
+      var filter = window.__wrFilter || 'uncompleted';
+      var items = window.__wrData;
+
+      // Filter
+      var completedStates = ['Completed', 'Done', 'Closed'];
+      var filtered;
+      if (filter === 'all') {
+        filtered = items.slice();
+      } else if (filter === 'uncompleted') {
+        filtered = items.filter(function(wr) { return completedStates.indexOf(wr.state) === -1; });
+      } else {
+        filtered = items.filter(function(wr) { return wr.state === filter; });
+      }
+
+      // Sort: non-completed first, then completed at bottom
+      filtered.sort(function(a, b) {
+        var aCompleted = completedStates.indexOf(a.state) !== -1 ? 1 : 0;
+        var bCompleted = completedStates.indexOf(b.state) !== -1 ? 1 : 0;
+        return aCompleted - bCompleted;
+      });
+
+      if (wrCount) wrCount.textContent = '(' + filtered.length + ')';
+
+      wrList.innerHTML = '';
+      if (filtered.length === 0) {
+        wrList.innerHTML = '<div style="font-size:0.7rem;color:var(--text-muted)">No work requests match this filter</div>';
+        return;
+      }
+      filtered.forEach(function(wr) {
+        var stateColor = 'var(--text-muted)';
+        if (wr.state === 'In Review') stateColor = 'var(--warm)';
+        else if (wr.state === 'Approved') stateColor = 'var(--cool)';
+        else if (wr.state === 'Completed') stateColor = 'var(--accent)';
+        else if (wr.state === 'New') stateColor = 'var(--text-dim)';
+        var item = document.createElement('a');
+        item.className = 'dash-wr-item';
+        var baseUrl = window.__wrBaseUrl || '';
+        if (baseUrl) {
+          item.href = baseUrl + '/_workitems/edit/' + wr.id;
+          item.target = '_blank';
+        }
+        item.innerHTML = '<span class="dash-pr-id">' + wr.id + '</span>' +
+          '<span class="dash-pr-title">' + wr.title + '</span>' +
+          '<span style="color:' + stateColor + ';font-size:0.6rem;">' + wr.state + '</span>' +
+          '<span style="color:var(--text-muted);font-size:0.6rem;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (wr.assigned || '—') + '</span>';
+        wrList.appendChild(item);
+      });
+    }
+
+    // Update generated timestamp
+    if (genEl) genEl.textContent = 'refreshed: ' + new Date().toLocaleString();
+
+    // Burndown — update sprint dates, save today's snapshot, redraw
+    if (data.sprint && data.burndown) {
+      var prevKey = getBurndownStorageKey();
+      sprintStart = data.sprint.start;
+      sprintFinish = data.sprint.finish;
+      totalPoints = data.burndown.total_points;
+      sprintDays = getWorkingDays(sprintStart, sprintFinish);
+      totalDays = sprintDays.length;
+
+      // If sprint changed, clear stale history for the new key
+      var newKey = getBurndownStorageKey();
+      if (prevKey !== newKey) {
+        try { localStorage.removeItem(newKey); } catch (e) {}
+      }
+
+      // Determine which working day to record the snapshot for.
+      var snapshotDate = data.burndown.date;
+      var workingDates = getWorkingDateStrings(sprintStart, sprintFinish);
+
+      if (workingDates.length > 0) {
+        if (snapshotDate > sprintFinish) {
+          // Sprint ended — record against the last working day
+          snapshotDate = workingDates[workingDates.length - 1];
+        } else if (snapshotDate < sprintStart) {
+          // Sprint hasn't started — record against the first working day
+          snapshotDate = workingDates[0];
+        } else {
+          // Mid-sprint — snap to nearest past working day (handles weekends)
+          var found = false;
+          for (var i = workingDates.length - 1; i >= 0; i--) {
+            if (workingDates[i] <= snapshotDate) {
+              snapshotDate = workingDates[i];
+              found = true;
+              break;
+            }
+          }
+          if (!found) snapshotDate = workingDates[0];
+        }
+
+        // Always seed day 1 with total capacity as starting point
+        var history = loadBurndownHistory();
+        if (history[workingDates[0]] === undefined) {
+          saveBurndownSnapshot(workingDates[0], data.burndown.total_points);
+        }
+
+        // Record current remaining at the resolved day
+        saveBurndownSnapshot(snapshotDate, data.burndown.remaining_points);
+      }
+
+      // Rebuild the actual series from history
+      actual = buildActualSeries();
+
+      // Redraw the chart with live data
+      drawBurndown();
+    }
+
+    // Re-init Lucide icons for any new elements
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  // Wire up the refresh button
+  var refreshBtn = document.getElementById('dash-refresh-btn');
+
+  function doRefresh() {
+    if (!window.pywebview || !window.pywebview.api) {
+      if (window.__hvToast) window.__hvToast('Refresh requires the desktop app (PyWebView)');
+      return;
+    }
+
+    refreshBtn.classList.add('is-loading');
+    window.pywebview.api.refresh_ado_dashboard().then(function(result) {
+      refreshBtn.classList.remove('is-loading');
+      if (!result || !result.ok) {
+        var msg = (result && result.error) ? result.error : 'Unknown error';
+        if (window.__hvToast) window.__hvToast('Refresh failed: ' + msg);
+        return;
+      }
+      renderDashboard(result);
+    }).catch(function(err) {
+      refreshBtn.classList.remove('is-loading');
+      if (window.__hvToast) window.__hvToast('Refresh error: ' + err);
+    });
+  }
+
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', doRefresh);
+  }
+
+  // --- Report Generation ---
+  var lastDashData = null;
+
+  // Patch renderDashboard to cache the data for report generation
+  var _origRender = renderDashboard;
+  renderDashboard = function(data) {
+    lastDashData = data;
+    _origRender(data);
+  };
+
+  var reportBtn = document.getElementById('dash-report-btn');
+  if (reportBtn) {
+    reportBtn.addEventListener('click', function() {
+      if (!lastDashData) {
+        if (window.__hvToast) window.__hvToast('No data yet — refresh first');
+        return;
+      }
+      if (!window.pywebview || !window.pywebview.api) {
+        if (window.__hvToast) window.__hvToast('Report export requires the desktop app');
+        return;
+      }
+
+      var d = lastDashData;
+      var now = new Date().toLocaleString();
+      var sprintName = d.sprint.name || 'Unknown';
+      var startDate = formatDate(d.sprint.start);
+      var endDate = formatDate(d.sprint.finish);
+      var daysLeft = workingDaysLeft(d.sprint.finish);
+
+      // Build the report as a self-contained HTML that mirrors the dashboard layout
+      var accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#00ff41';
+
+      // State color map (resolved values for the standalone report)
+      var reportStateColors = {
+        'Closed': accent,
+        'Review': '#ffb000',
+        'In Progress': '#00cccc',
+        'Ready': '#909090',
+        'Hold': '#ff3333',
+        'Active': '#ff3333',
+        'New': '#666666'
+      };
+
+      // Build state bar rows
+      var stateBarHtml = '';
+      var maxCount = 0;
+      var stateOrder2 = ['Closed','Review','In Progress','Ready','Hold','Active','New'];
+      var allStates = [];
+      if (d.states) {
+        stateOrder2.forEach(function(st) { if (d.states[st]) allStates.push({state: st, count: d.states[st]}); });
+        for (var s in d.states) { if (stateOrder2.indexOf(s) === -1) allStates.push({state: s, count: d.states[s]}); }
+        allStates.forEach(function(e) { if (e.count > maxCount) maxCount = e.count; });
+        allStates.forEach(function(entry) {
+          var pct = (entry.count / maxCount * 100).toFixed(0);
+          var pts = (d.state_points && d.state_points[entry.state]) ? d.state_points[entry.state] : 0;
+          var color = reportStateColors[entry.state] || '#666';
+          stateBarHtml += '<div style="display:grid;grid-template-columns:100px 1fr 40px 50px;align-items:center;gap:0.5rem;margin-bottom:0.4rem;">'
+            + '<span style="font-size:0.75rem;color:#ccc;text-align:right;">' + entry.state + '</span>'
+            + '<div style="height:20px;background:#111;border:1px solid #222;position:relative;"><div style="height:100%;width:' + pct + '%;background:' + color + ';opacity:0.85;"></div></div>'
+            + '<span style="font-size:0.7rem;color:#909090;">' + entry.count + '</span>'
+            + '<span style="font-size:0.7rem;color:#909090;">' + pts + ' pts</span>'
+            + '</div>';
+        });
+      }
+
+      // Build progress bar segments
+      var progressHtml = '';
+      var progressLegendHtml = '';
+      if (d.states) {
+        var totalItems = 0;
+        for (var s in d.states) totalItems += d.states[s];
+        allStates.forEach(function(entry) {
+          var pct = (entry.count / totalItems * 100).toFixed(1);
+          var color = reportStateColors[entry.state] || '#666';
+          progressHtml += '<div style="height:100%;width:' + pct + '%;background:' + color + ';opacity:0.85;"></div>';
+          progressLegendHtml += '<span style="display:inline-flex;align-items:center;gap:0.3rem;margin-right:1rem;font-size:0.65rem;color:#909090;">'
+            + '<span style="width:10px;height:10px;background:' + color + ';display:inline-block;opacity:0.85;"></span>'
+            + entry.state + ' (' + entry.count + ')</span>';
+        });
+      }
+
+      // Build team rows
+      var teamHtml = '';
+      if (d.team) {
+        d.team.sort(function(a, b) { return b.points - a.points; });
+        var maxPts = d.team[0] ? d.team[0].points : 1;
+        d.team.forEach(function(m) {
+          if (m.points === 0) return;
+          var barHtml = '';
+          for (var st in m.states) {
+            var segPct = (m.states[st] / m.points * 100).toFixed(0);
+            var color = reportStateColors[st] || '#666';
+            barHtml += '<div style="height:100%;width:' + segPct + '%;background:' + color + ';opacity:0.85;"></div>';
+          }
+          teamHtml += '<div style="display:grid;grid-template-columns:140px 1fr 50px;align-items:center;gap:0.6rem;margin-bottom:0.6rem;">'
+            + '<span style="font-size:0.75rem;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + m.name + '</span>'
+            + '<div style="height:22px;display:flex;border:1px solid #222;overflow:hidden;">' + barHtml + '</div>'
+            + '<span style="font-size:0.65rem;color:#909090;text-align:right;">' + m.points + ' pts</span>'
+            + '</div>';
+        });
+      }
+
+      // Build PR list
+      var prHtml = '';
+      if (d.prs && d.prs.length) {
+        d.prs.forEach(function(pr) {
+          var ageColor = pr.age_days > 7 ? '#ff3333' : pr.age_days > 2 ? '#ffb000' : accent;
+          prHtml += '<div style="display:grid;grid-template-columns:40px 1fr 90px 40px;align-items:center;gap:0.5rem;padding:0.3rem 0.5rem;background:#0a0a0a;border:1px solid #222;margin-bottom:0.3rem;font-size:0.7rem;">'
+            + '<span style="color:' + accent + ';">#' + pr.id + '</span>'
+            + '<span style="color:#ccc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + pr.title + '</span>'
+            + '<span style="color:#666;font-size:0.6rem;">' + pr.repo + '</span>'
+            + '<span style="color:' + ageColor + ';text-align:right;">' + pr.age_days + 'd</span>'
+            + '</div>';
+        });
+      } else {
+        prHtml = '<div style="font-size:0.7rem;color:#909090;">No active pull requests</div>';
+      }
+
+      // Build risks
+      var risksHtml = '';
+      if (d.risks && d.risks.length) {
+        d.risks.forEach(function(r) {
+          risksHtml += '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem 0.5rem;font-size:0.7rem;color:#ccc;border-left:3px solid #ff3333;background:#0a0a0a;margin-bottom:0.3rem;">'
+            + '<span style="font-size:0.55rem;text-transform:uppercase;letter-spacing:0.06em;color:#ff3333;white-space:nowrap;">' + r.type + '</span>'
+            + r.title + ' (' + r.id + ')' + (r.assigned ? ' — ' + r.assigned : '')
+            + '</div>';
+        });
+      } else {
+        risksHtml = '<div style="font-size:0.7rem;color:#909090;">No risks detected</div>';
+      }
+
+      // Assemble the full report HTML
+      var htmlReport = '<!DOCTYPE html>\n<html><head><meta charset="utf-8">\n'
+        + '<title>Sprint Report — ' + sprintName + '</title>\n'
+        + '<style>\n'
+        + '@font-face { font-family: "Departure Mono"; src: url("https://cdn.jsdelivr.net/gh/nicholasgasior/departure-mono-font@main/DepartureMono-Regular.woff2") format("woff2"); }\n'
+        + '* { margin: 0; padding: 0; box-sizing: border-box; }\n'
+        + 'body { font-family: "Departure Mono", monospace; background: #000; color: #ccc; padding: 2rem; max-width: 1000px; margin: 0 auto; -webkit-font-smoothing: none; }\n'
+        + '.report-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }\n'
+        + '.report-full { grid-column: 1 / -1; }\n'
+        + '.report-card { background: #0a0a0a; border: 1px solid #222; padding: 1rem; }\n'
+        + '.report-card-title { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; color: #666; margin-bottom: 0.75rem; }\n'
+        + '.report-header { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #222; margin-bottom: 0.5rem; }\n'
+        + '.report-header h1 { font-size: 1.1rem; color: #fff; text-transform: uppercase; letter-spacing: 0.08em; }\n'
+        + '.report-meta { grid-column: 1 / -1; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.4rem 1.2rem; padding: 0.4rem 0 0.8rem; font-size: 0.65rem; color: #909090; }\n'
+        + '.report-meta-val { color: ' + accent + '; font-weight: 700; }\n'
+        + '.report-meta-sep { color: #222; }\n'
+        + '</style>\n</head><body>\n'
+        + '<div class="report-grid">\n'
+        + '  <div class="report-header"><h1>Sprint Report: ' + sprintName + '</h1><span style="font-size:0.6rem;color:#666;">Generated ' + now + '</span></div>\n'
+        + '  <div class="report-meta">\n'
+        + '    <span><span class="report-meta-val">' + sprintName + '</span></span>\n'
+        + '    <span class="report-meta-sep">|</span>\n'
+        + '    <span>' + startDate + ' – ' + endDate + '</span>\n'
+        + '    <span class="report-meta-sep">|</span>\n'
+        + '    <span><span class="report-meta-val">' + d.kpis.total_points + '</span> pts committed</span>\n'
+        + '    <span class="report-meta-sep">|</span>\n'
+        + '    <span><span class="report-meta-val">' + d.kpis.remaining_points + '</span> remaining (' + d.kpis.pct_burned + '%)</span>\n'
+        + '    <span class="report-meta-sep">|</span>\n'
+        + '    <span><span class="report-meta-val">' + daysLeft + '</span> days left</span>\n'
+        + '    <span class="report-meta-sep">|</span>\n'
+        + '    <span><span class="report-meta-val">' + d.kpis.active_prs + '</span> active PRs</span>\n'
+        + '  </div>\n'
+        + '  <div class="report-card report-full">\n'
+        + '    <div class="report-card-title">Sprint Progress</div>\n'
+        + '    <div style="height:28px;display:flex;border:1px solid #222;overflow:hidden;">' + progressHtml + '</div>\n'
+        + '    <div style="margin-top:0.5rem;">' + progressLegendHtml + '</div>\n'
+        + '  </div>\n'
+        + '  <div class="report-card">\n'
+        + '    <div class="report-card-title">By State</div>\n'
+        + stateBarHtml
+        + '  </div>\n'
+        + '  <div class="report-card">\n'
+        + '    <div class="report-card-title">Team Workload</div>\n'
+        + teamHtml
+        + '  </div>\n'
+        + '  <div class="report-card report-full">\n'
+        + '    <div class="report-card-title">Active Pull Requests</div>\n'
+        + prHtml
+        + '  </div>\n'
+        + '  <div class="report-card report-full">\n'
+        + '    <div class="report-card-title">Risks</div>\n'
+        + risksHtml
+        + '  </div>\n'
+        + '</div>\n'
+        + '</body></html>';
+
+      var filename = 'sprint-report-' + sprintName.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '.html';
+      window.pywebview.api.save_export(htmlReport, filename).then(function(result) {
+        if (result && result.ok) {
+          if (window.__hvToast) window.__hvToast('Report saved: ' + result.path);
+        } else if (result && result.error !== 'cancelled') {
+          if (window.__hvToast) window.__hvToast('Save failed: ' + result.error);
+        }
+      });
+    });
+  }
+
+  // Auto-refresh on page load
+  doRefresh();
+})();
+</script>

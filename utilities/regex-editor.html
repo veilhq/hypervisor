@@ -1,0 +1,431 @@
+<div class="rx-layout">
+  <div class="rx-editor">
+    <h1><i data-lucide="regex" class="utility-title-icon"></i> Regex Editor</h1>
+
+    <!-- Pattern input -->
+    <div class="rx-pattern-wrap">
+      <span class="rx-delim">/</span>
+      <input type="text" id="rx-pattern" class="rx-pattern" placeholder="enter pattern..." spellcheck="false" autocomplete="off">
+      <span class="rx-delim">/</span>
+      <div class="rx-flags" id="rx-flags">
+        <button class="rx-flag active" data-flag="g" data-tooltip="Global — match all occurrences">g</button>
+        <button class="rx-flag" data-flag="i" data-tooltip="Case insensitive">i</button>
+        <button class="rx-flag" data-flag="m" data-tooltip="Multiline — ^ and $ match line boundaries">m</button>
+        <button class="rx-flag" data-flag="s" data-tooltip="Dotall — . matches newlines">s</button>
+        <button class="rx-flag" data-flag="u" data-tooltip="Unicode-aware matching">u</button>
+      </div>
+    </div>
+
+    <!-- Error display -->
+    <div class="rx-error" id="rx-error"></div>
+
+    <!-- Test string -->
+    <div class="rx-test-label">
+      <span>Test String</span>
+      <span class="rx-match-count" id="rx-match-count"></span>
+    </div>
+    <div class="rx-test-wrap">
+      <div class="rx-test-container" id="rx-test-container">
+        <div class="rx-test-highlights" id="rx-test-highlights" aria-hidden="true"></div>
+        <textarea id="rx-test" class="rx-test" spellcheck="false" placeholder="enter test string...">The quick brown fox jumps over the lazy dog.
+foo@example.com and bar@test.org are emails.
+2026-04-29 is today's date. Phone: 555-123-4567.
+https://example.com/path?q=hello&lang=en#section
+192.168.1.1 and 10.0.0.255 are IP addresses.</textarea>
+      </div>
+    </div>
+
+    <!-- Substitution -->
+    <div class="rx-sub-row">
+      <label class="rx-sub-label" for="rx-replace">Replace</label>
+      <input type="text" id="rx-replace" class="rx-replace" placeholder="replacement string..." spellcheck="false" autocomplete="off">
+    </div>
+    <div class="rx-sub-output-wrap" id="rx-sub-output-wrap" style="display:none">
+      <div class="rx-sub-output-label">
+        <span>Result</span>
+        <button class="rx-sub-copy" id="rx-sub-copy">copy</button>
+      </div>
+      <pre class="rx-sub-output" id="rx-sub-output"></pre>
+    </div>
+  </div>
+
+  <!-- Right panel: match details + reference -->
+  <div class="rx-sidebar">
+    <!-- Match details -->
+    <div class="rx-matches-panel" id="rx-matches-panel">
+      <div class="rx-panel-header">
+        <span><i data-lucide="scan-search" style="width:12px;height:12px;vertical-align:-1px"></i> Matches</span>
+      </div>
+      <div class="rx-matches-list" id="rx-matches-list">
+        <div class="rx-matches-empty">matches appear here</div>
+      </div>
+    </div>
+
+    <!-- Quick reference -->
+    <div class="rx-ref-panel" id="rx-ref-panel">
+      <button class="rx-ref-toggle" id="rx-ref-toggle">
+        <i data-lucide="book-open" style="width:12px;height:12px;vertical-align:-1px"></i>
+        Quick Reference
+        <i data-lucide="chevron-down" class="rx-ref-chevron" id="rx-ref-chevron" style="width:12px;height:12px"></i>
+      </button>
+      <div class="rx-ref-body" id="rx-ref-body">
+        <div class="rx-ref-section">
+          <div class="rx-ref-section-title">Character Classes</div>
+          <div class="rx-ref-table">
+            <div class="rx-ref-row"><code>.</code><span>any char except newline</span></div>
+            <div class="rx-ref-row"><code>\d</code><span>digit [0-9]</span></div>
+            <div class="rx-ref-row"><code>\D</code><span>non-digit</span></div>
+            <div class="rx-ref-row"><code>\w</code><span>word char [a-zA-Z0-9_]</span></div>
+            <div class="rx-ref-row"><code>\W</code><span>non-word char</span></div>
+            <div class="rx-ref-row"><code>\s</code><span>whitespace</span></div>
+            <div class="rx-ref-row"><code>\S</code><span>non-whitespace</span></div>
+            <div class="rx-ref-row"><code>\b</code><span>word boundary</span></div>
+          </div>
+        </div>
+        <div class="rx-ref-section">
+          <div class="rx-ref-section-title">Quantifiers</div>
+          <div class="rx-ref-table">
+            <div class="rx-ref-row"><code>*</code><span>0 or more (greedy)</span></div>
+            <div class="rx-ref-row"><code>+</code><span>1 or more (greedy)</span></div>
+            <div class="rx-ref-row"><code>?</code><span>0 or 1 (greedy)</span></div>
+            <div class="rx-ref-row"><code>{n}</code><span>exactly n</span></div>
+            <div class="rx-ref-row"><code>{n,m}</code><span>between n and m</span></div>
+            <div class="rx-ref-row"><code>*?</code><span>0 or more (lazy)</span></div>
+            <div class="rx-ref-row"><code>+?</code><span>1 or more (lazy)</span></div>
+          </div>
+        </div>
+        <div class="rx-ref-section">
+          <div class="rx-ref-section-title">Anchors</div>
+          <div class="rx-ref-table">
+            <div class="rx-ref-row"><code>^</code><span>start of string/line</span></div>
+            <div class="rx-ref-row"><code>$</code><span>end of string/line</span></div>
+            <div class="rx-ref-row"><code>\b</code><span>word boundary</span></div>
+            <div class="rx-ref-row"><code>\B</code><span>non-word boundary</span></div>
+          </div>
+        </div>
+        <div class="rx-ref-section">
+          <div class="rx-ref-section-title">Groups</div>
+          <div class="rx-ref-table">
+            <div class="rx-ref-row"><code>(abc)</code><span>capture group</span></div>
+            <div class="rx-ref-row"><code>(?:abc)</code><span>non-capturing group</span></div>
+            <div class="rx-ref-row"><code>(?&lt;n&gt;abc)</code><span>named group</span></div>
+            <div class="rx-ref-row"><code>\1</code><span>backreference</span></div>
+            <div class="rx-ref-row"><code>(?=abc)</code><span>lookahead (+)</span></div>
+            <div class="rx-ref-row"><code>(?!abc)</code><span>lookahead (-)</span></div>
+            <div class="rx-ref-row"><code>(?&lt;=abc)</code><span>lookbehind (+)</span></div>
+            <div class="rx-ref-row"><code>(?&lt;!abc)</code><span>lookbehind (-)</span></div>
+          </div>
+        </div>
+        <div class="rx-ref-section">
+          <div class="rx-ref-section-title">Character Sets</div>
+          <div class="rx-ref-table">
+            <div class="rx-ref-row"><code>[abc]</code><span>a, b, or c</span></div>
+            <div class="rx-ref-row"><code>[^abc]</code><span>not a, b, or c</span></div>
+            <div class="rx-ref-row"><code>[a-z]</code><span>range: a to z</span></div>
+            <div class="rx-ref-row"><code>[a-zA-Z0-9]</code><span>alphanumeric</span></div>
+          </div>
+        </div>
+        <div class="rx-ref-section">
+          <div class="rx-ref-section-title">Flags</div>
+          <div class="rx-ref-table">
+            <div class="rx-ref-row"><code>g</code><span>global — all matches</span></div>
+            <div class="rx-ref-row"><code>i</code><span>case insensitive</span></div>
+            <div class="rx-ref-row"><code>m</code><span>multiline (^/$ per line)</span></div>
+            <div class="rx-ref-row"><code>s</code><span>dotall (. matches \n)</span></div>
+            <div class="rx-ref-row"><code>u</code><span>unicode-aware</span></div>
+          </div>
+        </div>
+        <div class="rx-ref-link">
+          <a href="" id="rx-cheatsheet-link"><i data-lucide="external-link" style="width:10px;height:10px;vertical-align:-1px"></i> Full regex cheatsheet</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  // --- DOM refs ---
+  var patternInput = document.getElementById('rx-pattern');
+  var testArea = document.getElementById('rx-test');
+  var highlightsDiv = document.getElementById('rx-test-highlights');
+  var flagsContainer = document.getElementById('rx-flags');
+  var errorDiv = document.getElementById('rx-error');
+  var matchCountSpan = document.getElementById('rx-match-count');
+  var matchesList = document.getElementById('rx-matches-list');
+  var replaceInput = document.getElementById('rx-replace');
+  var subOutputWrap = document.getElementById('rx-sub-output-wrap');
+  var subOutput = document.getElementById('rx-sub-output');
+  var subCopyBtn = document.getElementById('rx-sub-copy');
+  var refToggle = document.getElementById('rx-ref-toggle');
+  var refBody = document.getElementById('rx-ref-body');
+  var refChevron = document.getElementById('rx-ref-chevron');
+  var testContainer = document.getElementById('rx-test-container');
+
+  // --- Cheatsheet link ---
+  var cheatLink = document.getElementById('rx-cheatsheet-link');
+  if (cheatLink) {
+    var brand = document.querySelector('.brand');
+    var root = brand ? (brand.getAttribute('href') || './index.html').replace('index.html', '') : '../../';
+    cheatLink.href = root + 'reference/regex-cheatsheet/index.html';
+  }
+
+  // --- State ---
+  var activeFlags = { g: true, i: false, m: false, s: false, u: false };
+  var replaceActive = false;
+
+  // --- Flag toggles ---
+  flagsContainer.addEventListener('click', function(e) {
+    var btn = e.target.closest('.rx-flag');
+    if (!btn) return;
+    var flag = btn.getAttribute('data-flag');
+    activeFlags[flag] = !activeFlags[flag];
+    btn.classList.toggle('active', activeFlags[flag]);
+    runMatch();
+  });
+
+  // --- Sync scroll between textarea and highlights ---
+  testArea.addEventListener('scroll', function() {
+    highlightsDiv.scrollTop = testArea.scrollTop;
+    highlightsDiv.scrollLeft = testArea.scrollLeft;
+  });
+
+  // --- Auto-resize textarea ---
+  function autoResize() {
+    testArea.style.height = 'auto';
+    var newHeight = Math.max(testArea.scrollHeight, 120);
+    testArea.style.height = newHeight + 'px';
+    testContainer.style.height = newHeight + 'px';
+    highlightsDiv.style.height = newHeight + 'px';
+  }
+
+  // --- Escape HTML ---
+  function esc(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  // --- Build regex from inputs ---
+  function buildRegex() {
+    var pattern = patternInput.value;
+    if (!pattern) return null;
+
+    var flags = '';
+    if (activeFlags.g) flags += 'g';
+    if (activeFlags.i) flags += 'i';
+    if (activeFlags.m) flags += 'm';
+    if (activeFlags.s) flags += 's';
+    if (activeFlags.u) flags += 'u';
+
+    try {
+      var re = new RegExp(pattern, flags);
+      errorDiv.textContent = '';
+      errorDiv.style.display = 'none';
+      return re;
+    } catch (e) {
+      errorDiv.textContent = e.message.replace(/^Invalid regular expression: /, '');
+      errorDiv.style.display = 'block';
+      return null;
+    }
+  }
+
+  // --- Highlight matches in test string ---
+  function highlightMatches(text, re) {
+    if (!re) return esc(text);
+
+    var result = '';
+    var lastIndex = 0;
+    var matchCount = 0;
+    var matches = [];
+    var MAX_MATCHES = 1000;
+
+    // Use matchAll for global, exec loop for non-global
+    if (re.global) {
+      var iter = text.matchAll(re);
+      for (var m = iter.next(); !m.done; m = iter.next()) {
+        var match = m.value;
+        if (match.index === undefined) break;
+        // Prevent infinite loops on zero-length matches
+        if (match[0].length === 0 && match.index <= lastIndex && matchCount > 0) break;
+        if (matchCount >= MAX_MATCHES) break;
+
+        result += esc(text.slice(lastIndex, match.index));
+        result += '<mark class="rx-hl rx-hl-' + (matchCount % 2) + '">' + esc(match[0]) + '</mark>';
+        lastIndex = match.index + match[0].length;
+        matches.push(match);
+        matchCount++;
+      }
+    } else {
+      var match = re.exec(text);
+      if (match && match.index !== undefined) {
+        result += esc(text.slice(0, match.index));
+        result += '<mark class="rx-hl rx-hl-0">' + esc(match[0]) + '</mark>';
+        lastIndex = match.index + match[0].length;
+        matches.push(match);
+        matchCount = 1;
+      }
+    }
+
+    result += esc(text.slice(lastIndex));
+    return { html: result, matches: matches, count: matchCount };
+  }
+
+  // --- Render match details ---
+  function renderMatches(matches) {
+    if (!matches || matches.length === 0) {
+      matchesList.innerHTML = '<div class="rx-matches-empty">no matches</div>';
+      return;
+    }
+
+    var html = '';
+    matches.forEach(function(m, idx) {
+      html += '<div class="rx-match-item">';
+      html += '<div class="rx-match-header">';
+      html += '<span class="rx-match-idx">' + (idx + 1) + '</span>';
+      html += '<span class="rx-match-value">' + esc(m[0]) + '</span>';
+      html += '<span class="rx-match-pos">' + m.index + '-' + (m.index + m[0].length) + '</span>';
+      html += '</div>';
+
+      // Capture groups
+      var hasGroups = false;
+      for (var i = 1; i < m.length; i++) {
+        if (m[i] !== undefined) {
+          hasGroups = true;
+          break;
+        }
+      }
+
+      if (hasGroups || (m.groups && Object.keys(m.groups).length > 0)) {
+        html += '<div class="rx-match-groups">';
+
+        // Named groups
+        if (m.groups) {
+          var names = Object.keys(m.groups);
+          for (var n = 0; n < names.length; n++) {
+            if (m.groups[names[n]] !== undefined) {
+              html += '<div class="rx-group-row">';
+              html += '<span class="rx-group-name">' + esc(names[n]) + '</span>';
+              html += '<span class="rx-group-value">' + esc(m.groups[names[n]]) + '</span>';
+              html += '</div>';
+            }
+          }
+        }
+
+        // Numbered groups (skip if already shown as named)
+        var namedValues = m.groups ? Object.values(m.groups) : [];
+        for (var i = 1; i < m.length; i++) {
+          if (m[i] !== undefined) {
+            // Skip if this is a named group already displayed
+            var isNamed = false;
+            if (m.groups) {
+              var gNames = Object.keys(m.groups);
+              for (var g = 0; g < gNames.length; g++) {
+                if (m.groups[gNames[g]] === m[i]) { isNamed = true; break; }
+              }
+            }
+            if (!isNamed) {
+              html += '<div class="rx-group-row">';
+              html += '<span class="rx-group-name">$' + i + '</span>';
+              html += '<span class="rx-group-value">' + esc(m[i]) + '</span>';
+              html += '</div>';
+            }
+          }
+        }
+
+        html += '</div>';
+      }
+
+      html += '</div>';
+    });
+
+    matchesList.innerHTML = html;
+  }
+
+  // --- Main match runner ---
+  function runMatch() {
+    var text = testArea.value;
+    var re = buildRegex();
+
+    if (!re || !patternInput.value) {
+      highlightsDiv.innerHTML = esc(text) + '\n';
+      matchCountSpan.textContent = '';
+      matchesList.innerHTML = '<div class="rx-matches-empty">matches appear here</div>';
+      subOutputWrap.style.display = 'none';
+      return;
+    }
+
+    var result = highlightMatches(text, re);
+    // Add trailing newline so the highlight div matches textarea height
+    highlightsDiv.innerHTML = result.html + '\n';
+    matchCountSpan.textContent = result.count + ' match' + (result.count !== 1 ? 'es' : '');
+    renderMatches(result.matches);
+
+    // Substitution — show whenever the replace field has been touched
+    if (replaceActive) {
+      try {
+        var subResult = text.replace(re, replaceInput.value);
+        subOutput.textContent = subResult;
+        subOutputWrap.style.display = 'block';
+      } catch (e) {
+        subOutput.textContent = 'error: ' + e.message;
+        subOutputWrap.style.display = 'block';
+      }
+    } else {
+      subOutputWrap.style.display = 'none';
+    }
+  }
+
+  // --- Event listeners ---
+  patternInput.addEventListener('input', runMatch);
+  testArea.addEventListener('input', function() {
+    autoResize();
+    runMatch();
+  });
+  replaceInput.addEventListener('input', function() {
+    replaceActive = true;
+    runMatch();
+  });
+  replaceInput.addEventListener('focus', function() {
+    replaceActive = true;
+    runMatch();
+  });
+
+  // --- Copy substitution result ---
+  subCopyBtn.addEventListener('click', function() {
+    var text = subOutput.textContent;
+    navigator.clipboard.writeText(text).then(function() {
+      subCopyBtn.textContent = 'copied';
+      subCopyBtn.classList.add('copied');
+      setTimeout(function() { subCopyBtn.textContent = 'copy'; subCopyBtn.classList.remove('copied'); }, 1500);
+    }).catch(function() {
+      subCopyBtn.textContent = 'err';
+      setTimeout(function() { subCopyBtn.textContent = 'copy'; }, 1000);
+    });
+  });
+
+  // --- Reference panel toggle ---
+  var refOpen = false;
+  refToggle.addEventListener('click', function() {
+    refOpen = !refOpen;
+    refBody.classList.toggle('open', refOpen);
+    refChevron.style.transform = refOpen ? 'rotate(180deg)' : '';
+  });
+
+  // --- Clickable reference rows insert into pattern ---
+  document.querySelectorAll('.rx-ref-row code').forEach(function(el) {
+    el.addEventListener('click', function() {
+      var token = el.textContent;
+      var start = patternInput.selectionStart;
+      var end = patternInput.selectionEnd;
+      var val = patternInput.value;
+      patternInput.value = val.slice(0, start) + token + val.slice(end);
+      patternInput.focus();
+      patternInput.setSelectionRange(start + token.length, start + token.length);
+      runMatch();
+    });
+  });
+
+  // --- Init ---
+  autoResize();
+  runMatch();
+})();
+</script>

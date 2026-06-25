@@ -1,0 +1,180 @@
+<div class="ss-layout">
+  <div class="utility-container" style="max-width:720px">
+    <h1><i data-lucide="monitor" class="utility-title-icon"></i> Screensaver</h1>
+    <p class="ss-subtitle">Choose a screensaver mode. Press <kbd class="ss-kbd">s</kbd> anywhere to launch, or wait for the idle timer.</p>
+
+    <div class="ss-cards" id="ss-cards"></div>
+
+    <div class="ss-settings">
+      <div class="ss-setting-row">
+        <label for="ss-idle">Idle timeout</label>
+        <select id="ss-idle">
+          <option value="0">Disabled</option>
+          <option value="60000">1 minute</option>
+          <option value="120000">2 minutes</option>
+          <option value="300000">5 minutes</option>
+          <option value="600000">10 minutes</option>
+          <option value="900000">15 minutes</option>
+          <option value="1800000">30 minutes</option>
+        </select>
+      </div>
+      <div class="ss-setting-row">
+        <label for="ss-clock-toggle">Show clock overlay</label>
+        <input type="checkbox" id="ss-clock-toggle" checked>
+      </div>
+      <div class="ss-setting-row">
+        <label for="ss-palette-toggle">Use full palette</label>
+        <input type="checkbox" id="ss-palette-toggle">
+      </div>
+      <div class="ss-setting-row">
+        <label for="ss-grid-mouse-toggle">Grid: mouse interaction</label>
+        <input type="checkbox" id="ss-grid-mouse-toggle" checked>
+      </div>
+    </div>
+
+    <div class="ss-actions">
+      <button class="ss-launch" id="ss-launch"><i data-lucide="play" style="width:12px;height:12px;vertical-align:-1px"></i> Launch Now</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var MODES = [
+    { key: "particles", name: "Particles",   icon: "atom",          desc: "Reactive particles — push them with your mouse" },
+    { key: "starfield", name: "Starfield",    icon: "sparkles",      desc: "Stars flying toward you through space" },
+    { key: "worm",      name: "Worm",         icon: "route",         desc: "Crawling trails that wander the screen" },
+    { key: "dither",    name: "Dither",       icon: "blend",         desc: "Bayer-dithered gradients morphing in the dark" },
+    { key: "bounce",    name: "Bounce",       icon: "move-diagonal", desc: "A word bouncing off the walls — retro" },
+    { key: "life",      name: "Game of Life", icon: "grid-3x3",      desc: "Conway's cellular automaton — endlessly evolving" },
+    { key: "grid",      name: "Grid",         icon: "grid-2x2",     desc: "Infinite perspective grid scrolling into the void" }
+  ];
+
+  // app.js loads after this inline script — wait for the screensaver API
+  function boot() {
+    var api = window.__screensaver;
+    if (!api) return setTimeout(boot, 50);
+    init(api);
+  }
+
+  function init(api) {
+    var currentMode = api.getMode();
+    var cardsContainer = document.getElementById("ss-cards");
+    var idleSelect = document.getElementById("ss-idle");
+    var clockToggle = document.getElementById("ss-clock-toggle");
+    var paletteToggle = document.getElementById("ss-palette-toggle");
+    var launchBtn = document.getElementById("ss-launch");
+
+    // Build mode cards with live preview canvases
+    function buildCards() {
+      cardsContainer.innerHTML = "";
+      MODES.forEach(function (mode) {
+        var card = document.createElement("div");
+        card.className = "ss-card" + (mode.key === currentMode ? " selected" : "");
+        card.setAttribute("data-mode", mode.key);
+        card.setAttribute("role", "button");
+        card.setAttribute("tabindex", "0");
+        card.setAttribute("aria-label", "Select " + mode.name + " screensaver");
+
+        var preview = document.createElement("canvas");
+        preview.className = "ss-card-preview";
+        preview.width = 280;
+        preview.height = 140;
+        card.appendChild(preview);
+
+        var body = document.createElement("div");
+        body.className = "ss-card-body";
+
+        var header = document.createElement("div");
+        header.className = "ss-card-header";
+        header.innerHTML = '<i data-lucide="' + mode.icon + '" class="ss-card-icon"></i>' +
+                           '<span class="ss-card-name">' + mode.name + '</span>' +
+                           (mode.key === currentMode ? '<span class="hv-badge hv-badge-accent ss-card-active">active</span>' : '');
+        body.appendChild(header);
+
+        var desc = document.createElement("div");
+        desc.className = "ss-card-desc";
+        desc.textContent = mode.desc;
+        body.appendChild(desc);
+
+        card.appendChild(body);
+        cardsContainer.appendChild(card);
+
+        // Render static preview
+        var pCtx = preview.getContext("2d");
+        pCtx.fillStyle = "#000000";
+        pCtx.fillRect(0, 0, 280, 140);
+        try {
+          api.preview(mode.key, pCtx, 280, 140);
+        } catch (e) {}
+
+        // Selection handler
+        function selectMode() {
+          currentMode = mode.key;
+          api.setMode(mode.key);
+          buildCards();
+          if (window.lucide) lucide.createIcons({ attrs: { "stroke-width": 1.5 } });
+        }
+        card.addEventListener("click", selectMode);
+        card.addEventListener("keydown", function (e) {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            selectMode();
+          }
+        });
+      });
+    }
+
+    buildCards();
+
+    // Idle timeout
+    idleSelect.value = String(api.getIdleTimeout());
+    idleSelect.addEventListener("change", function () {
+      api.setIdleTimeout(parseInt(this.value, 10));
+    });
+
+    // Clock toggle
+    clockToggle.checked = api.getShowClock();
+    clockToggle.addEventListener("change", function () {
+      api.setShowClock(this.checked);
+    });
+
+    // Palette toggle
+    paletteToggle.checked = api.getUsePalette();
+    paletteToggle.addEventListener("change", function () {
+      api.setUsePalette(this.checked);
+      // Rebuild previews to reflect palette change
+      buildCards();
+      if (window.lucide) lucide.createIcons({ attrs: { "stroke-width": 1.5 } });
+    });
+
+    // Grid mouse toggle
+    var gridMouseToggle = document.getElementById("ss-grid-mouse-toggle");
+    function initGridMouse() {
+      if (window.__gridMouse) {
+        gridMouseToggle.checked = window.__gridMouse.get();
+        gridMouseToggle.addEventListener("change", function () {
+          window.__gridMouse.set(this.checked);
+        });
+      } else {
+        setTimeout(initGridMouse, 100);
+      }
+    }
+    initGridMouse();
+
+    // Launch button
+    launchBtn.addEventListener("click", function () {
+      api.activate(currentMode);
+    });
+
+    // Init lucide icons in cards
+    if (window.lucide) {
+      setTimeout(function () {
+        lucide.createIcons({ attrs: { "stroke-width": 1.5 } });
+      }, 50);
+    }
+  }
+
+  boot();
+})();
+</script>

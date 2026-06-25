@@ -1,0 +1,94 @@
+<div class="quiz-layout">
+  <div class="utility-container quiz-container">
+    <h1><i data-lucide="file-check" class="utility-title-icon"></i> Assessment <span id="quiz-dataset-title" class="quiz-dataset-title"></span></h1>
+    <div class="quiz-tabs">
+      <button class="quiz-tab active" data-tab="quiz"><i data-lucide="pen-tool" style="width:11px;height:11px;vertical-align:-1px"></i> Quiz</button>
+      <button class="quiz-tab" data-tab="guide"><i data-lucide="book-open" style="width:11px;height:11px;vertical-align:-1px"></i> Study Guide</button>
+    </div>
+
+    <div class="quiz-tab-panel" id="panel-guide" style="display:none">
+      <div class="guide-nav" id="guide-nav"></div>
+      <div class="guide-content" id="guide-content"></div>
+    </div>
+
+    <div class="quiz-tab-panel" id="panel-quiz">
+    <div class="quiz-meta" id="quiz-meta">
+      <span class="quiz-meta-item" id="quiz-score-display">0 / 0</span>
+      <span class="quiz-meta-sep">|</span>
+      <span class="quiz-meta-item" id="quiz-progress">Question 1</span>
+      <span class="quiz-meta-sep">|</span>
+      <span class="quiz-meta-item" id="quiz-pct">0%</span>
+    </div>
+    <div class="quiz-progress-bar"><div class="quiz-progress-fill" id="quiz-progress-fill"></div></div>
+
+    <div class="quiz-card" id="quiz-card">
+      <div class="quiz-card-tags">
+        <span class="quiz-domain" id="quiz-domain"></span>
+        <span class="quiz-type-tag" id="quiz-type-tag"></span>
+        <span class="quiz-multi-tag" id="quiz-multi-tag" style="display:none">SELECT <span id="quiz-pick-count"></span></span>
+      </div>
+      <div class="quiz-question" id="quiz-question"></div>
+      <div class="quiz-options" id="quiz-options"></div>
+      <div class="quiz-feedback" id="quiz-feedback"></div>
+      <div class="quiz-actions" id="quiz-actions">
+        <button class="quiz-btn quiz-btn-check" id="quiz-check" disabled>check</button>
+        <button class="quiz-btn quiz-btn-next" id="quiz-next" style="display:none">next</button>
+      </div>
+    </div>
+
+    <div class="quiz-summary" id="quiz-summary" style="display:none">
+      <div class="quiz-summary-score" id="quiz-summary-score"></div>
+      <div class="quiz-summary-breakdown" id="quiz-summary-breakdown"></div>
+      <div class="quiz-summary-actions">
+        <button class="quiz-btn quiz-btn-check" id="quiz-restart">restart</button>
+        <button class="quiz-btn quiz-btn-next" id="quiz-review">review missed</button>
+      </div>
+    </div>
+    </div><!-- /panel-quiz -->
+  </div>
+
+  <div class="quiz-sidebar">
+    <div class="quiz-sidebar-header">
+      <span><i data-lucide="database" style="width:12px;height:12px;vertical-align:-1px"></i> Dataset</span>
+    </div>
+    <div class="quiz-sidebar-body">
+      <div class="quiz-setting">
+        <select id="quiz-dataset-select"></select>
+      </div>
+    </div>
+    <div class="quiz-sidebar-header">
+      <span><i data-lucide="settings-2" style="width:12px;height:12px;vertical-align:-1px"></i> Settings</span>
+    </div>
+    <div class="quiz-sidebar-body">
+      <div class="quiz-setting">
+        <label for="quiz-count">Questions</label>
+        <select id="quiz-count"></select>
+      </div>
+      <div class="quiz-setting">
+        <label>Domains</label>
+        <div class="quiz-domain-filters" id="quiz-domain-filters"></div>
+      </div>
+      <div class="quiz-setting">
+        <label><input type="checkbox" id="quiz-weighted" checked> Exam-weighted distribution</label>
+      </div>
+      <div class="quiz-setting">
+        <label><input type="checkbox" id="quiz-shuffle" checked> Shuffle answers</label>
+      </div>
+      <button class="quiz-btn quiz-btn-check quiz-new-btn" id="quiz-new">new quiz</button>
+    </div>
+    <div class="quiz-sidebar-header" style="margin-top:0.5rem">
+      <span><i data-lucide="bar-chart-3" style="width:12px;height:12px;vertical-align:-1px"></i> Session</span>
+    </div>
+    <div class="quiz-sidebar-body">
+      <div class="quiz-stat-row"><span>Attempted</span><span id="quiz-stat-attempted">0</span></div>
+      <div class="quiz-stat-row"><span>Correct</span><span id="quiz-stat-correct" class="pw-str-strong">0</span></div>
+      <div class="quiz-stat-row"><span>Incorrect</span><span id="quiz-stat-incorrect" class="pw-str-weak">0</span></div>
+      <div class="quiz-stat-row"><span>Accuracy</span><span id="quiz-stat-accuracy">—</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- Dataset registry (lists available datasets) -->
+<script src="datasets.js"></script>
+<!-- Assessment engine (loads dataset files dynamically) -->
+<script src="engine.js"></script>

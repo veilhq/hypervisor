@@ -1,0 +1,500 @@
+<div class="health-dashboard">
+  <h1><i data-lucide="activity" class="utility-title-icon"></i> Hyperspace Health</h1>
+
+  <!-- Loading state -->
+  <div class="health-loading" id="hd-loading">
+    <span class="health-loading-text">Scanning hyperspace...</span>
+  </div>
+
+  <!-- Dashboard content (hidden until loaded) -->
+  <div class="health-content" id="hd-content" style="display:none;">
+
+    <!-- Summary Cards -->
+    <div class="health-cards">
+      <div class="health-card" id="hd-total">
+        <div class="health-card-value" id="hd-total-val">—</div>
+        <div class="health-card-label">Total Documents</div>
+      </div>
+      <div class="health-card health-card-good" id="hd-valid">
+        <div class="health-card-value" id="hd-valid-val">—</div>
+        <div class="health-card-label">Valid</div>
+      </div>
+      <div class="health-card health-card-warn" id="hd-violations">
+        <div class="health-card-value" id="hd-violations-val">—</div>
+        <div class="health-card-label">With Issues</div>
+      </div>
+      <div class="health-card" id="hd-stale">
+        <div class="health-card-value" id="hd-stale-val">—</div>
+        <div class="health-card-label">Stale (30d+)</div>
+      </div>
+    </div>
+
+    <!-- Trend Indicator + metadata -->
+    <div class="health-trend" id="hd-trend">
+      <span class="health-trend-icon" id="hd-trend-icon"></span>
+      <span class="health-trend-text" id="hd-trend-text"></span>
+      <span class="health-trend-spacer"></span>
+      <span class="health-trend-meta" id="hd-timestamp">—</span>
+      <button class="health-refresh-btn" id="hd-refresh">
+        <i data-lucide="refresh-cw" style="width:11px;height:11px;vertical-align:-1px"></i> Refresh
+      </button>
+      <button class="health-fix-btn" id="hd-fix" style="display:none;">
+        <i data-lucide="wrench" style="width:11px;height:11px;vertical-align:-1px"></i> Fix Violations
+      </button>
+    </div>
+
+    <!-- Fix violations results panel (hidden until triggered) -->
+    <div class="health-fix-panel" id="hd-fix-panel" style="display:none;">
+      <div class="health-fix-header">
+        <h2><i data-lucide="wrench" style="width:14px;height:14px;vertical-align:-2px"></i> Auto-Fix Results</h2>
+        <div class="health-fix-actions" id="hd-fix-actions">
+          <button class="health-fix-apply-btn" id="hd-fix-apply" style="display:none;">Apply Fixes</button>
+          <button class="health-fix-dismiss-btn" id="hd-fix-dismiss">Dismiss</button>
+        </div>
+      </div>
+      <div class="health-fix-summary" id="hd-fix-summary"></div>
+      <div class="health-fix-details" id="hd-fix-details"></div>
+      <div class="health-fix-note" id="hd-fix-note"></div>
+    </div>
+
+    <!-- Grid: modular panels -->
+    <div class="health-grid">
+
+      <!-- Left stack: Issues + Directory + Stale -->
+      <div class="health-col">
+        <div class="health-panel">
+          <h2><i data-lucide="alert-triangle" style="width:14px;height:14px;vertical-align:-2px"></i> Top Issues</h2>
+          <div class="health-issues" id="hd-issues">
+            <div class="health-empty">No issues found</div>
+          </div>
+        </div>
+
+        <div class="health-panel" id="hd-affected-panel" style="display:none;">
+          <h2><i data-lucide="file-warning" style="width:14px;height:14px;vertical-align:-2px"></i> Affected Files</h2>
+          <div class="health-affected-list" id="hd-affected-list"></div>
+        </div>
+
+        <div class="health-panel">
+          <h2><i data-lucide="folder-tree" style="width:14px;height:14px;vertical-align:-2px"></i> By Directory</h2>
+          <div class="health-dirs" id="hd-dirs"></div>
+        </div>
+
+        <div class="health-panel">
+          <h2><i data-lucide="clock" style="width:14px;height:14px;vertical-align:-2px"></i> Stale Documents</h2>
+          <div class="health-filter-row">
+            <button class="health-filter-btn active" data-filter="all">All</button>
+            <button class="health-filter-btn" data-filter="work-item">Work</button>
+            <button class="health-filter-btn" data-filter="idea">Ideas</button>
+            <button class="health-filter-btn" data-filter="research">Research</button>
+            <button class="health-filter-btn" data-filter="context">Context</button>
+            <button class="health-filter-btn" data-filter="pattern">Patterns</button>
+          </div>
+          <div class="health-stale-list" id="hd-stale-list">
+            <div class="health-empty">No stale documents</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Tag Analytics -->
+      <div class="health-col">
+        <div class="health-panel">
+          <h2><i data-lucide="tags" style="width:14px;height:14px;vertical-align:-2px"></i> Tag Analytics</h2>
+          <div class="health-tag-stats" id="hd-tag-stats"></div>
+
+          <h3>Top Co-occurring Pairs</h3>
+          <div class="health-co-occurrence" id="hd-cooccurrence"></div>
+
+          <h3>Underused Tags</h3>
+          <div class="health-underused" id="hd-underused"></div>
+
+          <h3>Merge Candidates</h3>
+          <div class="health-merge" id="hd-merge"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="health-footer"></div>
+  </div>
+</div>
+
+<script>
+(function() {
+  var loadingEl = document.getElementById('hd-loading');
+  var contentEl = document.getElementById('hd-content');
+  var staleItems = [];
+
+  function render(DATA) {
+    var health = DATA.health;
+    var stale = DATA.stale;
+    var tags = DATA.tags;
+    var timestamp = DATA.timestamp;
+
+    // --- Summary Cards ---
+    document.getElementById('hd-total-val').textContent = health.current.total;
+    document.getElementById('hd-valid-val').textContent = health.current.valid;
+    document.getElementById('hd-violations-val').textContent = health.current.violations;
+    document.getElementById('hd-stale-val').textContent = stale.total_stale;
+
+    var violCard = document.getElementById('hd-violations');
+    if (health.current.violations === 0) {
+      violCard.className = 'health-card health-card-good';
+      document.getElementById('hd-fix').style.display = 'none';
+    } else if (health.current.violations <= 5) {
+      violCard.className = 'health-card health-card-warn';
+      document.getElementById('hd-fix').style.display = 'inline-block';
+    } else {
+      violCard.className = 'health-card health-card-bad';
+      document.getElementById('hd-fix').style.display = 'inline-block';
+    }
+
+    // --- Trend ---
+    var trendIcon = document.getElementById('hd-trend-icon');
+    var trendText = document.getElementById('hd-trend-text');
+    var trendMap = {
+      'improving': { icon: '\u2197', text: 'Improving', cls: 'trend-good' },
+      'stable': { icon: '\u2192', text: 'Stable', cls: 'trend-neutral' },
+      'declining': { icon: '\u2198', text: 'Declining', cls: 'trend-bad' },
+      'unknown': { icon: '?', text: 'No baseline', cls: 'trend-neutral' }
+    };
+    var t = trendMap[health.trend] || trendMap['unknown'];
+    trendIcon.textContent = t.icon;
+    trendText.textContent = t.text;
+    document.getElementById('hd-trend').className = 'health-trend ' + t.cls;
+    if (health.previous) {
+      trendText.textContent += ' (prev: ' + health.previous.violations + ' issues on ' + health.previous.timestamp + ')';
+    }
+
+    // --- Top Issues ---
+    var issuesEl = document.getElementById('hd-issues');
+    if (health.top_remaining_issues && health.top_remaining_issues.length > 0) {
+      issuesEl.innerHTML = health.top_remaining_issues.map(function(issue) {
+        return '<div class="health-issue-row">' +
+          '<span class="health-issue-rule">' + issue.rule + '</span>' +
+          '<span class="health-issue-count">' + issue.count + '</span>' +
+          '</div>';
+      }).join('');
+    } else {
+      issuesEl.innerHTML = '<div class="health-empty">No issues — all documents are valid</div>';
+    }
+
+    // --- Affected Files ---
+    var affectedPanel = document.getElementById('hd-affected-panel');
+    var affectedList = document.getElementById('hd-affected-list');
+    if (health.violations_by_file && Object.keys(health.violations_by_file).length > 0) {
+      affectedPanel.style.display = 'block';
+      var files = Object.keys(health.violations_by_file).sort();
+      affectedList.innerHTML = files.map(function(filePath) {
+        var violations = health.violations_by_file[filePath];
+        var violationRows = violations.map(function(v) {
+          return '<div class="health-affected-violation">' +
+            '<span class="health-affected-rule">' + v.rule + '</span>' +
+            '<span class="health-affected-msg">' + v.message + '</span>' +
+            '</div>';
+        }).join('');
+        return '<div class="health-affected-file">' +
+          '<div class="health-affected-path">' + filePath + '</div>' +
+          violationRows +
+          '</div>';
+      }).join('');
+    } else {
+      affectedPanel.style.display = 'none';
+    }
+
+    // --- Stale Documents ---
+    staleItems = [];
+    Object.keys(stale).forEach(function(key) {
+      if (key.startsWith('stale_') && Array.isArray(stale[key])) {
+        var docType = key.replace('stale_', '').replace(/e?s$/, '');
+        stale[key].forEach(function(item) {
+          item._type = docType;
+          staleItems.push(item);
+        });
+      }
+    });
+    staleItems.sort(function(a, b) { return b.days_stale - a.days_stale; });
+    renderStaleList('all');
+
+    // --- Tag Analytics ---
+    var tagStatsEl = document.getElementById('hd-tag-stats');
+    tagStatsEl.innerHTML =
+      '<div class="health-tag-stat"><strong>' + tags.summary.total_tags_in_registry + '</strong> in registry</div>' +
+      '<div class="health-tag-stat"><strong>' + tags.summary.tags_actively_used + '</strong> actively used</div>' +
+      '<div class="health-tag-stat"><strong>' + tags.summary.avg_tags_per_doc + '</strong> avg/doc</div>';
+
+    var coEl = document.getElementById('hd-cooccurrence');
+    if (tags.co_occurrence && tags.co_occurrence.length > 0) {
+      coEl.innerHTML = tags.co_occurrence.slice(0, 10).map(function(pair) {
+        return '<div class="health-co-row">' +
+          '<span class="health-co-tags">' + pair.tags.join(' + ') + '</span>' +
+          '<span class="health-co-count">' + pair.count + ' (' + pair.percentage + '%)</span>' +
+          '</div>';
+      }).join('');
+    } else {
+      coEl.innerHTML = '<div class="health-empty">No co-occurrence data</div>';
+    }
+
+    var underEl = document.getElementById('hd-underused');
+    if (tags.underused && tags.underused.length > 0) {
+      underEl.innerHTML = tags.underused.map(function(t) {
+        return '<div class="health-underused-row">' +
+          '<span class="health-tag-name">' + t.tag + '</span>' +
+          '<span class="health-tag-count">' + t.count + ' uses</span>' +
+          '</div>';
+      }).join('');
+    } else {
+      underEl.innerHTML = '<div class="health-empty">All tags are well-used</div>';
+    }
+
+    var mergeEl = document.getElementById('hd-merge');
+    if (tags.merge_candidates && tags.merge_candidates.length > 0) {
+      mergeEl.innerHTML = tags.merge_candidates.slice(0, 5).map(function(mc) {
+        return '<div class="health-merge-row">' +
+          '<span class="health-merge-tags">' + mc.tags.join(' \u2194 ') + '</span>' +
+          '<span class="health-merge-overlap">' + mc.overlap + '</span>' +
+          '</div>';
+      }).join('');
+    } else {
+      mergeEl.innerHTML = '<div class="health-empty">No merge candidates</div>';
+    }
+
+    // --- Directory Breakdown ---
+    var dirsEl = document.getElementById('hd-dirs');
+    if (health.by_directory) {
+      var dirs = Object.keys(health.by_directory).sort();
+      dirsEl.innerHTML = dirs.map(function(dir) {
+        var d = health.by_directory[dir];
+        var pct = Math.round((1 - d.violations / Math.max(d.total, 1)) * 100);
+        var barCls = pct === 100 ? 'dir-bar-good' : pct >= 80 ? 'dir-bar-ok' : 'dir-bar-bad';
+        return '<div class="health-dir-row">' +
+          '<span class="health-dir-name">' + dir + '</span>' +
+          '<div class="health-dir-bar"><div class="health-dir-fill ' + barCls + '" style="width:' + pct + '%"></div></div>' +
+          '<span class="health-dir-pct">' + pct + '%</span>' +
+          '</div>';
+      }).join('');
+    }
+
+    // --- Footer ---
+    document.getElementById('hd-timestamp').textContent = 'Generated: ' + timestamp;
+
+    // Show content, hide loading
+    loadingEl.style.display = 'none';
+    contentEl.style.display = 'block';
+  }
+
+  function renderStaleList(filter) {
+    var filtered = filter === 'all' ? staleItems : staleItems.filter(function(i) { return i._type === filter; });
+    var el = document.getElementById('hd-stale-list');
+    if (filtered.length === 0) {
+      el.innerHTML = '<div class="health-empty">No stale documents in this category</div>';
+      return;
+    }
+    el.innerHTML = filtered.slice(0, 30).map(function(item) {
+      var badge = item.days_stale > 90 ? 'stale-critical' : item.days_stale > 60 ? 'stale-warning' : 'stale-minor';
+      return '<div class="health-stale-row">' +
+        '<span class="health-stale-title">' + item.title + '</span>' +
+        '<span class="health-stale-badge ' + badge + '">' + item.days_stale + 'd</span>' +
+        '<span class="health-stale-type">' + item._type + '</span>' +
+        '</div>';
+    }).join('');
+    if (filtered.length > 30) {
+      el.innerHTML += '<div class="health-more">+ ' + (filtered.length - 30) + ' more</div>';
+    }
+  }
+
+  // Filter buttons
+  document.querySelectorAll('.health-filter-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.health-filter-btn').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      renderStaleList(btn.dataset.filter);
+    });
+  });
+
+  // Refresh button
+  document.getElementById('hd-refresh').addEventListener('click', function() {
+    loadingEl.style.display = 'block';
+    contentEl.style.display = 'none';
+    fetchData();
+  });
+
+  // Fix violations button — preview (dry run)
+  document.getElementById('hd-fix').addEventListener('click', function() {
+    var btn = document.getElementById('hd-fix');
+    btn.disabled = true;
+    btn.classList.add('health-fix-btn-loading');
+    btn.innerHTML = '<span class="health-fix-spinner"></span> Scanning...';
+
+    if (!window.pywebview || !window.pywebview.api || !window.pywebview.api.fix_violations) {
+      btn.disabled = false;
+      btn.classList.remove('health-fix-btn-loading');
+      btn.innerHTML = '<i data-lucide="wrench" style="width:11px;height:11px;vertical-align:-1px"></i> Fix Violations';
+      if (window.lucide) lucide.createIcons();
+      showFixPanel('error', 'Bridge method not available. Restart the Hypervisor app to load the new feature.');
+      return;
+    }
+
+    window.pywebview.api.fix_violations(true).then(function(result) {
+      btn.disabled = false;
+      btn.classList.remove('health-fix-btn-loading');
+      btn.innerHTML = '<i data-lucide="wrench" style="width:11px;height:11px;vertical-align:-1px"></i> Fix Violations';
+      if (window.lucide) lucide.createIcons();
+
+      if (!result.ok) {
+        showFixPanel('error', 'Error: ' + (result.error || 'unknown'));
+        return;
+      }
+
+      if (result.needs_migration === 0) {
+        showFixPanel('clean', null, result);
+        return;
+      }
+
+      showFixPanel('preview', null, result);
+    }).catch(function(err) {
+      btn.disabled = false;
+      btn.classList.remove('health-fix-btn-loading');
+      btn.innerHTML = '<i data-lucide="wrench" style="width:11px;height:11px;vertical-align:-1px"></i> Fix Violations';
+      if (window.lucide) lucide.createIcons();
+      showFixPanel('error', 'Bridge error: ' + (err.message || err));
+    });
+  });
+
+  // Apply fixes button (dry_run=false)
+  document.getElementById('hd-fix-apply').addEventListener('click', function() {
+    var btn = document.getElementById('hd-fix-apply');
+    btn.disabled = true;
+    btn.textContent = 'Applying...';
+
+    window.pywebview.api.fix_violations(false).then(function(result) {
+      btn.disabled = false;
+      btn.textContent = 'Apply Fixes';
+
+      if (!result.ok) {
+        showFixPanel('error', 'Error applying fixes: ' + (result.error || 'unknown'));
+        return;
+      }
+
+      showFixPanel('applied', null, result);
+      // Auto-refresh dashboard after applying
+      setTimeout(function() {
+        loadingEl.style.display = 'block';
+        contentEl.style.display = 'none';
+        document.getElementById('hd-fix-panel').style.display = 'none';
+        fetchData();
+      }, 2000);
+    });
+  });
+
+  // Dismiss button
+  document.getElementById('hd-fix-dismiss').addEventListener('click', function() {
+    document.getElementById('hd-fix-panel').style.display = 'none';
+  });
+
+  function showFixPanel(mode, message, result) {
+    var panel = document.getElementById('hd-fix-panel');
+    var summary = document.getElementById('hd-fix-summary');
+    var details = document.getElementById('hd-fix-details');
+    var note = document.getElementById('hd-fix-note');
+    var applyBtn = document.getElementById('hd-fix-apply');
+
+    panel.style.display = 'block';
+    applyBtn.style.display = 'none';
+    summary.innerHTML = '';
+    details.innerHTML = '';
+    note.innerHTML = '';
+
+    if (mode === 'error') {
+      summary.innerHTML = '<div class="health-fix-error">' + message + '</div>';
+      return;
+    }
+
+    if (mode === 'clean') {
+      summary.innerHTML = '<div class="health-fix-clean">\u2714 No auto-fixable metadata issues found.</div>';
+      if (result && result.remaining_violations && result.remaining_violations.length > 0) {
+        note.innerHTML = '<div class="health-fix-manual">' +
+          '<strong>\u26a0 ' + result.total_violations + ' violation' + (result.total_violations !== 1 ? 's' : '') + ' require manual fixes:</strong>' +
+          '<ul class="health-fix-manual-list">' +
+          result.remaining_violations.map(function(v) {
+            return '<li><span class="health-fix-manual-rule">' + v.rule + '</span> <span class="health-fix-manual-msg">' + v.message + '</span></li>';
+          }).join('') +
+          '</ul></div>';
+      }
+      return;
+    }
+
+    if (mode === 'preview') {
+      applyBtn.style.display = 'inline-block';
+      summary.innerHTML =
+        '<div class="health-fix-stat">' +
+        '<strong>' + result.needs_migration + '</strong> document' + (result.needs_migration !== 1 ? 's' : '') + ' can be auto-fixed ' +
+        '(' + result.total_changes + ' total change' + (result.total_changes !== 1 ? 's' : '') + ')' +
+        '</div>';
+
+      // Show change breakdown
+      if (result.change_breakdown && result.change_breakdown.length > 0) {
+        details.innerHTML = '<div class="health-fix-breakdown">' +
+          result.change_breakdown.map(function(cb) {
+            return '<div class="health-fix-breakdown-row">' +
+              '<span class="health-fix-type">' + cb.type + '</span>' +
+              '<span class="health-fix-count">' + cb.count + '</span>' +
+              '</div>';
+          }).join('') +
+          '</div>';
+      }
+
+      // Show per-file details (first 10)
+      if (result.results && result.results.length > 0) {
+        var fileList = result.results.slice(0, 10).map(function(r) {
+          return '<div class="health-fix-file">' +
+            '<span class="health-fix-file-path">' + r.path + '</span>' +
+            '<span class="health-fix-file-changes">' + r.changes.length + ' change' + (r.changes.length !== 1 ? 's' : '') + '</span>' +
+            '</div>';
+        }).join('');
+        if (result.results.length > 10) {
+          fileList += '<div class="health-fix-more">+ ' + (result.results.length - 10) + ' more files</div>';
+        }
+        details.innerHTML += '<div class="health-fix-files">' + fileList + '</div>';
+      }
+
+      note.innerHTML = '<div class="health-fix-warning">\u26a0 This fixes metadata structure only (Date\u2192Created, missing Updated, bold\u2192dash format, date normalization). ' +
+        'Tag issues and missing titles require manual correction.</div>';
+      return;
+    }
+
+    if (mode === 'applied') {
+      summary.innerHTML =
+        '<div class="health-fix-success">\u2714 Fixed ' + result.needs_migration + ' document' + (result.needs_migration !== 1 ? 's' : '') +
+        ' (' + result.total_changes + ' change' + (result.total_changes !== 1 ? 's' : '') + '). Refreshing dashboard...</div>';
+      return;
+    }
+  }
+
+  // Fetch live data from PyWebView bridge
+  function fetchData() {
+    if (window.pywebview && window.pywebview.api) {
+      window.pywebview.api.refresh_health_dashboard().then(function(result) {
+        if (result.ok) {
+          render(result);
+        } else {
+          loadingEl.innerHTML = '<span class="health-loading-text">Error: ' + (result.error || 'unknown') + '</span>';
+        }
+      });
+    } else {
+      // Fallback: wait for pywebview to be ready
+      window.addEventListener('pywebviewready', function() {
+        window.pywebview.api.refresh_health_dashboard().then(function(result) {
+          if (result.ok) {
+            render(result);
+          } else {
+            loadingEl.innerHTML = '<span class="health-loading-text">Error: ' + (result.error || 'unknown') + '</span>';
+          }
+        });
+      });
+    }
+  }
+
+  // Kick off on page load
+  fetchData();
+})();
+</script>
