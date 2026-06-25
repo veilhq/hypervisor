@@ -18,10 +18,12 @@ from site_utils.config import HYPERSPACE_ROOT, SKIP_DIRS, SKIP_FILES
 # ---------------------------------------------------------------------------
 # Paths
 # ---------------------------------------------------------------------------
-CONFIG_DIR = _HYPERVISOR_DIR
+HYPERVISOR_DIR = _HYPERVISOR_DIR
+CONFIG_DIR = _HYPERVISOR_DIR / "config"
+STATE_DIR = _HYPERVISOR_DIR / "state"
 TAGS_FILE = CONFIG_DIR / "tags.json"
 PROJECTS_FILE = CONFIG_DIR / "projects.json"
-WORK_ID_FILE = CONFIG_DIR / "work-item-counter.json"
+WORK_ID_FILE = STATE_DIR / "work-item-counter.json"
 INDEX_FILE = HYPERSPACE_ROOT / "_index.md"
 
 # ---------------------------------------------------------------------------

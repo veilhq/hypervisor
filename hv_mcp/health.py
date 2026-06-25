@@ -1,7 +1,7 @@
 """
 Health history — persists validation snapshots for trend tracking.
 
-Stores snapshots in .hypervisor/health-history.json. Each entry records:
+Stores snapshots in .hypervisor/state/health-history.json. Each entry records:
 - timestamp
 - total documents
 - valid count
@@ -15,9 +15,9 @@ import json
 from datetime import datetime
 from pathlib import Path
 
-from .config import CONFIG_DIR
+from .config import STATE_DIR
 
-HEALTH_HISTORY_FILE = CONFIG_DIR / "health-history.json"
+HEALTH_HISTORY_FILE = STATE_DIR / "health-history.json"
 MAX_HISTORY_ENTRIES = 50  # Keep last 50 snapshots
 
 

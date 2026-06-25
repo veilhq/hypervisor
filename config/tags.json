@@ -166,5 +166,9 @@
   "playwright": {
     "category": "technology",
     "description": "Playwright E2E browser testing framework"
+  },
+  "hyperline": {
+    "category": "application",
+    "description": "The Hyperline terminal emulator app (.hyperspace/.hyperline/)"
   }
 }

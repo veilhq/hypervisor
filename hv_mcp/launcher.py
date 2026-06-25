@@ -8,11 +8,11 @@ import subprocess
 import sys
 from pathlib import Path
 
-from .config import CONFIG_DIR
+from .config import HYPERVISOR_DIR
 
 
-_APP_LOCK = CONFIG_DIR / ".app_running"
-_APP_SCRIPT = CONFIG_DIR / "hypervisor-app.py"
+_APP_LOCK = HYPERVISOR_DIR / ".app_running"
+_APP_SCRIPT = HYPERVISOR_DIR / "hypervisor-app.py"
 
 
 def launch_hypervisor() -> dict:
@@ -47,7 +47,7 @@ def launch_hypervisor() -> dict:
     try:
         proc = subprocess.Popen(
             [python, str(_APP_SCRIPT)],
-            cwd=str(CONFIG_DIR),
+            cwd=str(HYPERVISOR_DIR),
             # Detach from parent — app runs independently
             creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP,
             stdout=subprocess.DEVNULL,

@@ -14,7 +14,7 @@ How the Hypervisor build pipeline works — from markdown source to browsable st
 ├── mcp-server.py              # MCP server entry point — AI tool integration (Kiro)
 ├── hv_mcp/                    # MCP server logic package
 │   ├── __init__.py            # Package docstring
-│   ├── config.py              # Paths, constants, registries (tags.json, projects.json)
+│   ├── config.py              # Paths, constants, registries (config/tags.json, config/projects.json)
 │   ├── index.py               # In-memory index: build, refresh, remove, file watcher
 │   ├── index_file.py          # _index.md regeneration
 │   ├── backlinks.py           # Backlink graph (eager build, incremental updates)
@@ -31,10 +31,13 @@ How the Hypervisor build pipeline works — from markdown source to browsable st
 │   ├── migration.py           # migrate_document, get_schema_changelog
 │   └── generation.py          # suggest_tags, similar_documents, outline_work_item
 ├── watcher.py                  # File watcher (watchdog) for live rebuild on .md changes
-├── preferences.json            # User preferences persisted by the desktop app
-├── tags.json                  # Canonical tag registry (MCP server)
-├── projects.json              # Valid project names (MCP server)
-├── health-history.json        # Health snapshots (MCP server)
+├── config/                     # Portable configuration (tracked in git)
+│   ├── tags.json              # Canonical tag registry (MCP server)
+│   └── projects.json          # Valid project names (MCP server)
+├── state/                      # Content-specific state (gitignored)
+│   ├── work-item-counter.json # Sequential work item ID counter
+│   └── health-history.json    # Health snapshots (MCP server)
+├── preferences.json            # User preferences persisted by the desktop app (gitignored)
 ├── requirements-app.txt        # Extra deps for the desktop app (pywebview, watchdog)
 ├── site_utils/                 # Build modules package
 │   ├── __init__.py             # Re-exports all public symbols

@@ -38,7 +38,7 @@ Each tool is a thin wrapper that maps MCP parameters to a function in one of the
 ```
 hv_mcp/
 ├── __init__.py
-├── config.py           ← Paths, registries (tags.json, projects.json), constants
+├── config.py           ← Paths, registries (config/tags.json, config/projects.json), constants
 ├── index.py            ← In-memory document index + file watcher
 ├── index_file.py       ← Regenerates _index.md after write operations
 ├── search.py           ← search_hyperspace, recent_activity, get_work_items
@@ -104,7 +104,7 @@ Every write operation:
 | `get_tags` | Return the full tag registry with usage counts |
 | `add_tag` | Add a new tag (validates naming, checks duplicates) |
 
-The tag registry lives in `tags.json`. The `add_tag` tool enforces:
+The tag registry lives in `config/tags.json`. The `add_tag` tool enforces:
 - Lowercase kebab-case naming
 - Category must be `application`, `technology`, or `domain`
 - Fuzzy duplicate detection (rejects tags too similar to existing ones)
@@ -118,7 +118,7 @@ The tag registry lives in `tags.json`. The `add_tag` tool enforces:
 | `migrate_document` | Auto-fix metadata format issues (non-destructive) |
 | `get_schema_changelog` | Show when conventions changed |
 
-The health report records snapshots to `health-history.json` and compares against previous runs to show whether the knowledge base is improving or declining.
+The health report records snapshots to `state/health-history.json` and compares against previous runs to show whether the knowledge base is improving or declining.
 
 ### Analytics
 
@@ -195,8 +195,8 @@ Here's the full flow when the AI calls `create_document(type="work-item", ...)`:
 
 ```
 1. crud.py validates type is valid
-2. crud.py calls validate_tags() → checks each tag against tags.json
-3. crud.py calls validate_project() → checks against projects.json
+2. crud.py calls validate_tags() → checks each tag against config/tags.json
+3. crud.py calls validate_project() → checks against config/projects.json
 4. crud.py calls apply_work_item_template() → assembles markdown string
 5. crud.py generates slug from title, checks for collisions
 6. crud.py writes the .md file to work/to-do/{slug}.md

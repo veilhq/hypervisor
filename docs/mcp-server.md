@@ -32,7 +32,7 @@ Kiro ←→ MCP Protocol (stdio) ←→ mcp-server.py ←→ hv_mcp/ package ←
 ├── mcp-server.py              # Entry point: FastMCP init, tool registration, startup
 ├── hv_mcp/                    # All server logic
 │   ├── __init__.py            # Package docstring
-│   ├── config.py              # Paths, constants, registries (tags.json, projects.json)
+│   ├── config.py              # Paths, constants, registries (config/tags.json, config/projects.json)
 │   ├── index.py               # In-memory index: build, refresh, remove, file watcher
 │   ├── index_file.py          # _index.md regeneration
 │   ├── backlinks.py           # Backlink graph (eager build, incremental updates)
@@ -48,9 +48,12 @@ Kiro ←→ MCP Protocol (stdio) ←→ mcp-server.py ←→ hv_mcp/ package ←
 │   ├── intelligence.py        # session_brief, suggest_next_action, context_for_work_item
 │   ├── migration.py           # migrate_document, get_schema_changelog
 │   └── generation.py          # suggest_tags, similar_documents, outline_work_item
-├── tags.json                  # Canonical tag registry
-├── projects.json              # Valid project names
-└── health-history.json        # Persisted health snapshots
+├── config/                    # Portable configuration (tracked in git)
+│   ├── tags.json              # Canonical tag registry
+│   └── projects.json          # Valid project names
+├── state/                     # Content-specific state (gitignored)
+│   ├── work-item-counter.json # Sequential work item ID counter
+│   └── health-history.json    # Persisted health snapshots
 ```
 
 ### Shared Infrastructure
@@ -62,7 +65,7 @@ All tools share these core systems:
 | In-memory index | `index.py` | Full document metadata in RAM, thread-safe, incrementally updated |
 | Backlink graph | `backlinks.py` | Eagerly-built reverse-link map (who links to whom) |
 | File watcher | `index.py` | Watchdog observer keeps index and backlinks current on disk changes |
-| Tag registry | `config.py` → `tags.json` | Canonical tag names, categories, descriptions |
+| Tag registry | `config.py` → `config/tags.json` | Canonical tag names, categories, descriptions |
 | Project registry | `config.py` → `projects.json` | Valid project names for validation |
 | Health history | `health.py` → `health-history.json` | Timestamped validation snapshots for trend tracking |
 

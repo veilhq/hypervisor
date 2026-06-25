@@ -13,7 +13,7 @@ from pathlib import Path
 from site_utils.config import HYPERSPACE_ROOT
 from site_utils.file_utils import collect_files
 
-from .config import VALID_TRANSITIONS, load_tags, load_projects, CONFIG_DIR
+from .config import VALID_TRANSITIONS, load_tags, load_projects, HYPERVISOR_DIR
 
 
 # ---------------------------------------------------------------------------
@@ -40,7 +40,7 @@ def trigger_site_build(changed_path: str | None = None):
     When the app is NOT running (MCP-only mode), builds run in a background
     thread to avoid blocking the tool response.
     """
-    app_lock = CONFIG_DIR / ".app_running"
+    app_lock = HYPERVISOR_DIR / ".app_running"
     app_is_running = app_lock.exists()
 
     if app_is_running and not changed_path:
@@ -49,7 +49,7 @@ def trigger_site_build(changed_path: str | None = None):
 
     def _build():
         try:
-            spec = importlib.util.spec_from_file_location("build", str(CONFIG_DIR / "build.py"))
+            spec = importlib.util.spec_from_file_location("build", str(HYPERVISOR_DIR / "build.py"))
             build_mod = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(build_mod)
             if changed_path:
