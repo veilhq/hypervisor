@@ -14,7 +14,7 @@ OUTPUT_DIR = _HYPERVISOR_DIR / "site"
 ASSETS_DIR = _HYPERVISOR_DIR / "assets"
 
 # --- Filters ---
-SKIP_DIRS = {"__pycache__", "site", "learn"}
+SKIP_DIRS = {"__pycache__", "site", "learn", ".scratch", ".hyperagent"}
 SKIP_FILES = {".gitkeep"}
 
 # --- Markdown engine ---

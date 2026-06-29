@@ -626,6 +626,96 @@ class HypervisorAPI:
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
+    # --- Scratch Buffer / Daily Journal ---
+
+    def open_scratch(self, date=None):
+        """Load a scratch file by date, or today's file (creating if absent).
+
+        Args:
+            date: Optional date string "YYYY-MM-DD". Defaults to today.
+
+        Returns:
+            dict with ok, date, content, and whether the file was just created.
+        """
+        from datetime import datetime as _dt
+
+        scratch_dir = HYPERSPACE_ROOT / ".scratch"
+        scratch_dir.mkdir(exist_ok=True)
+
+        target_date = date or _dt.now().strftime("%Y-%m-%d")
+        file_path = scratch_dir / f"{target_date}.md"
+
+        created = False
+        if not file_path.exists():
+            # Initialize with a header
+            file_path.write_text(f"# Scratch \u2014 {target_date}\n\n", encoding="utf-8")
+            created = True
+
+        content = file_path.read_text(encoding="utf-8")
+        return {"ok": True, "date": target_date, "content": content, "created": created}
+
+    def save_scratch(self, date, content):
+        """Save scratch content for a given date.
+
+        Args:
+            date: Date string "YYYY-MM-DD"
+            content: Full file content to write
+
+        Returns:
+            dict with ok status.
+        """
+        scratch_dir = HYPERSPACE_ROOT / ".scratch"
+        scratch_dir.mkdir(exist_ok=True)
+
+        file_path = scratch_dir / f"{date}.md"
+        try:
+            file_path.write_text(content, encoding="utf-8")
+            return {"ok": True}
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+
+    def list_scratch(self):
+        """List all scratch files with dates and entry counts.
+
+        Returns:
+            dict with ok and files list [{date, entries, size}], newest first.
+        """
+        scratch_dir = HYPERSPACE_ROOT / ".scratch"
+        if not scratch_dir.exists():
+            return {"ok": True, "files": []}
+
+        files = []
+        for f in sorted(scratch_dir.glob("*.md"), reverse=True):
+            # Date is the filename stem (YYYY-MM-DD)
+            date = f.stem
+            content = f.read_text(encoding="utf-8")
+            # Count entries by counting ## HH:MM headings
+            entries = content.count("\n## ")
+            files.append({"date": date, "entries": entries, "size": len(content)})
+
+        return {"ok": True, "files": files}
+
+    def delete_scratch(self, date):
+        """Delete a scratch file by date.
+
+        Args:
+            date: Date string "YYYY-MM-DD"
+
+        Returns:
+            dict with ok status.
+        """
+        scratch_dir = HYPERSPACE_ROOT / ".scratch"
+        file_path = scratch_dir / f"{date}.md"
+
+        if not file_path.exists():
+            return {"ok": False, "error": f"Scratch file not found: {date}"}
+
+        try:
+            file_path.unlink()
+            return {"ok": True}
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+
     def refresh_health_dashboard(self):
         """Fetch live hyperspace health analytics for the dashboard.
 

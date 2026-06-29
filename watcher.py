@@ -25,7 +25,7 @@ class MarkdownHandler(FileSystemEventHandler):
     """Watches for .md file changes and triggers rebuilds with debouncing."""
 
     # Directories to ignore (relative to HYPERSPACE_ROOT)
-    IGNORE_DIRS = {".hypervisor", "__pycache__"}
+    IGNORE_DIRS = {".hypervisor", "__pycache__", ".scratch"}
 
     def __init__(self, rebuild_callback, debounce_seconds=0.3):
         super().__init__()
