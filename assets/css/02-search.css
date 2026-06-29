@@ -311,11 +311,10 @@
 }
 
 ul.todo-list li {
-  display: grid;
-  grid-template-columns: 1fr 3.5rem 6.5rem;
+  display: flex;
   gap: 0.5rem;
   align-items: center;
-  padding: 0.4rem 0.5rem;
+  padding: 0.4rem 0.5rem 0.4rem 10px;
   border-bottom: 1px solid var(--border);
   font-size: 0.75rem;
 }
@@ -327,6 +326,8 @@ ul.todo-list li.doc-recent { border-left: 2px solid var(--comp); }
   flex-direction: column;
   gap: 0.15rem;
   overflow: hidden;
+  min-width: 0;
+  flex: 1;
 }
 .todo-title a {
   display: flex;
@@ -362,9 +363,32 @@ ul.todo-list li.doc-recent { border-left: 2px solid var(--comp); }
   font-weight: normal;
 }
 ul.todo-list li.todo-hidden { display: none; }
+/* ---- Computed metadata badges ---- */
+.todo-badges {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  margin-left: auto;
+  flex-shrink: 0;
+  padding-right: 10px;
+}
+.todo-badges .hv-badge {
+  text-align: center;
+  margin: 0;
+  min-width: 5.5rem;
+}
+.badge-tasks-done   { color: var(--accent); border-color: var(--accent); }
+.badge-tasks-partial { color: var(--warm); border-color: var(--warm); }
+.badge-tasks-none   { color: var(--text-dim); border-color: var(--border); }
+.badge-stale-warn   { color: var(--warm); border-color: var(--warm); }
+.badge-stale-crit   { color: var(--comp); border-color: var(--comp); }
+.badge-words        { color: var(--text-dim); border-color: var(--border); }
 @media (max-width: 700px) {
   .todo-filters { grid-template-columns: 1fr; }
-  ul.todo-list li { grid-template-columns: 1fr auto auto; }
+  ul.todo-list li { flex-wrap: wrap; }
+  .todo-badges { display: none; }
   .todo-desc { display: none; }
   .app-shelf-header { padding: 0.4rem 0.5rem; }
 }

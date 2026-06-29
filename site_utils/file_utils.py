@@ -315,3 +315,89 @@ def infer_app_group(tags):
         if tag_set & match_tags:
             return (label, key)
     return ("Other", "other")
+
+
+# --- Computed metadata badges ---
+
+STALE_THRESHOLD_DAYS = 30
+
+
+def compute_badges(md_text, updated_str=None):
+    """Compute metadata badges from markdown content.
+
+    Returns dict with:
+      - tasks: (done, total) or None if no checkboxes
+      - stale_days: int days since updated, or None if not stale
+      - words: int word count of body content
+
+    Args:
+        md_text: Full markdown text of the document
+        updated_str: Updated date string (YYYY-MM-DDTHH:MM format) or None
+    """
+    from datetime import datetime
+
+    # --- Task progress ---
+    done = md_text.count("- [x]") + md_text.count("- [X]")
+    total = done + md_text.count("- [ ]")
+    tasks = (done, total) if total > 0 else None
+
+    # --- Staleness ---
+    stale_days = None
+    if updated_str:
+        try:
+            updated_dt = datetime.fromisoformat(updated_str)
+            delta = datetime.now() - updated_dt
+            if delta.days > STALE_THRESHOLD_DAYS:
+                stale_days = delta.days
+        except (ValueError, TypeError):
+            pass
+
+    # --- Word count (body only, skip metadata header) ---
+    lines = md_text.splitlines()
+    body_started = False
+    body_lines = []
+    for line in lines:
+        if not body_started:
+            # Skip until we hit the first --- after metadata
+            if line.strip() == "---":
+                body_started = True
+            continue
+        body_lines.append(line)
+
+    body_text = " ".join(body_lines)
+    words = len(body_text.split())
+
+    return {"tasks": tasks, "stale_days": stale_days, "words": words}
+
+
+def format_badge_html(badges):
+    """Generate HTML badge spans from compute_badges() output.
+
+    Returns HTML string with badge spans, or empty string if no badges.
+    """
+    parts = []
+
+    if badges["tasks"]:
+        done, total = badges["tasks"]
+        if done == total:
+            cls = "badge-tasks-done"
+        elif done > 0:
+            cls = "badge-tasks-partial"
+        else:
+            cls = "badge-tasks-none"
+        parts.append(f'<span class="hv-badge {cls}">{done}/{total} tasks</span>')
+
+    if badges["stale_days"]:
+        days = badges["stale_days"]
+        cls = "badge-stale-warn" if days < 60 else "badge-stale-crit"
+        parts.append(f'<span class="hv-badge {cls}">stale: {days}d</span>')
+
+    if badges["words"]:
+        w = badges["words"]
+        if w >= 1000:
+            label = f"~{w / 1000:.1f}k words"
+        else:
+            label = f"~{w} words"
+        parts.append(f'<span class="hv-badge badge-words">{label}</span>')
+
+    return "".join(parts)

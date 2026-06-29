@@ -12,6 +12,7 @@ from .file_utils import (
     dir_label, nice_name, get_title, extract_dates, sort_date, display_date,
     href_for, count_docs_under, get_dir_snippet,
     get_dir_status, get_dir_type, get_dir_tags, infer_app_group,
+    compute_badges, format_badge_html,
 )
 
 
@@ -488,7 +489,8 @@ def generate_dir_index_content(files, dir_prefix, recent_paths=None):
                     statuses_set.add(status)
                 if app_key not in app_groups_seen:
                     app_groups_seen[app_key] = app_label
-                enriched.append((rel, doc_title, date_str, date_label, status, item_type, app_key, app_label, desc, work_id))
+                badges_html = format_badge_html(compute_badges(md_text, dates.get("updated")))
+                enriched.append((rel, doc_title, date_str, date_label, status, item_type, app_key, app_label, desc, work_id, badges_html))
 
             # Sort: dated docs first (newest to oldest), undated last
             dated = [e for e in enriched if e[2] != "0000-00-00T00:00"]
@@ -539,7 +541,7 @@ def generate_dir_index_content(files, dir_prefix, recent_paths=None):
                 html.append(f'</div>')
                 html.append(f'<ul class="doc-list todo-list" data-app-group="{gk}">')
 
-                for rel, doc_title, date_str, date_label, status, item_type, _ak, _al, desc, work_id in group_items:
+                for rel, doc_title, date_str, date_label, status, item_type, _ak, _al, desc, work_id, badges_html in group_items:
                     rel_posix = str(rel).replace("\\", "/")
                     fname_stem = PurePosixPath(rel_posix).stem
                     type_cls = "type-badge-personal" if item_type.lower() == "personal" else "type-badge-professional"
@@ -553,8 +555,9 @@ def generate_dir_index_content(files, dir_prefix, recent_paths=None):
                         f'<li class="{li_cls.strip()}" data-name="{doc_title.lower()}" data-type="{item_type.lower()}" data-status="{(status or "").lower()}" data-app="{gk}">'
                         f'<div class="todo-title"><a href="{fname_stem}/index.html"><i data-lucide="{"lightbulb" if is_ideas_dir else "circle-dot"}" class="doc-icon"></i>{id_prefix}{doc_title}</a>'
                         f'<span class="todo-desc">{desc}</span></div>'
+                        f'<div class="todo-badges">{badges_html}'
                         f'<span class="hv-badge {type_cls}">{type_label}</span>'
-                        f'{status_badge}'
+                        f'{status_badge}</div>'
                         f'</li>'
                     )
 
