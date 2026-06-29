@@ -708,7 +708,7 @@ class HypervisorAPI:
             return {"ok": False, "error": "ADO_PAT not configured. Set the ADO_PAT environment variable."}
 
         try:
-            client = ADOClient(config["org"], config["pat"])
+            client = ADOClient(config["org"], pat=config.get("pat"), use_entra=config.get("use_entra", False))
 
             # Get current iteration
             iteration = client.get_current_iteration(config["project"], config["team"])

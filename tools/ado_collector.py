@@ -51,7 +51,12 @@ BASE_URL_TEMPLATE = "https://dev.azure.com/{org}"
 
 
 def load_config():
-    """Load configuration from environment variables."""
+    """Load configuration from environment variables.
+
+    Auth priority:
+      1. azure-identity (DefaultAzureCredential) — no PAT needed
+      2. ADO_PAT environment variable — legacy fallback
+    """
     # Try loading from .env file in the same directory
     env_path = Path(__file__).parent / ".env"
     if env_path.exists():
@@ -62,13 +67,24 @@ def load_config():
                 os.environ.setdefault(key.strip(), value.strip())
 
     pat = os.environ.get("ADO_PAT")
-    if not pat:
-        print("ERROR: ADO_PAT environment variable not set.")
-        print("  Set it with: set ADO_PAT=your-personal-access-token")
+
+    # Determine auth method
+    use_entra = False
+    try:
+        from azure.identity import DefaultAzureCredential  # noqa: F401
+        use_entra = True
+    except ImportError:
+        pass
+
+    if not use_entra and not pat:
+        print("ERROR: No auth method available.")
+        print("  Install azure-identity (pip install azure-identity) for Entra ID auth,")
+        print("  or set ADO_PAT environment variable.")
         sys.exit(1)
 
     return {
         "pat": pat,
+        "use_entra": use_entra,
         "org": os.environ.get("ADO_ORG", DEFAULT_ORG),
         "project": os.environ.get("ADO_PROJECT", DEFAULT_PROJECT),
         "team": os.environ.get("ADO_TEAM", DEFAULT_TEAM),
@@ -80,17 +96,36 @@ def load_config():
 # ---------------------------------------------------------------------------
 
 class ADOClient:
-    """Minimal Azure DevOps REST API client."""
+    """Minimal Azure DevOps REST API client.
 
-    def __init__(self, org, pat):
+    Supports two auth modes:
+      - Entra ID (DefaultAzureCredential) — preferred, uses bearer tokens
+      - PAT (Basic auth) — legacy fallback
+    """
+
+    # Azure DevOps resource ID for token scoping
+    _ADO_RESOURCE = "499b84ac-1321-427f-aa17-267ca6975798/.default"
+
+    def __init__(self, org, pat=None, use_entra=False):
         self.base_url = BASE_URL_TEMPLATE.format(org=org)
-        # PAT auth uses Basic with empty username
-        token = base64.b64encode(f":{pat}".encode()).decode()
+        self._credential = None
         self.session = requests.Session()
-        self.session.headers.update({
-            "Authorization": f"Basic {token}",
-            "Content-Type": "application/json",
-        })
+        self.session.headers.update({"Content-Type": "application/json"})
+
+        if use_entra:
+            from azure.identity import DefaultAzureCredential
+            self._credential = DefaultAzureCredential()
+            self._refresh_token()
+        elif pat:
+            token = base64.b64encode(f":{pat}".encode()).decode()
+            self.session.headers["Authorization"] = f"Basic {token}"
+        else:
+            raise ValueError("Either use_entra=True or provide a PAT")
+
+    def _refresh_token(self):
+        """Get a fresh bearer token from Entra ID."""
+        token = self._credential.get_token(self._ADO_RESOURCE)
+        self.session.headers["Authorization"] = f"Bearer {token.token}"
 
     def get(self, path, params=None):
         """Make a GET request to the ADO API."""
@@ -98,6 +133,10 @@ class ADOClient:
         params = params or {}
         params.setdefault("api-version", "7.1")
         resp = self.session.get(url, params=params)
+        # Retry once with a fresh token on 401 (Entra tokens expire)
+        if resp.status_code == 401 and self._credential:
+            self._refresh_token()
+            resp = self.session.get(url, params=params)
         resp.raise_for_status()
         return resp.json()
 
@@ -151,6 +190,9 @@ class ADOClient:
         url = f"{self.base_url}/{path}"
         params = {"api-version": "7.1", "$top": str(top)}
         resp = self.session.post(url, params=params, json={"query": wiql})
+        if resp.status_code == 401 and self._credential:
+            self._refresh_token()
+            resp = self.session.post(url, params=params, json={"query": wiql})
         resp.raise_for_status()
         data = resp.json()
         ids = [wi["id"] for wi in data.get("workItems", [])]
@@ -371,7 +413,7 @@ def main():
     print("=" * 40)
 
     config = load_config()
-    client = ADOClient(config["org"], config["pat"])
+    client = ADOClient(config["org"], pat=config.get("pat"), use_entra=config.get("use_entra", False))
 
     # 1. Get current iteration
     print(f"  Fetching current iteration for {config['team']}...")
