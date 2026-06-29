@@ -8,7 +8,7 @@ from collections import defaultdict
 from datetime import datetime
 
 
-def build_dashboard_payload(iteration, work_items, pull_requests, work_requests=None, config=None):
+def build_dashboard_payload(iteration, work_items, pull_requests, work_requests=None, config=None, burndown_history=None):
     """Build the full dashboard response payload from raw ADO data.
 
     Args:
@@ -17,6 +17,7 @@ def build_dashboard_payload(iteration, work_items, pull_requests, work_requests=
         pull_requests: List of PR dicts from ADOClient.get_pull_requests()
         work_requests: List of work request dicts from WIQL query (optional)
         config: ADO config dict with org/project for building URLs (optional)
+        burndown_history: List of daily burndown dicts from Analytics (optional)
 
     Returns:
         dict ready to be returned as JSON to the frontend.
@@ -134,6 +135,7 @@ def build_dashboard_payload(iteration, work_items, pull_requests, work_requests=
             "total_points": total_points,
             "remaining_points": remaining_points,
             "date": today_str,
+            "history": burndown_history or [],
         },
         "states": dict(state_counts),
         "state_points": {k: v for k, v in state_points.items()},

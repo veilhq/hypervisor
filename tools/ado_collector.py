@@ -205,10 +205,42 @@ class ADOClient:
         ]
         return self.get_work_items(project, ids, fields=fields)
 
+    def get_burndown_history(self, org, project, iteration_path, start_date, finish_date):
+        """Get daily burndown data from Analytics OData.
 
-# ---------------------------------------------------------------------------
-# Data Processing
-# ---------------------------------------------------------------------------
+        Returns:
+            List of dicts with 'date', 'total', 'remaining' for each day in the sprint.
+        """
+        from collections import defaultdict
+        base = f"https://analytics.dev.azure.com/{org}/{project}/_odata/v3.0-preview/WorkItemSnapshot"
+        apply_str = (
+            f"filter(Iteration/IterationPath eq '{iteration_path}'"
+            f" and DateValue ge {start_date}Z"
+            f" and DateValue le {finish_date}Z"
+            f" and (WorkItemType eq 'User Story' or WorkItemType eq 'Bug')"
+            f" and State ne 'Removed'"
+            f")/groupby((DateValue,StateCategory),aggregate(StoryPoints with sum as TotalPoints))"
+        )
+        resp = self.session.get(base, params={"$apply": apply_str, "$orderby": "DateValue"})
+        if resp.status_code == 401 and self._credential:
+            self._refresh_token()
+            resp = self.session.get(base, params={"$apply": apply_str, "$orderby": "DateValue"})
+        if resp.status_code != 200:
+            return []
+
+        rows = resp.json().get("value", [])
+        daily = defaultdict(lambda: {"total": 0, "remaining": 0})
+        for r in rows:
+            date = r["DateValue"][:10]
+            pts = r.get("TotalPoints") or 0
+            daily[date]["total"] += pts
+            if r.get("StateCategory") != "Completed":
+                daily[date]["remaining"] += pts
+
+        return [
+            {"date": d, "total": daily[d]["total"], "remaining": daily[d]["remaining"]}
+            for d in sorted(daily.keys())
+        ]
 
 def extract_top_level_items(iteration_data):
     """Extract top-level (parent) work item IDs from iteration response."""

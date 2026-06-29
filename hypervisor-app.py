@@ -746,8 +746,21 @@ class HypervisorAPI:
             )
             work_requests = client.query_work_items_wiql(config["project"], wiql, top=50)
 
+            # Get historical burndown from Analytics OData
+            iter_path = iteration.get("path", "")
+            start_date = iteration.get("attributes", {}).get("startDate", "")[:10]
+            finish_date = iteration.get("attributes", {}).get("finishDate", "")[:10]
+            burndown_history = []
+            if iter_path and start_date and finish_date:
+                try:
+                    burndown_history = client.get_burndown_history(
+                        config["org"], config["project"], iter_path, start_date, finish_date
+                    )
+                except Exception:
+                    pass  # Non-fatal — dashboard still works without history
+
             # Build and return the dashboard payload
-            return build_dashboard_payload(iteration, work_items, pull_requests, work_requests, config)
+            return build_dashboard_payload(iteration, work_items, pull_requests, work_requests, config, burndown_history)
 
         except Exception as e:
             return {"ok": False, "error": str(e)}

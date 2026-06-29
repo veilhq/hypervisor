@@ -1231,53 +1231,45 @@
     // Update generated timestamp
     if (genEl) genEl.textContent = 'refreshed: ' + new Date().toLocaleString();
 
-    // Burndown — update sprint dates, save today's snapshot, redraw
+    // Burndown — update sprint dates, use server history, redraw
     if (data.sprint && data.burndown) {
-      var prevKey = getBurndownStorageKey();
       sprintStart = data.sprint.start;
       sprintFinish = data.sprint.finish;
       totalPoints = data.burndown.total_points;
       sprintDays = getWorkingDays(sprintStart, sprintFinish);
       totalDays = sprintDays.length;
 
-      // If sprint changed, clear stale history for the new key
-      var newKey = getBurndownStorageKey();
-      if (prevKey !== newKey) {
-        try { localStorage.removeItem(newKey); } catch (e) {}
-      }
-
-      // Determine which working day to record the snapshot for.
-      var snapshotDate = data.burndown.date;
       var workingDates = getWorkingDateStrings(sprintStart, sprintFinish);
 
-      if (workingDates.length > 0) {
-        if (snapshotDate > sprintFinish) {
-          // Sprint ended — record against the last working day
-          snapshotDate = workingDates[workingDates.length - 1];
-        } else if (snapshotDate < sprintStart) {
-          // Sprint hasn't started — record against the first working day
-          snapshotDate = workingDates[0];
-        } else {
-          // Mid-sprint — snap to nearest past working day (handles weekends)
-          var found = false;
-          for (var i = workingDates.length - 1; i >= 0; i--) {
-            if (workingDates[i] <= snapshotDate) {
-              snapshotDate = workingDates[i];
-              found = true;
-              break;
+      // If server provided Analytics history, use it directly
+      if (data.burndown.history && data.burndown.history.length > 0) {
+        // Build a date→remaining map from server history
+        var serverHistory = {};
+        for (var i = 0; i < data.burndown.history.length; i++) {
+          var entry = data.burndown.history[i];
+          serverHistory[entry.date] = entry.remaining;
+        }
+        // Persist to localStorage (overwrites stale data)
+        try { localStorage.setItem(getBurndownStorageKey(), JSON.stringify(serverHistory)); } catch (e) {}
+      } else {
+        // Fallback: record today's snapshot in localStorage
+        var snapshotDate = data.burndown.date;
+        if (workingDates.length > 0) {
+          if (snapshotDate > sprintFinish) {
+            snapshotDate = workingDates[workingDates.length - 1];
+          } else if (snapshotDate < sprintStart) {
+            snapshotDate = workingDates[0];
+          } else {
+            for (var i = workingDates.length - 1; i >= 0; i--) {
+              if (workingDates[i] <= snapshotDate) { snapshotDate = workingDates[i]; break; }
             }
           }
-          if (!found) snapshotDate = workingDates[0];
+          var history = loadBurndownHistory();
+          if (history[workingDates[0]] === undefined) {
+            saveBurndownSnapshot(workingDates[0], data.burndown.total_points);
+          }
+          saveBurndownSnapshot(snapshotDate, data.burndown.remaining_points);
         }
-
-        // Always seed day 1 with total capacity as starting point
-        var history = loadBurndownHistory();
-        if (history[workingDates[0]] === undefined) {
-          saveBurndownSnapshot(workingDates[0], data.burndown.total_points);
-        }
-
-        // Record current remaining at the resolved day
-        saveBurndownSnapshot(snapshotDate, data.burndown.remaining_points);
       }
 
       // Rebuild the actual series from history
