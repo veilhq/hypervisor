@@ -356,10 +356,10 @@ def build_site_nav(categories, recent_dirs=None):
 
     Args:
         categories: list of (dir_name, doc_count, children) tuples
-        recent_dirs: set of directory names that contain recently updated docs
+        recent_dirs: dict of {directory_name: recent_count}
     """
     if recent_dirs is None:
-        recent_dirs = set()
+        recent_dirs = {}
 
     html = ['<nav class="site-nav" id="site-nav" aria-label="Categories">']
     for item in categories:
@@ -383,7 +383,8 @@ def build_site_nav(categories, recent_dirs=None):
             for child_name, child_count in children:
                 child_label = CATEGORY_LABELS.get(child_name, child_name.replace("-", " ").replace("_", " ").title())
                 child_icon = CATEGORY_ICONS.get(child_name, "folder")
-                child_recent = " site-nav-child-recent" if f"{dir_name}/{child_name}" in recent_dirs else ""
+                child_key = f"{dir_name}/{child_name}"
+                child_recent = " site-nav-child-recent" if child_key in recent_dirs else ""
                 html.append(
                     f'<a href="/{dir_name}/{child_name}/index.html" class="site-nav-child{child_recent}" data-category="{dir_name}/{child_name}">'
                     f'<i data-lucide="{child_icon}" class="site-nav-child-icon"></i>'

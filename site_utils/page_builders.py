@@ -181,8 +181,13 @@ def build_learn_pages(build_id):
 def _build_learn_index(entries, build_id):
     """Generate the learn section index as a content fragment."""
     cards_html = '<div class="learn-index">\n'
-    cards_html += '<h1>Learn Hypervisor</h1>\n'
-    cards_html += '<p class="learn-intro">A guided walkthrough of how Hypervisor works — architecture, build pipeline, styling, interactivity, and design decisions. Each topic is self-contained with annotated code, explanations, and reference links.</p>\n'
+    cards_html += '<div class="dir-header">\n'
+    cards_html += '<div class="dir-header-top">\n'
+    cards_html += '<i data-lucide="graduation-cap" class="dir-header-icon"></i>\n'
+    cards_html += '<h1 class="dir-header-title">Learn Hypervisor</h1>\n'
+    cards_html += '</div>\n'
+    cards_html += '<div class="dir-header-desc">A guided walkthrough of how Hypervisor works — architecture, build pipeline, styling, interactivity, and design decisions.</div>\n'
+    cards_html += '</div>\n'
     cards_html += '<div class="card-grid">\n'
 
     for i, (slug, title, desc) in enumerate(entries):
@@ -213,8 +218,13 @@ def build_pinboard_page(build_id):
     """
     content_html = """\
 <div class="pinboard-page">
-  <h1><i data-lucide="pin" class="section-icon"></i> Pinboard</h1>
-  <p class="pinboard-intro">Documents you've pinned for quick access. Pins are stored locally in your browser.</p>
+  <div class="dir-header">
+    <div class="dir-header-top">
+      <i data-lucide="pin" class="dir-header-icon"></i>
+      <h1 class="dir-header-title">Pinboard</h1>
+    </div>
+    <div class="dir-header-desc">Documents you've pinned for quick access. Pins are stored locally in your browser.</div>
+  </div>
   <div class="pinboard-content"></div>
 </div>"""
 

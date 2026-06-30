@@ -10,18 +10,10 @@
       var statusSelect = document.getElementById("todo-filter-status");
       if (!nameInput) return;
 
-      var shelves = document.querySelectorAll(".app-shelf");
-      if (!shelves.length) return;
-
-      // --- Collapsible shelf headers (default collapsed) ---
-      shelves.forEach(function(shelf) {
-        shelf.classList.add("shelf-collapsed");
-        var header = shelf.querySelector(".app-shelf-header");
-        if (!header) return;
-        header.addEventListener("click", function() {
-          shelf.classList.toggle("shelf-collapsed");
-        });
-      });
+      var list = document.querySelector(".todo-list");
+      if (!list) return;
+      var items = list.querySelectorAll("li");
+      if (!items.length) return;
 
       function applyFilters() {
         var nameVal = nameInput.value.toLowerCase();
@@ -29,39 +21,19 @@
         var typeVal = typeSelect ? typeSelect.value : "";
         var statusVal = statusSelect ? statusSelect.value : "";
 
-        shelves.forEach(function(shelf) {
-          var shelfApp = shelf.getAttribute("data-app-group") || "";
-          var items = shelf.querySelectorAll("li");
-          var visibleCount = 0;
+        items.forEach(function(li) {
+          var name = li.getAttribute("data-name") || "";
+          var type = li.getAttribute("data-type") || "";
+          var status = li.getAttribute("data-status") || "";
+          var app = li.getAttribute("data-app") || "";
 
-          items.forEach(function(li) {
-            var name = li.getAttribute("data-name") || "";
-            var type = li.getAttribute("data-type") || "";
-            var status = li.getAttribute("data-status") || "";
+          var show = true;
+          if (nameVal && name.indexOf(nameVal) === -1) show = false;
+          if (appVal && app !== appVal) show = false;
+          if (typeVal && type !== typeVal) show = false;
+          if (statusVal && status !== statusVal) show = false;
 
-            var show = true;
-            if (nameVal && name.indexOf(nameVal) === -1) show = false;
-            if (appVal && shelfApp !== appVal) show = false;
-            if (typeVal && type !== typeVal) show = false;
-            if (statusVal && status !== statusVal) show = false;
-
-            li.classList.toggle("todo-hidden", !show);
-            if (show) visibleCount++;
-          });
-
-          // Hide entire shelf if no visible items
-          shelf.classList.toggle("shelf-hidden", visibleCount === 0);
-
-          // Update shelf count
-          var countEl = shelf.querySelector(".app-shelf-count");
-          if (countEl) {
-            var total = items.length;
-            if (nameVal || appVal || typeVal || statusVal) {
-              countEl.textContent = visibleCount + "/" + total;
-            } else {
-              countEl.textContent = total;
-            }
-          }
+          li.classList.toggle("todo-hidden", !show);
         });
       }
 

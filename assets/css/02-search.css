@@ -254,7 +254,6 @@
 .app-shelf {
   margin-top: 0.75rem;
   border: 1px solid var(--border);
-  border-left: 2px solid var(--accent-border);
   background: var(--bg-surface);
 }
 .app-shelf-header {
@@ -306,8 +305,10 @@
 .app-shelf-count::before { content: '('; }
 .app-shelf-count::after { content: ')'; }
 .app-shelf.shelf-hidden { display: none; }
-.app-shelf.shelf-recent {
-  border-left-color: var(--comp);
+.app-shelf-recent-count {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--comp);
 }
 
 ul.todo-list li {
@@ -320,7 +321,16 @@ ul.todo-list li {
 }
 ul.todo-list li:last-child { border-bottom: none; }
 ul.todo-list li:hover { background: var(--accent-glow); }
-ul.todo-list li.doc-recent { border-left: 2px solid var(--comp); }
+ul.todo-list li.doc-recent { position: relative; }
+ul.todo-list li.doc-recent::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 6px;
+  height: 6px;
+  background: var(--comp);
+}
 .todo-title {
   display: flex;
   flex-direction: column;

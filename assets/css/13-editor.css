@@ -129,7 +129,6 @@
   color: var(--text-bright);
   background: var(--bg-surface);
   border: 1px solid var(--border-strong);
-  border-left: 2px solid var(--accent);
   resize: vertical;
   outline: none;
   tab-size: 2;

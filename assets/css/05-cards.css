@@ -115,7 +115,6 @@
 
 /* ---- Active work section ---- */
 .active-work-section {
-  border-left-color: var(--accent);
   margin-top: 0;
 }
 .active-work-section h2 {
@@ -217,6 +216,75 @@ h1 + .home-dock {
   color: var(--text-muted);
   margin-bottom: 1rem;
   font-size: 1rem;
+}
+
+/* ---- Directory page header ---- */
+.dir-header {
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  padding: 1.2rem 1.5rem;
+  margin-bottom: 0;
+  animation: fadeSlideIn 0.3s var(--ease) both;
+}
+.dir-header-top {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.dir-header-icon {
+  width: 28px;
+  height: 28px;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+.dir-header .dir-header-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+.dir-header-desc {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-top: 0.5rem;
+  line-height: 1.5;
+}
+.dir-header-stats {
+  display: flex;
+  gap: 1.5rem;
+  margin-top: 0.75rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--border);
+}
+.dir-stat {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.dir-stat-icon {
+  width: 12px;
+  height: 12px;
+  color: var(--text-dim);
+}
+.dir-stat-val {
+  font-weight: 700;
+  color: var(--text-bright);
+}
+.dir-stat-label {
+  color: var(--text-dim);
+}
+.dir-header + .home-dock {
+  margin-top: -1px;
+}
+.dir-header + .hv-section {
+  margin-top: -1px;
 }
 
 /* ---- KPI strip (compact single-line stats) ---- */
@@ -502,13 +570,18 @@ h2 + .doc-list {
 /* ---- Recently updated indicator on doc list items ---- */
 .doc-list li.doc-recent {
   position: relative;
-  border-left: 2px solid var(--comp);
+}
+.doc-list li.doc-recent::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 6px;
+  height: 6px;
+  background: var(--comp);
 }
 
 /* ---- Recently Updated / Root docs / Documents sections (extend .hv-section) ---- */
-.root-docs-section {
-  border-left-color: var(--cool);
-}
 .root-docs-section h2 {
   color: var(--cool);
 }
@@ -518,9 +591,6 @@ h2 + .doc-list {
 .documents-section { /* extends .hv-section via HTML class */ }
 .documents-section .doc-list li {
   grid-template-columns: 2fr 2.5fr 5.5rem 8.5rem;
-}
-.recent-section {
-  border-left-color: var(--comp);
 }
 .recent-section h2 {
   color: var(--comp);

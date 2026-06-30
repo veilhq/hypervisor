@@ -299,13 +299,14 @@ def full_build(quiet=False):
 
     # Compute nav categories and recent paths before generating any pages
     recent_paths = compute_recent_paths(files)
-    recent_dirs = set()
+    recent_dirs = {}
     for rp in recent_paths:
         p = PurePosixPath(rp)
         if len(p.parts) > 1:
-            recent_dirs.add(p.parts[0])
+            recent_dirs[p.parts[0]] = recent_dirs.get(p.parts[0], 0) + 1
         if len(p.parts) > 2:
-            recent_dirs.add(f"{p.parts[0]}/{p.parts[1]}")
+            key = f"{p.parts[0]}/{p.parts[1]}"
+            recent_dirs[key] = recent_dirs.get(key, 0) + 1
     # Build category list with children for the nav rail
     top_dirs = set()
     for rel in files:
@@ -337,7 +338,7 @@ def full_build(quiet=False):
             {"name": cat[0], "count": cat[1], "children": [{"name": c[0], "count": c[1]} for c in cat[2]]}
             for cat in nav_categories
         ],
-        "recentDirs": list(recent_dirs),
+        "recentDirs": recent_dirs,
     }
     (OUTPUT_DIR / "nav-state.json").write_text(
         json.dumps(nav_state, ensure_ascii=False), encoding="utf-8"
@@ -409,13 +410,14 @@ def build_single_file(changed_path):
 
     # Set up nav categories for this rebuild
     recent_paths = compute_recent_paths(files)
-    recent_dirs = set()
+    recent_dirs = {}
     for rp in recent_paths:
         p = PurePosixPath(rp)
         if len(p.parts) > 1:
-            recent_dirs.add(p.parts[0])
+            recent_dirs[p.parts[0]] = recent_dirs.get(p.parts[0], 0) + 1
         if len(p.parts) > 2:
-            recent_dirs.add(f"{p.parts[0]}/{p.parts[1]}")
+            key = f"{p.parts[0]}/{p.parts[1]}"
+            recent_dirs[key] = recent_dirs.get(key, 0) + 1
     top_dirs = set()
     for rel in files:
         p = PurePosixPath(str(rel).replace("\\", "/"))
@@ -445,7 +447,7 @@ def build_single_file(changed_path):
             {"name": cat[0], "count": cat[1], "children": [{"name": c[0], "count": c[1]} for c in cat[2]]}
             for cat in nav_categories
         ],
-        "recentDirs": list(recent_dirs),
+        "recentDirs": recent_dirs,
     }
     (OUTPUT_DIR / "nav-state.json").write_text(
         json.dumps(nav_state, ensure_ascii=False), encoding="utf-8"

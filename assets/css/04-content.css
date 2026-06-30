@@ -255,13 +255,12 @@
 .doc-section {
   margin: 0;
   border: 1px solid var(--border);
-  border-left: 2px solid var(--border-strong);
   background: var(--bg-surface);
-  transition: border-left-color 0.2s var(--ease);
+  transition: border-color 0.2s var(--ease);
   position: relative;
 }
 .doc-section:hover {
-  border-left-color: var(--accent-border);
+  border-color: var(--border-strong);
 }
 .doc-section-summary {
   padding: 1rem 3.5rem 1rem 1.75rem;

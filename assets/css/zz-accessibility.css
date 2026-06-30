@@ -243,8 +243,8 @@ html.a11y-system-cursors .cursor-box {
 html.a11y-hide-indicators .card-recent::before {
   display: none !important;
 }
-html.a11y-hide-indicators .doc-list li.doc-recent {
-  border-left: none !important;
+html.a11y-hide-indicators .doc-list li.doc-recent::after {
+  display: none !important;
 }
 html.a11y-hide-indicators .site-nav-item-recent::after {
   display: none !important;

@@ -233,6 +233,11 @@ def generate_dir_index_content(files, dir_prefix, recent_paths=None):
         """Check if any recent path lives under this directory prefix."""
         prefix = dp + "/"
         return any(rp.startswith(prefix) for rp in recent_paths)
+
+    def _dir_recent_count(dp):
+        """Count how many recent paths live under this directory prefix."""
+        prefix = dp + "/"
+        return sum(1 for rp in recent_paths if rp.startswith(prefix))
     slug_label = dir_label(PurePosixPath(dir_prefix).name)
     subdirs, doc_entries = collect_dir_contents(files, dir_prefix)
 
@@ -247,7 +252,42 @@ def generate_dir_index_content(files, dir_prefix, recent_paths=None):
                 title = extracted
                 break
 
-    html = [f'<h1>{title}</h1>']
+    # --- Build the directory page header ---
+    dir_name = PurePosixPath(dir_prefix).name
+    # Walk parents for icon/description lookup (try current dir name, then parent)
+    icon = CATEGORY_ICONS.get(dir_name, "folder")
+    desc = CATEGORY_DESCRIPTIONS.get(dir_name, "")
+
+    total_docs = count_docs_under(files, dir_prefix)
+
+    # Compute last activity date across all docs in this directory
+    last_activity = ""
+    for rel in files:
+        rel_posix = str(rel).replace("\\", "/")
+        if not rel_posix.startswith(dir_prefix + "/"):
+            continue
+        md_path = HYPERSPACE_ROOT / rel
+        if md_path.exists():
+            md_text = md_path.read_text(encoding="utf-8")
+            dates = extract_dates(md_text)
+            date_str, _ = sort_date(dates)
+            if date_str > last_activity:
+                last_activity = date_str
+
+    html = ['<div class="dir-header">']
+    html.append('<div class="dir-header-top">')
+    html.append(f'<i data-lucide="{icon}" class="dir-header-icon"></i>')
+    html.append(f'<h1 class="dir-header-title">{title}</h1>')
+    html.append('</div>')
+    if desc:
+        html.append(f'<div class="dir-header-desc">{desc}</div>')
+    html.append('<div class="dir-header-stats">')
+    html.append(f'<span class="dir-stat"><i data-lucide="file-text" class="dir-stat-icon"></i><span class="dir-stat-val">{total_docs}</span><span class="dir-stat-label">docs</span></span>')
+    html.append(f'<span class="dir-stat"><i data-lucide="folder" class="dir-stat-icon"></i><span class="dir-stat-val">{len(subdirs)}</span><span class="dir-stat-label">dirs</span></span>')
+    if last_activity and not last_activity.startswith("0000"):
+        html.append(f'<span class="dir-stat"><i data-lucide="clock" class="dir-stat-icon"></i><span class="dir-stat-val">{display_date(last_activity)}</span><span class="dir-stat-label">last activity</span></span>')
+    html.append('</div>')
+    html.append('</div>')
 
     COMPACT_THRESHOLD = 10  # Switch to list view above this many subdirs
 
@@ -371,14 +411,15 @@ def generate_dir_index_content(files, dir_prefix, recent_paths=None):
             for gk in ordered_groups:
                 group_items = [d for d in subdir_data if d[6] == gk]
                 gl = seen_groups[gk]
-                # Check if any item in this group has recently updated docs
-                shelf_has_recent = any(
-                    _dir_has_recent(f"{dir_prefix}/{d[0]}") for d in group_items
+                # Count how many items in this group have recent activity
+                shelf_recent_count = sum(
+                    1 for d in group_items if _dir_has_recent(f"{dir_prefix}/{d[0]}")
                 )
-                shelf_cls = "app-shelf shelf-recent" if shelf_has_recent else "app-shelf"
-                html.append(f'<div class="{shelf_cls}" data-app-group="{gk}">')
+                html.append(f'<div class="app-shelf" data-app-group="{gk}">')
                 html.append(f'<div class="app-shelf-header">')
                 html.append(f'<span class="app-shelf-label">{gl}</span>')
+                if shelf_recent_count:
+                    html.append(f'<span class="app-shelf-recent-count">{shelf_recent_count}</span>')
                 html.append(f'<span class="app-shelf-count">{len(group_items)}</span>')
                 html.append(f'</div>')
                 html.append(f'<ul class="doc-list todo-list" data-app-group="{gk}">')
@@ -526,43 +567,41 @@ def generate_dir_index_content(files, dir_prefix, recent_paths=None):
                 html.append('  </select>')
             html.append('</div>')
 
-            # Group by app
-            for gk in ordered_groups:
-                group_items = [e for e in enriched if e[6] == gk]
-                gl = app_groups_seen[gk]
-                shelf_has_recent = any(
-                    str(e[0]).replace("\\", "/") in recent_paths for e in group_items
+            # Flat list sorted by work item ID (descending — newest first)
+            def _wi_sort_key(e):
+                wid = e[9]  # work_id field
+                if wid and wid.startswith("WI-"):
+                    try:
+                        return -int(wid[3:])
+                    except ValueError:
+                        pass
+                return 0
+
+            enriched.sort(key=_wi_sort_key)
+
+            html.append('<ul class="doc-list todo-list">')
+
+            for rel, doc_title, date_str, date_label, status, item_type, app_key, _al, desc, work_id, badges_html in enriched:
+                rel_posix = str(rel).replace("\\", "/")
+                fname_stem = PurePosixPath(rel_posix).stem
+                type_cls = "type-badge-personal" if item_type.lower() == "personal" else "type-badge-professional"
+                type_label = item_type.lower()[:4]
+                status_cls = "status-" + (status or "planned").lower().replace(" ", "-")
+                status_label = status or "—"
+                li_cls = " doc-recent" if rel_posix in recent_paths else ""
+                status_badge = f'<span class="hv-badge {status_cls}">{status_label}</span>' if not is_ideas_dir else ''
+                id_prefix = f'<span class="work-id-inline">{work_id} —</span> ' if work_id else ''
+                html.append(
+                    f'<li class="{li_cls.strip()}" data-name="{doc_title.lower()}" data-type="{item_type.lower()}" data-status="{(status or "").lower()}" data-app="{app_key}">'
+                    f'<div class="todo-title"><a href="{fname_stem}/index.html"><i data-lucide="{"lightbulb" if is_ideas_dir else "circle-dot"}" class="doc-icon"></i>{id_prefix}{doc_title}</a>'
+                    f'<span class="todo-desc">{desc}</span></div>'
+                    f'<div class="todo-badges">{badges_html}'
+                    f'<span class="hv-badge {type_cls}">{type_label}</span>'
+                    f'{status_badge}</div>'
+                    f'</li>'
                 )
-                shelf_cls = "app-shelf shelf-recent" if shelf_has_recent else "app-shelf"
-                html.append(f'<div class="{shelf_cls}" data-app-group="{gk}">')
-                html.append(f'<div class="app-shelf-header">')
-                html.append(f'<span class="app-shelf-label">{gl}</span>')
-                html.append(f'<span class="app-shelf-count">{len(group_items)}</span>')
-                html.append(f'</div>')
-                html.append(f'<ul class="doc-list todo-list" data-app-group="{gk}">')
 
-                for rel, doc_title, date_str, date_label, status, item_type, _ak, _al, desc, work_id, badges_html in group_items:
-                    rel_posix = str(rel).replace("\\", "/")
-                    fname_stem = PurePosixPath(rel_posix).stem
-                    type_cls = "type-badge-personal" if item_type.lower() == "personal" else "type-badge-professional"
-                    type_label = item_type.lower()[:4]
-                    status_cls = "status-" + (status or "planned").lower().replace(" ", "-")
-                    status_label = status or "—"
-                    li_cls = " doc-recent" if rel_posix in recent_paths else ""
-                    status_badge = f'<span class="hv-badge {status_cls}">{status_label}</span>' if not is_ideas_dir else ''
-                    id_prefix = f'<span class="work-id-inline">{work_id} —</span> ' if work_id else ''
-                    html.append(
-                        f'<li class="{li_cls.strip()}" data-name="{doc_title.lower()}" data-type="{item_type.lower()}" data-status="{(status or "").lower()}" data-app="{gk}">'
-                        f'<div class="todo-title"><a href="{fname_stem}/index.html"><i data-lucide="{"lightbulb" if is_ideas_dir else "circle-dot"}" class="doc-icon"></i>{id_prefix}{doc_title}</a>'
-                        f'<span class="todo-desc">{desc}</span></div>'
-                        f'<div class="todo-badges">{badges_html}'
-                        f'<span class="hv-badge {type_cls}">{type_label}</span>'
-                        f'{status_badge}</div>'
-                        f'</li>'
-                    )
-
-                html.append('</ul>')
-                html.append('</div>')
+            html.append('</ul>')
 
         else:
             # Standard document list rendering

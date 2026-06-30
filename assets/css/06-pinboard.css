@@ -70,24 +70,10 @@
   opacity: 0;
   animation: cardIn 0.4s var(--ease) both;
 }
-.pin-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 3px;
-  height: 100%;
-  background: var(--warm);
-  opacity: 0.6;
-  transition: opacity 0.2s var(--ease);
-}
 .pin-card:hover {
   border-color: var(--warm);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), 0 0 1px rgba(255, 176, 0, 0.15);
   transform: translateY(-1px);
-}
-.pin-card:hover::before {
-  opacity: 1;
 }
 .pin-card-removing {
   opacity: 0;

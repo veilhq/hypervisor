@@ -330,7 +330,6 @@ body.a11y-cursors-active *.disabled {
   margin-bottom: 2rem;
   padding: 1.25rem 1.25rem 0.5rem;
   border: 1px solid var(--border);
-  border-left: 2px solid var(--accent);
   background: var(--bg-surface);
   animation: fadeSlideIn 0.4s var(--ease) 0.1s both;
 }
