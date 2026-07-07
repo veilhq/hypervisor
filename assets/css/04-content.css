@@ -534,10 +534,10 @@
 .admonition-note .admonition-title { color: var(--cool); }
 .admonition-tip     { border-left-color: var(--accent); }
 .admonition-tip .admonition-title { color: var(--accent); }
-.admonition-warning { border-left-color: var(--warm); }
-.admonition-warning .admonition-title { color: var(--warm); }
-.admonition-caution { border-left-color: var(--comp); }
-.admonition-caution .admonition-title { color: var(--comp); }
+.admonition-warning { border-left-color: var(--warning); }
+.admonition-warning .admonition-title { color: var(--warning); }
+.admonition-caution { border-left-color: var(--error); }
+.admonition-caution .admonition-title { color: var(--error); }
 .admonition-important { border-left-color: #cc66ff; }
 .admonition-important .admonition-title { color: #cc66ff; }
 

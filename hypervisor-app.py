@@ -394,17 +394,27 @@ class HypervisorAPI:
 
         return {"ok": True}
 
-    def save_theme_defaults(self, accent, palette_mode, bw_theme):
+    def save_theme_defaults(self, accent, palette_mode, bw_theme, mode=None, gradient_map=None):
         """Save the current theme settings as the site default.
 
         These defaults are baked into the build so new installs or cleared
         localStorage will start with the saved theme.
+
+        Args:
+            accent: Hex color string (e.g., '#00ff41')
+            palette_mode: One of split/triadic/analogous/square/complement
+            bw_theme: Boolean for B&W accessibility mode
+            mode: 'custom' or 'preset' (default: 'custom' for backward compat)
+            gradient_map: Preset key when mode='preset' (e.g., 'blade-runner')
         """
         defaults_path = OUTPUT_DIR.parent / "theme-defaults.json"
+        theme_mode = mode or "custom"
         data = {
+            "mode": theme_mode,
             "accent": accent,
             "paletteMode": palette_mode,
             "bwTheme": bw_theme,
+            "gradientMap": gradient_map,
         }
         defaults_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
         return {"ok": True}

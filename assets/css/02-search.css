@@ -392,7 +392,7 @@ ul.todo-list li.todo-hidden { display: none; }
 .badge-tasks-done   { color: var(--accent); border-color: var(--accent); }
 .badge-tasks-partial { color: var(--warm); border-color: var(--warm); }
 .badge-tasks-none   { color: var(--text-dim); border-color: var(--border); }
-.badge-stale-warn   { color: var(--warm); border-color: var(--warm); }
+.badge-stale-warn   { color: var(--warning); border-color: var(--warning); }
 .badge-stale-crit   { color: var(--comp); border-color: var(--comp); }
 .badge-words        { color: var(--text-dim); border-color: var(--border); }
 @media (max-width: 700px) {

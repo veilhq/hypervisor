@@ -56,8 +56,8 @@
   margin-bottom: 1rem;
   padding: 0.25rem 0;
 }
-.pw-str-weak { color: var(--comp); }
-.pw-str-fair { color: var(--warm); }
+.pw-str-weak { color: var(--error); }
+.pw-str-fair { color: var(--warning); }
 .pw-str-good { color: var(--cool); }
 .pw-str-strong { color: var(--accent-dim); }
 .pw-str-excellent { color: var(--accent); }
@@ -1440,7 +1440,7 @@
 }
 .health-card-good .health-card-value { color: var(--accent); }
 .health-card-warn .health-card-value { color: var(--amber); }
-.health-card-bad .health-card-value { color: var(--comp); }
+.health-card-bad .health-card-value { color: var(--error); }
 
 /* Trend */
 .health-trend {
@@ -1461,8 +1461,8 @@
 .trend-good .health-trend-icon { color: var(--accent); }
 .trend-neutral { border-left-color: var(--amber); }
 .trend-neutral .health-trend-icon { color: var(--amber); }
-.trend-bad { border-left-color: var(--comp); }
-.trend-bad .health-trend-icon { color: var(--comp); }
+.trend-bad { border-left-color: var(--error); }
+.trend-bad .health-trend-icon { color: var(--error); }
 
 /* Modular grid layout */
 .health-grid {
@@ -1564,7 +1564,7 @@
 }
 .stale-minor { color: var(--text-muted); border: 1px solid var(--border); }
 .stale-warning { color: var(--amber); border: 1px solid var(--amber); }
-.stale-critical { color: var(--comp); border: 1px solid var(--comp); }
+.stale-critical { color: var(--error); border: 1px solid var(--error); }
 .health-stale-type {
   font-size: 0.55rem;
   color: var(--text-dim);
@@ -1656,7 +1656,7 @@
 }
 .dir-bar-good { background: var(--accent); }
 .dir-bar-ok { background: var(--amber); }
-.dir-bar-bad { background: var(--comp); }
+.dir-bar-bad { background: var(--error); }
 .health-dir-pct {
   min-width: 2.5rem;
   text-align: right;

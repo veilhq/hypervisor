@@ -67,9 +67,9 @@
 }
 
 .external-delete-btn:hover {
-  border-color: var(--comp);
+  border-color: var(--error);
 }
 
 .external-delete-btn:hover svg {
-  stroke: var(--comp);
+  stroke: var(--error);
 }

@@ -21,6 +21,15 @@
   --warm:         #ffb000;
   --comp:           #ff3333;
   --cool:          #00cccc;
+
+  /* Semantic color roles — state communication, independent of palette aesthetic */
+  --success:        #00ff41;
+  --warning:        #ffb000;
+  --error:          #ff3333;
+  --info:           #00cccc;
+  --highlight:      var(--accent);
+  --surface-active: var(--accent-glow);
+
   --font:          'Departure Mono', 'JetBrains Mono', 'Cascadia Code', 'Fira Code', 'Courier New', monospace;
   --ease:          cubic-bezier(0.4, 0, 0.2, 1);
   --ease-bounce:   cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -360,7 +369,7 @@ body.a11y-cursors-active *.disabled {
 .hv-confirm-box {
   background: var(--bg-card);
   border: 1px solid var(--border-strong);
-  border-top: 2px solid var(--comp);
+  border-top: 2px solid var(--error);
   padding: 1.5rem 2rem;
   max-width: 400px;
   width: 90%;
@@ -395,10 +404,10 @@ body.a11y-cursors-active *.disabled {
   border-color: var(--text-muted);
 }
 .hv-confirm-btn-danger {
-  color: var(--comp);
-  border-color: var(--comp);
+  color: var(--error);
+  border-color: var(--error);
 }
 .hv-confirm-btn-danger:hover {
-  background: var(--comp);
+  background: var(--error);
   color: var(--bg);
 }

@@ -296,6 +296,42 @@
 .settings-color-input::-webkit-color-swatch { border: none; }
 .settings-color-input::-moz-color-swatch { border: none; }
 
+/* ---- Preset selector row ---- */
+.settings-preset-row {
+  margin-bottom: 0.5rem;
+}
+.preset-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.preset-chip {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  font-family: var(--font);
+  font-size: 0.5rem;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: border-color 0.15s var(--ease), color 0.15s var(--ease);
+}
+.preset-chip:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+.preset-chip.active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.preset-chip-swatch {
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+}
+
 /* ---- Theme row (three equal squares) ---- */
 .settings-theme-row {
   display: grid;

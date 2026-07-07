@@ -27,6 +27,8 @@ def _load_theme_defaults_script():
     accent = data.get("accent", "")
     palette_mode = data.get("paletteMode", "")
     bw_theme = data.get("bwTheme", False)
+    theme_mode = data.get("mode", "custom")
+    gradient_map = data.get("gradientMap", "")
 
     # Only seed localStorage if no user preference exists yet
     parts = []
@@ -45,6 +47,16 @@ def _load_theme_defaults_script():
             'if(!localStorage.getItem("hypervisor-a11y-bw-theme"))'
             '{localStorage.setItem("hypervisor-a11y-bw-theme","1");'
             'document.documentElement.classList.add("a11y-bw-theme")}'
+        )
+    if theme_mode:
+        parts.append(
+            f'if(!localStorage.getItem("hypervisor-theme-mode"))'
+            f'{{localStorage.setItem("hypervisor-theme-mode","{theme_mode}")}}'
+        )
+    if gradient_map:
+        parts.append(
+            f'if(!localStorage.getItem("hypervisor-gradient-map"))'
+            f'{{localStorage.setItem("hypervisor-gradient-map","{gradient_map}")}}'
         )
 
     if not parts:
@@ -166,7 +178,10 @@ TOP_BAR = """\
             </div>
             <div class="nav-group">
               <div class="nav-group-label">Theme</div>
-              <div class="settings-theme-row">
+              <div class="settings-preset-row" id="preset-selector">
+                <div class="preset-chips" id="preset-chips"></div>
+              </div>
+              <div class="settings-theme-row" id="theme-custom-row">
                 <input type="color" id="accent-color" class="settings-color-input" value="#00ff41">
                 <div class="palette-preview" id="palette-preview">
                   <span class="swatch" data-tooltip="accent"></span>
