@@ -271,17 +271,34 @@ class HypervisorAPI:
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
-    def launch_dev(self):
-        """Launch the local dev environment (launch.cmd)."""
-        script = HYPERSPACE_ROOT.parent / "launch.cmd"
-        if not script.exists():
-            return {"ok": False, "error": "launch.cmd not found"}
+    def launch_dev(self, preset=None):
+        """Launch the local dev environment.
+
+        Args:
+            preset: Preset name (e.g., 'full', 'cms', 'portal-only').
+                    Skips the interactive menu and launches directly.
+                    If None, opens the interactive launcher console.
+        """
+        launch_dir = HYPERSPACE_ROOT.parent / ".launch"
+        launch_script = launch_dir / "launch.js"
+        if not launch_script.exists():
+            return {"ok": False, "error": ".launch/launch.js not found"}
         try:
-            subprocess.Popen(
-                ["cmd", "/c", str(script)],
-                cwd=str(HYPERSPACE_ROOT.parent),
-                creationflags=subprocess.CREATE_NEW_CONSOLE,
-            )
+            if preset:
+                # Direct launch with preset — no interactive console needed
+                subprocess.Popen(
+                    ["node", str(launch_script), "--preset", preset],
+                    cwd=str(HYPERSPACE_ROOT.parent),
+                    creationflags=subprocess.CREATE_NEW_CONSOLE,
+                )
+            else:
+                # Fallback to interactive menu
+                script = HYPERSPACE_ROOT.parent / "launch.cmd"
+                subprocess.Popen(
+                    ["cmd", "/c", str(script)],
+                    cwd=str(HYPERSPACE_ROOT.parent),
+                    creationflags=subprocess.CREATE_NEW_CONSOLE,
+                )
             return {"ok": True}
         except Exception as e:
             return {"ok": False, "error": str(e)}

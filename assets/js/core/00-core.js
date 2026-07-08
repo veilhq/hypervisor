@@ -99,7 +99,7 @@
     if (ldBtn) {
       ldBtn.style.display = "";
       ldBtn.addEventListener("click", function () {
-        api.launch_dev();
+        api.launch_dev("full");
       });
     }
     if (saveThemeBtn) {
