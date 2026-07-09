@@ -145,7 +145,24 @@
     } else {
       accentHex = (cp && cp.value) || "#00ff41";
     }
-    applyAccent(accentHex);
+    // Check if a gradient map preset was active — restore it instead of
+    // applying custom-mode derivation. Check preferences.json first, then
+    // fall back to localStorage (which theme.js sync init may have populated
+    // from a prior session before this function runs).
+    var loadedThemeMode = data["hypervisor-theme-mode"];
+    var loadedGradientMap = data["hypervisor-gradient-map"];
+    if (!loadedThemeMode) {
+      try { loadedThemeMode = localStorage.getItem("hypervisor-theme-mode"); } catch (e) {}
+    }
+    if (!loadedGradientMap) {
+      try { loadedGradientMap = localStorage.getItem("hypervisor-gradient-map"); } catch (e) {}
+    }
+    if (loadedThemeMode === "preset" && loadedGradientMap && typeof applyGradientMap === "function") {
+      applyGradientMap(loadedGradientMap);
+      if (typeof updatePresetSelector === "function") updatePresetSelector();
+    } else {
+      applyAccent(accentHex);
+    }
     // Update palette mode button label and tooltip
     if (typeof updateModeButton === "function") {
       updateModeButton();

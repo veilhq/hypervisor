@@ -190,40 +190,53 @@
     return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
   }
 
-  // --- OKLCH palette builder (parallel to buildPalette, not yet wired) ---
+  // --- OKLCH palette builder ---
+  // Works natively in OKLCH perceptual space. Key principles:
+  // - Hue rotation does the heavy lifting (perceptually uniform in OKLCH)
+  // - Lightness stays in a tight band suitable for dark backgrounds (0.65–0.85)
+  // - Chroma preserved near source level to maintain vibrancy
+  // - No multiplicative darkening that produces muddy results
   function buildPaletteOKLCH(hex, mode) {
     var oklch = hexToOklch(hex);
-    // Enforce legibility floor — let gamut clamper handle chroma naturally
-    var l = Math.max(oklch.l, 0.55);
-    var c = oklch.c;
     var h = oklch.h;
+    // Clamp source lightness/chroma into usable ranges for UI accent colors
+    // on dark backgrounds. Too dark = invisible, too light = washed out.
+    // Floor at 0.55 to allow naturally dark hues (red, magenta) to stay vivid
+    // without the gamut clamper desaturating them.
+    var l = Math.max(Math.min(oklch.l, 0.82), 0.55);
+    var c = Math.max(oklch.c, 0.08); // floor chroma so pastels stay vivid
 
     var warm, cool, comp;
     switch (mode) {
       case "triadic":
-        warm = oklchToHex(Math.min(l * 0.9, 0.8), c, (h + 120) % 360);
-        cool = oklchToHex(l * 0.8, c * 0.95, (h + 240) % 360);
-        comp = oklchToHex(l * 0.7, c * 0.85, (h + 180) % 360);
+        // 120° intervals — classic triad with slight lightness variation
+        warm = oklchToHex(Math.min(l + 0.04, 0.85), c, (h + 120) % 360);
+        cool = oklchToHex(Math.max(l - 0.03, 0.55), c, (h + 240) % 360);
+        comp = oklchToHex(Math.max(l - 0.06, 0.55), c * 0.9, (h + 180) % 360);
         break;
       case "analogous":
-        warm = oklchToHex(Math.min(l * 0.95, 0.8), c, (h + 30) % 360);
-        cool = oklchToHex(l * 0.85, c * 0.95, (h + 60) % 360);
-        comp = oklchToHex(l * 0.75, c * 0.9, (h + 330) % 360);
+        // Tight hue cluster — harmony through proximity
+        warm = oklchToHex(Math.min(l + 0.03, 0.85), c, (h + 35) % 360);
+        cool = oklchToHex(Math.max(l - 0.02, 0.55), c, (h + 70) % 360);
+        comp = oklchToHex(Math.max(l - 0.04, 0.55), c * 0.95, (h + 330) % 360);
         break;
       case "square":
-        warm = oklchToHex(Math.min(l * 0.9, 0.8), c, (h + 90) % 360);
-        cool = oklchToHex(l * 0.8, c * 0.95, (h + 180) % 360);
-        comp = oklchToHex(l * 0.7, c * 0.85, (h + 270) % 360);
+        // 90° intervals — maximum variety
+        warm = oklchToHex(Math.min(l + 0.03, 0.85), c, (h + 90) % 360);
+        cool = oklchToHex(Math.max(l - 0.02, 0.55), c, (h + 180) % 360);
+        comp = oklchToHex(Math.max(l - 0.05, 0.55), c * 0.9, (h + 270) % 360);
         break;
       case "complement":
-        warm = oklchToHex(Math.min(l * 0.9, 0.8), c, (h + 180) % 360);
-        cool = oklchToHex(l * 0.7, c * 0.85, (h + 180) % 360);
-        comp = oklchToHex(l * 0.6, c * 0.6, h);
+        // 180° — two variations of the complement plus a muted accent
+        warm = oklchToHex(Math.min(l + 0.05, 0.85), c, (h + 180) % 360);
+        cool = oklchToHex(Math.max(l - 0.05, 0.55), c * 0.85, (h + 180) % 360);
+        comp = oklchToHex(Math.max(l - 0.08, 0.55), c * 0.7, h);
         break;
       default: // split
-        warm = oklchToHex(Math.min(l * 0.9, 0.8), c, (h + 150) % 360);
-        cool = oklchToHex(l * 0.8, c * 0.95, (h + 210) % 360);
-        comp = oklchToHex(l * 0.7, c * 0.85, (h + 180) % 360);
+        // +150° and +210° — split-complement
+        warm = oklchToHex(Math.min(l + 0.04, 0.85), c, (h + 150) % 360);
+        cool = oklchToHex(Math.max(l - 0.02, 0.55), c, (h + 210) % 360);
+        comp = oklchToHex(Math.max(l - 0.05, 0.55), c * 0.9, (h + 180) % 360);
     }
 
     return { accent: hex, warm: warm, cool: cool, comp: comp };
@@ -231,101 +244,23 @@
 
   // --- Gradient map presets (curated palettes that bypass algorithmic derivation) ---
   var GRADIENT_MAPS = {
-    "phosphor": {
-      name: "Phosphor",
-      description: "Classic terminal green — the original",
-      accent: "#00ff41", warm: "#ffb000", cool: "#00cccc", comp: "#ff3333",
-      semantics: { success: "#00ff41", warning: "#ffb000", error: "#ff3333", info: "#00cccc" }
+    "frost": {
+      name: "Frost",
+      description: "Icy blue-white — clean and clinical",
+      accent: "#d2ebfe", warm: "#c0caff", cool: "#ceb0e4", comp: "#7bc5d3",
+      semantics: { success: "#7edba6", warning: "#c0caff", error: "#f78c8c", info: "#7bc5d3" }
     },
-    "blade-runner": {
-      name: "Blade Runner",
-      description: "Neon pink city lights through rain",
-      accent: "#ff6ac1", warm: "#ffd700", cool: "#7dcfff", comp: "#ff2e63",
-      semantics: { success: "#5af78e", warning: "#ffd700", error: "#ff2e63", info: "#7dcfff" }
+    "slate": {
+      name: "Slate",
+      description: "Industrial blue-grey — subdued and moody",
+      accent: "#7a9bb5", warm: "#8a8fad", cool: "#6a9fa3", comp: "#a3757b",
+      semantics: { success: "#7aad8a", warning: "#ad9a6a", error: "#a3757b", info: "#6a9fa3" }
     },
-    "ocean-depth": {
-      name: "Ocean Depth",
-      description: "Deep sea bioluminescence",
-      accent: "#00bfff", warm: "#f0a500", cool: "#4de0d0", comp: "#ff6b6b",
-      semantics: { success: "#4de0d0", warning: "#f0a500", error: "#ff6b6b", info: "#00bfff" }
-    },
-    "amber-terminal": {
-      name: "Amber Terminal",
-      description: "Warm CRT phosphor glow",
-      accent: "#ffb000", warm: "#ff6b35", cool: "#ffe066", comp: "#ff4444",
-      semantics: { success: "#7ddb57", warning: "#ffe066", error: "#ff4444", info: "#66ccff" }
-    },
-    "ultraviolet": {
-      name: "Ultraviolet",
-      description: "Purple haze and electric pinks",
-      accent: "#b266ff", warm: "#ff66b2", cool: "#66ccff", comp: "#ff4466",
-      semantics: { success: "#66ffb2", warning: "#ffcc66", error: "#ff4466", info: "#66ccff" }
-    },
-    "solar-flare": {
-      name: "Solar Flare",
-      description: "Explosive oranges and plasma bursts",
-      accent: "#ff6600", warm: "#ff3366", cool: "#ffcc00", comp: "#ff0044",
-      semantics: { success: "#66ff66", warning: "#ffcc00", error: "#ff0044", info: "#33ccff" }
-    },
-    "arctic": {
-      name: "Arctic",
-      description: "Frozen aurora under polar skies",
-      accent: "#66ffee", warm: "#aaddff", cool: "#88ffcc", comp: "#ff6688",
-      semantics: { success: "#88ffcc", warning: "#ffdd66", error: "#ff6688", info: "#66ffee" }
-    },
-    "neon-noir": {
-      name: "Neon Noir",
-      description: "Maximum contrast cyberpunk",
-      accent: "#39ff14", warm: "#ff073a", cool: "#00fff7", comp: "#ff00ff",
-      semantics: { success: "#39ff14", warning: "#ffdd00", error: "#ff073a", info: "#00fff7" }
-    },
-    "rust": {
-      name: "Rust",
-      description: "Industrial decay and furnace heat",
-      accent: "#e65c00", warm: "#e04000", cool: "#ff9933", comp: "#ff2200",
-      semantics: { success: "#66cc66", warning: "#ff9933", error: "#ff2200", info: "#5599cc" }
-    },
-    "synthwave": {
-      name: "Synthwave",
-      description: "Retro-futuristic sunset grid",
-      accent: "#f72585", warm: "#b44aff", cool: "#4cc9f0", comp: "#ff006e",
-      semantics: { success: "#72efdd", warning: "#ffc300", error: "#ff006e", info: "#4cc9f0" }
-    },
-    "dracula": {
-      name: "Dracula",
-      description: "The beloved dark theme, vampiric purples",
-      accent: "#bd93f9", warm: "#ff79c6", cool: "#8be9fd", comp: "#ff5555",
-      semantics: { success: "#50fa7b", warning: "#f1fa8c", error: "#ff5555", info: "#8be9fd" }
-    },
-    "monokai": {
-      name: "Monokai",
-      description: "Classic editor warmth — green on dark",
-      accent: "#a6e22e", warm: "#fd971f", cool: "#66d9ef", comp: "#f92672",
-      semantics: { success: "#a6e22e", warning: "#e6db74", error: "#f92672", info: "#66d9ef" }
-    },
-    "gruvbox": {
-      name: "Gruvbox",
-      description: "Earthy retro with warm contrast",
-      accent: "#fabd2f", warm: "#fe8019", cool: "#83a598", comp: "#fb4934",
-      semantics: { success: "#b8bb26", warning: "#fabd2f", error: "#fb4934", info: "#83a598" }
-    },
-    "catppuccin": {
-      name: "Catppuccin",
-      description: "Soothing pastel tones for late nights",
-      accent: "#cba6f7", warm: "#f9e2af", cool: "#89dceb", comp: "#f38ba8",
-      semantics: { success: "#a6e3a1", warning: "#f9e2af", error: "#f38ba8", info: "#89dceb" }
-    },
-    "nord": {
-      name: "Nord",
-      description: "Arctic blue-grey serenity",
-      accent: "#88c0d0", warm: "#ebcb8b", cool: "#a3be8c", comp: "#bf616a",
-      semantics: { success: "#a3be8c", warning: "#ebcb8b", error: "#bf616a", info: "#88c0d0" }
-    },
-    "tokyo-night": {
-      name: "Tokyo Night",
-      description: "Neon-lit streets, cool blues and purples",
-      accent: "#7aa2f7", warm: "#e0af68", cool: "#73daca", comp: "#f7768e",
-      semantics: { success: "#9ece6a", warning: "#e0af68", error: "#f7768e", info: "#7aa2f7" }
+    "mono": {
+      name: "Mono",
+      description: "True monochrome — cool grey-blue only",
+      accent: "#94abbe", warm: "#7b93a8", cool: "#adbfcc", comp: "#687f8f",
+      semantics: { success: "#94abbe", warning: "#adbfcc", error: "#7b93a8", info: "#94abbe" }
     },
     "cyberdeck": {
       name: "Cyberdeck",
@@ -333,11 +268,35 @@
       accent: "#00ff9f", warm: "#ffe600", cool: "#00e5ff", comp: "#ff003c",
       semantics: { success: "#00ff9f", warning: "#ffe600", error: "#ff003c", info: "#00e5ff" }
     },
-    "vaporwave": {
-      name: "Vaporwave",
-      description: "Aesthetic nostalgia in pastel neon",
-      accent: "#ff71ce", warm: "#b967ff", cool: "#01cdfe", comp: "#ff71ce",
-      semantics: { success: "#05ffa1", warning: "#fffb96", error: "#ff71ce", info: "#01cdfe" }
+    "ember": {
+      name: "Ember",
+      description: "Red-orange hue ladder — hot to dark",
+      accent: "#ff6551", warm: "#de1d3f", cool: "#ffa565", comp: "#b21f41",
+      semantics: { success: "#ffa565", warning: "#ff6551", error: "#b21f41", info: "#de1d3f" }
+    },
+    "spectrum": {
+      name: "Spectrum",
+      description: "Equal perceptual brightness at 90° intervals",
+      accent: "#43b2e1", warm: "#c68bd3", cool: "#7bb76e", comp: "#e08d5d",
+      semantics: { success: "#7bb76e", warning: "#e08d5d", error: "#c68bd3", info: "#43b2e1" }
+    },
+    "smoke": {
+      name: "Smoke",
+      description: "Near-achromatic — the faintest blue haze",
+      accent: "#9ba6b1", warm: "#80878f", cool: "#b2bfce", comp: "#657383",
+      semantics: { success: "#9ba6b1", warning: "#b2bfce", error: "#80878f", info: "#9ba6b1" }
+    },
+    "voltage": {
+      name: "Voltage",
+      description: "Complementary clash — cyan vs magenta at full chroma",
+      accent: "#00d4bb", warm: "#ec6094", cool: "#50ddd5", comp: "#d43b86",
+      semantics: { success: "#00d4bb", warning: "#50ddd5", error: "#d43b86", info: "#ec6094" }
+    },
+    "thermal": {
+      name: "Thermal",
+      description: "Infrared heat map — cool blue to hot yellow",
+      accent: "#ffc250", warm: "#fb5a46", cool: "#5480c7", comp: "#d10054",
+      semantics: { success: "#ffc250", warning: "#fb5a46", error: "#d10054", info: "#5480c7" }
     }
   };
 
@@ -537,6 +496,9 @@
       localStorage.setItem(GRADIENT_MAP_KEY, presetKey);
       localStorage.setItem(STORAGE_KEY, hex);
     } catch (e) {}
+    savePreference(THEME_MODE_KEY, "preset");
+    savePreference(GRADIENT_MAP_KEY, presetKey);
+    savePreference(STORAGE_KEY, hex);
 
     return true;
   }
@@ -548,6 +510,8 @@
       localStorage.setItem(THEME_MODE_KEY, "custom");
       localStorage.removeItem(GRADIENT_MAP_KEY);
     } catch (e) {}
+    savePreference(THEME_MODE_KEY, "custom");
+    savePreference(GRADIENT_MAP_KEY, "");
     applySemanticDefaults();
     var hex = colorPicker ? colorPicker.value : "#00ff41";
     applyAccent(hex);
