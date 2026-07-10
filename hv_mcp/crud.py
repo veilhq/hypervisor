@@ -23,6 +23,7 @@ from .templates import (
     apply_work_item_template, apply_idea_template,
     apply_document_template, apply_adr_template, apply_bugfix_template,
 )
+from .validation import validate_single
 
 
 def create_document(
@@ -154,8 +155,14 @@ def create_document(
     except OSError as e:
         return {"error": f"File write failed: {e}"}
 
-    # Update index
+    # Post-write validation — verify the generated document is well-formed
     rel_path = str(final_path.relative_to(HYPERSPACE_ROOT)).replace("\\", "/")
+    validation_result = validate_single(rel_path)
+    if validation_result.get("violations"):
+        # Non-fatal: document was created but has issues. Include warnings.
+        pass  # Will attach to result below
+
+    # Update index
     refresh_single(rel_path)
     regenerate_index_file()
     trigger_site_build(changed_path=rel_path)
@@ -169,6 +176,8 @@ def create_document(
     }
     if type == "work-item":
         result["id"] = work_id
+    if validation_result.get("violations"):
+        result["warnings"] = validation_result["violations"]
     return result
 
 
@@ -261,17 +270,26 @@ def update_document(
         final_content += "\n"
     full_path.write_text(final_content, encoding="utf-8")
 
+    # Post-write validation — verify the updated document is still well-formed
+    validation_result = validate_single(path)
+    if validation_result.get("violations"):
+        # Non-fatal: update applied but document has issues. Include warnings.
+        pass  # Will attach to result below
+
     # Refresh index
     refresh_single(path)
     regenerate_index_file()
     trigger_site_build(changed_path=path)
 
-    return {
+    result = {
         "success": True,
         "path": path,
         "updated_fields": updated_fields,
         "updated_timestamp": now,
     }
+    if validation_result.get("violations"):
+        result["warnings"] = validation_result["violations"]
+    return result
 
 
 def move_work_item(slug: str) -> dict:

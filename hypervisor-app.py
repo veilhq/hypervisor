@@ -411,11 +411,15 @@ class HypervisorAPI:
 
         return {"ok": True}
 
-    def save_theme_defaults(self, accent, palette_mode, bw_theme, mode=None, gradient_map=None):
+    def save_theme_defaults(self, accent, palette_mode, bw_theme, mode=None, gradient_map=None, palette=None):
         """Save the current theme settings as the site default.
 
         These defaults are baked into the build so new installs or cleared
         localStorage will start with the saved theme.
+
+        When mode='preset', the palette dict should contain the full colors
+        (warm, cool, comp, semantics) so consumers like Hyperagent can
+        reconstruct the theme without needing to look up the preset key.
 
         Args:
             accent: Hex color string (e.g., '#00ff41')
@@ -423,6 +427,7 @@ class HypervisorAPI:
             bw_theme: Boolean for B&W accessibility mode
             mode: 'custom' or 'preset' (default: 'custom' for backward compat)
             gradient_map: Preset key when mode='preset' (e.g., 'blade-runner')
+            palette: Dict with warm, cool, comp, and optional semantics (for preset mode)
         """
         defaults_path = OUTPUT_DIR.parent / "theme-defaults.json"
         theme_mode = mode or "custom"
@@ -433,6 +438,15 @@ class HypervisorAPI:
             "bwTheme": bw_theme,
             "gradientMap": gradient_map,
         }
+
+        # Embed full palette colors when provided (preset mode)
+        if palette and isinstance(palette, dict):
+            data["warm"] = palette.get("warm")
+            data["cool"] = palette.get("cool")
+            data["comp"] = palette.get("comp")
+            if palette.get("semantics"):
+                data["semantics"] = palette["semantics"]
+
         defaults_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
         return {"ok": True}
 
@@ -477,6 +491,63 @@ class HypervisorAPI:
             return json.loads(prefs_path.read_text(encoding="utf-8"))
         except (json.JSONDecodeError, OSError):
             return {}
+
+    def get_user_gradient_maps(self):
+        """Return all user-created gradient map presets.
+
+        Stored in preferences.json under the 'userGradientMaps' key.
+        Returns a dict of {key: {name, description, accent, warm, cool, comp, semantics}}.
+        """
+        prefs_path = OUTPUT_DIR.parent / "preferences.json"
+        if not prefs_path.exists():
+            return {}
+        try:
+            prefs = json.loads(prefs_path.read_text(encoding="utf-8"))
+            return prefs.get("userGradientMaps", {})
+        except (json.JSONDecodeError, OSError):
+            return {}
+
+    def save_user_gradient_map(self, key, data):
+        """Save a user-created gradient map preset.
+
+        Args:
+            key: Unique key for the preset (kebab-case, e.g. 'my-sunset')
+            data: Dict with name, description, accent, warm, cool, comp, and
+                  optional semantics {success, warning, error, info}
+        """
+        prefs_path = OUTPUT_DIR.parent / "preferences.json"
+        prefs = {}
+        if prefs_path.exists():
+            try:
+                prefs = json.loads(prefs_path.read_text(encoding="utf-8"))
+            except (json.JSONDecodeError, OSError):
+                prefs = {}
+        if "userGradientMaps" not in prefs:
+            prefs["userGradientMaps"] = {}
+        prefs["userGradientMaps"][key] = data
+        prefs_path.write_text(json.dumps(prefs, indent=2), encoding="utf-8")
+        return {"ok": True, "key": key}
+
+    def delete_user_gradient_map(self, key):
+        """Delete a user-created gradient map preset by key.
+
+        Args:
+            key: The preset key to remove.
+        """
+        prefs_path = OUTPUT_DIR.parent / "preferences.json"
+        if not prefs_path.exists():
+            return {"ok": False, "error": "No preferences file"}
+        try:
+            prefs = json.loads(prefs_path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            return {"ok": False, "error": "Failed to read preferences"}
+        maps = prefs.get("userGradientMaps", {})
+        if key not in maps:
+            return {"ok": False, "error": f"Preset '{key}' not found"}
+        del maps[key]
+        prefs["userGradientMaps"] = maps
+        prefs_path.write_text(json.dumps(prefs, indent=2), encoding="utf-8")
+        return {"ok": True}
 
     def mark_done(self, file_path):
         """Move a work item from work/to-do/ to work/done/ and update index.
@@ -813,7 +884,7 @@ class HypervisorAPI:
         try:
             tools_dir = Path(__file__).parent / "tools"
             sys.path.insert(0, str(tools_dir))
-            from ado_collector import load_config, ADOClient, extract_top_level_items
+            from ado_collector import load_config, ADOClient, extract_top_level_items, ADOConfigError
             from ado_dashboard import build_dashboard_payload
             sys.path.pop(0)
         except ImportError as e:
@@ -821,8 +892,8 @@ class HypervisorAPI:
 
         try:
             config = load_config()
-        except SystemExit:
-            return {"ok": False, "error": "ADO_PAT not configured. Set the ADO_PAT environment variable."}
+        except ADOConfigError as e:
+            return {"ok": False, "error": str(e)}
 
         try:
             client = ADOClient(config["org"], pat=config.get("pat"), use_entra=config.get("use_entra", False))

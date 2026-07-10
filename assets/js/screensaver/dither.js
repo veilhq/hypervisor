@@ -32,7 +32,7 @@
       var w = ssCanvas.width;
       var h = ssCanvas.height;
       var t = ditherState.time;
-      var cell = 2;
+      var cell = Math.max(2, Math.floor(Math.min(w, h) / 400));
 
       var imgData = ssCtx.createImageData(w, h);
       var data = imgData.data;

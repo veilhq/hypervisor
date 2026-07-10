@@ -29,6 +29,7 @@
     var UTILITIES = [
       { name: "ADO Dashboard",      icon: "bar-chart-3",  href: "/_utils/ado-dashboard/index.html" },
       { name: "Health Dashboard",   icon: "activity",     href: "/_utils/health-dashboard/index.html" },
+      { name: "Palette Generator",  icon: "palette",      href: "/_utils/palette-generator/index.html" },
       { name: "Password Generator", icon: "lock-keyhole", href: "/_utils/password-generator/index.html" },
       { name: "Regex Editor",       icon: "regex",        href: "/_utils/regex-editor/index.html" },
       { name: "Screensaver",        icon: "monitor",      href: "/_utils/screensaver/index.html" },

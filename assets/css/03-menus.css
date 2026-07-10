@@ -300,36 +300,31 @@
 .settings-preset-row {
   margin-bottom: 0.5rem;
 }
-.preset-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-.preset-chip {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  padding: 2px 6px;
+.preset-select {
+  width: 100%;
+  padding: 4px 6px;
   border: 1px solid var(--border);
   background: var(--bg);
   font-family: var(--font);
-  font-size: 0.5rem;
-  color: var(--text-dim);
-  cursor: pointer;
-  transition: border-color 0.15s var(--ease), color 0.15s var(--ease);
-}
-.preset-chip:hover {
-  border-color: var(--accent);
+  font-size: 0.55rem;
   color: var(--text);
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23888'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 6px center;
+  background-size: 8px 5px;
+  transition: border-color 0.15s var(--ease);
 }
-.preset-chip.active {
+.preset-select:hover,
+.preset-select:focus {
   border-color: var(--accent);
-  color: var(--accent);
+  outline: none;
 }
-.preset-chip-swatch {
-  width: 8px;
-  height: 8px;
-  flex-shrink: 0;
+.preset-select option {
+  background: var(--bg);
+  color: var(--text);
 }
 
 /* ---- Theme row (three equal squares) ---- */

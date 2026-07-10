@@ -1,0 +1,600 @@
+<div class="pg-layout">
+  <div class="utility-container" style="max-width:960px">
+    <h1><i data-lucide="palette" class="utility-title-icon"></i> Palette Generator</h1>
+    <p class="pg-subtitle">Browse gradient map presets, create custom palettes, and save them for use across the site.</p>
+
+    <!-- Browse Section -->
+    <div class="pg-section-header">
+      <span class="pg-section-label">Presets</span>
+    </div>
+    <div class="pg-grid" id="pg-grid"></div>
+
+    <!-- Create Section -->
+    <div class="pg-section-header" style="margin-top:2rem">
+      <span class="pg-section-label">Create</span>
+    </div>
+    <div class="pg-create">
+      <div class="pg-create-controls">
+        <div class="pg-control-group">
+          <label class="pg-label">Base Color</label>
+          <div class="pg-base-row">
+            <input type="color" id="pg-base-color" class="pg-color-input" value="#00ff41">
+            <span class="pg-hex-display" id="pg-base-hex">#00ff41</span>
+            <select id="pg-harmony-mode" class="pg-select">
+              <optgroup label="Classic Harmonies">
+                <option value="split">Split-complementary</option>
+                <option value="triadic">Triadic</option>
+                <option value="analogous">Analogous</option>
+                <option value="square">Tetradic (square)</option>
+                <option value="complement">Complementary</option>
+              </optgroup>
+              <optgroup label="Extended">
+                <option value="monochromatic">Monochromatic</option>
+                <option value="double-comp">Double complementary</option>
+                <option value="clash">Clash</option>
+                <option value="warm-shift">Warm shift</option>
+                <option value="cool-shift">Cool shift</option>
+                <option value="high-contrast">High contrast</option>
+                <option value="muted">Muted / desaturated</option>
+                <option value="pastel">Pastel</option>
+                <option value="neon">Neon / vivid</option>
+              </optgroup>
+              <optgroup label="Freehand">
+                <option value="random">Random</option>
+                <option value="manual">Manual (freehand)</option>
+              </optgroup>
+            </select>
+            <button class="pg-shuffle-btn" id="pg-shuffle-btn" title="Regenerate"><i data-lucide="shuffle" style="width:14px;height:14px;vertical-align:-2px"></i></button>
+          </div>
+        </div>
+
+        <div class="pg-swatches-edit" id="pg-swatches-edit">
+          <div class="pg-swatch-slot">
+            <label class="pg-swatch-label">Accent</label>
+            <input type="color" id="pg-s-accent" class="pg-swatch-input" value="#00ff41">
+            <span class="pg-swatch-hex" data-slot="accent">#00ff41</span>
+          </div>
+          <div class="pg-swatch-slot">
+            <label class="pg-swatch-label">Warm</label>
+            <input type="color" id="pg-s-warm" class="pg-swatch-input" value="#ffb000">
+            <span class="pg-swatch-hex" data-slot="warm">#ffb000</span>
+          </div>
+          <div class="pg-swatch-slot">
+            <label class="pg-swatch-label">Cool</label>
+            <input type="color" id="pg-s-cool" class="pg-swatch-input" value="#00cccc">
+            <span class="pg-swatch-hex" data-slot="cool">#00cccc</span>
+          </div>
+          <div class="pg-swatch-slot">
+            <label class="pg-swatch-label">Comp</label>
+            <input type="color" id="pg-s-comp" class="pg-swatch-input" value="#ff3333">
+            <span class="pg-swatch-hex" data-slot="comp">#ff3333</span>
+          </div>
+        </div>
+
+        <div class="pg-semantics-toggle">
+          <label><input type="checkbox" id="pg-show-semantics"> Include semantic colors</label>
+        </div>
+        <div class="pg-semantics-edit" id="pg-semantics-edit" style="display:none">
+          <div class="pg-swatch-slot">
+            <label class="pg-swatch-label">Success</label>
+            <input type="color" id="pg-sem-success" class="pg-swatch-input" value="#00ff41">
+            <span class="pg-swatch-hex" data-slot="success">#00ff41</span>
+          </div>
+          <div class="pg-swatch-slot">
+            <label class="pg-swatch-label">Warning</label>
+            <input type="color" id="pg-sem-warning" class="pg-swatch-input" value="#ffb000">
+            <span class="pg-swatch-hex" data-slot="warning">#ffb000</span>
+          </div>
+          <div class="pg-swatch-slot">
+            <label class="pg-swatch-label">Error</label>
+            <input type="color" id="pg-sem-error" class="pg-swatch-input" value="#ff3333">
+            <span class="pg-swatch-hex" data-slot="error">#ff3333</span>
+          </div>
+          <div class="pg-swatch-slot">
+            <label class="pg-swatch-label">Info</label>
+            <input type="color" id="pg-sem-info" class="pg-swatch-input" value="#00cccc">
+            <span class="pg-swatch-hex" data-slot="info">#00cccc</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Preview -->
+      <div class="pg-preview" id="pg-preview">
+        <div class="pg-preview-header">Live Preview</div>
+        <div class="pg-preview-body">
+          <div class="pg-preview-bar" id="pg-preview-bar">
+            <span class="pg-pv-accent"></span>
+            <span class="pg-pv-warm"></span>
+            <span class="pg-pv-cool"></span>
+            <span class="pg-pv-comp"></span>
+          </div>
+          <div class="pg-preview-samples">
+            <div class="pg-pv-heading" id="pg-pv-h1">Heading Text</div>
+            <div class="pg-pv-text">Body text on a dark background. The palette should be <span class="pg-pv-link" id="pg-pv-link">readable</span> and distinct.</div>
+            <div class="pg-pv-badges">
+              <span class="pg-pv-badge pg-pv-badge-accent" id="pg-pv-badge-a">accent</span>
+              <span class="pg-pv-badge pg-pv-badge-warm" id="pg-pv-badge-w">warm</span>
+              <span class="pg-pv-badge pg-pv-badge-cool" id="pg-pv-badge-c">cool</span>
+              <span class="pg-pv-badge pg-pv-badge-comp" id="pg-pv-badge-comp">comp</span>
+            </div>
+            <div class="pg-pv-code" id="pg-pv-code">
+              <span class="pg-pv-kw">const</span> theme = { accent: <span class="pg-pv-str">"#00ff41"</span> };
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Save Controls -->
+    <div class="pg-save-row">
+      <input type="text" id="pg-name" class="pg-name-input" placeholder="Preset name" maxlength="32">
+      <input type="text" id="pg-desc" class="pg-desc-input" placeholder="Short description (optional)" maxlength="64">
+      <button class="pg-save-btn" id="pg-save-btn"><i data-lucide="save" style="width:12px;height:12px;vertical-align:-1px"></i> Save Preset</button>
+      <button class="pg-apply-btn" id="pg-apply-btn"><i data-lucide="check" style="width:12px;height:12px;vertical-align:-1px"></i> Apply to Site</button>
+    </div>
+    <div class="pg-toast" id="pg-toast"></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  // Wait for the palette API from theme.js (loaded via app.js)
+  function boot() {
+    if (!window.__palette) return setTimeout(boot, 50);
+    init(window.__palette);
+  }
+
+  function init(api) {
+    var grid = document.getElementById("pg-grid");
+    var baseColor = document.getElementById("pg-base-color");
+    var baseHex = document.getElementById("pg-base-hex");
+    var harmonyMode = document.getElementById("pg-harmony-mode");
+    var sAccent = document.getElementById("pg-s-accent");
+    var sWarm = document.getElementById("pg-s-warm");
+    var sCool = document.getElementById("pg-s-cool");
+    var sComp = document.getElementById("pg-s-comp");
+    var showSemantics = document.getElementById("pg-show-semantics");
+    var semanticsEdit = document.getElementById("pg-semantics-edit");
+    var semSuccess = document.getElementById("pg-sem-success");
+    var semWarning = document.getElementById("pg-sem-warning");
+    var semError = document.getElementById("pg-sem-error");
+    var semInfo = document.getElementById("pg-sem-info");
+    var nameInput = document.getElementById("pg-name");
+    var descInput = document.getElementById("pg-desc");
+    var saveBtn = document.getElementById("pg-save-btn");
+    var applyBtn = document.getElementById("pg-apply-btn");
+    var toast = document.getElementById("pg-toast");
+
+    var isManual = false;
+
+    // --- Toast ---
+    function showToast(msg, type) {
+      toast.textContent = msg;
+      toast.className = "pg-toast pg-toast-show" + (type === "error" ? " pg-toast-error" : "");
+      clearTimeout(toast._t);
+      toast._t = setTimeout(function () { toast.className = "pg-toast"; }, 2500);
+    }
+
+    // --- Build the preset grid ---
+    function renderGrid() {
+      grid.innerHTML = "";
+      var builtins = api.getBuiltinMaps();
+      var userMaps = api.getUserMaps();
+      var activeKey = api.getActiveGradientMap();
+
+      // Built-in presets
+      Object.keys(builtins).forEach(function (key) {
+        grid.appendChild(makeCard(key, builtins[key], false, activeKey === key));
+      });
+
+      // User presets (with section label if any)
+      var userKeys = Object.keys(userMaps);
+      if (userKeys.length > 0) {
+        var sep = document.createElement("div");
+        sep.className = "pg-grid-separator";
+        sep.textContent = "User Presets";
+        grid.appendChild(sep);
+        userKeys.forEach(function (key) {
+          grid.appendChild(makeCard(key, userMaps[key], true, activeKey === key));
+        });
+      }
+    }
+
+    function makeCard(key, preset, isUser, isActive) {
+      var card = document.createElement("div");
+      card.className = "pg-card" + (isActive ? " pg-card-active" : "");
+      card.setAttribute("data-key", key);
+
+      // Swatch bar
+      var bar = document.createElement("div");
+      bar.className = "pg-card-bar";
+      var colors = [preset.accent, preset.warm, preset.cool, preset.comp];
+      colors.forEach(function (c) {
+        var swatch = document.createElement("span");
+        swatch.className = "pg-card-swatch";
+        swatch.style.background = c;
+        swatch.setAttribute("data-tooltip", c);
+        swatch.addEventListener("click", function (e) {
+          e.stopPropagation();
+          copyToClipboard(c);
+          showToast("Copied " + c, "ok");
+        });
+        bar.appendChild(swatch);
+      });
+      card.appendChild(bar);
+
+      // Info
+      var info = document.createElement("div");
+      info.className = "pg-card-info";
+      var name = document.createElement("span");
+      name.className = "pg-card-name";
+      name.textContent = preset.name;
+      info.appendChild(name);
+      if (preset.description) {
+        var desc = document.createElement("span");
+        desc.className = "pg-card-desc";
+        desc.textContent = preset.description;
+        info.appendChild(desc);
+      }
+      card.appendChild(info);
+
+      // Actions
+      var actions = document.createElement("div");
+      actions.className = "pg-card-actions";
+
+      var applyA = document.createElement("button");
+      applyA.className = "pg-card-btn";
+      applyA.textContent = isActive ? "active" : "apply";
+      applyA.disabled = isActive;
+      applyA.addEventListener("click", function (e) {
+        e.stopPropagation();
+        api.applyGradientMap(key);
+        renderGrid();
+      });
+      actions.appendChild(applyA);
+
+      if (isUser) {
+        var delBtn = document.createElement("button");
+        delBtn.className = "pg-card-btn pg-card-btn-del";
+        delBtn.textContent = "delete";
+        delBtn.addEventListener("click", function (e) {
+          e.stopPropagation();
+          if (window.pywebview && window.pywebview.api) {
+            window.pywebview.api.delete_user_gradient_map(key).then(function () {
+              api.refreshUserMaps(function () { renderGrid(); });
+              showToast("Deleted " + preset.name, "ok");
+            });
+          }
+        });
+        actions.appendChild(delBtn);
+      }
+      card.appendChild(actions);
+
+      // Click card to load into editor
+      card.addEventListener("click", function () {
+        loadIntoEditor(preset);
+      });
+
+      return card;
+    }
+
+    function loadIntoEditor(preset) {
+      isManual = true;
+      harmonyMode.value = "manual";
+      baseColor.value = preset.accent;
+      baseHex.textContent = preset.accent;
+      sAccent.value = preset.accent;
+      sWarm.value = preset.warm;
+      sCool.value = preset.cool;
+      sComp.value = preset.comp;
+      updateHexDisplays();
+      if (preset.semantics) {
+        showSemantics.checked = true;
+        semanticsEdit.style.display = "";
+        semSuccess.value = preset.semantics.success || "#00ff41";
+        semWarning.value = preset.semantics.warning || "#ffb000";
+        semError.value = preset.semantics.error || "#ff3333";
+        semInfo.value = preset.semantics.info || "#00cccc";
+      }
+      updatePreview();
+    }
+
+    // --- Derivation ---
+    // --- Extended palette generation ---
+    function generatePalette(hex, mode) {
+      // For the 5 classic modes, delegate to the site's OKLCH builder
+      var classic = ["split", "triadic", "analogous", "square", "complement"];
+      if (classic.indexOf(mode) !== -1) {
+        return api.buildPaletteOKLCH(hex, mode);
+      }
+
+      var oklch = api.hexToOklch(hex);
+      var h = oklch.h;
+      var l = Math.max(Math.min(oklch.l, 0.82), 0.55);
+      var c = Math.max(oklch.c, 0.08);
+      var accent, warm, cool, comp;
+
+      switch (mode) {
+        case "monochromatic":
+          // Same hue, vary lightness and chroma
+          accent = hex;
+          warm = api.oklchToHex(Math.min(l + 0.12, 0.88), c * 0.7, h);
+          cool = api.oklchToHex(Math.max(l - 0.10, 0.45), c * 0.85, h);
+          comp = api.oklchToHex(Math.max(l - 0.18, 0.38), c * 0.5, h);
+          break;
+
+        case "double-comp":
+          // Two complementary pairs at 30° offset
+          accent = hex;
+          warm = api.oklchToHex(Math.min(l + 0.04, 0.85), c, (h + 30) % 360);
+          cool = api.oklchToHex(l, c, (h + 180) % 360);
+          comp = api.oklchToHex(Math.max(l - 0.04, 0.55), c, (h + 210) % 360);
+          break;
+
+        case "clash":
+          // Accent + colors at 90° and 270° (tension)
+          accent = hex;
+          warm = api.oklchToHex(Math.min(l + 0.06, 0.85), c * 1.1, (h + 90) % 360);
+          cool = api.oklchToHex(l, c, (h + 270) % 360);
+          comp = api.oklchToHex(Math.max(l - 0.08, 0.50), c * 1.15, (h + 180) % 360);
+          break;
+
+        case "warm-shift":
+          // Cluster in the warm direction (+20°, +40°, +60°)
+          accent = hex;
+          warm = api.oklchToHex(Math.min(l + 0.04, 0.85), c, (h + 20) % 360);
+          cool = api.oklchToHex(l, c * 0.95, (h + 40) % 360);
+          comp = api.oklchToHex(Math.max(l - 0.04, 0.55), c * 0.9, (h + 60) % 360);
+          break;
+
+        case "cool-shift":
+          // Cluster in the cool direction (-20°, -40°, -60°)
+          accent = hex;
+          warm = api.oklchToHex(Math.min(l + 0.04, 0.85), c, (h + 340) % 360);
+          cool = api.oklchToHex(l, c * 0.95, (h + 320) % 360);
+          comp = api.oklchToHex(Math.max(l - 0.04, 0.55), c * 0.9, (h + 300) % 360);
+          break;
+
+        case "high-contrast":
+          // Max chroma, wide hue spacing, varied lightness
+          accent = api.oklchToHex(l, Math.min(c * 1.4, 0.37), h);
+          warm = api.oklchToHex(Math.min(l + 0.10, 0.88), Math.min(c * 1.3, 0.37), (h + 120) % 360);
+          cool = api.oklchToHex(Math.max(l - 0.08, 0.50), Math.min(c * 1.3, 0.37), (h + 240) % 360);
+          comp = api.oklchToHex(Math.max(l - 0.15, 0.42), Math.min(c * 1.4, 0.37), (h + 180) % 360);
+          break;
+
+        case "muted":
+          // Low chroma, soft and desaturated
+          accent = api.oklchToHex(l, c * 0.4, h);
+          warm = api.oklchToHex(Math.min(l + 0.06, 0.82), c * 0.35, (h + 40) % 360);
+          cool = api.oklchToHex(Math.max(l - 0.04, 0.55), c * 0.3, (h + 200) % 360);
+          comp = api.oklchToHex(Math.max(l - 0.08, 0.50), c * 0.25, (h + 180) % 360);
+          break;
+
+        case "pastel":
+          // High lightness, moderate chroma
+          accent = api.oklchToHex(Math.min(l + 0.15, 0.88), c * 0.55, h);
+          warm = api.oklchToHex(Math.min(l + 0.18, 0.90), c * 0.5, (h + 60) % 360);
+          cool = api.oklchToHex(Math.min(l + 0.16, 0.89), c * 0.5, (h + 180) % 360);
+          comp = api.oklchToHex(Math.min(l + 0.14, 0.87), c * 0.45, (h + 270) % 360);
+          break;
+
+        case "neon":
+          // Max lightness + max chroma — vivid and electric
+          accent = api.oklchToHex(Math.min(l + 0.08, 0.85), Math.min(c * 1.6, 0.37), h);
+          warm = api.oklchToHex(Math.min(l + 0.06, 0.84), Math.min(c * 1.5, 0.37), (h + 90) % 360);
+          cool = api.oklchToHex(Math.min(l + 0.04, 0.83), Math.min(c * 1.5, 0.37), (h + 200) % 360);
+          comp = api.oklchToHex(l, Math.min(c * 1.6, 0.37), (h + 300) % 360);
+          break;
+
+        case "random":
+          // Four fully random OKLCH colors with usable lightness
+          accent = api.oklchToHex(0.55 + Math.random() * 0.30, 0.08 + Math.random() * 0.22, Math.random() * 360);
+          warm = api.oklchToHex(0.55 + Math.random() * 0.30, 0.08 + Math.random() * 0.22, Math.random() * 360);
+          cool = api.oklchToHex(0.55 + Math.random() * 0.30, 0.08 + Math.random() * 0.22, Math.random() * 360);
+          comp = api.oklchToHex(0.55 + Math.random() * 0.30, 0.08 + Math.random() * 0.22, Math.random() * 360);
+          break;
+
+        default:
+          return { accent: hex, warm: hex, cool: hex, comp: hex };
+      }
+      return { accent: accent, warm: warm, cool: cool, comp: comp };
+    }
+
+    function derive() {
+      if (isManual) return;
+      var hex = baseColor.value;
+      var mode = harmonyMode.value;
+      if (mode === "manual") { isManual = true; return; }
+      var palette = generatePalette(hex, mode);
+      sAccent.value = palette.accent;
+      sWarm.value = palette.warm;
+      sCool.value = palette.cool;
+      sComp.value = palette.comp;
+      updateHexDisplays();
+      updatePreview();
+    }
+
+    function updateHexDisplays() {
+      baseHex.textContent = baseColor.value;
+      document.querySelector('[data-slot="accent"]').textContent = sAccent.value;
+      document.querySelector('[data-slot="warm"]').textContent = sWarm.value;
+      document.querySelector('[data-slot="cool"]').textContent = sCool.value;
+      document.querySelector('[data-slot="comp"]').textContent = sComp.value;
+      if (showSemantics.checked) {
+        document.querySelector('[data-slot="success"]').textContent = semSuccess.value;
+        document.querySelector('[data-slot="warning"]').textContent = semWarning.value;
+        document.querySelector('[data-slot="error"]').textContent = semError.value;
+        document.querySelector('[data-slot="info"]').textContent = semInfo.value;
+      }
+    }
+
+    // --- Live preview ---
+    function updatePreview() {
+      var a = sAccent.value, w = sWarm.value, c = sCool.value, comp = sComp.value;
+      // Update preview bar
+      var bar = document.getElementById("pg-preview-bar");
+      var spans = bar.querySelectorAll("span");
+      spans[0].style.background = a;
+      spans[1].style.background = w;
+      spans[2].style.background = c;
+      spans[3].style.background = comp;
+      // Update sample elements
+      document.getElementById("pg-pv-h1").style.color = a;
+      document.getElementById("pg-pv-link").style.color = a;
+      document.getElementById("pg-pv-badge-a").style.borderColor = a;
+      document.getElementById("pg-pv-badge-a").style.color = a;
+      document.getElementById("pg-pv-badge-w").style.borderColor = w;
+      document.getElementById("pg-pv-badge-w").style.color = w;
+      document.getElementById("pg-pv-badge-c").style.borderColor = c;
+      document.getElementById("pg-pv-badge-c").style.color = c;
+      document.getElementById("pg-pv-badge-comp").style.borderColor = comp;
+      document.getElementById("pg-pv-badge-comp").style.color = comp;
+      document.getElementById("pg-pv-code").querySelector(".pg-pv-kw").style.color = w;
+      document.getElementById("pg-pv-code").querySelector(".pg-pv-str").style.color = a;
+    }
+
+    // --- Events ---
+    baseColor.addEventListener("input", function () {
+      isManual = false;
+      if (harmonyMode.value === "manual") harmonyMode.value = "split";
+      // Random mode ignores base color — but still re-derive for other modes
+      derive();
+    });
+    harmonyMode.addEventListener("change", function () {
+      isManual = (this.value === "manual");
+      if (!isManual) {
+        // For random, derive immediately (ignores base color internally)
+        derive();
+      }
+    });
+    document.getElementById("pg-shuffle-btn").addEventListener("click", function () {
+      isManual = false;
+      if (harmonyMode.value === "manual") harmonyMode.value = "random";
+      derive();
+    });
+    [sAccent, sWarm, sCool, sComp].forEach(function (inp) {
+      inp.addEventListener("input", function () {
+        isManual = true;
+        harmonyMode.value = "manual";
+        updateHexDisplays();
+        updatePreview();
+      });
+    });
+    [semSuccess, semWarning, semError, semInfo].forEach(function (inp) {
+      inp.addEventListener("input", function () {
+        updateHexDisplays();
+      });
+    });
+    showSemantics.addEventListener("change", function () {
+      semanticsEdit.style.display = this.checked ? "" : "none";
+    });
+
+    // --- Save ---
+    saveBtn.addEventListener("click", function () {
+      var name = nameInput.value.trim();
+      if (!name) { showToast("Enter a preset name", "error"); nameInput.focus(); return; }
+      var key = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      if (!key) { showToast("Invalid name", "error"); return; }
+
+      // Check for collision with built-in
+      if (api.getBuiltinMaps()[key]) {
+        showToast("Name conflicts with a built-in preset", "error");
+        return;
+      }
+
+      var data = {
+        name: name,
+        description: descInput.value.trim() || "",
+        accent: sAccent.value,
+        warm: sWarm.value,
+        cool: sCool.value,
+        comp: sComp.value
+      };
+      if (showSemantics.checked) {
+        data.semantics = {
+          success: semSuccess.value,
+          warning: semWarning.value,
+          error: semError.value,
+          info: semInfo.value
+        };
+      }
+
+      if (window.pywebview && window.pywebview.api) {
+        window.pywebview.api.save_user_gradient_map(key, data).then(function () {
+          api.refreshUserMaps(function () {
+            renderGrid();
+            showToast("Saved \"" + name + "\"", "ok");
+            nameInput.value = "";
+            descInput.value = "";
+          });
+        });
+      } else {
+        showToast("Bridge not available", "error");
+      }
+    });
+
+    // --- Apply (live, without saving) ---
+    applyBtn.addEventListener("click", function () {
+      var root = document.documentElement.style;
+      var hex = sAccent.value;
+      var r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+
+      // Apply palette to CSS vars directly
+      root.setProperty("--accent", hex);
+      root.setProperty("--accent-dim", hex + "cc");
+      root.setProperty("--accent-glow", "rgba(" + r + "," + g + "," + b + ",0.06)");
+      root.setProperty("--accent-border", "rgba(" + r + "," + g + "," + b + ",0.15)");
+      root.setProperty("--warm", sWarm.value);
+      root.setProperty("--cool", sCool.value);
+      root.setProperty("--comp", sComp.value);
+
+      if (showSemantics.checked) {
+        root.setProperty("--success", semSuccess.value);
+        root.setProperty("--warning", semWarning.value);
+        root.setProperty("--error", semError.value);
+        root.setProperty("--info", semInfo.value);
+      }
+
+      // Persist to theme-defaults.json with full palette embedded
+      var palette = { warm: sWarm.value, cool: sCool.value, comp: sComp.value };
+      if (showSemantics.checked) {
+        palette.semantics = {
+          success: semSuccess.value,
+          warning: semWarning.value,
+          error: semError.value,
+          info: semInfo.value
+        };
+      }
+      var presetName = nameInput.value.trim() || "unsaved";
+      var presetKey = presetName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "unsaved";
+
+      if (window.pywebview && window.pywebview.api && window.pywebview.api.save_theme_defaults) {
+        window.pywebview.api.save_theme_defaults(hex, "split", false, "preset", presetKey, palette);
+      }
+      showToast("Applied to site", "ok");
+    });
+
+    // --- Clipboard ---
+    function copyToClipboard(text) {
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(text);
+      } else {
+        var ta = document.createElement("textarea");
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+      }
+    }
+
+    // --- Init ---
+    derive();
+    updatePreview();
+    renderGrid();
+  }
+
+  boot();
+})();
+</script>

@@ -3,11 +3,15 @@
 ADO Stats Collector — Prototype
 
 Pulls Azure DevOps sprint data and generates a hyperspace-compatible markdown
-dashboard file. Designed to run standalone with a PAT for authentication.
+dashboard file.
+
+Authentication:
+    Primary:   Azure CLI cached credentials (run 'az login' first)
+    Fallback:  ADO_PAT environment variable (Personal Access Token)
 
 Usage:
-    # Set your PAT as an environment variable
-    set ADO_PAT=your-personal-access-token
+    # Ensure you're logged in to Azure CLI
+    az login
 
     # Run from the .hypervisor/tools/ directory
     python ado_collector.py
@@ -16,13 +20,13 @@ Usage:
     python ado_collector.py --output ../../prototypes/ado-dashboard.md
 
 Requirements:
-    pip install requests
+    pip install requests azure-identity
 
 Configuration:
-    ADO_PAT          - Personal Access Token (env var or .env file)
     ADO_ORG          - Organization name (default: CyberInnovationCenter)
     ADO_PROJECT      - Project name (default: Cyber.org)
     ADO_TEAM         - Team name (default: Cyber.org Team)
+    ADO_PAT          - Personal Access Token (optional fallback if az login unavailable)
 """
 
 import argparse
@@ -50,12 +54,23 @@ DEFAULT_TEAM = "Cyber.org Team"
 BASE_URL_TEMPLATE = "https://dev.azure.com/{org}"
 
 
+class ADOConfigError(Exception):
+    """Raised when ADO configuration/auth is unavailable."""
+    pass
+
+
 def load_config():
     """Load configuration from environment variables.
 
     Auth priority:
-      1. azure-identity (DefaultAzureCredential) — no PAT needed
+      1. AzureCliCredential (cached 'az login' session) — preferred
       2. ADO_PAT environment variable — legacy fallback
+
+    Returns:
+        dict with org, project, team, and auth settings.
+
+    Raises:
+        ADOConfigError: If no auth method is available.
     """
     # Try loading from .env file in the same directory
     env_path = Path(__file__).parent / ".env"
@@ -68,19 +83,20 @@ def load_config():
 
     pat = os.environ.get("ADO_PAT")
 
-    # Determine auth method
+    # Determine auth method — prefer AzureCliCredential (uses cached az login)
     use_entra = False
     try:
-        from azure.identity import DefaultAzureCredential  # noqa: F401
+        from azure.identity import AzureCliCredential  # noqa: F401
         use_entra = True
     except ImportError:
         pass
 
     if not use_entra and not pat:
-        print("ERROR: No auth method available.")
-        print("  Install azure-identity (pip install azure-identity) for Entra ID auth,")
-        print("  or set ADO_PAT environment variable.")
-        sys.exit(1)
+        raise ADOConfigError(
+            "No auth method available. "
+            "Run 'az login' (requires azure-identity package), "
+            "or set ADO_PAT environment variable."
+        )
 
     return {
         "pat": pat,
@@ -99,7 +115,7 @@ class ADOClient:
     """Minimal Azure DevOps REST API client.
 
     Supports two auth modes:
-      - Entra ID (DefaultAzureCredential) — preferred, uses bearer tokens
+      - AzureCliCredential (cached 'az login' session) — preferred
       - PAT (Basic auth) — legacy fallback
     """
 
@@ -113,8 +129,8 @@ class ADOClient:
         self.session.headers.update({"Content-Type": "application/json"})
 
         if use_entra:
-            from azure.identity import DefaultAzureCredential
-            self._credential = DefaultAzureCredential()
+            from azure.identity import AzureCliCredential
+            self._credential = AzureCliCredential()
             self._refresh_token()
         elif pat:
             token = base64.b64encode(f":{pat}".encode()).decode()
@@ -444,7 +460,12 @@ def main():
     print("ADO Stats Collector")
     print("=" * 40)
 
-    config = load_config()
+    try:
+        config = load_config()
+    except ADOConfigError as e:
+        print(f"  ERROR: {e}")
+        sys.exit(1)
+
     client = ADOClient(config["org"], pat=config.get("pat"), use_entra=config.get("use_entra", False))
 
     # 1. Get current iteration

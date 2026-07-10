@@ -179,7 +179,9 @@ TOP_BAR = """\
             <div class="nav-group">
               <div class="nav-group-label">Theme</div>
               <div class="settings-preset-row" id="preset-selector">
-                <div class="preset-chips" id="preset-chips"></div>
+                <select class="preset-select" id="preset-select">
+                  <option value="custom">Custom</option>
+                </select>
               </div>
               <div class="settings-theme-row" id="theme-custom-row">
                 <input type="color" id="accent-color" class="settings-color-input" value="#00ff41">

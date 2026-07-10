@@ -243,6 +243,8 @@
   }
 
   // --- Gradient map presets (curated palettes that bypass algorithmic derivation) ---
+  var userGradientMaps = {};
+
   var GRADIENT_MAPS = {
     "frost": {
       name: "Frost",
@@ -447,7 +449,7 @@
   }
 
   function applyGradientMap(presetKey) {
-    var preset = GRADIENT_MAPS[presetKey];
+    var preset = GRADIENT_MAPS[presetKey] || userGradientMaps[presetKey];
     if (!preset) return false;
 
     var root = document.documentElement;
@@ -521,9 +523,18 @@
     var saved = null;
     try { saved = localStorage.getItem(STORAGE_KEY); } catch (e) {}
 
-    // On load: apply preset if active, otherwise apply saved custom accent
-    if (themeMode === "preset" && activeGradientMap && GRADIENT_MAPS[activeGradientMap]) {
+    // On load: apply preset if active, otherwise apply saved custom accent.
+    // For user presets, the async loadUserGradientMaps callback handles
+    // re-application after maps arrive — don't clobber with applyAccent here.
+    var storedThemeMode = null, storedGradMap = null;
+    try { storedThemeMode = localStorage.getItem(THEME_MODE_KEY); } catch (e) {}
+    try { storedGradMap = localStorage.getItem(GRADIENT_MAP_KEY); } catch (e) {}
+
+    if (themeMode === "preset" && activeGradientMap && (GRADIENT_MAPS[activeGradientMap] || userGradientMaps[activeGradientMap])) {
       applyGradientMap(activeGradientMap);
+    } else if (storedThemeMode === "preset" && storedGradMap && !GRADIENT_MAPS[storedGradMap]) {
+      // User preset — defer to loadUserGradientMaps callback; just set picker value
+      if (saved) colorPicker.value = saved;
     } else if (saved) {
       colorPicker.value = saved;
       applyAccent(saved);
@@ -584,56 +595,56 @@
     });
   }
 
-  // --- Preset selector UI (rendered dynamically) ---
-  var presetChipsContainer = document.getElementById("preset-chips");
+  // --- Preset selector UI (select dropdown) ---
+  var presetSelect = document.getElementById("preset-select");
   var themeCustomRow = document.getElementById("theme-custom-row");
 
-  function renderPresetChips() {
-    if (!presetChipsContainer) return;
-    var html = "";
-    // "Custom" chip
-    html += '<div class="preset-chip' + (themeMode === "custom" ? " active" : "") + '" data-preset="custom">';
-    html += '<span class="preset-chip-swatch" style="background:var(--accent)"></span>';
-    html += 'Custom</div>';
-    // Preset chips
+  function populatePresetSelect() {
+    if (!presetSelect) return;
+    // Clear existing options except the first (Custom)
+    while (presetSelect.options.length > 1) presetSelect.remove(1);
+
+    // Add built-in gradient map options
     var keys = Object.keys(GRADIENT_MAPS);
     for (var i = 0; i < keys.length; i++) {
       var key = keys[i];
-      var p = GRADIENT_MAPS[key];
-      var isActive = (themeMode === "preset" && activeGradientMap === key);
-      html += '<div class="preset-chip' + (isActive ? " active" : "") + '" data-preset="' + key + '">';
-      html += '<span class="preset-chip-swatch" style="background:' + p.accent + '"></span>';
-      html += p.name + '</div>';
+      var opt = document.createElement("option");
+      opt.value = key;
+      opt.textContent = GRADIENT_MAPS[key].name;
+      presetSelect.appendChild(opt);
     }
-    presetChipsContainer.innerHTML = html;
 
-    // Wire click events
-    var chips = presetChipsContainer.querySelectorAll(".preset-chip");
-    chips.forEach(function (chip) {
-      chip.addEventListener("click", function () {
-        var preset = this.getAttribute("data-preset");
-        if (preset === "custom") {
-          switchToCustomMode();
-        } else {
-          applyGradientMap(preset);
-        }
-        updatePresetSelector();
-        persistThemeDefaults();
-      });
-    });
+    // Add user gradient maps (with separator if any exist)
+    var userKeys = Object.keys(userGradientMaps);
+    if (userKeys.length > 0) {
+      var sep = document.createElement("option");
+      sep.disabled = true;
+      sep.textContent = "── User Presets ──";
+      presetSelect.appendChild(sep);
+      for (var j = 0; j < userKeys.length; j++) {
+        var uKey = userKeys[j];
+        var uOpt = document.createElement("option");
+        uOpt.value = uKey;
+        uOpt.textContent = userGradientMaps[uKey].name;
+        presetSelect.appendChild(uOpt);
+      }
+    }
+
+    // Set initial selection
+    if (themeMode === "preset" && activeGradientMap) {
+      presetSelect.value = activeGradientMap;
+    } else {
+      presetSelect.value = "custom";
+    }
   }
 
   function updatePresetSelector() {
-    if (!presetChipsContainer) return;
-    var chips = presetChipsContainer.querySelectorAll(".preset-chip");
-    chips.forEach(function (chip) {
-      var preset = chip.getAttribute("data-preset");
-      if (preset === "custom") {
-        chip.classList.toggle("active", themeMode === "custom");
-      } else {
-        chip.classList.toggle("active", themeMode === "preset" && activeGradientMap === preset);
-      }
-    });
+    if (!presetSelect) return;
+    if (themeMode === "preset" && activeGradientMap) {
+      presetSelect.value = activeGradientMap;
+    } else {
+      presetSelect.value = "custom";
+    }
     // Show/hide picker + mode toggle based on mode
     if (themeCustomRow) {
       var picker = themeCustomRow.querySelector(".settings-color-input");
@@ -643,6 +654,19 @@
     }
   }
 
+  if (presetSelect) {
+    presetSelect.addEventListener("change", function () {
+      var val = this.value;
+      if (val === "custom") {
+        switchToCustomMode();
+      } else {
+        applyGradientMap(val);
+      }
+      updatePresetSelector();
+      persistThemeDefaults();
+    });
+  }
+
   function persistThemeDefaults() {
     // Persist to theme-defaults.json via bridge if available
     if (typeof savePreference === "function") {
@@ -650,14 +674,51 @@
       var bwToggle = document.getElementById("a11y-bw-theme");
       var bwTheme = bwToggle ? bwToggle.checked : false;
       if (window.pywebview && window.pywebview.api && window.pywebview.api.save_theme_defaults) {
-        window.pywebview.api.save_theme_defaults(accent, paletteMode, bwTheme, themeMode, activeGradientMap);
+        // When in preset mode, pass the full palette so theme-defaults.json
+        // is self-contained (Hyperagent reads this without looking up the key)
+        var palette = null;
+        if (themeMode === "preset" && activeGradientMap) {
+          var preset = GRADIENT_MAPS[activeGradientMap] || userGradientMaps[activeGradientMap];
+          if (preset) {
+            palette = { warm: preset.warm, cool: preset.cool, comp: preset.comp };
+            if (preset.semantics) palette.semantics = preset.semantics;
+          }
+        }
+        window.pywebview.api.save_theme_defaults(accent, paletteMode, bwTheme, themeMode, activeGradientMap, palette);
       }
     }
   }
 
-  // Render on load
-  renderPresetChips();
-  updatePresetSelector();
+  // Render on load — fetch user gradient maps from bridge, then populate
+  function loadUserGradientMaps(cb) {
+    if (window.pywebview && window.pywebview.api && window.pywebview.api.get_user_gradient_maps) {
+      window.pywebview.api.get_user_gradient_maps().then(function (maps) {
+        userGradientMaps = maps || {};
+        if (cb) cb();
+      }).catch(function () { if (cb) cb(); });
+    } else {
+      if (cb) cb();
+    }
+  }
+
+  loadUserGradientMaps(function () {
+    populatePresetSelect();
+    updatePresetSelector();
+    // After user maps load, re-check if a user preset should be active.
+    // On desktop app launch, localStorage is ephemeral — applyLoadedPreferences
+    // seeds it from preferences.json, but the JS themeMode/activeGradientMap
+    // variables were initialized before that seeding happened. Re-read from
+    // localStorage (now seeded) to catch user presets.
+    var storedMode = null, storedMap = null;
+    try { storedMode = localStorage.getItem(THEME_MODE_KEY); } catch (e) {}
+    try { storedMap = localStorage.getItem(GRADIENT_MAP_KEY); } catch (e) {}
+    if (storedMode === "preset" && storedMap && userGradientMaps[storedMap]) {
+      themeMode = "preset";
+      activeGradientMap = storedMap;
+      applyGradientMap(storedMap);
+      updatePresetSelector();
+    }
+  });
 
   // --- Home title icon: cycle palette colors on hover ---
   var titleIcon = document.querySelector(".home-title-icon");
@@ -724,3 +785,24 @@
       }
     });
   }
+
+  // --- Public API for palette generator utility ---
+  window.__palette = {
+    getBuiltinMaps: function () { return GRADIENT_MAPS; },
+    getUserMaps: function () { return userGradientMaps; },
+    applyGradientMap: applyGradientMap,
+    switchToCustomMode: switchToCustomMode,
+    buildPaletteOKLCH: buildPaletteOKLCH,
+    hexToOklch: hexToOklch,
+    oklchToHex: oklchToHex,
+    getPaletteMode: function () { return paletteMode; },
+    getPaletteModes: function () { return PALETTE_MODES; },
+    getActiveGradientMap: function () { return activeGradientMap; },
+    refreshUserMaps: function (cb) {
+      loadUserGradientMaps(function () {
+        populatePresetSelect();
+        updatePresetSelector();
+        if (cb) cb();
+      });
+    }
+  };
