@@ -15,56 +15,14 @@ from .config import OUTPUT_DIR, CATEGORY_ICONS, CATEGORY_LABELS
 _THEME_DEFAULTS_PATH = OUTPUT_DIR.parent / "theme-defaults.json"
 
 
-def _load_theme_defaults_script():
-    """Load theme-defaults.json and return an inline JS snippet that seeds localStorage."""
-    if not _THEME_DEFAULTS_PATH.exists():
-        return ""
-    try:
-        data = json.loads(_THEME_DEFAULTS_PATH.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError):
-        return ""
-
-    accent = data.get("accent", "")
-    palette_mode = data.get("paletteMode", "")
-    bw_theme = data.get("bwTheme", False)
-    theme_mode = data.get("mode", "custom")
-    gradient_map = data.get("gradientMap", "")
-
-    # Only seed localStorage if no user preference exists yet
-    parts = []
-    if accent:
-        parts.append(
-            f'if(!localStorage.getItem("hypervisor-accent"))'
-            f'{{localStorage.setItem("hypervisor-accent","{accent}")}}'
-        )
-    if palette_mode:
-        parts.append(
-            f'if(!localStorage.getItem("hypervisor-palette-mode"))'
-            f'{{localStorage.setItem("hypervisor-palette-mode","{palette_mode}")}}'
-        )
-    if bw_theme:
-        parts.append(
-            'if(!localStorage.getItem("hypervisor-a11y-bw-theme"))'
-            '{localStorage.setItem("hypervisor-a11y-bw-theme","1");'
-            'document.documentElement.classList.add("a11y-bw-theme")}'
-        )
-    if theme_mode:
-        parts.append(
-            f'if(!localStorage.getItem("hypervisor-theme-mode"))'
-            f'{{localStorage.setItem("hypervisor-theme-mode","{theme_mode}")}}'
-        )
-    if gradient_map:
-        parts.append(
-            f'if(!localStorage.getItem("hypervisor-gradient-map"))'
-            f'{{localStorage.setItem("hypervisor-gradient-map","{gradient_map}")}}'
-        )
-
-    if not parts:
-        return ""
-    return "try{" + ";".join(parts) + "}catch(e){}"
+# DEPRECATED: Theme state now lives in preferences.json, loaded via the JS bridge.
+# No inline script needed — the baked-in seeding was the source of palette loss bugs.
+# These remain as empty stubs so any import references don't break.
+def get_theme_defaults_script():
+    return ""
 
 
-THEME_DEFAULTS_SCRIPT = _load_theme_defaults_script()
+THEME_DEFAULTS_SCRIPT = ""
 
 
 # ---------------------------------------------------------------------------
@@ -362,7 +320,6 @@ LEGACY_PAGE_TEMPLATE = """\
       sequence: { useMaxWidth: true, mirrorActors: false }
     });
   </script>
-  <script>{{THEME_DEFAULTS}}</script>
   <script src="/app.js"></script>
 </body>
 </html>"""
@@ -478,7 +435,6 @@ def build_page(content_html, title, rel_path_str, toc_html="", backlinks_html=""
         .replace("{{TOPBAR}}", topbar)
         .replace("{{SITE_NAV}}", site_nav_html)
         .replace("{{TOC_SIDEBAR}}", toc_sidebar)
-        .replace("{{THEME_DEFAULTS}}", THEME_DEFAULTS_SCRIPT)
         .replace("{{BUILD_ID}}", build_id)
         .replace("{{REL_PATH}}", rel_path_str)
         .replace("{{CONTENT}}", full_content)
@@ -552,7 +508,6 @@ SHELL_TEMPLATE = """\
   </div>
   <button class="scroll-top" id="scroll-top" aria-label="Scroll to top"><i data-lucide="arrow-up"></i></button>
   <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
-  <script>{{THEME_DEFAULTS}}</script>
   <script src="/app.js"></script>
 </body>
 </html>"""
@@ -587,6 +542,5 @@ def build_shell(build_id, site_nav_html=None):
         SHELL_TEMPLATE
         .replace("{{TOPBAR}}", topbar)
         .replace("{{SITE_NAV}}", site_nav_html)
-        .replace("{{THEME_DEFAULTS}}", THEME_DEFAULTS_SCRIPT)
         .replace("{{BUILD_ID}}", build_id)
     )

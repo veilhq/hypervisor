@@ -170,5 +170,9 @@
   "hyperline": {
     "category": "application",
     "description": "The Hyperline terminal emulator app (.hyperspace/.hyperline/)"
+  },
+  "webgl": {
+    "category": "technology",
+    "description": "WebGL/WebGL2 GPU rendering and GLSL shaders"
   }
 }

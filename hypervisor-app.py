@@ -154,6 +154,7 @@ class HypervisorAPI:
     def __init__(self, watcher):
         self._window = None
         self._watcher = watcher
+        self._prefs_lock = __import__("threading").Lock()
 
     def set_window(self, window):
         """Set the window reference after creation (needed for evaluate_js)."""
@@ -412,42 +413,9 @@ class HypervisorAPI:
         return {"ok": True}
 
     def save_theme_defaults(self, accent, palette_mode, bw_theme, mode=None, gradient_map=None, palette=None):
-        """Save the current theme settings as the site default.
-
-        These defaults are baked into the build so new installs or cleared
-        localStorage will start with the saved theme.
-
-        When mode='preset', the palette dict should contain the full colors
-        (warm, cool, comp, semantics) so consumers like Hyperagent can
-        reconstruct the theme without needing to look up the preset key.
-
-        Args:
-            accent: Hex color string (e.g., '#00ff41')
-            palette_mode: One of split/triadic/analogous/square/complement
-            bw_theme: Boolean for B&W accessibility mode
-            mode: 'custom' or 'preset' (default: 'custom' for backward compat)
-            gradient_map: Preset key when mode='preset' (e.g., 'blade-runner')
-            palette: Dict with warm, cool, comp, and optional semantics (for preset mode)
+        """DEPRECATED: Theme state now lives entirely in preferences.json.
+        Kept as a no-op for backward compat with any JS that still calls it.
         """
-        defaults_path = OUTPUT_DIR.parent / "theme-defaults.json"
-        theme_mode = mode or "custom"
-        data = {
-            "mode": theme_mode,
-            "accent": accent,
-            "paletteMode": palette_mode,
-            "bwTheme": bw_theme,
-            "gradientMap": gradient_map,
-        }
-
-        # Embed full palette colors when provided (preset mode)
-        if palette and isinstance(palette, dict):
-            data["warm"] = palette.get("warm")
-            data["cool"] = palette.get("cool")
-            data["comp"] = palette.get("comp")
-            if palette.get("semantics"):
-                data["semantics"] = palette["semantics"]
-
-        defaults_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
         return {"ok": True}
 
     def get_status(self):
@@ -470,16 +438,29 @@ class HypervisorAPI:
         """Persist a user preference to disk so it survives app restarts.
 
         Preferences are stored in .hypervisor/preferences.json.
+        Uses a lock + atomic write (temp file → rename) to prevent concurrent
+        bridge calls from reading a half-written file and nuking existing data.
         """
         prefs_path = OUTPUT_DIR.parent / "preferences.json"
-        prefs = {}
-        if prefs_path.exists():
-            try:
-                prefs = json.loads(prefs_path.read_text(encoding="utf-8"))
-            except (json.JSONDecodeError, OSError):
-                prefs = {}
-        prefs[key] = value
-        prefs_path.write_text(json.dumps(prefs, indent=2), encoding="utf-8")
+        with self._prefs_lock:
+            prefs = {}
+            if prefs_path.exists():
+                try:
+                    prefs = json.loads(prefs_path.read_text(encoding="utf-8"))
+                except (json.JSONDecodeError, OSError):
+                    # File is corrupt or unreadable — DON'T overwrite blindly.
+                    # Try once more after a brief pause (write may be in-flight).
+                    import time
+                    time.sleep(0.05)
+                    try:
+                        prefs = json.loads(prefs_path.read_text(encoding="utf-8"))
+                    except (json.JSONDecodeError, OSError):
+                        prefs = {}
+            prefs[key] = value
+            # Atomic write: write to temp file then replace
+            tmp_path = prefs_path.with_suffix(".tmp")
+            tmp_path.write_text(json.dumps(prefs, indent=2), encoding="utf-8")
+            tmp_path.replace(prefs_path)
         return {"ok": True}
 
     def load_preferences(self):
@@ -492,11 +473,38 @@ class HypervisorAPI:
         except (json.JSONDecodeError, OSError):
             return {}
 
-    def get_user_gradient_maps(self):
-        """Return all user-created gradient map presets.
+    def save_preferences_batch(self, updates):
+        """Merge multiple preference keys into preferences.json in one write.
 
-        Stored in preferences.json under the 'userGradientMaps' key.
-        Returns a dict of {key: {name, description, accent, warm, cool, comp, semantics}}.
+        Args:
+            updates: Dict of {key: value} pairs to merge into the file.
+                     Preserves all existing keys not in updates (e.g. userGradientMaps).
+        """
+        prefs_path = OUTPUT_DIR.parent / "preferences.json"
+        with self._prefs_lock:
+            prefs = {}
+            if prefs_path.exists():
+                try:
+                    prefs = json.loads(prefs_path.read_text(encoding="utf-8"))
+                except (json.JSONDecodeError, OSError):
+                    import time
+                    time.sleep(0.05)
+                    try:
+                        prefs = json.loads(prefs_path.read_text(encoding="utf-8"))
+                    except (json.JSONDecodeError, OSError):
+                        prefs = {}
+            # Merge flat keys only — skip nested objects passed from JS
+            for k, v in updates.items():
+                if isinstance(v, str) or isinstance(v, (int, float, bool)):
+                    prefs[k] = v
+            tmp_path = prefs_path.with_suffix(".tmp")
+            tmp_path.write_text(json.dumps(prefs, indent=2), encoding="utf-8")
+            tmp_path.replace(prefs_path)
+        return {"ok": True}
+
+    def get_user_gradient_maps(self):
+        """DEPRECATED: User maps are now returned as part of load_preferences().
+        Kept for backward compat with palette-generator.html.
         """
         prefs_path = OUTPUT_DIR.parent / "preferences.json"
         if not prefs_path.exists():
@@ -516,16 +524,19 @@ class HypervisorAPI:
                   optional semantics {success, warning, error, info}
         """
         prefs_path = OUTPUT_DIR.parent / "preferences.json"
-        prefs = {}
-        if prefs_path.exists():
-            try:
-                prefs = json.loads(prefs_path.read_text(encoding="utf-8"))
-            except (json.JSONDecodeError, OSError):
-                prefs = {}
-        if "userGradientMaps" not in prefs:
-            prefs["userGradientMaps"] = {}
-        prefs["userGradientMaps"][key] = data
-        prefs_path.write_text(json.dumps(prefs, indent=2), encoding="utf-8")
+        with self._prefs_lock:
+            prefs = {}
+            if prefs_path.exists():
+                try:
+                    prefs = json.loads(prefs_path.read_text(encoding="utf-8"))
+                except (json.JSONDecodeError, OSError):
+                    prefs = {}
+            if "userGradientMaps" not in prefs:
+                prefs["userGradientMaps"] = {}
+            prefs["userGradientMaps"][key] = data
+            tmp_path = prefs_path.with_suffix(".tmp")
+            tmp_path.write_text(json.dumps(prefs, indent=2), encoding="utf-8")
+            tmp_path.replace(prefs_path)
         return {"ok": True, "key": key}
 
     def delete_user_gradient_map(self, key):
@@ -535,18 +546,21 @@ class HypervisorAPI:
             key: The preset key to remove.
         """
         prefs_path = OUTPUT_DIR.parent / "preferences.json"
-        if not prefs_path.exists():
-            return {"ok": False, "error": "No preferences file"}
-        try:
-            prefs = json.loads(prefs_path.read_text(encoding="utf-8"))
-        except (json.JSONDecodeError, OSError):
-            return {"ok": False, "error": "Failed to read preferences"}
-        maps = prefs.get("userGradientMaps", {})
-        if key not in maps:
-            return {"ok": False, "error": f"Preset '{key}' not found"}
-        del maps[key]
-        prefs["userGradientMaps"] = maps
-        prefs_path.write_text(json.dumps(prefs, indent=2), encoding="utf-8")
+        with self._prefs_lock:
+            if not prefs_path.exists():
+                return {"ok": False, "error": "No preferences file"}
+            try:
+                prefs = json.loads(prefs_path.read_text(encoding="utf-8"))
+            except (json.JSONDecodeError, OSError):
+                return {"ok": False, "error": "Failed to read preferences"}
+            maps = prefs.get("userGradientMaps", {})
+            if key not in maps:
+                return {"ok": False, "error": f"Preset '{key}' not found"}
+            del maps[key]
+            prefs["userGradientMaps"] = maps
+            tmp_path = prefs_path.with_suffix(".tmp")
+            tmp_path.write_text(json.dumps(prefs, indent=2), encoding="utf-8")
+            tmp_path.replace(prefs_path)
         return {"ok": True}
 
     def mark_done(self, file_path):

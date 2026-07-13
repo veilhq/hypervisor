@@ -520,24 +520,20 @@
   }
 
   if (colorPicker) {
+    // Initial accent: use localStorage cache or default.
+    // The authoritative apply happens in applyAllPreferences (00-core.js)
+    // once preferences.json loads. This just prevents a flash of unstyled content.
     var saved = null;
     try { saved = localStorage.getItem(STORAGE_KEY); } catch (e) {}
-
-    // On load: apply preset if active, otherwise apply saved custom accent.
-    // For user presets, the async loadUserGradientMaps callback handles
-    // re-application after maps arrive — don't clobber with applyAccent here.
-    var storedThemeMode = null, storedGradMap = null;
-    try { storedThemeMode = localStorage.getItem(THEME_MODE_KEY); } catch (e) {}
-    try { storedGradMap = localStorage.getItem(GRADIENT_MAP_KEY); } catch (e) {}
-
-    if (themeMode === "preset" && activeGradientMap && (GRADIENT_MAPS[activeGradientMap] || userGradientMaps[activeGradientMap])) {
-      applyGradientMap(activeGradientMap);
-    } else if (storedThemeMode === "preset" && storedGradMap && !GRADIENT_MAPS[storedGradMap]) {
-      // User preset — defer to loadUserGradientMaps callback; just set picker value
-      if (saved) colorPicker.value = saved;
-    } else if (saved) {
+    if (saved) {
       colorPicker.value = saved;
-      applyAccent(saved);
+      // Only apply custom accent from cache — preset applies will come from
+      // applyAllPreferences once user maps are injected.
+      var cachedMode = null;
+      try { cachedMode = localStorage.getItem(THEME_MODE_KEY); } catch (e) {}
+      if (cachedMode !== "preset") {
+        applyAccent(saved);
+      }
     }
 
     // Debounce disk writes — the input event fires on every drag tick of the
@@ -663,62 +659,19 @@
         applyGradientMap(val);
       }
       updatePresetSelector();
-      persistThemeDefaults();
     });
   }
 
-  function persistThemeDefaults() {
-    // Persist to theme-defaults.json via bridge if available
-    if (typeof savePreference === "function") {
-      var accent = colorPicker ? colorPicker.value : "#00ff41";
-      var bwToggle = document.getElementById("a11y-bw-theme");
-      var bwTheme = bwToggle ? bwToggle.checked : false;
-      if (window.pywebview && window.pywebview.api && window.pywebview.api.save_theme_defaults) {
-        // When in preset mode, pass the full palette so theme-defaults.json
-        // is self-contained (Hyperagent reads this without looking up the key)
-        var palette = null;
-        if (themeMode === "preset" && activeGradientMap) {
-          var preset = GRADIENT_MAPS[activeGradientMap] || userGradientMaps[activeGradientMap];
-          if (preset) {
-            palette = { warm: preset.warm, cool: preset.cool, comp: preset.comp };
-            if (preset.semantics) palette.semantics = preset.semantics;
-          }
-        }
-        window.pywebview.api.save_theme_defaults(accent, paletteMode, bwTheme, themeMode, activeGradientMap, palette);
-      }
-    }
-  }
+  // Render preset selector on load (user maps injected by applyAllPreferences)
+  populatePresetSelect();
+  updatePresetSelector();
 
-  // Render on load — fetch user gradient maps from bridge, then populate
-  function loadUserGradientMaps(cb) {
-    if (window.pywebview && window.pywebview.api && window.pywebview.api.get_user_gradient_maps) {
-      window.pywebview.api.get_user_gradient_maps().then(function (maps) {
-        userGradientMaps = maps || {};
-        if (cb) cb();
-      }).catch(function () { if (cb) cb(); });
-    } else {
-      if (cb) cb();
-    }
-  }
-
-  loadUserGradientMaps(function () {
-    populatePresetSelect();
-    updatePresetSelector();
-    // After user maps load, re-check if a user preset should be active.
-    // On desktop app launch, localStorage is ephemeral — applyLoadedPreferences
-    // seeds it from preferences.json, but the JS themeMode/activeGradientMap
-    // variables were initialized before that seeding happened. Re-read from
-    // localStorage (now seeded) to catch user presets.
-    var storedMode = null, storedMap = null;
-    try { storedMode = localStorage.getItem(THEME_MODE_KEY); } catch (e) {}
-    try { storedMap = localStorage.getItem(GRADIENT_MAP_KEY); } catch (e) {}
-    if (storedMode === "preset" && storedMap && userGradientMaps[storedMap]) {
-      themeMode = "preset";
-      activeGradientMap = storedMap;
-      applyGradientMap(storedMap);
-      updatePresetSelector();
-    }
-  });
+  // --- User gradient maps injection ---
+  // Called by applyAllPreferences in 00-core.js with the maps from load_preferences().
+  // Must be called BEFORE applyGradientMap so user presets are available.
+  window.__setUserGradientMaps = function (maps) {
+    userGradientMaps = maps || {};
+  };
 
   // --- Home title icon: cycle palette colors on hover ---
   var titleIcon = document.querySelector(".home-title-icon");
@@ -799,10 +752,15 @@
     getPaletteModes: function () { return PALETTE_MODES; },
     getActiveGradientMap: function () { return activeGradientMap; },
     refreshUserMaps: function (cb) {
-      loadUserGradientMaps(function () {
-        populatePresetSelect();
-        updatePresetSelector();
+      if (window.pywebview && window.pywebview.api && window.pywebview.api.get_user_gradient_maps) {
+        window.pywebview.api.get_user_gradient_maps().then(function (maps) {
+          userGradientMaps = maps || {};
+          populatePresetSelect();
+          updatePresetSelector();
+          if (cb) cb();
+        }).catch(function () { if (cb) cb(); });
+      } else {
         if (cb) cb();
-      });
+      }
     }
   };

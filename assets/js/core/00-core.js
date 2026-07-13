@@ -12,9 +12,10 @@
   var isDesktopApp = false;
 
   // --- Persistent preferences (desktop app) ---
-  // In PyWebView, localStorage is tied to an ephemeral origin that changes
-  // between launches. Bridge preferences from a JSON file on disk into
-  // localStorage so the accent color and palette mode survive restarts.
+  // Single source of truth: preferences.json on disk.
+  // localStorage is an expendable cache — losing it is fine, prefs.json has the truth.
+  // One load on init, direct writes via bridge after that. No queue, no coordination.
+
   function savePreference(key, value) {
     try { localStorage.setItem(key, value); } catch (e) {}
     if (isDesktopApp && window.pywebview && window.pywebview.api) {
@@ -27,15 +28,17 @@
     document.body.classList.add("hv-desktop");
     var api = window.pywebview.api;
 
-    // --- Seed localStorage from disk-backed preferences ---
+    // --- Single load: get all prefs (flat keys + userGradientMaps) ---
     try {
       var prefs = api.load_preferences();
       if (prefs && typeof prefs.then === "function") {
-        prefs.then(function (data) { applyLoadedPreferences(data); });
+        prefs.then(function (data) { applyAllPreferences(data); });
       } else if (prefs && typeof prefs === "object") {
-        applyLoadedPreferences(prefs);
+        applyAllPreferences(prefs);
       }
-    } catch (e) {}
+    } catch (e) {
+      // Bridge failed — dismiss splash after safety timeout
+    }
 
     // --- Show and wire fullscreen toggle ---
     var fsBtn = document.getElementById("fullscreen-toggle");
@@ -104,12 +107,9 @@
     }
     if (saveThemeBtn) {
       saveThemeBtn.addEventListener("click", function () {
-        var accent = (document.getElementById("accent-color") || {}).value || "#00ff41";
-        var bwToggle = document.getElementById("a11y-bw-theme");
-        var bwTheme = bwToggle ? bwToggle.checked : false;
-        api.save_theme_defaults(accent, paletteMode, bwTheme).then(function () {
-          if (window.__hypervisorToast) window.__hypervisorToast("theme defaults saved");
-        });
+        // Theme state is already persisted to preferences.json on every change.
+        // This button is just a reassurance UX element now.
+        if (window.__hypervisorToast) window.__hypervisorToast("theme preferences are saved");
       });
     }
 
@@ -124,17 +124,23 @@
     }
   }
 
-  function applyLoadedPreferences(data) {
-    if (!data || typeof data !== "object") return;
+  // --- Apply all preferences from the single load_preferences() payload ---
+  function applyAllPreferences(data) {
+    if (!data || typeof data !== "object") {
+      if (window.__dismissSplash) window.__dismissSplash();
+      return;
+    }
+
+    // Seed localStorage as an expendable cache (other modules may read it)
     Object.keys(data).forEach(function (k) {
-      // Skip pins — handled by pins.js with merge logic to avoid data loss
-      if (k === "hypervisor-pins") return;
-      try { localStorage.setItem(k, data[k]); } catch (e) {}
+      if (k === "hypervisor-pins") return;       // pins.js has merge logic
+      if (k === "userGradientMaps") return;      // nested object, not a flat string
+      if (typeof data[k] === "string" || typeof data[k] === "number" || typeof data[k] === "boolean") {
+        try { localStorage.setItem(k, data[k]); } catch (e) {}
+      }
     });
-    // Re-apply accent color and palette mode if they were loaded.
-    // Palette mode must be set before applyAccent so the palette is built
-    // with the correct mode. Always call applyAccent at the end so CSS
-    // variables update even when only the palette mode changed.
+
+    // --- Theme: palette mode, accent, gradient map ---
     if (data["hypervisor-palette-mode"]) {
       paletteMode = data["hypervisor-palette-mode"];
     }
@@ -145,32 +151,28 @@
     } else {
       accentHex = (cp && cp.value) || "#00ff41";
     }
-    // Check if a gradient map preset was active — restore it instead of
-    // applying custom-mode derivation. Check preferences.json first, then
-    // fall back to localStorage (which theme.js sync init may have populated
-    // from a prior session before this function runs).
+
+    // Inject user gradient maps into theme module BEFORE applying preset
+    var userMaps = data["userGradientMaps"];
+    if (userMaps && typeof userMaps === "object" && typeof window.__setUserGradientMaps === "function") {
+      window.__setUserGradientMaps(userMaps);
+    }
+
+    // Apply gradient map preset or custom accent
     var loadedThemeMode = data["hypervisor-theme-mode"];
     var loadedGradientMap = data["hypervisor-gradient-map"];
-    if (!loadedThemeMode) {
-      try { loadedThemeMode = localStorage.getItem("hypervisor-theme-mode"); } catch (e) {}
-    }
-    if (!loadedGradientMap) {
-      try { loadedGradientMap = localStorage.getItem("hypervisor-gradient-map"); } catch (e) {}
-    }
     if (loadedThemeMode === "preset" && loadedGradientMap && typeof applyGradientMap === "function") {
       applyGradientMap(loadedGradientMap);
-      if (typeof updatePresetSelector === "function") updatePresetSelector();
     } else {
       applyAccent(accentHex);
     }
-    // Update palette mode button label and tooltip
-    if (typeof updateModeButton === "function") {
-      updateModeButton();
-    } else {
-      var mt = document.getElementById("palette-mode");
-      if (mt) mt.textContent = (PALETTE_LABELS && PALETTE_LABELS[paletteMode]) || "SPL";
-    }
-    // Re-apply screensaver preferences (mode, palette, clock, idle)
+
+    // Update UI controls
+    if (typeof populatePresetSelect === "function") populatePresetSelect();
+    if (typeof updatePresetSelector === "function") updatePresetSelector();
+    if (typeof updateModeButton === "function") updateModeButton();
+
+    // --- Screensaver ---
     if (window.__screensaver) {
       if (data["hypervisor-screensaver-mode"]) {
         window.__screensaver.setMode(data["hypervisor-screensaver-mode"]);
@@ -192,6 +194,8 @@
         }
       }
     }
+
+    // --- Zoom ---
     if (data["hypervisor-zoom"]) {
       var z = parseInt(data["hypervisor-zoom"], 10);
       if (z >= 50 && z <= 200) {
@@ -205,6 +209,9 @@
         if (zOut) zOut.classList.toggle("active", z < 100);
       }
     }
+
+    // --- Done: dismiss splash ---
+    if (window.__dismissSplash) window.__dismissSplash();
   }
 
   // Listen for the pywebview bridge to become available
