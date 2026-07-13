@@ -31,6 +31,12 @@
         try { localStorage.setItem(PALETTE_KEY, usePalette ? "1" : "0"); } catch (e) {}
         savePreference(PALETTE_KEY, usePalette ? "1" : "0");
       },
+      getDitherPattern: function () { return ditherPattern; },
+      setDitherPattern: function (p) {
+        ditherPattern = p;
+        try { localStorage.setItem(DITHER_PATTERN_KEY, p); } catch (e) {}
+        savePreference(DITHER_PATTERN_KEY, p);
+      },
       activate: function (mode) {
         if (mode && ssModes[mode]) currentMode = mode;
         activate();

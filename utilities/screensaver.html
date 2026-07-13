@@ -30,6 +30,16 @@
         <label for="ss-grid-mouse-toggle">Grid: mouse interaction</label>
         <input type="checkbox" id="ss-grid-mouse-toggle" checked>
       </div>
+      <div class="ss-setting-row">
+        <label for="ss-dither-pattern">GL Dither: pattern</label>
+        <select id="ss-dither-pattern">
+          <option value="trig">Trig Waves</option>
+          <option value="fbm">FBM Noise</option>
+          <option value="warp">Domain Warp</option>
+          <option value="voronoi-trig">Voronoi × Trig</option>
+          <option value="trig-warp-reaction">Voronoi + Warp</option>
+        </select>
+      </div>
     </div>
 
     <div class="ss-actions">
@@ -49,8 +59,7 @@
     { key: "life",      name: "Game of Life", icon: "grid-3x3",      desc: "Conway's cellular automaton — endlessly evolving" },
     { key: "grid",      name: "Grid",         icon: "grid-2x2",     desc: "Infinite perspective grid scrolling into the void" },
     { key: "gl-noise",  name: "GL Noise",     icon: "waves",         desc: "GPU-rendered fractal noise — domain warped and palette colored" },
-    { key: "gl-dither", name: "GL Dither",    icon: "scan-line",     desc: "Bayer dither on the GPU — silky smooth at any resolution" },
-    { key: "gl-chroma",  name: "GL Chroma",    icon: "droplets",      desc: "Chromatic fluid sim — paint with light" }
+    { key: "gl-dither", name: "GL Dither",    icon: "scan-line",     desc: "Bayer dither on the GPU — silky smooth at any resolution" }
   ];
 
   // app.js loads after this inline script — wait for the screensaver API
@@ -164,6 +173,13 @@
       }
     }
     initGridMouse();
+
+    // Dither pattern selector
+    var ditherPatternSelect = document.getElementById("ss-dither-pattern");
+    ditherPatternSelect.value = api.getDitherPattern ? api.getDitherPattern() : "trig";
+    ditherPatternSelect.addEventListener("change", function () {
+      if (api.setDitherPattern) api.setDitherPattern(this.value);
+    });
 
     // Launch button
     launchBtn.addEventListener("click", function () {

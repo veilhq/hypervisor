@@ -1,28 +1,14 @@
-/* === Screensaver Mode: GL Dither (WebGL2 GPU Bayer Dither) === */
+/* === Screensaver Mode: GL Dither (WebGL2 GPU Bayer Dither — Multi-Pattern) === */
 
-    // GPU port of the existing CPU dither mode.
-    // Bayer 8x8 ordered dithering with animated gradient fields — runs entirely
-    // as a fragment shader, replacing per-pixel ImageData manipulation.
+    // GPU Bayer 8x8 ordered dithering with selectable gradient pattern.
+    // Pattern is chosen via ditherPattern preference (engine head state).
 
     (function () {
-      var DITHER_FRAG = [
-        '#version 300 es',
-        'precision highp float;',
-        'uniform float u_time;',
-        'uniform vec2 u_resolution;',
-        'uniform vec3 u_accent;',
-        'uniform vec3 u_palette[4];',
-        'out vec4 fragColor;',
-        '',
-        '// Bayer 8x8 dither matrix (normalized 0-1)',
+
+      // --- Shared GLSL fragments ---
+      var BAYER_GLSL = [
         'float bayer8(vec2 pos) {',
         '    ivec2 p = ivec2(mod(pos, 8.0));',
-        '    int idx = p.x + p.y * 8;',
-        '    // Encode 8x8 Bayer matrix as bit operations',
-        '    int x = p.x ^ p.y;',
-        '    int v = ((p.y & 4) >> 1) | ((p.y & 2) << 1) | ((p.y & 1) << 3);',
-        '    v |= ((x & 4) >> 2) | ((x & 2)) | ((x & 1) << 2);',
-        '    // Alternative: direct computation matching the classic matrix',
         '    float m[64] = float[64](',
         '         0.0, 32.0,  8.0, 40.0,  2.0, 34.0, 10.0, 42.0,',
         '        48.0, 16.0, 56.0, 24.0, 50.0, 18.0, 58.0, 26.0,',
@@ -33,70 +19,207 @@
         '        15.0, 47.0,  7.0, 39.0, 13.0, 45.0,  5.0, 37.0,',
         '        63.0, 31.0, 55.0, 23.0, 61.0, 29.0, 53.0, 21.0',
         '    );',
-        '    return m[idx] / 64.0;',
+        '    return m[p.x + p.y * 8] / 64.0;',
+        '}'
+      ].join('\n');
+
+      var SIMPLEX_GLSL = [
+        'vec3 mod289(vec3 x){return x-floor(x*(1.0/289.0))*289.0;}',
+        'vec2 mod289v2(vec2 x){return x-floor(x*(1.0/289.0))*289.0;}',
+        'vec3 permute(vec3 x){return mod289((x*34.0+1.0)*x);}',
+        'float snoise(vec2 v){',
+        '  const vec4 C=vec4(0.211324865405187,0.366025403784439,-0.577350269189626,0.024390243902439);',
+        '  vec2 i=floor(v+dot(v,C.yy));',
+        '  vec2 x0=v-i+dot(i,C.xx);',
+        '  vec2 i1;i1=(x0.x>x0.y)?vec2(1.0,0.0):vec2(0.0,1.0);',
+        '  vec4 x12=x0.xyxy+C.xxzz;x12.xy-=i1;',
+        '  i=mod289v2(i);',
+        '  vec3 p=permute(permute(i.y+vec3(0.0,i1.y,1.0))+i.x+vec3(0.0,i1.x,1.0));',
+        '  vec3 m=max(0.5-vec3(dot(x0,x0),dot(x12.xy,x12.xy),dot(x12.zw,x12.zw)),0.0);',
+        '  m=m*m;m=m*m;',
+        '  vec3 x=2.0*fract(p*C.www)-1.0;',
+        '  vec3 h=abs(x)-0.5;',
+        '  vec3 ox=floor(x+0.5);',
+        '  vec3 a0=x-ox;',
+        '  m*=1.79284291400159-0.85373472095314*(a0*a0+h*h);',
+        '  vec3 g;',
+        '  g.x=a0.x*x0.x+h.x*x0.y;',
+        '  g.yz=a0.yz*x12.xz+h.yz*x12.yw;',
+        '  return 130.0*dot(m,g);',
+        '}'
+      ].join('\n');
+
+      var FBM_GLSL = [
+        'float fbm(vec2 p) {',
+        '    float v = 0.0; float a = 0.5;',
+        '    for (int i = 0; i < 3; i++) {',
+        '        v += a * (snoise(p) * 0.5 + 0.5);',
+        '        p *= 2.0; a *= 0.5;',
+        '    }',
+        '    return v;',
+        '}'
+      ].join('\n');
+
+      var VORONOI_GLSL = [
+        'vec2 hash2(vec2 p) {',
+        '    p = vec2(dot(p,vec2(127.1,311.7)), dot(p,vec2(269.5,183.3)));',
+        '    return fract(sin(p)*43758.5453);',
         '}',
-        '',
-        'void main() {',
-        '    vec2 uv = gl_FragCoord.xy / u_resolution;',
-        '    float t = u_time * 0.4;',
-        '',
-        '    // Cell size — match CPU version logic',
-        '    float cellSize = max(2.0, floor(min(u_resolution.x, u_resolution.y) / 400.0));',
-        '    vec2 cellUv = floor(gl_FragCoord.xy / cellSize) * cellSize;',
-        '    vec2 cellPos = cellUv / u_resolution;',
-        '',
-        '    // Animated gradient fields (matching CPU version)',
+        'float voronoiDist(vec2 uv, float t) {',
+        '    vec2 ip = floor(uv);',
+        '    vec2 fp = fract(uv);',
+        '    float minDist = 1.0;',
+        '    for (int y = -1; y <= 1; y++) {',
+        '        for (int x = -1; x <= 1; x++) {',
+        '            vec2 neighbor = vec2(float(x), float(y));',
+        '            vec2 point = hash2(ip + neighbor);',
+        '            point = 0.5 + 0.5*sin(t*0.5 + 6.2831*point);',
+        '            float d = length(neighbor + point - fp);',
+        '            minDist = min(minDist, d);',
+        '        }',
+        '    }',
+        '    return minDist;',
+        '}'
+      ].join('\n');
+
+      // --- Pattern-specific main() bodies ---
+      // Each returns a gradient value computation (expects cellPos, t, u_resolution available)
+
+      var PATTERN_MAIN = {};
+
+      PATTERN_MAIN.trig = [
         '    float cx = 0.5 + sin(t * 0.4) * 0.3;',
         '    float cy = 0.5 + cos(t * 0.3) * 0.3;',
         '    vec2 d = cellPos - vec2(cx, cy);',
         '    float dist = length(d);',
-        '',
         '    float g1 = 0.5 + 0.5 * sin(dist * 6.0 - t * 0.8);',
         '    float g2 = 0.5 + 0.5 * sin((cellUv.x + cellUv.y) * 0.0032 + t * 0.5);',
         '    float g3 = 0.5 + 0.5 * cos((cellUv.y - cellUv.x) * 0.0041 - t * 0.3);',
-        '    float val = g1 * 0.5 + g2 * 0.25 + g3 * 0.25;',
-        '    val = val * val;',
-        '',
-        '    // Bayer threshold',
-        '    float threshold = bayer8(gl_FragCoord.xy / cellSize);',
-        '    bool on = val > threshold;',
-        '',
-        '    if (!on) {',
-        '        fragColor = vec4(0.0, 0.0, 0.0, 1.0);',
-        '        return;',
-        '    }',
-        '',
-        '    // Color from palette (interpolate based on raw value)',
-        '    float rawVal = g1 * 0.5 + g2 * 0.25 + g3 * 0.25;',
-        '    float pos = rawVal * 3.0;',
-        '    int ci = int(min(floor(pos), 2.0));',
-        '    float frac = fract(pos);',
-        '    vec3 colA = (ci == 0) ? u_palette[0] : (ci == 1) ? u_palette[1] : u_palette[2];',
-        '    vec3 colB = (ci == 0) ? u_palette[1] : (ci == 1) ? u_palette[2] : u_palette[3];',
-        '    vec3 col = mix(colA, colB, frac);',
-        '',
-        '    fragColor = vec4(col * 0.78, 1.0);',
-        '}'
+        '    float val = g1 * 0.5 + g2 * 0.25 + g3 * 0.25;'
       ].join('\n');
 
+      PATTERN_MAIN.fbm = [
+        '    vec2 p = cellPos * 0.6;',
+        '    vec2 wobble = vec2(sin(t*0.2)*0.4, cos(t*0.15)*0.4);',
+        '    float n1 = fbm(p + wobble);',
+        '    float n2 = fbm(p + vec2(3.1, 7.2) + wobble * 0.7);',
+        '    vec2 warp = vec2(n1, n2) * 0.6;',
+        '    float val = fbm(p + warp + vec2(cos(t*0.1)*0.3, sin(t*0.13)*0.3));'
+      ].join('\n');
+
+      PATTERN_MAIN.warp = [
+        '    vec2 p = cellPos * 0.4;',
+        '    vec2 wobble = vec2(sin(t*0.1)*0.6, cos(t*0.07)*0.6);',
+        '    vec2 q = vec2(fbm(p + wobble), fbm(p + vec2(5.2, 1.3) + wobble*0.8));',
+        '    vec2 wobble2 = vec2(cos(t*0.06)*0.4, sin(t*0.09)*0.4);',
+        '    vec2 r = vec2(fbm(p + 2.5*q + vec2(1.7, 9.2) + wobble2), fbm(p + 2.5*q + vec2(8.3, 2.8) + wobble2*1.2));',
+        '    float val = fbm(p + 2.5*r);'
+      ].join('\n');
+
+      PATTERN_MAIN['voronoi-trig'] = [
+        '    vec2 vuv = cellPos * 2.0;',
+        '    float minDist = voronoiDist(vuv, t);',
+        '    float warpedX = cellPos.x + minDist * 0.6;',
+        '    float warpedY = cellPos.y + minDist * 0.4;',
+        '    float w1 = 0.5 + 0.5 * sin(warpedX * 12.0 - t * 0.8);',
+        '    float w2 = 0.5 + 0.5 * sin(warpedY * 10.0 + t * 0.6);',
+        '    float w3 = 0.5 + 0.5 * cos((warpedX + warpedY) * 8.0 - t * 0.4);',
+        '    float val = w1 * 0.4 + w2 * 0.3 + w3 * 0.3;'
+      ].join('\n');
+
+      PATTERN_MAIN['trig-warp-reaction'] = [
+        '    // Voronoi(0.7) + Warp(0.3) blend',
+        '    float vd = voronoiDist(cellPos * 2.0, t);',
+        '    vec2 p = cellPos * 0.4;',
+        '    vec2 wobble = vec2(sin(t*0.1)*0.6, cos(t*0.07)*0.6);',
+        '    vec2 q = vec2(fbm(p + wobble), fbm(p + vec2(5.2,1.3) + wobble*0.8));',
+        '    vec2 wobble2 = vec2(cos(t*0.06)*0.4, sin(t*0.09)*0.4);',
+        '    vec2 r = vec2(fbm(p + 2.5*q + vec2(1.7,9.2) + wobble2), fbm(p + 2.5*q + vec2(8.3,2.8) + wobble2*1.2));',
+        '    float warpVal = fbm(p + 2.5*r);',
+        '    float val = vd * 0.7 + warpVal * 0.3;'
+      ].join('\n');
+
+      // --- Determine which GLSL libs a pattern needs ---
+      function patternNeedsSimplex(key) {
+        return key !== 'trig';
+      }
+      function patternNeedsFBM(key) {
+        return key === 'fbm' || key === 'warp' || key === 'trig-warp-reaction';
+      }
+      function patternNeedsVoronoi(key) {
+        return key === 'voronoi-trig' || key === 'trig-warp-reaction';
+      }
+
+      // --- Build full fragment shader for a given pattern key ---
+      function buildFragShader(patternKey) {
+        var src = '#version 300 es\nprecision highp float;\n';
+        src += 'uniform float u_time;\nuniform vec2 u_resolution;\nuniform vec3 u_accent;\nuniform vec3 u_palette[4];\n';
+        src += 'out vec4 fragColor;\n\n';
+        src += BAYER_GLSL + '\n\n';
+        if (patternNeedsSimplex(patternKey)) src += SIMPLEX_GLSL + '\n\n';
+        if (patternNeedsFBM(patternKey)) src += FBM_GLSL + '\n\n';
+        if (patternNeedsVoronoi(patternKey)) src += VORONOI_GLSL + '\n\n';
+        src += 'void main() {\n';
+        src += '    vec2 uv = gl_FragCoord.xy / u_resolution;\n';
+        src += '    float t = u_time * 0.4;\n';
+        src += '    float cellSize = max(2.0, floor(min(u_resolution.x, u_resolution.y) / 400.0));\n';
+        src += '    vec2 cellUv = floor(gl_FragCoord.xy / cellSize) * cellSize;\n';
+        src += '    vec2 cellPos = cellUv / u_resolution;\n\n';
+        src += PATTERN_MAIN[patternKey] + '\n\n';
+        src += '    val = val * val;\n';
+        src += '    float threshold = bayer8(gl_FragCoord.xy / cellSize);\n';
+        src += '    bool on = val > threshold;\n';
+        src += '    if (!on) { fragColor = vec4(0.0, 0.0, 0.0, 1.0); return; }\n\n';
+        src += '    // Color from palette — smooth cubic interpolation\n';
+        src += '    float pos = clamp(val, 0.0, 1.0) * 3.0;\n';
+        src += '    float frac = smoothstep(0.0, 1.0, fract(pos));\n';
+        src += '    int ci = int(min(floor(pos), 2.0));\n';
+        src += '    vec3 colA = (ci == 0) ? u_palette[0] : (ci == 1) ? u_palette[1] : u_palette[2];\n';
+        src += '    vec3 colB = (ci == 0) ? u_palette[1] : (ci == 1) ? u_palette[2] : u_palette[3];\n';
+        src += '    vec3 col = mix(colA, colB, frac);\n';
+        src += '    fragColor = vec4(col * 0.78, 1.0);\n';
+        src += '}\n';
+        return src;
+      }
+
+      // --- Instance management ---
       var instance = null;
+      var compiledPattern = null;
 
       function glDitherInit() {
         var glCanvas = ssGetGLCanvas();
         glCanvas.width = window.innerWidth;
         glCanvas.height = window.innerHeight;
-        if (!instance || !instance.gl || instance.gl.isContextLost()) {
+        var patternKey = ditherPattern || 'trig';
+        if (!PATTERN_MAIN[patternKey]) patternKey = 'trig';
+
+        if (!instance || !instance.gl || instance.gl.isContextLost() || compiledPattern !== patternKey) {
+          var frag = buildFragShader(patternKey);
           instance = HyperGL.create({
             target: glCanvas,
-            fragment: DITHER_FRAG,
+            fragment: frag,
             loop: false
           });
+          compiledPattern = patternKey;
         } else {
           instance.resize();
         }
       }
 
       function glDitherDraw() {
+        // Hot-swap if pattern changed while active
+        var patternKey = ditherPattern || 'trig';
+        if (!PATTERN_MAIN[patternKey]) patternKey = 'trig';
+        if (compiledPattern !== patternKey) {
+          var glCanvas = ssGetGLCanvas();
+          var frag = buildFragShader(patternKey);
+          instance = HyperGL.create({
+            target: glCanvas,
+            fragment: frag,
+            loop: false
+          });
+          compiledPattern = patternKey;
+        }
         if (instance) instance.render();
       }
 
@@ -109,7 +232,6 @@
       }
 
       function glDitherPreview(ctx, w, h) {
-        // Use the CPU dither's preview logic (simplified)
         var accent = ssGetAccent();
         var rgb = ssHexToRgb(accent);
         var imgData = ctx.createImageData(w, h);

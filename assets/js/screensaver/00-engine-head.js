@@ -9,11 +9,13 @@
     var MODE_KEY = "hypervisor-screensaver-mode";
     var CLOCK_KEY = "hypervisor-screensaver-clock";
     var PALETTE_KEY = "hypervisor-screensaver-palette";
+    var DITHER_PATTERN_KEY = "hypervisor-screensaver-dither-pattern";
     var IDLE_DEFAULT = 300000; // 5 minutes
     var idleTimeout = IDLE_DEFAULT;
     var currentMode = "particles";
     var showClock = true;
     var usePalette = false;
+    var ditherPattern = "trig";
     try {
       var savedIdle = localStorage.getItem(IDLE_KEY);
       if (savedIdle) idleTimeout = parseInt(savedIdle, 10) || IDLE_DEFAULT;
@@ -23,6 +25,8 @@
       if (savedClock === "0") showClock = false;
       var savedPalette = localStorage.getItem(PALETTE_KEY);
       if (savedPalette === "1") usePalette = true;
+      var savedDitherPattern = localStorage.getItem(DITHER_PATTERN_KEY);
+      if (savedDitherPattern) ditherPattern = savedDitherPattern;
     } catch (e) {}
 
     // Build overlay DOM
@@ -103,6 +107,7 @@
         ssGLCanvas.style.left = "0";
         ssGLCanvas.style.width = "100%";
         ssGLCanvas.style.height = "100%";
+        ssGLCanvas.style.pointerEvents = "none";
         ssGLCanvas.style.display = "none";
         overlay.insertBefore(ssGLCanvas, clockEl);
       }
