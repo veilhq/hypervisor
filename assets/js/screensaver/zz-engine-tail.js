@@ -40,6 +40,21 @@
       modes: Object.keys(ssModes),
       preview: function (modeKey, extCtx, w, h) {
         if (!ssModes[modeKey]) return;
+        // WebGL modes provide their own preview method
+        if (ssModes[modeKey].gl && ssModes[modeKey].preview) {
+          ssModes[modeKey].preview(extCtx, w, h);
+          return;
+        }
+        // Fallback for GL modes without a preview method
+        if (ssModes[modeKey].gl) {
+          extCtx.fillStyle = "#000000";
+          extCtx.fillRect(0, 0, w, h);
+          extCtx.fillStyle = getAccentColor();
+          extCtx.font = "10px monospace";
+          extCtx.textAlign = "center";
+          extCtx.fillText("WebGL", w / 2, h / 2);
+          return;
+        }
         var origCtx = ssCtx;
         var origCanvas = ssCanvas;
         var proxyCanvas = { width: w, height: h };
@@ -88,9 +103,20 @@
 
       isActive = true;
       resize();
+
+      // Toggle canvas visibility based on mode type
+      var mode = ssModes[currentMode];
+      if (mode && mode.gl) {
+        canvas.style.display = "none";
+        ssGetGLCanvas().style.display = "";
+      } else {
+        canvas.style.display = "";
+        if (ssGLCanvas) ssGLCanvas.style.display = "none";
+      }
+
       ssCtx.fillStyle = "#000000";
       ssCtx.fillRect(0, 0, ssCanvas.width, ssCanvas.height);
-      if (ssModes[currentMode]) ssModes[currentMode].init();
+      if (mode) mode.init();
       overlay.classList.add("active");
       clockEl.style.display = showClock ? "" : "none";
       if (showClock) {
@@ -103,9 +129,16 @@
     function dismiss() {
       if (!isActive) return;
       isActive = false;
+      // Call cleanup on active mode if it has one
+      if (ssModes[currentMode] && ssModes[currentMode].cleanup) {
+        ssModes[currentMode].cleanup();
+      }
       overlay.classList.remove("active");
       if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
       if (clockInterval) { clearInterval(clockInterval); clockInterval = null; }
+      // Hide GL canvas on dismiss
+      if (ssGLCanvas) ssGLCanvas.style.display = "none";
+      canvas.style.display = "";
       resetIdleTimer();
     }
 
@@ -132,14 +165,23 @@
       }, true);
     });
 
-    // Track mouse position for interactive modes (particles)
+    // Track mouse position for interactive modes (shared state)
     overlay.addEventListener("mousemove", function (e) {
+      ssMouseState.prevX = ssMouseState.x;
+      ssMouseState.prevY = ssMouseState.y;
+      ssMouseState.x = e.clientX;
+      ssMouseState.y = e.clientY;
+      // Backwards compat: update particles state if it exists
       if (typeof ssParticleState !== "undefined") {
         ssParticleState.mouseX = e.clientX;
         ssParticleState.mouseY = e.clientY;
       }
     });
     overlay.addEventListener("mouseleave", function () {
+      ssMouseState.prevX = ssMouseState.x;
+      ssMouseState.prevY = ssMouseState.y;
+      ssMouseState.x = -1;
+      ssMouseState.y = -1;
       if (typeof ssParticleState !== "undefined") {
         ssParticleState.mouseX = -1;
         ssParticleState.mouseY = -1;

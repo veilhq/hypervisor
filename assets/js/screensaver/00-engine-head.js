@@ -89,3 +89,22 @@
     // Mode registry — mode files push into this
     var modes = {};
     var ssModes = modes;
+
+    // Shared mouse state — all modes (2D and WebGL) read from this
+    var ssMouseState = { x: -1, y: -1, prevX: -1, prevY: -1 };
+
+    // WebGL canvas (created lazily, shown only for GL modes)
+    var ssGLCanvas = null;
+    function ssGetGLCanvas() {
+      if (!ssGLCanvas) {
+        ssGLCanvas = document.createElement("canvas");
+        ssGLCanvas.style.position = "absolute";
+        ssGLCanvas.style.top = "0";
+        ssGLCanvas.style.left = "0";
+        ssGLCanvas.style.width = "100%";
+        ssGLCanvas.style.height = "100%";
+        ssGLCanvas.style.display = "none";
+        overlay.insertBefore(ssGLCanvas, clockEl);
+      }
+      return ssGLCanvas;
+    }

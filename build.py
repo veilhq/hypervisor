@@ -70,7 +70,7 @@ def copy_assets():
             shutil.copy2(src, OUTPUT_DIR / "style.css")
 
     # Concatenate JS modules into site/app.js
-    # Order: core/ → features/ → screensaver/
+    # Order: core/ → features/ → webgl/ → screensaver/
     if JS_DIR.exists():
         js_parts = []
         # Core modules (sorted — 00-core.js must be first)
@@ -82,6 +82,13 @@ def copy_assets():
         features_dir = JS_DIR / "features"
         if features_dir.exists():
             for js_file in sorted(features_dir.glob("*.js")):
+                if js_file.name.startswith("zz-"):
+                    continue
+                js_parts.append(js_file.read_text(encoding="utf-8"))
+        # WebGL modules (sorted — HyperGL layer, loads before screensaver)
+        webgl_dir = JS_DIR / "webgl"
+        if webgl_dir.exists():
+            for js_file in sorted(webgl_dir.glob("*.js")):
                 if js_file.name.startswith("zz-"):
                     continue
                 js_parts.append(js_file.read_text(encoding="utf-8"))
