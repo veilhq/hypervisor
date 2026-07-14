@@ -3,7 +3,7 @@
 How the Hypervisor build pipeline works — from markdown source to browsable static site.
 
 - Created: 2026-04-22T00:00
-- Updated: 2026-06-15T14:30
+- Updated: 2026-07-14T09:43
 
 ## Project Structure
 
@@ -29,7 +29,9 @@ How the Hypervisor build pipeline works — from markdown source to browsable st
 │   ├── analytics.py           # stale_documents, health_report, tag_analytics
 │   ├── intelligence.py        # session_brief, suggest_next_action, context_for_work_item
 │   ├── migration.py           # migrate_document, get_schema_changelog
-│   └── generation.py          # suggest_tags, similar_documents, outline_work_item
+│   ├── generation.py          # suggest_tags, similar_documents, outline_work_item
+│   ├── template_drift.py     # Template drift detection (markdown vs programmatic templates)
+│   └── launcher.py            # launch_hypervisor desktop app subprocess management
 ├── watcher.py                  # File watcher (watchdog) for live rebuild on .md changes
 ├── config/                     # Portable configuration (tracked in git)
 │   ├── tags.json              # Canonical tag registry (MCP server)
@@ -50,12 +52,15 @@ How the Hypervisor build pipeline works — from markdown source to browsable st
 │   ├── directory_index.py      # Dir tree helpers, home page, subdirectory index generators
 │   ├── search.py               # Search index builder
 │   ├── build_cache.py          # Content hash caching for incremental builds
-│   └── backlinks.py            # Reverse-link index from .md cross-references
+│   ├── backlinks.py            # Reverse-link index from .md cross-references
+│   ├── ideas.py                # Idea operations (delete/dismiss implemented ideas)
+│   ├── external_files.py       # .external/ import and delete operations
+│   └── work_items.py           # Work item operations (mark done, move files)
 ├── assets/                     # Static assets — source of truth for site styling & behavior
 │   ├── css/                    # Modular CSS (numbered sorted, zz-* last → site/style.css)
 │   │   ├── 00-variables.css    # CSS custom properties, resets, component base classes
 │   │   ├── 01-layout.css       # Topbar, page, footer, breadcrumbs, scroll-to-top
-│   │   ├── 02-search.css       # Search input, results dropdown, tag filtering
+│   │   ├── 02-search.css       # Search input, results dropdown, tag filtering, work item filters
 │   │   ├── 03-menus.css        # Reference menu, utilities menu, width toggle, accent picker
 │   │   ├── 04-content.css      # Markdown body, code blocks, tables, blockquotes
 │   │   ├── 05-cards.css        # Card grid, doc lists, build stats, homepage dock
@@ -63,8 +68,15 @@ How the Hypervisor build pipeline works — from markdown source to browsable st
 │   │   ├── 07-toc.css          # Floating table of contents sidebar
 │   │   ├── 08-utilities.css    # Password generator and other utility page styles
 │   │   ├── 09-effects.css      # Cursor companion, glitch effect, keyboard shortcuts
+│   │   ├── 10-splash.css       # Loading splash screen styles
+│   │   ├── 11-tabs.css         # Tabbed document interface styles
+│   │   ├── 12-drop-import.css  # Drag-and-drop .md file import zone
+│   │   ├── 13-ideas-dismiss.css # Idea dismiss button styles
+│   │   ├── 14-editor.css       # Inline markdown editor styles
+│   │   ├── 15-command-palette.css # Command palette (Ctrl+K) overlay
+│   │   ├── 16-scratch.css      # Scratch buffer / daily journal panel
 │   │   └── zz-accessibility.css # A11y panel, high contrast, reduced motion (loads last)
-│   └── js/                     # Modular JS (core/ → features/ → screensaver/ → site/app.js)
+│   └── js/                     # Modular JS (core/ → features/ → webgl/ → screensaver/ → site/app.js)
 │       ├── core/               # Foundation modules (load first, order matters)
 │       │   ├── 00-core.js      # IIFE open, PyWebView bridge, preferences, toasts, shared DOM refs
 │       │   ├── 01-router.js    # SPA router: fragment fetch, content swap, history, lifecycle hooks
@@ -73,24 +85,34 @@ How the Hypervisor build pipeline works — from markdown source to browsable st
 │       │   └── theme.js        # Accent color picker, palette modes, brand/title hover
 │       ├── features/           # Self-contained feature modules (order-independent, zz-* last)
 │       │   ├── actions-drawer.js # Footer actions drawer toggle
+│       │   ├── command-palette.js # Unified command palette (Ctrl+K) — docs, actions, utilities
 │       │   ├── content.js      # Todo filters, section copy, table copy, zoom, width toggle (lifecycle-aware)
 │       │   ├── drop-import.js  # Drag-and-drop .md import on .external page (lifecycle-aware)
 │       │   ├── editor.js       # Inline markdown editor (lifecycle-aware)
 │       │   ├── effects.js      # Terminal glitch, footer clock, cursor companion
+│       │   ├── ideas-dismiss.js # Dismiss/delete buttons on ideas/ index (lifecycle-aware)
 │       │   ├── live-reload.js  # Build-change polling / fragment re-fetch
 │       │   ├── pins.js         # Pinboard: pin CRUD, card rendering, navigation (lifecycle-aware)
+│       │   ├── scratch.js      # Scratch buffer / daily journal (backtick hotkey, auto-save)
 │       │   ├── shortcuts.js    # Keyboard shortcuts overlay
 │       │   ├── splash.js       # Initial load splash screen
+│       │   ├── tabs.js         # Tabbed document interface (multi-doc browsing)
 │       │   ├── writeback.js    # Task checkbox + status write-back, explorer, mark done (lifecycle-aware)
 │       │   └── zz-accessibility.js  # Accessibility panel + IIFE close (must be last)
+│       ├── webgl/              # WebGL2 integration layer (loads after features, before screensaver)
+│       │   └── 00-hypergl.js   # HyperGL — zero-dep WebGL2 runtime for GPU shader effects
 │       └── screensaver/        # Screensaver engine + modes (00-* first, zz-* last)
 │           ├── 00-engine-head.js    # Engine IIFE open, shared helpers, DOM overlay, state
 │           ├── particles.js    # Mode: SPH fluid particles with mouse interaction
 │           ├── starfield.js    # Mode: Starfield fly-through
 │           ├── worm.js         # Mode: Wandering worm trails
-│           ├── dither.js       # Mode: Bayer-dithered morphing gradients
+│           ├── dither.js       # Mode: Bayer-dithered morphing gradients (CPU)
 │           ├── bounce.js       # Mode: Bouncing text (DVD-style)
 │           ├── life.js         # Mode: Conway's Game of Life
+│           ├── grid.js         # Mode: Infinite perspective grid
+│           ├── gl-dither.js    # Mode: GPU Bayer dither (WebGL2 via HyperGL)
+│           ├── gl-noise.js     # Mode: GPU FBM noise (WebGL2 via HyperGL)
+│           ├── gl-particles.js # Mode: GPU fluid particles (50k, transform feedback)
 │           └── zz-engine-tail.js    # Engine tail: public API, activate/dismiss, idle timer
 ├── docs/                       # Hypervisor's own documentation (this file lives here)
 │   ├── README.md
@@ -241,19 +263,32 @@ CSS lives in `assets/css/` as numbered modules. During build, `build.py` globs n
 |--------|-------|
 | `00-variables.css` | `:root` custom properties, resets, body cursor rules, tooltip base, component base classes |
 | `01-layout.css` | Topbar, `.page` layout, footer, breadcrumbs, scroll-to-top, Lucide icon sizes, condensed reading width |
-| `02-search.css` | Search input, results dropdown, tag filter indicator, result snippets/tags |
+| `02-search.css` | Search input, results dropdown, tag filter indicator, result snippets/tags, work item filters |
 | `03-menus.css` | Reference dropdown, utilities dropdown, width toggle button, accent picker + palette preview |
 | `04-content.css` | `.markdown-body` typography, code blocks, tables, blockquotes, metadata bar, section panels, backlinks, related sections |
 | `05-cards.css` | Card grid, card animations, doc lists, build stats, homepage dock, empty messages |
 | `06-pinboard.css` | Pin cards, pin button (footer), pinboard page, pin type badges, dock item |
 | `07-toc.css` | Floating TOC sidebar, active heading tracking, responsive hide |
-| `08-utilities.css` | Password generator layout, history panel, utility page container |
+| `08-utilities.css` | Shared utility page container, 404 not-found page |
+| `utilities/password-gen.css` | Password generator layout, output display, history panel |
+| `utilities/quiz.css` | AWS CCP practice quiz — layout, cards, options, sidebar, study guide |
+| `utilities/regex-editor.css` | Regex editor — pattern input, flags, test strings, match highlights, reference |
+| `utilities/screensaver-settings.css` | Screensaver utility — mode cards, preview canvas, settings |
+| `utilities/health-dashboard.css` | Health dashboard — cards, charts, status indicators, grids |
+| `utilities/palette-gen.css` | Palette generator — preset grid, swatch editor, live preview |
 | `09-effects.css` | Cursor companion box, section copy buttons, table cell copy, keyboard shortcuts overlay |
+| `10-splash.css` | Loading splash screen overlay, scrollbar suppression during splash |
+| `11-tabs.css` | Tab bar, tab items, sliding highlight, tab overflow |
+| `12-drop-import.css` | Drag-and-drop file import zone for .external page |
+| `13-ideas-dismiss.css` | Idea dismiss/delete button overlay on list items |
+| `14-editor.css` | Inline markdown editor panel, toolbar, textarea |
+| `15-command-palette.css` | Command palette modal, search input, result items, categories |
+| `16-scratch.css` | Scratch buffer slide-in panel, journal entries, history view |
 | `zz-accessibility.css` | A11y panel UI, high contrast mode, large text, reduced motion, font smoothing, focus indicators, system cursors |
 
 ### JS: Subdirectory Concatenation
 
-JS lives in `assets/js/` organized into three subdirectories. During build, `build.py` concatenates them in this order: `core/` → `features/` → `screensaver/`. Within each directory, files sort alphabetically with `zz-*` files loading last. All modules share a single IIFE closure — `core/00-core.js` opens it (`(function() { "use strict";`) and `features/zz-accessibility.js` closes it (`})();`). Variables declared in any module are accessible to all subsequent modules.
+JS lives in `assets/js/` organized into four subdirectories. During build, `build.py` concatenates them in this order: `core/` → `features/` → `webgl/` → `screensaver/`. Within each directory, files sort alphabetically with `zz-*` files loading last. All modules share a single IIFE closure — `core/00-core.js` opens it (`(function() { "use strict";`) and `features/zz-accessibility.js` closes it (`})();`). Variables declared in any module are accessible to all subsequent modules.
 
 **Always edit the appropriate module in `assets/js/`.** Never edit the generated `site/app.js` directly.
 
@@ -272,28 +307,42 @@ JS lives in `assets/js/` organized into three subdirectories. During build, `bui
 | Module | Scope |
 |--------|-------|
 | `actions-drawer.js` | Footer actions drawer toggle (shell-level, persists) |
+| `command-palette.js` | Unified command palette (Ctrl+K) — fuzzy search across docs, actions, utilities, tags |
 | `content.js` | Todo filters, section copy (HTML→markdown), table cell copy, zoom controls, width toggle (lifecycle-aware) |
 | `drop-import.js` | Drag-and-drop .md import on .external page (lifecycle-aware) |
 | `editor.js` | Inline markdown editor with read/write bridge (lifecycle-aware) |
 | `effects.js` | Terminal glitch effect, footer clock, cursor companion box |
+| `ideas-dismiss.js` | Dismiss/delete buttons on ideas/ directory page (lifecycle-aware, requires bridge) |
 | `live-reload.js` | Build-change polling, fragment re-fetch via router |
 | `pins.js` | Pinboard: pin CRUD, card rendering, per-page pin button (lifecycle-aware) |
+| `scratch.js` | Scratch buffer / daily journal — backtick hotkey, auto-save, history browsing (requires bridge) |
 | `shortcuts.js` | Keyboard shortcuts overlay |
 | `splash.js` | Initial load splash screen (once per session) |
+| `tabs.js` | Tabbed document interface — multi-doc browsing with localStorage persistence |
 | `writeback.js` | Task checkbox + status write-back (event delegation), explorer button, mark done (lifecycle-aware) |
 | `zz-accessibility.js` | Accessibility panel + IIFE close (must be last globally) |
+
+**`webgl/`** — WebGL2 integration layer (loads after features, before screensaver):
+
+| Module | Scope |
+|--------|-------|
+| `00-hypergl.js` | HyperGL — zero-dependency WebGL2 runtime: shader compilation, program linking, uniform management, fullscreen triangle, resize handling. Used by `gl-*` screensaver modes. |
 
 **`screensaver/`** — Screensaver engine and modes (`00-*` first, `zz-*` last):
 
 | Module | Scope |
 |--------|-------|
 | `00-engine-head.js` | Screensaver IIFE open, shared helpers, DOM overlay, state variables |
-| `particles.js` | Mode: SPH fluid particles with mouse interaction |
+| `particles.js` | Mode: SPH fluid particles with mouse interaction (CPU) |
 | `starfield.js` | Mode: Starfield fly-through |
 | `worm.js` | Mode: Wandering worm trails |
-| `dither.js` | Mode: Bayer-dithered morphing gradients |
+| `dither.js` | Mode: Bayer-dithered morphing gradients (CPU) |
 | `bounce.js` | Mode: Bouncing text (DVD-style) |
 | `life.js` | Mode: Conway's Game of Life |
+| `grid.js` | Mode: Infinite perspective grid with mouse-tilt |
+| `gl-dither.js` | Mode: GPU Bayer 8×8 ordered dither with selectable patterns (WebGL2 via HyperGL) |
+| `gl-noise.js` | Mode: GPU animated FBM noise colored by accent palette (WebGL2 via HyperGL) |
+| `gl-particles.js` | Mode: GPU fluid particles — 50k particles via transform feedback (WebGL2 via HyperGL) |
 | `zz-engine-tail.js` | Screensaver engine tail: public API, activate/dismiss, idle timer, events |
 
 ### Adding New Styles
@@ -309,8 +358,9 @@ JS lives in `assets/js/` organized into three subdirectories. During build, `bui
 2. Add code to that module — all modules share the same IIFE scope
 3. For new features, create a file in `features/` (no number prefix needed)
 4. For new screensaver modes, create a file in `screensaver/` (no number prefix needed)
-5. Ensure the IIFE closing `})();` stays in `features/zz-accessibility.js`
-6. Run `python build.py` to regenerate
+5. For WebGL utilities shared across modes, add to `webgl/`
+6. Ensure the IIFE closing `})();` stays in `features/zz-accessibility.js`
+7. Run `python build.py` to regenerate
 
 ## Module Responsibilities
 
@@ -326,6 +376,9 @@ JS lives in `assets/js/` organized into three subdirectories. During build, `bui
 | `search.py` | `build_search_index` (with snippet extraction, tag extraction, and date enrichment) |
 | `build_cache.py` | `BuildCache` — content hash caching for incremental builds, template change detection |
 | `backlinks.py` | `build_backlink_index`, `render_backlinks_html` — reverse-link index from .md cross-references |
+| `ideas.py` | `delete_idea` — file deletion for dismissed/implemented ideas (called by desktop app bridge) |
+| `external_files.py` | `import_external_file`, `has_metadata_header` — .external/ import with metadata injection, collision handling |
+| `work_items.py` | `mark_done` — move work item to done/, update status+timestamp, regenerate _index.md (called by desktop app bridge) |
 
 ## Post-Processing Pipeline
 

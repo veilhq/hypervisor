@@ -5,15 +5,12 @@ All builders now output content fragments (JSON) for the SPA shell architecture.
 
 import shutil
 from datetime import datetime
-from pathlib import PurePosixPath
 
 from .config import HYPERSPACE_ROOT, OUTPUT_DIR, SKIP_DIRS
 from .file_utils import get_title, nice_name
 from .markdown_processing import render_markdown
 from .directory_index import generate_home_content
-from .page_generation import build_page, build_topbar, make_breadcrumbs, LEGACY_PAGE_TEMPLATE, THEME_DEFAULTS_SCRIPT, build_site_nav
 from .fragment import build_fragment, write_fragment
-import site_utils.page_generation as _pg
 
 _HYPERVISOR_DIR = OUTPUT_DIR.parent
 UTILITIES_DIR = _HYPERVISOR_DIR / "utilities"

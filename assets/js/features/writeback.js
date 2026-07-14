@@ -194,3 +194,70 @@
       window.__router.onNavigate(teardown, init);
     }
   })();
+
+  // --- Delete Document button (desktop app only, SPA-aware) ---
+  (function initDeleteDocument() {
+    var _deleteBtn = null;
+
+    function teardown() {
+      if (_deleteBtn && _deleteBtn.parentNode) {
+        _deleteBtn.parentNode.removeChild(_deleteBtn);
+      }
+      _deleteBtn = null;
+    }
+
+    function init(fragment) {
+      if (!fragment) return;
+      var filePath = fragment.sourcePath || "";
+      if (!filePath || !filePath.endsWith(".md")) return;
+
+      var btn = document.createElement("button");
+      btn.className = "action-item delete-doc-btn";
+      btn.setAttribute("aria-label", "Delete this document");
+      btn.innerHTML = '<i data-lucide="trash-2" class="action-icon"></i><span class="action-label">delete</span>';
+
+      if (!isDesktopApp) btn.style.display = "none";
+
+      var drawer = document.querySelector(".actions-drawer-inner");
+      if (!drawer) return;
+      drawer.appendChild(btn);
+      _deleteBtn = btn;
+
+      if (window.lucide) lucide.createIcons({ nodes: [btn], attrs: { "stroke-width": 1.5 } });
+
+      if (!isDesktopApp) {
+        window.addEventListener("pywebviewready", function onReady() {
+          btn.style.display = "";
+          window.removeEventListener("pywebviewready", onReady);
+        });
+      }
+
+      btn.addEventListener("click", function () {
+        if (!(window.pywebview && window.pywebview.api)) return;
+        if (!window.__hypervisorConfirm) return;
+
+        var shortName = filePath.replace(/\\/g, "/").split("/").pop();
+        window.__hypervisorConfirm("Delete " + shortName + "? This cannot be undone.", {
+          confirmLabel: "delete", cancelLabel: "cancel"
+        }).then(function (confirmed) {
+          if (!confirmed) return;
+          btn.disabled = true;
+
+          window.pywebview.api.delete_document(filePath).then(function (result) {
+            if (!result || !result.ok) {
+              btn.disabled = false;
+              if (window.__hypervisorToast) window.__hypervisorToast("failed: " + (result.error || "unknown error"));
+            }
+            // On success, the bridge navigates away — no UI cleanup needed.
+          }).catch(function () {
+            btn.disabled = false;
+            if (window.__hypervisorToast) window.__hypervisorToast("delete failed");
+          });
+        });
+      });
+    }
+
+    if (window.__router) {
+      window.__router.onNavigate(teardown, init);
+    }
+  })();

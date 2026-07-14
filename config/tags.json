@@ -174,5 +174,9 @@
   "webgl": {
     "category": "technology",
     "description": "WebGL/WebGL2 GPU rendering and GLSL shaders"
+  },
+  "external": {
+    "category": "domain",
+    "description": "Documents imported from outside hyperspace (team notes, vendor docs, external analysis)"
   }
 }

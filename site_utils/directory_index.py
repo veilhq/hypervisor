@@ -16,6 +16,13 @@ from .file_utils import (
 )
 
 
+# ---------------------------------------------------------------------------
+# Module-level constants
+# ---------------------------------------------------------------------------
+
+COMPACT_THRESHOLD = 10  # Switch to grouped shelves above this many subdirs
+
+
 def _doc_type_badge(rel_path):
     """Return an HTML badge indicating the document type based on filename.
 
@@ -64,6 +71,7 @@ def collect_all_dirs(files):
         for i in range(1, len(p.parts)):
             dirs.add(str(PurePosixPath(*p.parts[:i])))
     return dirs
+
 
 
 def generate_home_content(files, build_stats=None, recent_paths=None):
@@ -224,20 +232,12 @@ def generate_home_content(files, build_stats=None, recent_paths=None):
     return "\n".join(html)
 
 
+
 def generate_dir_index_content(files, dir_prefix, recent_paths=None):
     """Generate an index page for a subdirectory."""
     if recent_paths is None:
         recent_paths = set()
 
-    def _dir_has_recent(dp):
-        """Check if any recent path lives under this directory prefix."""
-        prefix = dp + "/"
-        return any(rp.startswith(prefix) for rp in recent_paths)
-
-    def _dir_recent_count(dp):
-        """Count how many recent paths live under this directory prefix."""
-        prefix = dp + "/"
-        return sum(1 for rp in recent_paths if rp.startswith(prefix))
     slug_label = dir_label(PurePosixPath(dir_prefix).name)
     subdirs, doc_entries = collect_dir_contents(files, dir_prefix)
 
@@ -252,12 +252,61 @@ def generate_dir_index_content(files, dir_prefix, recent_paths=None):
                 title = extracted
                 break
 
-    # --- Build the directory page header ---
+    html = []
+
+    # --- Directory header ---
+    _render_dir_header(html, files, dir_prefix, title)
+
+    # --- Subdirectories ---
+    if subdirs:
+        dir_has_recent_fn = _dir_has_recent_factory(recent_paths)
+
+        if len(subdirs) == 1:
+            _render_subdirs_single(html, files, dir_prefix, subdirs[0], recent_paths)
+        elif len(subdirs) > COMPACT_THRESHOLD:
+            _render_subdirs_grouped(html, files, dir_prefix, subdirs, dir_has_recent_fn)
+        else:
+            _render_subdirs_dock(html, files, dir_prefix, subdirs, dir_has_recent_fn)
+
+    # --- Document entries ---
+    if doc_entries:
+        is_work_dir = dir_prefix.startswith("work/to-do") or dir_prefix.startswith("work/done")
+        is_ideas_dir = dir_prefix == "ideas"
+
+        if (is_work_dir or is_ideas_dir) and len(doc_entries) > 5:
+            _render_work_items_list(html, files, dir_prefix, doc_entries, recent_paths, is_ideas_dir)
+        else:
+            _render_doc_list_standard(html, files, dir_prefix, doc_entries, recent_paths)
+
+    if not subdirs and not doc_entries:
+        html.append('<p class="empty-msg">No documents in this directory.</p>')
+
+    # --- Raw HTML prototypes ---
+    _render_prototypes(html, dir_prefix)
+
+    return "\n".join(html), title
+
+
+
+# ---------------------------------------------------------------------------
+# Private helper functions for generate_dir_index_content
+# ---------------------------------------------------------------------------
+
+
+def _dir_has_recent_factory(recent_paths):
+    """Return a closure that checks if a directory prefix has recent activity."""
+    def _dir_has_recent(dp):
+        prefix = dp + "/"
+        return any(rp.startswith(prefix) for rp in recent_paths)
+    return _dir_has_recent
+
+
+def _render_dir_header(html, files, dir_prefix, title):
+    """Render the directory page header with icon, title, stats, and last activity."""
     dir_name = PurePosixPath(dir_prefix).name
-    # Walk parents for icon/description lookup (try current dir name, then parent)
     icon = CATEGORY_ICONS.get(dir_name, "folder")
     desc = CATEGORY_DESCRIPTIONS.get(dir_name, "")
-
+    subdirs, _ = collect_dir_contents(files, dir_prefix)
     total_docs = count_docs_under(files, dir_prefix)
 
     # Compute last activity date across all docs in this directory
@@ -274,7 +323,7 @@ def generate_dir_index_content(files, dir_prefix, recent_paths=None):
             if date_str > last_activity:
                 last_activity = date_str
 
-    html = ['<div class="dir-header">']
+    html.append('<div class="dir-header">')
     html.append('<div class="dir-header-top">')
     html.append(f'<i data-lucide="{icon}" class="dir-header-icon"></i>')
     html.append(f'<h1 class="dir-header-title">{title}</h1>')
@@ -289,357 +338,360 @@ def generate_dir_index_content(files, dir_prefix, recent_paths=None):
     html.append('</div>')
     html.append('</div>')
 
-    COMPACT_THRESHOLD = 10  # Switch to list view above this many subdirs
 
-    if subdirs:
-        if len(subdirs) == 1:
-            # Single subdirectory — inline its contents instead of showing a lone dock item
-            sd = subdirs[0]
-            sd_path = f"{dir_prefix}/{sd}"
-            sd_label = dir_label(sd)
-            child_subdirs, child_docs = collect_dir_contents(files, sd_path)
 
-            # Show a linked section header for the single child
-            html.append('<div class="hv-section documents-section">')
-            sd_icon = CATEGORY_ICONS.get(sd, "folder")
-            html.append(f'<h2><a href="{sd}/index.html" style="color:inherit;text-decoration:none;border:none"><i data-lucide="{sd_icon}" class="section-icon"></i> {sd_label}</a></h2>')
+def _render_subdirs_single(html, files, dir_prefix, sd, recent_paths):
+    """Render a single subdirectory inline — expand its contents instead of showing a lone dock item."""
+    _dir_has_recent = _dir_has_recent_factory(recent_paths)
+    sd_path = f"{dir_prefix}/{sd}"
+    sd_label = dir_label(sd)
+    child_subdirs, child_docs = collect_dir_contents(files, sd_path)
 
-            if child_subdirs:
-                # Show grandchild dirs as a dock strip
-                html.append(f'<nav class="home-dock" aria-label="{sd_label} subdirectories">')
-                for gsd in child_subdirs:
-                    gsd_path = f"{sd_path}/{gsd}"
-                    gsd_label = dir_label(gsd)
-                    gsd_count = count_docs_under(files, gsd_path)
-                    gsd_icon = CATEGORY_ICONS.get(gsd, "folder")
-                    gsd_dock_cls = "dock-item dock-item-recent" if _dir_has_recent(gsd_path) else "dock-item"
-                    html.append(
-                        f'<a href="{sd}/{gsd}/index.html" class="{gsd_dock_cls}" data-tooltip="{gsd_label} ({gsd_count})">'
-                        f'<i data-lucide="{gsd_icon}" class="dock-icon"></i>'
-                        f'<span class="dock-label">{gsd_label}</span>'
-                        f'<span class="dock-count">{gsd_count}</span>'
-                        f'</a>'
-                    )
-                html.append('</nav>')
+    # Show a linked section header for the single child
+    html.append('<div class="hv-section documents-section">')
+    sd_icon = CATEGORY_ICONS.get(sd, "folder")
+    html.append(f'<h2><a href="{sd}/index.html" style="color:inherit;text-decoration:none;border:none"><i data-lucide="{sd_icon}" class="section-icon"></i> {sd_label}</a></h2>')
 
-            if child_docs:
-                html.append('<ul class="doc-list">')
-                enriched_child = []
-                for rel, name in child_docs:
-                    md_text = (HYPERSPACE_ROOT / rel).read_text(encoding="utf-8")
-                    doc_title = get_title(md_text, name)
-                    dates = extract_dates(md_text)
-                    date_str, date_label = sort_date(dates)
-                    enriched_child.append((rel, doc_title, date_str, date_label))
-                dated_c = [(r, t, d, l) for r, t, d, l in enriched_child if d != "0000-00-00"]
-                undated_c = [(r, t, d, l) for r, t, d, l in enriched_child if d == "0000-00-00"]
-                dated_c.sort(key=lambda x: x[2], reverse=True)
-                undated_c.sort(key=lambda x: x[1].lower())
-                enriched_child = dated_c + undated_c
-                for rel, doc_title, date_str, date_label in enriched_child:
-                    rel_posix = str(rel).replace("\\", "/")
-                    fname_stem = PurePosixPath(rel_posix).stem
-                    date_content = display_date(date_str) if date_label else ""
-                    li_cls = ' class="doc-recent"' if rel_posix in recent_paths else ''
-                    type_badge = _doc_type_badge(rel)
-                    badge_cell = f'<span class="doc-badges">{type_badge}</span>' if type_badge else ''
-                    html.append(f'<li{li_cls}><a href="{sd}/{fname_stem}/index.html"><i data-lucide="file-text" class="doc-icon"></i> {doc_title}</a>'
-                                f'<span class="doc-path">{rel_posix}</span>'
-                                f'{badge_cell}'
-                                f'<span class="doc-date">{date_content}</span></li>')
-                html.append('</ul>')
+    if child_subdirs:
+        # Show grandchild dirs as a dock strip
+        html.append(f'<nav class="home-dock" aria-label="{sd_label} subdirectories">')
+        for gsd in child_subdirs:
+            gsd_path = f"{sd_path}/{gsd}"
+            gsd_label = dir_label(gsd)
+            gsd_count = count_docs_under(files, gsd_path)
+            gsd_icon = CATEGORY_ICONS.get(gsd, "folder")
+            gsd_dock_cls = "dock-item dock-item-recent" if _dir_has_recent(gsd_path) else "dock-item"
+            html.append(
+                f'<a href="{sd}/{gsd}/index.html" class="{gsd_dock_cls}" data-tooltip="{gsd_label} ({gsd_count})">'
+                f'<i data-lucide="{gsd_icon}" class="dock-icon"></i>'
+                f'<span class="dock-label">{gsd_label}</span>'
+                f'<span class="dock-count">{gsd_count}</span>'
+                f'</a>'
+            )
+        html.append('</nav>')
 
-            if not child_subdirs and not child_docs:
-                html.append('<p class="empty-msg">No documents in this directory.</p>')
+    if child_docs:
+        html.append('<ul class="doc-list">')
+        enriched_child = []
+        for rel, name in child_docs:
+            md_text = (HYPERSPACE_ROOT / rel).read_text(encoding="utf-8")
+            doc_title = get_title(md_text, name)
+            dates = extract_dates(md_text)
+            date_str, date_label = sort_date(dates)
+            enriched_child.append((rel, doc_title, date_str, date_label))
+        dated_c = [(r, t, d, l) for r, t, d, l in enriched_child if d != "0000-00-00"]
+        undated_c = [(r, t, d, l) for r, t, d, l in enriched_child if d == "0000-00-00"]
+        dated_c.sort(key=lambda x: x[2], reverse=True)
+        undated_c.sort(key=lambda x: x[1].lower())
+        enriched_child = dated_c + undated_c
+        for rel, doc_title, date_str, date_label in enriched_child:
+            rel_posix = str(rel).replace("\\", "/")
+            fname_stem = PurePosixPath(rel_posix).stem
+            date_content = display_date(date_str) if date_label else ""
+            li_cls = ' class="doc-recent"' if rel_posix in recent_paths else ''
+            type_badge = _doc_type_badge(rel)
+            badge_cell = f'<span class="doc-badges">{type_badge}</span>' if type_badge else ''
+            html.append(f'<li{li_cls}><a href="{sd}/{fname_stem}/index.html"><i data-lucide="file-text" class="doc-icon"></i> {doc_title}</a>'
+                        f'<span class="doc-path">{rel_posix}</span>'
+                        f'{badge_cell}'
+                        f'<span class="doc-date">{date_content}</span></li>')
+        html.append('</ul>')
 
-            html.append('</div>')
-
-        elif len(subdirs) > COMPACT_THRESHOLD:
-            # --- Grouped shelves by application ---
-            subdir_data = []
-            for sd in subdirs:
-                sd_path = f"{dir_prefix}/{sd}"
-                sd_label = dir_label(sd)
-                count = count_docs_under(files, sd_path)
-                desc = get_dir_snippet(HYPERSPACE_ROOT, sd_path)
-                status = get_dir_status(HYPERSPACE_ROOT, sd_path)
-                item_type = get_dir_type(HYPERSPACE_ROOT, sd_path) or "professional"
-                tags = get_dir_tags(HYPERSPACE_ROOT, sd_path)
-                app_label, app_key = infer_app_group(tags)
-                subdir_data.append((sd, sd_label, count, desc, status, item_type, app_key, app_label))
-
-            # Sort within each group by name
-            subdir_data.sort(key=lambda x: x[1].lower())
-
-            # Collect unique app groups (preserve a stable order)
-            _APP_GROUP_ORDER = ["portal", "portal-cms", "hyperspace", "infrastructure", "other"]
-            seen_groups = {}
-            for item in subdir_data:
-                key, label = item[6], item[7]
-                if key not in seen_groups:
-                    seen_groups[key] = label
-            ordered_groups = [k for k in _APP_GROUP_ORDER if k in seen_groups]
-            for k in seen_groups:
-                if k not in ordered_groups:
-                    ordered_groups.append(k)
-
-            # Collect unique statuses across all items
-            statuses = sorted(set((d[4] or "").strip() for d in subdir_data if d[4]))
-
-            html.append('<div class="hv-section documents-section">')
-            html.append(f'<h2><i data-lucide="folder" class="section-icon"></i> Items ({len(subdir_data)})</h2>')
-            html.append('<div class="todo-filters" id="todo-filters">')
-            html.append('  <input type="text" class="todo-filter-input" id="todo-filter-name" placeholder="filter by name" spellcheck="false">')
-            html.append('  <select class="todo-filter-select" id="todo-filter-app">')
-            html.append('    <option value="">all apps</option>')
-            for gk in ordered_groups:
-                html.append(f'    <option value="{gk}">{seen_groups[gk]}</option>')
-            html.append('  </select>')
-            html.append('  <select class="todo-filter-select" id="todo-filter-type">')
-            html.append('    <option value="">all types</option>')
-            html.append('    <option value="personal">personal</option>')
-            html.append('    <option value="professional">professional</option>')
-            html.append('  </select>')
-            html.append('  <select class="todo-filter-select" id="todo-filter-status">')
-            html.append('    <option value="">all statuses</option>')
-            for s in statuses:
-                html.append(f'    <option value="{s.lower()}">{s}</option>')
-            html.append('  </select>')
-            html.append('</div>')
-
-            # Render each app group as a shelf
-            for gk in ordered_groups:
-                group_items = [d for d in subdir_data if d[6] == gk]
-                gl = seen_groups[gk]
-                # Count how many items in this group have recent activity
-                shelf_recent_count = sum(
-                    1 for d in group_items if _dir_has_recent(f"{dir_prefix}/{d[0]}")
-                )
-                html.append(f'<div class="app-shelf" data-app-group="{gk}">')
-                html.append(f'<div class="app-shelf-header">')
-                html.append(f'<span class="app-shelf-label">{gl}</span>')
-                if shelf_recent_count:
-                    html.append(f'<span class="app-shelf-recent-count">{shelf_recent_count}</span>')
-                html.append(f'<span class="app-shelf-count">{len(group_items)}</span>')
-                html.append(f'</div>')
-                html.append(f'<ul class="doc-list todo-list" data-app-group="{gk}">')
-
-                for sd, sd_label, count, desc, status, item_type, _ak, _al in group_items:
-                    sd_icon = CATEGORY_ICONS.get(sd, "folder")
-                    type_cls = "type-badge-personal" if item_type.lower() == "personal" else "type-badge-professional"
-                    type_label = item_type.lower()[:4]
-                    status_cls = "status-" + (status or "proposed").lower().replace(" ", "-")
-                    status_label = status or "—"
-                    desc_text = desc if desc else ""
-                    sd_full_path = f"{dir_prefix}/{sd}"
-                    li_cls = " doc-recent" if _dir_has_recent(sd_full_path) else ""
-                    html.append(
-                        f'<li class="{li_cls.strip()}" data-name="{sd_label.lower()}" data-type="{item_type.lower()}" data-status="{(status or "").lower()}" data-app="{gk}">'
-                        f'<div class="todo-title"><a href="{sd}/index.html"><i data-lucide="{sd_icon}" class="doc-icon"></i>{sd_label}</a>'
-                        f'<span class="todo-desc">{desc_text}</span></div>'
-                        f'<span class="hv-badge {type_cls}">{type_label}</span>'
-                        f'<span class="hv-badge {status_cls}">{status_label}</span>'
-                        f'</li>'
-                    )
-
-                html.append('</ul>')
-                html.append('</div>')
-
-            html.append('</div>')
-        else:
-            # Determine if this is a top-level category (children shown in site nav)
-            is_top_level = "/" not in dir_prefix and "\\" not in dir_prefix
-            if is_top_level:
-                # Top-level categories: children are in the nav rail, no dock needed.
-                # Just show nothing here — the nav handles navigation.
-                pass
-            else:
-                # Dock-style strip for deeper directories not in the nav
-                html.append('<nav class="home-dock" aria-label="Subdirectories">')
-                for sd in subdirs:
-                    sd_path = f"{dir_prefix}/{sd}"
-                    sd_label = dir_label(sd)
-                    count = count_docs_under(files, sd_path)
-                    sd_icon = CATEGORY_ICONS.get(sd, "folder")
-                    dock_cls = "dock-item dock-item-recent" if _dir_has_recent(sd_path) else "dock-item"
-                    html.append(
-                        f'<a href="{sd}/index.html" class="{dock_cls}" data-tooltip="{sd_label} ({count})">'
-                        f'<i data-lucide="{sd_icon}" class="dock-icon"></i>'
-                        f'<span class="dock-label">{sd_label}</span>'
-                        f'<span class="dock-count">{count}</span>'
-                        f'</a>'
-                    )
-                html.append('</nav>')
-
-    if doc_entries:
-        # Detect if this is a work directory with flat-file work items
-        is_work_dir = dir_prefix.startswith("work/to-do") or dir_prefix.startswith("work/done")
-        # Detect if this is the ideas directory
-        is_ideas_dir = dir_prefix == "ideas"
-
-        html.append('<div class="hv-section documents-section">')
-
-        if (is_work_dir or is_ideas_dir) and len(doc_entries) > 5:
-            # Work items / Ideas: show filter controls and app-group shelves
-            from .file_utils import _extract_status_from_text, _extract_type_from_text, _extract_tags_from_text, infer_app_group
-
-            enriched = []
-            statuses_set = set()
-            app_groups_seen = {}
-            _APP_GROUP_ORDER = ["portal", "portal-cms", "hyperspace", "infrastructure", "other"]
-
-            for rel, name in doc_entries:
-                md_text = (HYPERSPACE_ROOT / rel).read_text(encoding="utf-8")
-                doc_title = get_title(md_text, name)
-                dates = extract_dates(md_text)
-                date_str, date_label = sort_date(dates)
-                status = _extract_status_from_text(md_text) or ""
-                item_type = _extract_type_from_text(md_text) or "professional"
-                tags = _extract_tags_from_text(md_text)
-                app_label, app_key = infer_app_group(tags)
-                desc = ""
-                # Extract work item ID
-                work_id = ""
-                for line in md_text.splitlines()[:20]:
-                    id_match = re.match(r'^-\s*ID\s*:\s*(WI-\d+)', line.strip(), re.IGNORECASE)
-                    if id_match:
-                        work_id = id_match.group(1)
-                        break
-                # Extract snippet from the Overview section
-                past_meta = False
-                for line in md_text.splitlines():
-                    stripped = line.strip()
-                    if stripped.startswith("# ") and not past_meta:
-                        continue
-                    if not past_meta:
-                        if stripped.startswith("-") and ":" in stripped[:30]:
-                            continue
-                        if stripped == "" or stripped == "---":
-                            continue
-                        past_meta = True
-                    if stripped.startswith("#") or stripped.startswith("```"):
-                        break
-                    if stripped == "" or stripped == "---":
-                        if desc:
-                            break
-                        continue
-                    desc = stripped[:120]
-                    break
-
-                if status:
-                    statuses_set.add(status)
-                if app_key not in app_groups_seen:
-                    app_groups_seen[app_key] = app_label
-                badges_html = format_badge_html(compute_badges(md_text, dates.get("updated")))
-                enriched.append((rel, doc_title, date_str, date_label, status, item_type, app_key, app_label, desc, work_id, badges_html))
-
-            # Sort: dated docs first (newest to oldest), undated last
-            dated = [e for e in enriched if e[2] != "0000-00-00T00:00"]
-            undated = [e for e in enriched if e[2] == "0000-00-00T00:00"]
-            dated.sort(key=lambda x: x[2], reverse=True)
-            undated.sort(key=lambda x: x[1].lower())
-            enriched = dated + undated
-
-            statuses = sorted(statuses_set)
-            ordered_groups = [k for k in _APP_GROUP_ORDER if k in app_groups_seen]
-            for k in app_groups_seen:
-                if k not in ordered_groups:
-                    ordered_groups.append(k)
-
-            html.append(f'<h2><i data-lucide="{"lightbulb" if is_ideas_dir else "file-text"}" class="section-icon"></i> {"Ideas" if is_ideas_dir else "Items"} ({len(enriched)})</h2>')
-            html.append('<div class="todo-filters" id="todo-filters">')
-            html.append('  <input type="text" class="todo-filter-input" id="todo-filter-name" placeholder="filter by name" spellcheck="false">')
-            html.append('  <select class="todo-filter-select" id="todo-filter-app">')
-            html.append('    <option value="">all apps</option>')
-            for gk in ordered_groups:
-                html.append(f'    <option value="{gk}">{app_groups_seen[gk]}</option>')
-            html.append('  </select>')
-            html.append('  <select class="todo-filter-select" id="todo-filter-type">')
-            html.append('    <option value="">all types</option>')
-            html.append('    <option value="personal">personal</option>')
-            html.append('    <option value="professional">professional</option>')
-            html.append('  </select>')
-            if not is_ideas_dir:
-                html.append('  <select class="todo-filter-select" id="todo-filter-status">')
-                html.append('    <option value="">all statuses</option>')
-                for s in statuses:
-                    html.append(f'    <option value="{s.lower()}">{s}</option>')
-                html.append('  </select>')
-            html.append('</div>')
-
-            # Flat list sorted by work item ID (descending — newest first)
-            def _wi_sort_key(e):
-                wid = e[9]  # work_id field
-                if wid and wid.startswith("WI-"):
-                    try:
-                        return -int(wid[3:])
-                    except ValueError:
-                        pass
-                return 0
-
-            enriched.sort(key=_wi_sort_key)
-
-            html.append('<ul class="doc-list todo-list">')
-
-            for rel, doc_title, date_str, date_label, status, item_type, app_key, _al, desc, work_id, badges_html in enriched:
-                rel_posix = str(rel).replace("\\", "/")
-                fname_stem = PurePosixPath(rel_posix).stem
-                type_cls = "type-badge-personal" if item_type.lower() == "personal" else "type-badge-professional"
-                type_label = item_type.lower()[:4]
-                status_cls = "status-" + (status or "planned").lower().replace(" ", "-")
-                status_label = status or "—"
-                li_cls = " doc-recent" if rel_posix in recent_paths else ""
-                status_badge = f'<span class="hv-badge {status_cls}">{status_label}</span>' if not is_ideas_dir else ''
-                id_prefix = f'<span class="work-id-inline">{work_id} —</span> ' if work_id else ''
-                html.append(
-                    f'<li class="{li_cls.strip()}" data-name="{doc_title.lower()}" data-type="{item_type.lower()}" data-status="{(status or "").lower()}" data-app="{app_key}">'
-                    f'<div class="todo-title"><a href="{fname_stem}/index.html"><i data-lucide="{"lightbulb" if is_ideas_dir else "circle-dot"}" class="doc-icon"></i>{id_prefix}{doc_title}</a>'
-                    f'<span class="todo-desc">{desc}</span></div>'
-                    f'<div class="todo-badges">{badges_html}'
-                    f'<span class="hv-badge {type_cls}">{type_label}</span>'
-                    f'{status_badge}</div>'
-                    f'</li>'
-                )
-
-            html.append('</ul>')
-
-        else:
-            # Standard document list rendering
-            html.append('<h2><i data-lucide="file-text" class="section-icon"></i> Documents</h2>')
-            html.append('<ul class="doc-list">')
-
-            # Enrich entries with date metadata for sorting
-            enriched = []
-            for rel, name in doc_entries:
-                md_text = (HYPERSPACE_ROOT / rel).read_text(encoding="utf-8")
-                doc_title = get_title(md_text, name)
-                dates = extract_dates(md_text)
-                date_str, date_label = sort_date(dates)
-                enriched.append((rel, doc_title, date_str, date_label))
-
-            # Sort: dated docs first (newest to oldest), undated docs last (by title)
-            dated = [(r, t, d, l) for r, t, d, l in enriched if d != "0000-00-00"]
-            undated = [(r, t, d, l) for r, t, d, l in enriched if d == "0000-00-00"]
-            dated.sort(key=lambda x: x[2], reverse=True)
-            undated.sort(key=lambda x: x[1].lower())
-            enriched = dated + undated
-
-            for rel, doc_title, date_str, date_label in enriched:
-                rel_posix = str(rel).replace("\\", "/")
-                fname_stem = PurePosixPath(rel_posix).stem
-                date_content = display_date(date_str) if date_label else ""
-                li_cls = ' class="doc-recent"' if rel_posix in recent_paths else ''
-                html.append(f'<li{li_cls}><a href="{fname_stem}/index.html"><i data-lucide="file-text" class="doc-icon"></i> {doc_title}</a>'
-                            f'<span class="doc-path">{rel_posix}</span>'
-                            f'<span class="doc-date">{date_content}</span></li>')
-            html.append('</ul>')
-
-        html.append('</div>')
-
-    if not subdirs and not doc_entries:
+    if not child_subdirs and not child_docs:
         html.append('<p class="empty-msg">No documents in this directory.</p>')
 
-    # Detect raw HTML files in this directory and add links
+    html.append('</div>')
+
+
+
+def _render_subdirs_grouped(html, files, dir_prefix, subdirs, dir_has_recent_fn):
+    """Render subdirectories as grouped shelves by application (>10 subdirs)."""
+    subdir_data = []
+    for sd in subdirs:
+        sd_path = f"{dir_prefix}/{sd}"
+        sd_label = dir_label(sd)
+        count = count_docs_under(files, sd_path)
+        desc = get_dir_snippet(HYPERSPACE_ROOT, sd_path)
+        status = get_dir_status(HYPERSPACE_ROOT, sd_path)
+        item_type = get_dir_type(HYPERSPACE_ROOT, sd_path) or "professional"
+        tags = get_dir_tags(HYPERSPACE_ROOT, sd_path)
+        app_label, app_key = infer_app_group(tags)
+        subdir_data.append((sd, sd_label, count, desc, status, item_type, app_key, app_label))
+
+    # Sort within each group by name
+    subdir_data.sort(key=lambda x: x[1].lower())
+
+    # Collect unique app groups (preserve a stable order)
+    _APP_GROUP_ORDER = ["portal", "portal-cms", "hyperspace", "infrastructure", "other"]
+    seen_groups = {}
+    for item in subdir_data:
+        key, label = item[6], item[7]
+        if key not in seen_groups:
+            seen_groups[key] = label
+    ordered_groups = [k for k in _APP_GROUP_ORDER if k in seen_groups]
+    for k in seen_groups:
+        if k not in ordered_groups:
+            ordered_groups.append(k)
+
+    # Collect unique statuses across all items
+    statuses = sorted(set((d[4] or "").strip() for d in subdir_data if d[4]))
+
+    html.append('<div class="hv-section documents-section">')
+    html.append(f'<h2><i data-lucide="folder" class="section-icon"></i> Items ({len(subdir_data)})</h2>')
+    html.append('<div class="todo-filters" id="todo-filters">')
+    html.append('  <input type="text" class="todo-filter-input" id="todo-filter-name" placeholder="filter by name" spellcheck="false">')
+    html.append('  <select class="todo-filter-select" id="todo-filter-app">')
+    html.append('    <option value="">all apps</option>')
+    for gk in ordered_groups:
+        html.append(f'    <option value="{gk}">{seen_groups[gk]}</option>')
+    html.append('  </select>')
+    html.append('  <select class="todo-filter-select" id="todo-filter-type">')
+    html.append('    <option value="">all types</option>')
+    html.append('    <option value="personal">personal</option>')
+    html.append('    <option value="professional">professional</option>')
+    html.append('  </select>')
+    html.append('  <select class="todo-filter-select" id="todo-filter-status">')
+    html.append('    <option value="">all statuses</option>')
+    for s in statuses:
+        html.append(f'    <option value="{s.lower()}">{s}</option>')
+    html.append('  </select>')
+    html.append('</div>')
+
+    # Render each app group as a shelf
+    for gk in ordered_groups:
+        group_items = [d for d in subdir_data if d[6] == gk]
+        gl = seen_groups[gk]
+        # Count how many items in this group have recent activity
+        shelf_recent_count = sum(
+            1 for d in group_items if dir_has_recent_fn(f"{dir_prefix}/{d[0]}")
+        )
+        html.append(f'<div class="app-shelf" data-app-group="{gk}">')
+        html.append(f'<div class="app-shelf-header">')
+        html.append(f'<span class="app-shelf-label">{gl}</span>')
+        if shelf_recent_count:
+            html.append(f'<span class="app-shelf-recent-count">{shelf_recent_count}</span>')
+        html.append(f'<span class="app-shelf-count">{len(group_items)}</span>')
+        html.append(f'</div>')
+        html.append(f'<ul class="doc-list todo-list" data-app-group="{gk}">')
+
+        for sd, sd_label, count, desc, status, item_type, _ak, _al in group_items:
+            sd_icon = CATEGORY_ICONS.get(sd, "folder")
+            type_cls = "type-badge-personal" if item_type.lower() == "personal" else "type-badge-professional"
+            type_label = item_type.lower()[:4]
+            status_cls = "status-" + (status or "proposed").lower().replace(" ", "-")
+            status_label = status or "—"
+            desc_text = desc if desc else ""
+            sd_full_path = f"{dir_prefix}/{sd}"
+            li_cls = " doc-recent" if dir_has_recent_fn(sd_full_path) else ""
+            html.append(
+                f'<li class="{li_cls.strip()}" data-name="{sd_label.lower()}" data-type="{item_type.lower()}" data-status="{(status or "").lower()}" data-app="{gk}">'
+                f'<div class="todo-title"><a href="{sd}/index.html"><i data-lucide="{sd_icon}" class="doc-icon"></i>{sd_label}</a>'
+                f'<span class="todo-desc">{desc_text}</span></div>'
+                f'<span class="hv-badge {type_cls}">{type_label}</span>'
+                f'<span class="hv-badge {status_cls}">{status_label}</span>'
+                f'</li>'
+            )
+
+        html.append('</ul>')
+        html.append('</div>')
+
+    html.append('</div>')
+
+
+
+def _render_subdirs_dock(html, files, dir_prefix, subdirs, dir_has_recent_fn):
+    """Render subdirectories as a dock-style strip (2-10 subdirs, non-top-level)."""
+    # Determine if this is a top-level category (children shown in site nav)
+    is_top_level = "/" not in dir_prefix and "\\" not in dir_prefix
+    if is_top_level:
+        # Top-level categories: children are in the nav rail, no dock needed.
+        # Just show nothing here — the nav handles navigation.
+        pass
+    else:
+        # Dock-style strip for deeper directories not in the nav
+        html.append('<nav class="home-dock" aria-label="Subdirectories">')
+        for sd in subdirs:
+            sd_path = f"{dir_prefix}/{sd}"
+            sd_label = dir_label(sd)
+            count = count_docs_under(files, sd_path)
+            sd_icon = CATEGORY_ICONS.get(sd, "folder")
+            dock_cls = "dock-item dock-item-recent" if dir_has_recent_fn(sd_path) else "dock-item"
+            html.append(
+                f'<a href="{sd}/index.html" class="{dock_cls}" data-tooltip="{sd_label} ({count})">'
+                f'<i data-lucide="{sd_icon}" class="dock-icon"></i>'
+                f'<span class="dock-label">{sd_label}</span>'
+                f'<span class="dock-count">{count}</span>'
+                f'</a>'
+            )
+        html.append('</nav>')
+
+
+
+def _render_work_items_list(html, files, dir_prefix, doc_entries, recent_paths, is_ideas):
+    """Render work items or ideas with filter controls and flat sorted list."""
+    from .file_utils import _extract_status_from_text, _extract_type_from_text, _extract_tags_from_text, infer_app_group
+
+    html.append('<div class="hv-section documents-section">')
+
+    enriched = []
+    statuses_set = set()
+    app_groups_seen = {}
+    _APP_GROUP_ORDER = ["portal", "portal-cms", "hyperspace", "infrastructure", "other"]
+
+    for rel, name in doc_entries:
+        md_text = (HYPERSPACE_ROOT / rel).read_text(encoding="utf-8")
+        doc_title = get_title(md_text, name)
+        dates = extract_dates(md_text)
+        date_str, date_label = sort_date(dates)
+        status = _extract_status_from_text(md_text) or ""
+        item_type = _extract_type_from_text(md_text) or "professional"
+        tags = _extract_tags_from_text(md_text)
+        app_label, app_key = infer_app_group(tags)
+        desc = ""
+        # Extract work item ID
+        work_id = ""
+        for line in md_text.splitlines()[:20]:
+            id_match = re.match(r'^-\s*ID\s*:\s*(WI-\d+)', line.strip(), re.IGNORECASE)
+            if id_match:
+                work_id = id_match.group(1)
+                break
+        # Extract snippet from the Overview section
+        past_meta = False
+        for line in md_text.splitlines():
+            stripped = line.strip()
+            if stripped.startswith("# ") and not past_meta:
+                continue
+            if not past_meta:
+                if stripped.startswith("-") and ":" in stripped[:30]:
+                    continue
+                if stripped == "" or stripped == "---":
+                    continue
+                past_meta = True
+            if stripped.startswith("#") or stripped.startswith("```"):
+                break
+            if stripped == "" or stripped == "---":
+                if desc:
+                    break
+                continue
+            desc = stripped[:120]
+            break
+
+        if status:
+            statuses_set.add(status)
+        if app_key not in app_groups_seen:
+            app_groups_seen[app_key] = app_label
+        badges_html = format_badge_html(compute_badges(md_text, dates.get("updated")))
+        enriched.append((rel, doc_title, date_str, date_label, status, item_type, app_key, app_label, desc, work_id, badges_html))
+
+    # Sort: dated docs first (newest to oldest), undated last
+    dated = [e for e in enriched if e[2] != "0000-00-00T00:00"]
+    undated = [e for e in enriched if e[2] == "0000-00-00T00:00"]
+    dated.sort(key=lambda x: x[2], reverse=True)
+    undated.sort(key=lambda x: x[1].lower())
+    enriched = dated + undated
+
+    statuses = sorted(statuses_set)
+    ordered_groups = [k for k in _APP_GROUP_ORDER if k in app_groups_seen]
+    for k in app_groups_seen:
+        if k not in ordered_groups:
+            ordered_groups.append(k)
+
+    html.append(f'<h2><i data-lucide="{"lightbulb" if is_ideas else "file-text"}" class="section-icon"></i> {"Ideas" if is_ideas else "Items"} ({len(enriched)})</h2>')
+    html.append('<div class="todo-filters" id="todo-filters">')
+    html.append('  <input type="text" class="todo-filter-input" id="todo-filter-name" placeholder="filter by name" spellcheck="false">')
+    html.append('  <select class="todo-filter-select" id="todo-filter-app">')
+    html.append('    <option value="">all apps</option>')
+    for gk in ordered_groups:
+        html.append(f'    <option value="{gk}">{app_groups_seen[gk]}</option>')
+    html.append('  </select>')
+    html.append('  <select class="todo-filter-select" id="todo-filter-type">')
+    html.append('    <option value="">all types</option>')
+    html.append('    <option value="personal">personal</option>')
+    html.append('    <option value="professional">professional</option>')
+    html.append('  </select>')
+    if not is_ideas:
+        html.append('  <select class="todo-filter-select" id="todo-filter-status">')
+        html.append('    <option value="">all statuses</option>')
+        for s in statuses:
+            html.append(f'    <option value="{s.lower()}">{s}</option>')
+        html.append('  </select>')
+    html.append('</div>')
+
+    # Flat list sorted by work item ID (descending — newest first)
+    def _wi_sort_key(e):
+        wid = e[9]  # work_id field
+        if wid and wid.startswith("WI-"):
+            try:
+                return -int(wid[3:])
+            except ValueError:
+                pass
+        return 0
+
+    enriched.sort(key=_wi_sort_key)
+
+    html.append('<ul class="doc-list todo-list">')
+
+    for rel, doc_title, date_str, date_label, status, item_type, app_key, _al, desc, work_id, badges_html in enriched:
+        rel_posix = str(rel).replace("\\", "/")
+        fname_stem = PurePosixPath(rel_posix).stem
+        type_cls = "type-badge-personal" if item_type.lower() == "personal" else "type-badge-professional"
+        type_label = item_type.lower()[:4]
+        status_cls = "status-" + (status or "planned").lower().replace(" ", "-")
+        status_label = status or "—"
+        li_cls = " doc-recent" if rel_posix in recent_paths else ""
+        status_badge = f'<span class="hv-badge {status_cls}">{status_label}</span>' if not is_ideas else ''
+        id_prefix = f'<span class="work-id-inline">{work_id} —</span> ' if work_id else ''
+        html.append(
+            f'<li class="{li_cls.strip()}" data-name="{doc_title.lower()}" data-type="{item_type.lower()}" data-status="{(status or "").lower()}" data-app="{app_key}">'
+            f'<div class="todo-title"><a href="{fname_stem}/index.html"><i data-lucide="{"lightbulb" if is_ideas else "circle-dot"}" class="doc-icon"></i>{id_prefix}{doc_title}</a>'
+            f'<span class="todo-desc">{desc}</span></div>'
+            f'<div class="todo-badges">{badges_html}'
+            f'<span class="hv-badge {type_cls}">{type_label}</span>'
+            f'{status_badge}</div>'
+            f'</li>'
+        )
+
+    html.append('</ul>')
+    html.append('</div>')
+
+
+
+def _render_doc_list_standard(html, files, dir_prefix, doc_entries, recent_paths):
+    """Render a standard document list (non-work, non-ideas directories)."""
+    html.append('<div class="hv-section documents-section">')
+    html.append('<h2><i data-lucide="file-text" class="section-icon"></i> Documents</h2>')
+    html.append('<ul class="doc-list">')
+
+    # Enrich entries with date metadata for sorting
+    enriched = []
+    for rel, name in doc_entries:
+        md_text = (HYPERSPACE_ROOT / rel).read_text(encoding="utf-8")
+        doc_title = get_title(md_text, name)
+        dates = extract_dates(md_text)
+        date_str, date_label = sort_date(dates)
+        enriched.append((rel, doc_title, date_str, date_label))
+
+    # Sort: dated docs first (newest to oldest), undated docs last (by title)
+    dated = [(r, t, d, l) for r, t, d, l in enriched if d != "0000-00-00"]
+    undated = [(r, t, d, l) for r, t, d, l in enriched if d == "0000-00-00"]
+    dated.sort(key=lambda x: x[2], reverse=True)
+    undated.sort(key=lambda x: x[1].lower())
+    enriched = dated + undated
+
+    for rel, doc_title, date_str, date_label in enriched:
+        rel_posix = str(rel).replace("\\", "/")
+        fname_stem = PurePosixPath(rel_posix).stem
+        date_content = display_date(date_str) if date_label else ""
+        li_cls = ' class="doc-recent"' if rel_posix in recent_paths else ''
+        html.append(f'<li{li_cls}><a href="{fname_stem}/index.html"><i data-lucide="file-text" class="doc-icon"></i> {doc_title}</a>'
+                    f'<span class="doc-path">{rel_posix}</span>'
+                    f'<span class="doc-date">{date_content}</span></li>')
+    html.append('</ul>')
+    html.append('</div>')
+
+
+def _render_prototypes(html, dir_prefix):
+    """Render links to raw HTML prototype files in the directory."""
     dir_path = HYPERSPACE_ROOT / dir_prefix
     if dir_path.is_dir():
         html_files = sorted(dir_path.glob("*.html"))
@@ -653,5 +705,3 @@ def generate_dir_index_content(files, dir_prefix, recent_paths=None):
                             f'<span class="doc-path">{hf.name}</span></li>')
             html.append('</ul>')
             html.append('</div>')
-
-    return "\n".join(html), title

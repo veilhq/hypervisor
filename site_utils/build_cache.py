@@ -64,10 +64,12 @@ class BuildCache:
         if cached_hash != current_hash:
             return False
 
-        # Verify the output file still exists on disk
+        # Verify the output fragment still exists on disk
         from .file_utils import html_dir_for
-        out_file = OUTPUT_DIR / html_dir_for(rel_path) / "index.html"
-        return out_file.exists()
+        from pathlib import PurePosixPath
+        hdir = html_dir_for(rel_path)
+        fragment_path = OUTPUT_DIR / "content" / (str(PurePosixPath(hdir)) + ".json")
+        return fragment_path.exists()
 
     def update(self, rel_path, md_text):
         """Store the current hash for a document."""

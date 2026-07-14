@@ -8,7 +8,7 @@ from pathlib import Path, PurePosixPath
 from .config import HYPERSPACE_ROOT, SKIP_DIRS, SKIP_FILES, CATEGORY_LABELS
 
 
-def collect_files(root: Path):
+def collect_files(root: Path) -> list[Path]:
     """Walk the hyperspace root and return a sorted list of relative .md paths."""
     files = []
     for path in sorted(root.rglob("*.md")):
@@ -21,16 +21,16 @@ def collect_files(root: Path):
     return files
 
 
-def html_dir_for(rel_path):
+def html_dir_for(rel_path) -> str:
     """_index.md → _index, context/foo.md → context/foo"""
     return str(PurePosixPath(str(rel_path).replace("\\", "/")).with_suffix(""))
 
 
-def href_for(rel_path):
+def href_for(rel_path) -> str:
     return "/" + html_dir_for(rel_path) + "/index.html"
 
 
-def nice_name(fname):
+def nice_name(fname: str) -> str:
     specials = {"_index.md": "Index", "_readme.md": "Readme",
                 "_meta.md": "Meta", "_conventions.md": "Conventions"}
     if fname in specials:
@@ -38,16 +38,16 @@ def nice_name(fname):
     return fname.replace(".md", "").replace("-", " ").replace("_", " ").title()
 
 
-def dir_label(name):
+def dir_label(name: str) -> str:
     return CATEGORY_LABELS.get(name, name.replace("-", " ").replace("_", " ").title())
 
 
-def get_title(md_text, fallback):
+def get_title(md_text: str, fallback: str) -> str:
     m = re.match(r"^#\s+(.+)$", md_text, re.MULTILINE)
     return m.group(1).strip() if m else fallback
 
 
-def extract_dates(md_text):
+def extract_dates(md_text: str) -> dict[str, str | None]:
     """Extract Created/Updated/Date metadata from markdown text.
 
     Returns dict with 'created' and 'updated' keys (datetime strings or None).
@@ -102,7 +102,7 @@ def extract_dates(md_text):
     return dates
 
 
-def sort_date(dates_dict):
+def sort_date(dates_dict: dict[str, str | None]) -> tuple[str, str | None]:
     """Return the best datetime string for sorting (prefer updated over created).
     Returns a tuple (datetime_str, label) where label is 'updated' or 'created'.
     Undated docs get ('0000-00-00T00:00', None) so they sort last in descending order.
@@ -114,7 +114,7 @@ def sort_date(dates_dict):
     return ("0000-00-00T00:00", None)
 
 
-def display_date(datetime_str):
+def display_date(datetime_str: str) -> str:
     """Format a datetime string for HTML display.
 
     '2026-04-29T15:30' → '2026-04-29 15:30'
@@ -129,7 +129,7 @@ def display_date(datetime_str):
     return date_part
 
 
-def count_docs_under(files, dir_prefix):
+def count_docs_under(files: list[Path], dir_prefix: str) -> int:
     """Count total .md documents under a directory prefix."""
     prefix = PurePosixPath(dir_prefix)
     count = 0
@@ -143,7 +143,7 @@ def count_docs_under(files, dir_prefix):
     return count
 
 
-def get_dir_snippet(root, dir_prefix, max_len=120):
+def get_dir_snippet(root: Path, dir_prefix: str, max_len: int = 120) -> str:
     """Extract a description snippet for a subdirectory.
 
     Looks for idea.md first, then story.md, then any .md file in the directory.
@@ -219,7 +219,7 @@ def _extract_tags_from_text(md_text):
     return []
 
 
-def get_dir_tags(root, dir_prefix):
+def get_dir_tags(root: Path, dir_prefix: str) -> list[str]:
     """Extract tags for a subdirectory from its primary doc.
 
     Checks idea.md → story.md → first .md, returns lowercase tag list.
@@ -259,7 +259,7 @@ def _extract_type_from_text(md_text):
     return None
 
 
-def get_dir_status(root, dir_prefix):
+def get_dir_status(root: Path, dir_prefix: str) -> str | None:
     """Extract status for a subdirectory from its primary doc.
 
     Checks idea.md → story.md → first .md, returns status string or None.
@@ -278,7 +278,7 @@ def get_dir_status(root, dir_prefix):
     return None
 
 
-def get_dir_type(root, dir_prefix):
+def get_dir_type(root: Path, dir_prefix: str) -> str | None:
     """Extract type (Personal/Professional) for a subdirectory from its primary doc.
 
     Checks idea.md → story.md → first .md, returns type string or None.
@@ -308,7 +308,7 @@ _APP_GROUP_RULES = [
 ]
 
 
-def infer_app_group(tags):
+def infer_app_group(tags: list[str]) -> tuple[str, str]:
     """Infer an app group from a tag list. Returns (label, key) or ('Other', 'other')."""
     tag_set = set(tags) if tags else set()
     for label, key, match_tags in _APP_GROUP_RULES:
@@ -322,7 +322,7 @@ def infer_app_group(tags):
 STALE_THRESHOLD_DAYS = 30
 
 
-def compute_badges(md_text, updated_str=None):
+def compute_badges(md_text: str, updated_str: str | None = None) -> dict:
     """Compute metadata badges from markdown content.
 
     Returns dict with:
@@ -370,7 +370,7 @@ def compute_badges(md_text, updated_str=None):
     return {"tasks": tasks, "stale_days": stale_days, "words": words}
 
 
-def format_badge_html(badges):
+def format_badge_html(badges: dict) -> str:
     """Generate HTML badge spans from compute_badges() output.
 
     Returns HTML string with badge spans, or empty string if no badges.

@@ -17,7 +17,7 @@ from datetime import datetime
 from pathlib import PurePosixPath
 
 from site_utils.config import HYPERSPACE_ROOT, OUTPUT_DIR, ASSETS_DIR, SKIP_DIRS
-from site_utils.file_utils import collect_files, html_dir_for, nice_name, get_title, dir_label, extract_dates, sort_date, display_date, count_docs_under
+from site_utils.file_utils import collect_files, html_dir_for, nice_name, get_title, extract_dates, sort_date, count_docs_under
 from site_utils.build_cache import BuildCache
 
 # Utilities directory (HTML snippets for interactive tools)
@@ -28,8 +28,8 @@ JS_DIR = ASSETS_DIR / "js"
 from site_utils.markdown_processing import render_markdown
 from site_utils.search import build_search_index
 from site_utils.backlinks import build_backlink_index, render_backlinks_html
-from site_utils.directory_index import collect_all_dirs, generate_home_content, generate_dir_index_content
-from site_utils.page_generation import build_page, build_topbar, make_breadcrumbs, LEGACY_PAGE_TEMPLATE, THEME_DEFAULTS_SCRIPT, set_nav_categories, build_shell
+from site_utils.directory_index import collect_all_dirs, generate_dir_index_content
+from site_utils.page_generation import set_nav_categories, build_shell
 from site_utils.fragment import build_fragment, write_fragment
 
 

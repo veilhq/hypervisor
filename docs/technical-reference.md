@@ -3,7 +3,7 @@
 A comprehensive walkthrough of how Hypervisor works, from source to rendered site. This document covers every module, every pipeline stage, and every client-side system — written so you can understand the construction decisions and learn from the patterns.
 
 - Created: 2026-04-24T00:00
-- Updated: 2026-06-15T14:30
+- Updated: 2026-07-14T09:43
 - Tags: hypervisor, architecture, python, javascript
 
 ---
@@ -28,48 +28,82 @@ There is no bundler, no framework, no build tool chain. The output is a director
     css/                      # Modular CSS (numbered sorted, zz-* last → site/style.css)
       00-variables.css        # CSS custom properties, resets, component base classes
       01-layout.css           # Topbar, page, footer, breadcrumbs, condensed width
-      02-search.css           # Search input, results dropdown, tag filtering
+      02-search.css           # Search input, results dropdown, tag filtering, work item filters
       03-menus.css            # Reference menu, utilities menu, width toggle, accent picker
       04-content.css          # Markdown body, code blocks, tables, related sections
       05-cards.css            # Card grid, doc lists, build stats, homepage dock
       06-pinboard.css         # Pin cards, pin button, pinboard page, pin type badges
       07-toc.css              # Floating table of contents sidebar
-      08-utilities.css        # Password generator and other utility page styles
+      08-utilities.css        # Shared utility page container, 404 page
+      utilities/              # Per-utility-page styles (loaded after numbered modules)
+        password-gen.css
+        quiz.css
+        regex-editor.css
+        screensaver-settings.css
+        health-dashboard.css
+        palette-gen.css
       09-effects.css          # Cursor companion, glitch effect, keyboard shortcuts
+      10-splash.css           # Loading splash screen
+      11-tabs.css             # Tabbed document interface
+      12-drop-import.css      # Drag-and-drop file import zone
+      13-ideas-dismiss.css    # Idea dismiss button
+      14-editor.css           # Inline markdown editor
+      15-command-palette.css  # Command palette (Ctrl+K) overlay
+      16-scratch.css          # Scratch buffer / daily journal panel
       zz-accessibility.css    # A11y panel, high contrast, reduced motion (loads last)
-    js/                       # Modular JS (core/ → features/ → screensaver/ → site/app.js)
+    js/                       # Modular JS (core/ → features/ → webgl/ → screensaver/ → site/app.js)
       core/                   # Foundation modules (load first, order matters)
         00-core.js            # IIFE open, PyWebView bridge, preferences, toasts, shared DOM refs
+        01-router.js          # SPA router: fragment fetch, content swap, history, lifecycle
         navigation.js         # Search, topbar scroll, ref menu, util menu, code copy, scroll-to-top
         toc.js                # Floating TOC sidebar, active heading tracking
         theme.js              # Accent color picker, palette modes, brand/title hover
       features/               # Self-contained features (order-independent, zz-* last)
+        actions-drawer.js     # Footer actions drawer toggle
+        command-palette.js    # Unified command palette (Ctrl+K)
         content.js            # Todo filters, section copy, table copy, zoom, width toggle
+        drop-import.js        # Drag-and-drop .md import on .external page
+        editor.js             # Inline markdown editor
         effects.js            # Terminal glitch, footer clock, cursor companion
-        live-reload.js        # Single-tab auto-reload / build polling
+        ideas-dismiss.js      # Dismiss/delete buttons on ideas/ page
+        live-reload.js        # Build-change polling / fragment re-fetch
         pins.js               # Pinboard: pin CRUD, card rendering, navigation
+        scratch.js            # Scratch buffer / daily journal (backtick hotkey)
         shortcuts.js          # Keyboard shortcuts overlay
+        splash.js             # Initial load splash screen
+        tabs.js               # Tabbed document interface
         writeback.js          # Task checkbox + status write-back (desktop app)
         zz-accessibility.js   # Accessibility panel + IIFE close (must be last)
+      webgl/                  # WebGL2 integration layer (loads before screensaver)
+        00-hypergl.js         # HyperGL — zero-dep WebGL2 runtime for GPU effects
       screensaver/            # Screensaver engine + modes (00-* first, zz-* last)
         00-engine-head.js     # Engine IIFE open, shared helpers, DOM overlay, state
-        particles.js          # Mode: SPH fluid particles
+        particles.js          # Mode: SPH fluid particles (CPU)
         starfield.js          # Mode: Starfield fly-through
         worm.js               # Mode: Wandering worm trails
-        dither.js             # Mode: Bayer-dithered gradients
+        dither.js             # Mode: Bayer-dithered gradients (CPU)
         bounce.js             # Mode: Bouncing text (DVD-style)
         life.js               # Mode: Conway's Game of Life
+        grid.js               # Mode: Infinite perspective grid
+        gl-dither.js          # Mode: GPU Bayer dither (WebGL2 via HyperGL)
+        gl-noise.js           # Mode: GPU FBM noise (WebGL2 via HyperGL)
+        gl-particles.js       # Mode: GPU fluid particles (WebGL2 via HyperGL)
         zz-engine-tail.js     # Engine tail: public API, activate/dismiss, idle timer
   site_utils/                 # Python package — build pipeline modules
     __init__.py
     config.py                 # Paths, constants, markdown engine, category metadata
     file_utils.py             # File collection, path math, naming, dates, status, app-group inference
     markdown_processing.py    # Markdown-to-HTML + post-processing transforms
-    page_builders.py          # Homepage, pinboard, 404, utility pages, learn section
-    search.py                 # Search index builder (JSON blob)
-    backlinks.py              # Reverse-link index (who links to whom)
-    directory_index.py        # Homepage and directory index page generators
     page_generation.py        # HTML template, breadcrumbs, top bar, page assembly
+    page_builders.py          # Homepage, pinboard, 404, utility pages, learn section
+    fragment.py               # Content fragment JSON schema, serialization
+    directory_index.py        # Homepage and directory index page generators
+    search.py                 # Search index builder (JSON blob)
+    build_cache.py            # Content hash caching for incremental builds
+    backlinks.py              # Reverse-link index (who links to whom)
+    ideas.py                  # Idea delete/dismiss operations
+    external_files.py         # .external/ import and delete operations
+    work_items.py             # Work item mark-done operations
   utilities/                  # Raw HTML snippets for interactive tools
     password-generator.html
   docs/                       # Documentation about hypervisor itself
@@ -422,7 +456,7 @@ The TOC sidebar is conditionally included — it only renders if the markdown's 
 
 ## Client-Side Systems (assets/js/)
 
-All client-side behavior lives in `assets/js/` organized into three subdirectories (`core/`, `features/`, `screensaver/`) that are concatenated into a single `site/app.js` during build. Everything runs inside a single IIFE (`(function() { ... })()`) to avoid polluting the global scope. The IIFE opens in `core/00-core.js` and closes in `features/zz-accessibility.js`. Each subsystem is either inline or wrapped in its own nested IIFE within the shared closure.
+All client-side behavior lives in `assets/js/` organized into four subdirectories (`core/`, `features/`, `webgl/`, `screensaver/`) that are concatenated into a single `site/app.js` during build. Everything runs inside a single IIFE (`(function() { ... })()`) to avoid polluting the global scope. The IIFE opens in `core/00-core.js` and closes in `features/zz-accessibility.js`. Each subsystem is either inline or wrapped in its own nested IIFE within the shared closure.
 
 ### Lucide Icon Initialization
 

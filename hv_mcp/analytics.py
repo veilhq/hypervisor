@@ -141,6 +141,9 @@ def tag_analytics() -> dict:
     with get_index_lock():
         entries = list(_index)
 
+    # Exclude template files — their placeholder tags aren't real usage
+    entries = [e for e in entries if e.get("type") != "template"]
+
     # --- Usage counts ---
     tag_counts: dict[str, int] = {}
     for entry in entries:

@@ -8,7 +8,7 @@ import html as html_mod
 from .config import MD
 
 
-def normalize_tables(md_text):
+def normalize_tables(md_text: str) -> str:
     """Collapse blank lines within markdown table blocks.
 
     Some documents are double-spaced (blank line between every line). The markdown
@@ -47,7 +47,7 @@ def normalize_tables(md_text):
     return '\n'.join(result)
 
 
-def render_markdown(md_text, source_path=None):
+def render_markdown(md_text: str, source_path: str | None = None) -> tuple[str, str]:
     """Convert markdown text to post-processed HTML. Returns (html, toc_html).
 
     Args:
@@ -66,7 +66,7 @@ def render_markdown(md_text, source_path=None):
 # HTML post-processing — transform raw MD output into structured layout
 # ---------------------------------------------------------------------------
 
-def post_process(html, source_path=None, md_text=None):
+def post_process(html: str, source_path: str | None = None, md_text: str | None = None) -> str:
     """Transform flat markdown HTML into structured document layout."""
     html = rewrite_md_links(html, source_path=source_path)
     html = extract_metadata_block(html)
@@ -80,7 +80,7 @@ def post_process(html, source_path=None, md_text=None):
     return html
 
 
-def rewrite_md_links(html, source_path=None):
+def rewrite_md_links(html: str, source_path: str | None = None) -> str:
     """Rewrite href="...something.md" links to point to the generated HTML pages.
 
     With absolute paths, each link is resolved against the source document's
@@ -124,7 +124,7 @@ def rewrite_md_links(html, source_path=None):
     return re.sub(r'(href=")([^"]+?)\.md"', rewrite, html)
 
 
-def linkify_md_paths(val):
+def linkify_md_paths(val: str) -> str:
     """Convert .md file paths in meta values (including inside <code> tags) to links."""
     def code_to_link(m):
         path = m.group(1)
@@ -137,7 +137,7 @@ def linkify_md_paths(val):
     return re.sub(r'<code>([^<]*?\.md)</code>', code_to_link, val)
 
 
-def convert_admonitions(html):
+def convert_admonitions(html: str) -> str:
     """Convert GitHub-style admonition blockquotes into styled callout boxes.
 
     Detects patterns like:
@@ -216,7 +216,7 @@ def convert_admonitions(html):
     return html
 
 
-def convert_collapsible_sections(html):
+def convert_collapsible_sections(html: str) -> str:
     """Convert +++ markers into <details>/<summary> collapsible sections.
 
     Markdown pattern:
@@ -250,7 +250,7 @@ def convert_collapsible_sections(html):
     return html
 
 
-def extract_metadata_block(html):
+def extract_metadata_block(html: str) -> str:
     """
     Pull metadata lines (Date, Tags, Status, Technologies, etc.) from the
     <ul> immediately after the first <h1> and render as a styled header block.
@@ -327,7 +327,7 @@ def extract_metadata_block(html):
     return result
 
 
-def wrap_h2_sections(html):
+def wrap_h2_sections(html: str) -> str:
     """Wrap content between <h2> tags in collapsible <details> elements.
 
     Each H2 section becomes a <details open> with the H2 text as the <summary>,
@@ -371,7 +371,7 @@ def wrap_h2_sections(html):
     return "".join(output)
 
 
-def style_related_section(html):
+def style_related_section(html: str) -> str:
     """Restyle H2 sections titled 'Related' or 'See Also' into a panel matching the backlinks style.
 
     Also groups plain-text list items by category prefix (Model, Component, API, Backend, etc.)
@@ -500,7 +500,7 @@ def _extract_id(h2_tag):
     return m.group(1) if m else ""
 
 
-def convert_mermaid_blocks(html):
+def convert_mermaid_blocks(html: str) -> str:
     """Convert mermaid code blocks into <pre class="mermaid"> for client-side rendering.
 
     Since codehilite strips the 'mermaid' language identifier, we detect mermaid
@@ -535,7 +535,7 @@ def convert_mermaid_blocks(html):
     return html
 
 
-def label_code_blocks(html):
+def label_code_blocks(html: str) -> str:
     """Add a language label to fenced code blocks based on codehilite classes."""
     lang_map = {
         "python": "python", "javascript": "javascript", "jsx": "jsx",
@@ -568,7 +568,7 @@ def label_code_blocks(html):
                   add_label, html, flags=re.DOTALL)
 
 
-def style_task_lists(html, source_path=None, md_text=None):
+def style_task_lists(html: str, source_path: str | None = None, md_text: str | None = None) -> str:
     """Convert [ ] and [x] checkbox patterns into styled elements.
 
     When source_path and md_text are provided, each task <li> gets data-src and

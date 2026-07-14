@@ -13,6 +13,7 @@ Usage:
 """
 
 import json
+import logging
 import os
 import re
 import subprocess
@@ -23,6 +24,8 @@ from pathlib import Path
 
 import bottle
 import webview
+
+logger = logging.getLogger("hypervisor")
 import webview.http
 
 from site_utils.config import HYPERSPACE_ROOT, OUTPUT_DIR, ASSETS_DIR
@@ -165,8 +168,8 @@ class HypervisorAPI:
         for win in webview.windows:
             try:
                 win.evaluate_js(js_code)
-            except Exception:
-                pass
+            except (OSError, RuntimeError) as e:
+                logger.debug("JS broadcast failed for window %s: %s", win.title, e)
 
     def toggle_checkbox(self, file_path, line_number, checked):
         """Toggle a task checkbox in the source .md file.
@@ -253,8 +256,8 @@ class HypervisorAPI:
                     "try{sessionStorage.removeItem('__hv_splash_seen')}catch(e){};"
                     "window.location.reload();"
                 )
-            except Exception:
-                pass
+            except (OSError, RuntimeError) as e:
+                logger.debug("Reload broadcast failed for window %s: %s", win.title, e)
         return {"ok": True}
 
     def launch_hyperagent(self):
@@ -363,6 +366,56 @@ class HypervisorAPI:
             return result
         except Exception as e:
             return {"ok": False, "error": str(e)}
+
+    def delete_document(self, file_path):
+        """Delete a hyperspace document (.md file) from disk.
+
+        Removes the source file, triggers a full rebuild, and navigates the
+        UI back to the parent directory index.
+
+        Args:
+            file_path: Path relative to .hyperspace/ (e.g. "work/to-do/my-item.md")
+
+        Returns:
+            dict with ok status and the parent path navigated to, or error.
+        """
+        full_path = HYPERSPACE_ROOT / file_path
+        if not full_path.exists():
+            return {"ok": False, "error": f"File not found: {file_path}"}
+
+        # Safety: only allow deletion of .md files within hyperspace
+        if not file_path.endswith(".md"):
+            return {"ok": False, "error": "Only .md files can be deleted"}
+
+        # Resolve and verify the file is inside HYPERSPACE_ROOT
+        resolved = full_path.resolve()
+        if not str(resolved).startswith(str(HYPERSPACE_ROOT.resolve())):
+            return {"ok": False, "error": "Path escapes hyperspace root"}
+
+        try:
+            # Suppress watcher before deletion
+            self._watcher.ignore_path(str(full_path), grace_seconds=3.0)
+            full_path.unlink()
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+
+        # Full rebuild to remove the page from the site
+        full_build(quiet=True)
+
+        # Navigate to the parent directory index
+        parent_rel = str(Path(file_path).parent).replace("\\", "/")
+        nav_path = f"/{parent_rel}/index.html" if parent_rel != "." else "/index.html"
+
+        win = webview.active_window()
+        if win:
+            win.evaluate_js(
+                "if(window.__router){"
+                "  window.__router.navigate('" + nav_path + "');"
+                "  if(window.__hypervisorToast)window.__hypervisorToast('deleted');"
+                "}else{window.location.href='" + nav_path + "';}"
+            )
+
+        return {"ok": True, "navigated_to": nav_path}
 
     def read_file(self, file_path):
         """Read raw markdown content from a hyperspace document.
@@ -958,7 +1011,8 @@ class HypervisorAPI:
                     burndown_history = client.get_burndown_history(
                         config["org"], config["project"], iter_path, start_date, finish_date
                     )
-                except Exception:
+                except Exception as e:
+                    logger.warning("Failed to fetch burndown history: %s", e)
                     pass  # Non-fatal — dashboard still works without history
 
             # Build and return the dashboard payload
@@ -1001,10 +1055,10 @@ def on_file_changed(rel_path):
             for win in webview.windows:
                 try:
                     win.evaluate_js(js_code)
-                except Exception:
-                    pass
-        except Exception:
-            pass  # Window may be closing
+                except (OSError, RuntimeError) as e:
+                    logger.debug("Reload broadcast failed: %s", e)
+        except (OSError, RuntimeError):
+            pass  # Window may be closing during shutdown
 
 
 def start_watcher_thread(watcher):
