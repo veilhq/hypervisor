@@ -8,7 +8,10 @@ from collections import defaultdict
 from datetime import datetime
 
 
-def build_dashboard_payload(iteration, work_items, pull_requests, work_requests=None, config=None, burndown_history=None):
+def build_dashboard_payload(iteration, work_items, pull_requests, work_requests=None,
+                            config=None, burndown_history=None,
+                            commits=None, branches=None,
+                            pipeline_runs=None, active_pipelines=None):
     """Build the full dashboard response payload from raw ADO data.
 
     Args:
@@ -18,6 +21,10 @@ def build_dashboard_payload(iteration, work_items, pull_requests, work_requests=
         work_requests: List of work request dicts from WIQL query (optional)
         config: ADO config dict with org/project for building URLs (optional)
         burndown_history: List of daily burndown dicts from Analytics (optional)
+        commits: List of commit dicts from ADOClient.get_recent_commits() (optional)
+        branches: List of branch dicts from ADOClient.get_branches_overview() (optional)
+        pipeline_runs: List of run dicts from ADOClient.get_pipeline_runs() (optional)
+        active_pipelines: List of run dicts from ADOClient.get_active_pipeline_runs() (optional)
 
     Returns:
         dict ready to be returned as JSON to the frontend.
@@ -116,6 +123,15 @@ def build_dashboard_payload(iteration, work_items, pull_requests, work_requests=
                 "url": wr.get("url", ""),
             })
 
+    # Compute repo count for empty-state messaging
+    repo_names = set()
+    if commits:
+        for c in commits:
+            repo_names.add(c.get("repo", ""))
+    if branches:
+        for b in branches:
+            repo_names.add(b.get("repo", ""))
+
     return {
         "ok": True,
         "generated": datetime.now().isoformat(),
@@ -143,4 +159,9 @@ def build_dashboard_payload(iteration, work_items, pull_requests, work_requests=
         "prs": pr_list,
         "risks": risks,
         "work_requests": wr_list,
+        "commits": commits or [],
+        "branches": branches or [],
+        "pipeline_runs": pipeline_runs or [],
+        "active_pipelines": active_pipelines or [],
+        "repo_count": len(repo_names),
     }

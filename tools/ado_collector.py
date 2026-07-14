@@ -221,6 +221,226 @@ class ADOClient:
         ]
         return self.get_work_items(project, ids, fields=fields)
 
+    def get_repos(self, project):
+        """Get all git repositories in the project.
+
+        Returns:
+            List of repo dicts with id, name, defaultBranch.
+        """
+        path = f"{project}/_apis/git/repositories"
+        data = self.get(path)
+        return data.get("value", [])
+
+    def get_recent_commits(self, project, repos=None, top=30):
+        """Get recent commits across all branches and repos.
+
+        Args:
+            project: Project name.
+            repos: List of repo dicts (from get_repos). Fetched if None.
+            top: Max commits total to return.
+
+        Returns:
+            List of commit dicts sorted by date descending, merged across repos.
+        """
+        if repos is None:
+            repos = self.get_repos(project)
+
+        all_commits = []
+        for repo in repos:
+            repo_id = repo["id"]
+            repo_name = repo.get("name", "unknown")
+            try:
+                path = f"{project}/_apis/git/repositories/{repo_id}/commits"
+                data = self.get(path, params={"searchCriteria.$top": str(top)})
+                for c in data.get("value", []):
+                    all_commits.append({
+                        "hash": c.get("commitId", "")[:7],
+                        "full_hash": c.get("commitId", ""),
+                        "author": c.get("author", {}).get("name", "Unknown"),
+                        "message": (c.get("comment", "") or "").split("\n")[0][:80],
+                        "repo": repo_name,
+                        "branch": "",
+                        "date": c.get("author", {}).get("date", ""),
+                    })
+            except Exception:
+                continue
+
+        all_commits.sort(key=lambda x: x["date"], reverse=True)
+        return all_commits[:top]
+
+    def get_branches_overview(self, project, repos=None, max_age_days=3):
+        """Get active branches across all repos.
+
+        Only returns branches with commits within max_age_days.
+        Excludes default branches (main, master, dev, develop).
+
+        Args:
+            project: Project name.
+            repos: List of repo dicts (from get_repos). Fetched if None.
+            max_age_days: Max days since last commit to include.
+
+        Returns:
+            List of branch dicts with name, repo, author, last commit details.
+        """
+        from datetime import timedelta
+
+        if repos is None:
+            repos = self.get_repos(project)
+
+        cutoff = datetime.now() - timedelta(days=max_age_days)
+        default_names = {"main", "master", "dev", "develop"}
+        branches = []
+
+        for repo in repos:
+            repo_id = repo["id"]
+            repo_name = repo.get("name", "unknown")
+            try:
+                path = f"{project}/_apis/git/repositories/{repo_id}/refs"
+                data = self.get(path, params={"filter": "heads/"})
+                for ref in data.get("value", []):
+                    # Extract branch name from "refs/heads/feature/xyz"
+                    full_name = ref.get("name", "")
+                    branch_name = full_name.replace("refs/heads/", "")
+                    if branch_name in default_names:
+                        continue
+
+                    # Get the latest commit on this branch
+                    object_id = ref.get("objectId", "")
+                    if not object_id:
+                        continue
+
+                    # Fetch single commit details
+                    commit_path = f"{project}/_apis/git/repositories/{repo_id}/commits/{object_id}"
+                    try:
+                        commit = self.get(commit_path)
+                    except Exception:
+                        continue
+
+                    author_info = commit.get("author", {})
+                    commit_date_str = author_info.get("date", "")
+                    if not commit_date_str:
+                        continue
+
+                    # Parse date and filter by age
+                    try:
+                        # ADO dates: "2026-07-14T10:30:00Z"
+                        commit_date = datetime.fromisoformat(
+                            commit_date_str.replace("Z", "+00:00")
+                        ).replace(tzinfo=None)
+                    except (ValueError, TypeError):
+                        continue
+
+                    if commit_date < cutoff:
+                        continue
+
+                    branches.append({
+                        "name": branch_name,
+                        "repo": repo_name,
+                        "author": author_info.get("name", "Unknown"),
+                        "last_commit_hash": object_id[:7],
+                        "last_commit_message": (commit.get("comment", "") or "").split("\n")[0][:80],
+                        "last_commit_date": commit_date_str,
+                    })
+            except Exception:
+                continue
+
+        # Sort by most recent commit first
+        branches.sort(key=lambda x: x["last_commit_date"], reverse=True)
+        return branches
+
+    def get_pipeline_runs(self, project, top=5):
+        """Get recent completed pipeline/build runs.
+
+        Args:
+            project: Project name.
+            top: Max runs to return.
+
+        Returns:
+            List of run dicts with name, status, result, duration, triggered by,
+            finish time, and queue-time parameters.
+        """
+        import json as json_mod
+
+        path = f"{project}/_apis/build/builds"
+        data = self.get(path, params={
+            "$top": str(top),
+            "queryOrder": "finishTimeDescending",
+            "statusFilter": "completed",
+        })
+
+        runs = []
+        for build in data.get("value", []):
+            # Parse queue-time parameters
+            params_raw = build.get("parameters")
+            params = {}
+            if params_raw:
+                try:
+                    params = json_mod.loads(params_raw)
+                except (json_mod.JSONDecodeError, TypeError):
+                    pass
+
+            # Calculate duration
+            start_time = build.get("startTime", "")
+            finish_time = build.get("finishTime", "")
+            duration_min = 0
+            if start_time and finish_time:
+                try:
+                    st = datetime.fromisoformat(start_time.replace("Z", "+00:00")).replace(tzinfo=None)
+                    ft = datetime.fromisoformat(finish_time.replace("Z", "+00:00")).replace(tzinfo=None)
+                    duration_min = round((ft - st).total_seconds() / 60, 1)
+                except (ValueError, TypeError):
+                    pass
+
+            requested_for = build.get("requestedFor", {})
+            runs.append({
+                "id": build.get("id"),
+                "name": build.get("definition", {}).get("name", "Unknown"),
+                "status": build.get("status", ""),
+                "result": build.get("result", ""),
+                "duration_min": duration_min,
+                "finished": finish_time,
+                "triggered_by": requested_for.get("displayName", "Unknown"),
+                "parameters": params,
+            })
+
+        return runs
+
+    def get_active_pipeline_runs(self, project):
+        """Get currently in-progress or queued pipeline/build runs.
+
+        Returns:
+            List of run dicts for active/queued builds.
+        """
+        import json as json_mod
+
+        path = f"{project}/_apis/build/builds"
+        data = self.get(path, params={
+            "statusFilter": "inProgress,notStarted",
+        })
+
+        runs = []
+        for build in data.get("value", []):
+            params_raw = build.get("parameters")
+            params = {}
+            if params_raw:
+                try:
+                    params = json_mod.loads(params_raw)
+                except (json_mod.JSONDecodeError, TypeError):
+                    pass
+
+            requested_for = build.get("requestedFor", {})
+            runs.append({
+                "id": build.get("id"),
+                "name": build.get("definition", {}).get("name", "Unknown"),
+                "status": build.get("status", ""),
+                "started": build.get("startTime", ""),
+                "queued": build.get("queueTime", ""),
+                "triggered_by": requested_for.get("displayName", "Unknown"),
+                "parameters": params,
+            })
+
+        return runs
+
     def get_burndown_history(self, org, project, iteration_path, start_date, finish_date):
         """Get daily burndown data from Analytics OData.
 

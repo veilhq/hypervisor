@@ -16,7 +16,7 @@
   gap: 0.5rem;
 }
 .dash-card-title {
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: var(--text-dim);
@@ -24,9 +24,9 @@
   align-items: center;
   gap: 0.4rem;
 }
-.dash-card-title i { width: 12px; height: 12px; }
+.dash-card-title i { width: 14px; height: 14px; }
 .dash-kpi-label {
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
 }
 .dash-header {
@@ -39,7 +39,7 @@
   margin-bottom: 0;
 }
 .dash-header h1 {
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   color: var(--text-bright);
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -65,7 +65,7 @@
   gap: 0.4rem 1.2rem;
   padding: 0.5rem 0;
   margin-bottom: 0.5rem;
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   color: var(--text-muted);
 }
 .dash-meta-strip-item {
@@ -89,7 +89,7 @@
   border: 1px solid var(--border);
   color: var(--text-muted);
   font-family: var(--font);
-  font-size: 0.6rem;
+  font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   padding: 0.3rem 0.6rem;
@@ -128,7 +128,7 @@
   gap: 0.5rem;
 }
 .dash-bar-label {
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   color: var(--text);
   text-align: right;
   white-space: nowrap;
@@ -148,7 +148,7 @@
   transition: width 0.4s var(--ease);
 }
 .dash-bar-val {
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
 }
 
@@ -174,7 +174,7 @@
   display: flex;
   align-items: center;
   gap: 0.3rem;
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   color: var(--text-muted);
 }
 .dash-legend-swatch {
@@ -192,7 +192,7 @@
   gap: 0.6rem;
 }
 .dash-team-name {
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   color: var(--text-bright);
   white-space: nowrap;
   overflow: hidden;
@@ -209,7 +209,7 @@
   opacity: 0.85;
 }
 .dash-team-pts {
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   color: var(--text-muted);
   text-align: right;
 }
@@ -224,7 +224,7 @@
   padding: 0.3rem 0.5rem;
   background: var(--bg-surface);
   border: 1px solid var(--border);
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   cursor: pointer;
   text-decoration: none;
   color: inherit;
@@ -240,7 +240,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.dash-pr-repo { color: var(--text-dim); font-size: 0.6rem; }
+.dash-pr-repo { color: var(--text-dim); font-size: 0.7rem; }
 .dash-pr-age { text-align: right; }
 .dash-pr-age-fresh { color: var(--accent); }
 .dash-pr-age-mid { color: var(--warm); }
@@ -253,13 +253,13 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.3rem 0.5rem;
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   color: var(--text);
   border-left: 3px solid var(--comp);
   background: var(--bg-surface);
 }
 .dash-risk-tag {
-  font-size: 0.55rem;
+  font-size: 0.65rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--comp);
@@ -334,6 +334,126 @@
   .dash-bar-row { grid-template-columns: 70px 1fr 30px; }
 }
 
+/* Tab switcher */
+.dash-tabs {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0.5rem;
+}
+.dash-tab {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-bottom: none;
+  color: var(--text-muted);
+  font-family: var(--font);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.4rem 1rem;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+  margin-bottom: -1px;
+}
+.dash-tab:hover {
+  color: var(--text-bright);
+  border-color: var(--text-muted);
+}
+.dash-tab.is-active {
+  color: var(--accent);
+  border-color: var(--accent);
+  border-bottom: 1px solid var(--bg);
+  background: var(--bg);
+}
+.dash-tab-panel { display: none; grid-column: 1 / -1; }
+.dash-tab-panel.is-active {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+/* Commit list */
+.dash-commit-list { display: flex; flex-direction: column; gap: 0.3rem; }
+.dash-commit-item {
+  display: grid;
+  grid-template-columns: 70px 55px 100px 1fr 120px 50px;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0.5rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  font-size: 0.8rem;
+}
+.dash-commit-hash { color: var(--accent); font-size: 0.75rem; }
+.dash-commit-author { color: var(--text-bright); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dash-commit-msg { color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dash-commit-branch { color: var(--warm); font-size: 0.7rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dash-commit-repo { color: var(--comp); font-size: 0.7rem; font-weight: 700; font-style: italic; }
+.dash-commit-age { text-align: right; }
+
+/* Branch list */
+.dash-branch-list { display: flex; flex-direction: column; gap: 0.3rem; }
+.dash-branch-item {
+  display: grid;
+  grid-template-columns: 80px 1fr 55px 1fr 100px 50px;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0.5rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  font-size: 0.8rem;
+}
+.dash-branch-name { color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dash-branch-repo { color: var(--comp); font-size: 0.7rem; font-weight: 700; font-style: italic; }
+.dash-branch-hash { color: var(--warm); font-size: 0.75rem; }
+.dash-branch-msg { color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dash-branch-author { color: var(--text-muted); font-size: 0.7rem; text-align: right; }
+.dash-branch-time { color: var(--text-dim); font-size: 0.7rem; text-align: right; }
+
+/* Pipeline list */
+.dash-pipeline-list { display: flex; flex-direction: column; gap: 0.3rem; }
+.dash-pipeline-item {
+  display: grid;
+  grid-template-columns: 20px 1fr 60px 80px 50px;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0.5rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  font-size: 0.8rem;
+}
+.dash-pipeline-icon { font-size: 0.9rem; text-align: center; }
+.dash-pipeline-icon-pass { color: var(--accent); }
+.dash-pipeline-icon-fail { color: var(--comp); }
+.dash-pipeline-icon-cancel { color: var(--text-muted); }
+.dash-pipeline-icon-running { color: var(--warm); }
+.dash-pipeline-icon-queued { color: var(--text-dim); }
+.dash-pipeline-name { color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dash-pipeline-duration { color: var(--text-muted); font-size: 0.7rem; text-align: right; }
+.dash-pipeline-by { color: var(--text-muted); font-size: 0.7rem; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dash-pipeline-time { color: var(--text-dim); font-size: 0.7rem; text-align: right; }
+
+/* Pipeline param badges */
+.dash-param-badges { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.3rem; }
+.dash-param-badge {
+  font-size: 0.65rem;
+  color: var(--cool);
+  border: 1px solid var(--cool);
+  padding: 0.1rem 0.35rem;
+  white-space: nowrap;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Empty state message */
+.dash-empty {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  padding: 0.5rem;
+}
+
 /* Work Request items — wider assigned column */
 .dash-wr-item {
   display: grid;
@@ -343,7 +463,7 @@
   padding: 0.3rem 0.5rem;
   background: var(--bg-surface);
   border: 1px solid var(--border);
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   cursor: pointer;
   text-decoration: none;
   color: inherit;
@@ -365,7 +485,7 @@
   border: 1px solid var(--border);
   color: var(--text-muted);
   font-family: var(--font);
-  font-size: 0.6rem;
+  font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   padding: 0.2rem 0.5rem;
@@ -412,6 +532,16 @@
     <span class="dash-meta-strip-sep">|</span>
     <span class="dash-meta-strip-item"><i data-lucide="clock"></i> <span id="dash-generated">never</span></span>
   </div>
+
+  <!-- Tab Switcher -->
+  <div class="dash-tabs">
+    <button class="dash-tab is-active" data-tab="sprint">Sprint</button>
+    <button class="dash-tab" data-tab="source">Source</button>
+    <button class="dash-tab" data-tab="pipelines">Pipelines</button>
+  </div>
+
+  <!-- Sprint Tab -->
+  <div class="dash-tab-panel is-active" id="tab-sprint">
 
   <!-- Velocity Sparkline -->
   <div class="dash-card dash-full">
@@ -598,6 +728,47 @@
       </div>
     </div>
   </div>
+
+  </div><!-- /tab-sprint -->
+
+  <!-- Source Tab -->
+  <div class="dash-tab-panel" id="tab-source">
+    <!-- Active Branches -->
+    <div class="dash-card dash-full">
+      <div class="dash-card-title"><i data-lucide="git-branch"></i> Active Branches</div>
+      <div class="dash-branch-list" id="branch-list">
+        <div class="dash-empty">Click refresh to load branches</div>
+      </div>
+    </div>
+
+    <!-- Recent Commits -->
+    <div class="dash-card dash-full">
+      <div class="dash-card-title"><i data-lucide="git-commit"></i> Recent Commits</div>
+      <div class="dash-commit-list" id="commit-list">
+        <div class="dash-empty">Click refresh to load commits</div>
+      </div>
+    </div>
+  </div><!-- /tab-source -->
+
+  <!-- Pipelines Tab -->
+  <div class="dash-tab-panel" id="tab-pipelines">
+    <!-- Active/Queued Pipelines -->
+    <div class="dash-card dash-full">
+      <div class="dash-card-title"><i data-lucide="play-circle"></i> Active / Queued Pipelines</div>
+      <div class="dash-pipeline-list" id="active-pipelines-list">
+        <div class="dash-empty">No pipelines running</div>
+      </div>
+    </div>
+
+    <!-- Recent Runs -->
+    <div class="dash-card dash-full">
+      <div class="dash-card-title"><i data-lucide="history"></i> Recent Pipeline Runs</div>
+      <div class="dash-pipeline-list" id="pipeline-runs-list">
+        <div class="dash-empty">Click refresh to load pipeline runs</div>
+      </div>
+    </div>
+  </div><!-- /tab-pipelines -->
+
 </div>
 
 <script>
@@ -605,6 +776,49 @@
   // Set generation timestamp
   var genEl = document.getElementById('dash-generated');
   if (genEl) genEl.textContent = 'generated: ' + new Date().toLocaleString();
+
+  // --- Tab Switcher ---
+  var tabs = document.querySelectorAll('.dash-tab');
+  var panels = document.querySelectorAll('.dash-tab-panel');
+  var ACTIVE_TAB_KEY = 'hv-dash-active-tab';
+
+  function switchTab(tabName) {
+    tabs.forEach(function(t) { t.classList.toggle('is-active', t.getAttribute('data-tab') === tabName); });
+    panels.forEach(function(p) { p.classList.toggle('is-active', p.id === 'tab-' + tabName); });
+    try { localStorage.setItem(ACTIVE_TAB_KEY, tabName); } catch(e) {}
+    // Manage pipeline auto-poll
+    if (tabName === 'pipelines') startPipelinePoll();
+    else stopPipelinePoll();
+  }
+
+  tabs.forEach(function(tab) {
+    tab.addEventListener('click', function() { switchTab(tab.getAttribute('data-tab')); });
+  });
+
+  // Restore last active tab
+  try {
+    var saved = localStorage.getItem(ACTIVE_TAB_KEY);
+    if (saved && document.getElementById('tab-' + saved)) switchTab(saved);
+  } catch(e) {}
+
+  // --- Pipeline Auto-Poll ---
+  var pipelinePollTimer = null;
+
+  function startPipelinePoll() {
+    stopPipelinePoll();
+    pipelinePollTimer = setInterval(function() {
+      if (!window.pywebview || !window.pywebview.api) return;
+      window.pywebview.api.refresh_ado_pipelines().then(function(result) {
+        if (result && result.ok) {
+          renderActivePipelines(result.active_pipelines || []);
+        }
+      }).catch(function() {});
+    }, 60000);
+  }
+
+  function stopPipelinePoll() {
+    if (pipelinePollTimer) { clearInterval(pipelinePollTimer); pipelinePollTimer = null; }
+  }
 
   // --- Burndown Chart ---
   // All burndown state is populated on refresh from live ADO data.
@@ -1279,8 +1493,172 @@
       drawBurndown();
     }
 
+    // --- Source Tab: Commits ---
+    renderCommits(data.commits || [], data.repo_count || 0);
+
+    // --- Source Tab: Branches ---
+    renderBranches(data.branches || [], data.repo_count || 0);
+
+    // --- Pipelines Tab: Active/Queued ---
+    renderActivePipelines(data.active_pipelines || []);
+
+    // --- Pipelines Tab: Recent Runs ---
+    renderPipelineRuns(data.pipeline_runs || []);
+
     // Re-init Lucide icons for any new elements
     if (window.lucide) window.lucide.createIcons();
+  }
+
+  // --- Render: Commits ---
+  function relativeTime(isoStr) {
+    if (!isoStr) return '';
+    var now = new Date();
+    var d = new Date(isoStr);
+    var diff = Math.floor((now - d) / 1000);
+    if (diff < 60) return diff + 's';
+    if (diff < 3600) return Math.floor(diff / 60) + 'm';
+    if (diff < 86400) return Math.floor(diff / 3600) + 'h';
+    return Math.floor(diff / 86400) + 'd';
+  }
+
+  function getAgeClass(isoStr) {
+    if (!isoStr) return 'dash-pr-age-fresh';
+    var now = new Date();
+    var d = new Date(isoStr);
+    var days = Math.floor((now - d) / 86400000);
+    if (days > 7) return 'dash-pr-age-old';
+    if (days > 2) return 'dash-pr-age-mid';
+    return 'dash-pr-age-fresh';
+  }
+
+  function renderCommits(commits, repoCount) {
+    var list = document.getElementById('commit-list');
+    if (!list) return;
+    list.innerHTML = '';
+    if (!commits.length) {
+      list.innerHTML = '<div class="dash-empty">No recent activity across ' + repoCount + ' repos</div>';
+      return;
+    }
+    commits.forEach(function(c) {
+      var item = document.createElement('div');
+      item.className = 'dash-commit-item';
+      item.innerHTML = '<span class="dash-commit-repo">' + c.repo + '</span>' +
+        '<span class="dash-commit-hash">' + c.hash + '</span>' +
+        '<span class="dash-commit-author">' + c.author + '</span>' +
+        '<span class="dash-commit-msg">' + c.message + '</span>' +
+        '<span class="dash-commit-branch">' + (c.branch || '') + '</span>' +
+        '<span class="dash-commit-age ' + getAgeClass(c.date) + '">' + relativeTime(c.date) + '</span>';
+      list.appendChild(item);
+    });
+  }
+
+  // --- Render: Branches ---
+  function renderBranches(branches, repoCount) {
+    var list = document.getElementById('branch-list');
+    if (!list) return;
+    list.innerHTML = '';
+    if (!branches.length) {
+      list.innerHTML = '<div class="dash-empty">No active branches across ' + repoCount + ' repos</div>';
+      return;
+    }
+    branches.forEach(function(b) {
+      var item = document.createElement('div');
+      item.className = 'dash-branch-item';
+      item.innerHTML = '<span class="dash-branch-repo">' + b.repo + '</span>' +
+        '<span class="dash-branch-name">' + b.name + '</span>' +
+        '<span class="dash-branch-hash">' + b.last_commit_hash + '</span>' +
+        '<span class="dash-branch-msg">' + b.last_commit_message + '</span>' +
+        '<span class="dash-branch-author">' + b.author + '</span>' +
+        '<span class="dash-branch-time">' + relativeTime(b.last_commit_date) + '</span>';
+      list.appendChild(item);
+    });
+  }
+
+  // --- Render: Active/Queued Pipelines ---
+  function renderActivePipelines(pipelines) {
+    var list = document.getElementById('active-pipelines-list');
+    if (!list) return;
+    list.innerHTML = '';
+    if (!pipelines.length) {
+      list.innerHTML = '<div class="dash-empty">No pipelines running</div>';
+      return;
+    }
+    pipelines.forEach(function(p) {
+      var isRunning = p.status === 'inProgress';
+      var iconClass = isRunning ? 'dash-pipeline-icon-running' : 'dash-pipeline-icon-queued';
+      var statusLabel = isRunning ? '&#9654;' : '&#9679;';
+      var timeStr = '';
+      if (isRunning && p.started) {
+        var elapsed = Math.floor((new Date() - new Date(p.started)) / 60000);
+        timeStr = elapsed + 'm';
+      } else {
+        timeStr = 'queued';
+      }
+      var item = document.createElement('div');
+      item.className = 'dash-pipeline-item';
+      item.innerHTML = '<span class="dash-pipeline-icon ' + iconClass + '">' + statusLabel + '</span>' +
+        '<span class="dash-pipeline-name">' + p.name + '</span>' +
+        '<span class="dash-pipeline-duration">' + timeStr + '</span>' +
+        '<span class="dash-pipeline-by">' + p.triggered_by + '</span>' +
+        '<span class="dash-pipeline-time">' + (isRunning ? 'running' : 'waiting') + '</span>';
+      // Param badges
+      if (p.parameters && Object.keys(p.parameters).length) {
+        var badges = document.createElement('div');
+        badges.className = 'dash-param-badges';
+        badges.style.gridColumn = '1 / -1';
+        for (var key in p.parameters) {
+          var badge = document.createElement('span');
+          badge.className = 'dash-param-badge';
+          var val = key + '=' + p.parameters[key];
+          badge.textContent = val.length > 30 ? val.slice(0, 30) + '...' : val;
+          badge.title = key + '=' + p.parameters[key];
+          badges.appendChild(badge);
+        }
+        item.appendChild(badges);
+      }
+      list.appendChild(item);
+    });
+  }
+
+  // --- Render: Recent Pipeline Runs ---
+  function renderPipelineRuns(runs) {
+    var list = document.getElementById('pipeline-runs-list');
+    if (!list) return;
+    list.innerHTML = '';
+    if (!runs.length) {
+      list.innerHTML = '<div class="dash-empty">No recent pipeline runs</div>';
+      return;
+    }
+    runs.forEach(function(r) {
+      var icon = '&#10003;';
+      var iconClass = 'dash-pipeline-icon-pass';
+      if (r.result === 'failed') { icon = '&#10007;'; iconClass = 'dash-pipeline-icon-fail'; }
+      else if (r.result === 'canceled') { icon = '&#8212;'; iconClass = 'dash-pipeline-icon-cancel'; }
+
+      var item = document.createElement('div');
+      item.className = 'dash-pipeline-item';
+      item.innerHTML = '<span class="dash-pipeline-icon ' + iconClass + '">' + icon + '</span>' +
+        '<span class="dash-pipeline-name">' + r.name + '</span>' +
+        '<span class="dash-pipeline-duration">' + r.duration_min + 'm</span>' +
+        '<span class="dash-pipeline-by">' + r.triggered_by + '</span>' +
+        '<span class="dash-pipeline-time">' + relativeTime(r.finished) + '</span>';
+      // Param badges
+      if (r.parameters && Object.keys(r.parameters).length) {
+        var badges = document.createElement('div');
+        badges.className = 'dash-param-badges';
+        badges.style.gridColumn = '1 / -1';
+        for (var key in r.parameters) {
+          var badge = document.createElement('span');
+          badge.className = 'dash-param-badge';
+          var val = key + '=' + r.parameters[key];
+          badge.textContent = val.length > 30 ? val.slice(0, 30) + '...' : val;
+          badge.title = key + '=' + r.parameters[key];
+          badges.appendChild(badge);
+        }
+        item.appendChild(badges);
+      }
+      list.appendChild(item);
+    });
   }
 
   // Wire up the refresh button

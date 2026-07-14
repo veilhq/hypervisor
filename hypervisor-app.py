@@ -1022,9 +1022,61 @@ class HypervisorAPI:
                     logger.warning("Failed to fetch burndown history: %s", e)
                     pass  # Non-fatal — dashboard still works without history
 
-            # Build and return the dashboard payload
-            return build_dashboard_payload(iteration, work_items, pull_requests, work_requests, config, burndown_history)
+            # Fetch source control data
+            commits = []
+            branches = []
+            pipeline_runs = []
+            active_pipelines = []
+            try:
+                repos = client.get_repos(config["project"])
+                commits = client.get_recent_commits(config["project"], repos=repos, top=30)
+                branches = client.get_branches_overview(config["project"], repos=repos)
+            except Exception as e:
+                logger.warning("Failed to fetch source control data: %s", e)
 
+            # Fetch pipeline data
+            try:
+                pipeline_runs = client.get_pipeline_runs(config["project"], top=5)
+                active_pipelines = client.get_active_pipeline_runs(config["project"])
+            except Exception as e:
+                logger.warning("Failed to fetch pipeline data: %s", e)
+
+            # Build and return the dashboard payload
+            return build_dashboard_payload(
+                iteration, work_items, pull_requests, work_requests, config,
+                burndown_history, commits=commits, branches=branches,
+                pipeline_runs=pipeline_runs, active_pipelines=active_pipelines,
+            )
+
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+
+    def refresh_ado_pipelines(self):
+        """Lightweight poll — fetch only active/queued pipeline runs.
+
+        Used by the 60s auto-poll on the Pipelines tab to avoid re-fetching
+        the entire dashboard payload.
+
+        Returns:
+            dict with active_pipelines list or error.
+        """
+        try:
+            tools_dir = Path(__file__).parent / "tools"
+            sys.path.insert(0, str(tools_dir))
+            from ado_collector import load_config, ADOClient, ADOConfigError
+            sys.path.pop(0)
+        except ImportError as e:
+            return {"ok": False, "error": f"Failed to import ado modules: {e}"}
+
+        try:
+            config = load_config()
+        except ADOConfigError as e:
+            return {"ok": False, "error": str(e)}
+
+        try:
+            client = ADOClient(config["org"], pat=config.get("pat"), use_entra=config.get("use_entra", False))
+            active_pipelines = client.get_active_pipeline_runs(config["project"])
+            return {"ok": True, "active_pipelines": active_pipelines}
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
