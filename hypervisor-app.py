@@ -25,7 +25,14 @@ from pathlib import Path
 import bottle
 import webview
 
-logger = logging.getLogger("hypervisor")
+# ---------------------------------------------------------------------------
+# Structured logging (shared ecosystem logger)
+# ---------------------------------------------------------------------------
+sys.path.insert(0, str(Path(__file__).parent.parent.resolve()))
+from hyper_logging import setup_logger  # noqa: E402
+
+logger = setup_logger("hypervisor")
+
 import webview.http
 
 from site_utils.config import HYPERSPACE_ROOT, OUTPUT_DIR, ASSETS_DIR
@@ -1018,6 +1025,79 @@ class HypervisorAPI:
             # Build and return the dashboard payload
             return build_dashboard_payload(iteration, work_items, pull_requests, work_requests, config, burndown_history)
 
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+
+    # -----------------------------------------------------------------------
+    # Log Viewer
+    # -----------------------------------------------------------------------
+
+    def list_log_files(self):
+        """List available log files in .hyperspace/.logs/.
+
+        Returns:
+            dict with ok and files list [{name, size_bytes, modified}].
+        """
+        log_dir = HYPERSPACE_ROOT / ".logs"
+        if not log_dir.exists():
+            return {"ok": True, "files": []}
+
+        files = []
+        for f in sorted(log_dir.glob("*.log")):
+            try:
+                stat = f.stat()
+                files.append({
+                    "name": f.name,
+                    "size_bytes": stat.st_size,
+                    "modified": stat.st_mtime,
+                })
+            except OSError:
+                continue
+
+        return {"ok": True, "files": files}
+
+    def read_log_tail(self, filename, lines=200, after_line=0):
+        """Read the last N lines from a log file, or lines after a given index.
+
+        Args:
+            filename: Log filename (e.g. "hypervisor.log") — must be in .logs/
+            lines: Maximum number of lines to return (default 200)
+            after_line: If > 0, return only lines after this index (for polling)
+
+        Returns:
+            dict with ok, lines list, and total_lines count.
+        """
+        log_dir = HYPERSPACE_ROOT / ".logs"
+        log_path = log_dir / filename
+
+        # Security: prevent path traversal
+        try:
+            log_path = log_path.resolve()
+            if not str(log_path).startswith(str(log_dir.resolve())):
+                return {"ok": False, "error": "Invalid filename"}
+        except (OSError, ValueError):
+            return {"ok": False, "error": "Invalid filename"}
+
+        if not log_path.exists():
+            return {"ok": True, "lines": [], "total_lines": 0}
+
+        try:
+            content = log_path.read_text(encoding="utf-8", errors="replace")
+            all_lines = content.splitlines()
+            total = len(all_lines)
+
+            if after_line > 0:
+                # Return only new lines since last poll
+                result_lines = all_lines[after_line:]
+            else:
+                # Return last N lines
+                result_lines = all_lines[-lines:] if len(all_lines) > lines else all_lines
+
+            return {
+                "ok": True,
+                "lines": result_lines,
+                "total_lines": total,
+            }
         except Exception as e:
             return {"ok": False, "error": str(e)}
 

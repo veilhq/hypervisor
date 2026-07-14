@@ -11,6 +11,7 @@ rebuilds when the file's actual bytes have changed.
 """
 
 import hashlib
+import sys
 import time
 import threading
 from pathlib import Path, PurePosixPath
@@ -19,6 +20,12 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
 from site_utils.config import HYPERSPACE_ROOT, OUTPUT_DIR
+
+# Structured logging (shared ecosystem logger)
+sys.path.insert(0, str(Path(__file__).parent.parent.resolve()))
+from hyper_logging import setup_logger  # noqa: E402
+
+logger = setup_logger("hypervisor")
 
 
 class MarkdownHandler(FileSystemEventHandler):
@@ -201,6 +208,10 @@ class MarkdownHandler(FileSystemEventHandler):
             path = self._pending_path
             self._pending_path = None
             self._timer = None
+        if path:
+            logger.info("watcher: file changed, rebuilding: %s", path)
+        else:
+            logger.info("watcher: change detected, triggering full rebuild")
         self.rebuild_callback(path)
 
 
@@ -217,6 +228,7 @@ class FileWatcher:
         watch_path = str(HYPERSPACE_ROOT.resolve())
         self.observer.schedule(self.handler, watch_path, recursive=True)
         self.observer.start()
+        logger.info("watcher started: %s", watch_path)
         print(f"  Watching: {watch_path}")
 
     def stop(self):

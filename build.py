@@ -12,6 +12,7 @@ Usage:
 
 import json
 import shutil
+import sys
 import time
 from datetime import datetime
 from pathlib import PurePosixPath
@@ -19,6 +20,12 @@ from pathlib import PurePosixPath
 from site_utils.config import HYPERSPACE_ROOT, OUTPUT_DIR, ASSETS_DIR, SKIP_DIRS
 from site_utils.file_utils import collect_files, html_dir_for, nice_name, get_title, extract_dates, sort_date, count_docs_under
 from site_utils.build_cache import BuildCache
+
+# Structured logging (shared ecosystem logger)
+sys.path.insert(0, str(OUTPUT_DIR.parent.parent.resolve()))
+from hyper_logging import setup_logger  # noqa: E402
+
+logger = setup_logger("hypervisor")
 
 # Utilities directory (HTML snippets for interactive tools)
 _HYPERVISOR_DIR = OUTPUT_DIR.parent
@@ -281,9 +288,13 @@ def full_build(quiet=False):
     if not quiet:
         print("Hypervisor: scanning .hyperspace ...")
 
+    logger.info("full_build started: build_id=%s", build_id)
+
     files = collect_files(HYPERSPACE_ROOT)
     if not quiet:
         print(f"  Found {len(files)} markdown documents")
+
+    logger.info("collected %d markdown documents", len(files))
 
     # Initialize build cache — detects template/asset changes automatically
     cache = BuildCache()
@@ -385,6 +396,8 @@ def full_build(quiet=False):
             print(f"  Generated {page_count} fragments ({len(files)} docs + {len(all_dirs)} indexes + 1 home)")
         print(f"  Output: {OUTPUT_DIR}")
 
+    logger.info("full_build complete: %d fragments (%d rendered, %d cached)", page_count, rendered, len(files) - rendered)
+
     # Write _build.json so existing browser tabs can detect the new build
     build_json_data = json.dumps({"buildId": build_id})
     (OUTPUT_DIR / "_build.json").write_text(build_json_data, encoding="utf-8")
@@ -402,6 +415,8 @@ def build_single_file(changed_path):
     Returns the build_id used for this rebuild.
     """
     from pathlib import Path, PurePosixPath
+
+    logger.info("incremental build: %s", changed_path)
 
     build_id = str(int(time.time() * 1000))
     files = collect_files(HYPERSPACE_ROOT)

@@ -1,0 +1,563 @@
+<div class="log-viewer-layout">
+  <div class="utility-container log-viewer-container">
+    <h1><i data-lucide="terminal" class="utility-title-icon"></i> Log Viewer</h1>
+
+    <!-- Toolbar -->
+    <div class="log-toolbar">
+      <div class="log-toolbar-left">
+        <!-- Source toggles -->
+        <button class="log-filter-btn log-filter-active" data-source="all" id="log-src-all">All</button>
+        <button class="log-filter-btn log-filter-active" data-source="hypervisor" id="log-src-hypervisor">Hypervisor</button>
+        <button class="log-filter-btn log-filter-active" data-source="hyperagent" id="log-src-hyperagent">Hyperagent</button>
+        <button class="log-filter-btn log-filter-active" data-source="bridge" id="log-src-bridge">Bridge</button>
+      </div>
+      <div class="log-toolbar-center">
+        <!-- Severity toggles -->
+        <button class="log-severity-btn log-severity-active" data-severity="error" id="log-sev-error">
+          <span class="log-sev-dot log-sev-dot-error"></span>ERR
+        </button>
+        <button class="log-severity-btn log-severity-active" data-severity="warn" id="log-sev-warn">
+          <span class="log-sev-dot log-sev-dot-warn"></span>WARN
+        </button>
+        <button class="log-severity-btn log-severity-active" data-severity="info" id="log-sev-info">
+          <span class="log-sev-dot log-sev-dot-info"></span>INFO
+        </button>
+        <button class="log-severity-btn log-severity-active" data-severity="debug" id="log-sev-debug">
+          <span class="log-sev-dot log-sev-dot-debug"></span>DEBUG
+        </button>
+      </div>
+      <div class="log-toolbar-right">
+        <input type="text" class="log-search-input" id="log-search" placeholder="Filter..." spellcheck="false" autocomplete="off">
+        <button class="log-toolbar-action" id="log-pause" title="Pause/resume live polling">
+          <i data-lucide="pause" class="log-toolbar-action-icon" id="log-pause-icon"></i>
+        </button>
+        <button class="log-toolbar-action" id="log-clear" title="Clear display">
+          <i data-lucide="trash-2" class="log-toolbar-action-icon"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Log output panel -->
+    <div class="log-panel" id="log-panel">
+      <div class="log-panel-inner" id="log-panel-inner">
+        <div class="log-empty" id="log-empty">Waiting for logs...</div>
+      </div>
+    </div>
+
+    <!-- Status bar -->
+    <div class="log-status-bar">
+      <span id="log-status-lines">0 lines</span>
+      <span id="log-status-poll" class="log-status-live">&#9679; Live</span>
+    </div>
+  </div>
+</div>
+
+<style>
+/* === Log Viewer Utility Styles === */
+
+.log-viewer-layout {
+  height: calc(100vh - 10rem - 48px); /* viewport - page padding - topbar - h1/margins */
+  max-height: calc(100vh - 10rem - 48px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.log-viewer-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  gap: 0.5rem;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.log-viewer-container h1 {
+  margin: 0 0 0.5rem 0;
+}
+
+/* --- Toolbar --- */
+
+.log-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.4rem 0;
+  width: 100%;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.log-toolbar-left,
+.log-toolbar-center,
+.log-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.log-toolbar-right {
+  margin-left: auto;
+}
+
+.log-filter-btn,
+.log-severity-btn {
+  font-size: 0.65rem;
+  font-family: var(--font);
+  padding: 0.25rem 0.6rem;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  transition: all 0.15s ease;
+}
+
+.log-filter-btn:hover,
+.log-severity-btn:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.log-filter-btn.log-filter-active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.log-severity-btn.log-severity-active {
+  border-color: var(--text-muted);
+  color: var(--text);
+}
+
+.log-sev-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 0.25rem;
+  vertical-align: middle;
+}
+
+.log-sev-dot-error { background: #ff4444; }
+.log-sev-dot-warn { background: #ffb000; }
+.log-sev-dot-info { background: var(--accent); }
+.log-sev-dot-debug { background: var(--text-dim); }
+
+.log-search-input {
+  font-family: var(--font);
+  font-size: 0.65rem;
+  padding: 0.25rem 0.6rem;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  width: 160px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.log-search-input:focus {
+  border-color: var(--accent);
+}
+
+.log-toolbar-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.log-toolbar-action:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.log-toolbar-action-icon {
+  width: 14px;
+  height: 14px;
+}
+
+/* --- Log Panel --- */
+
+.log-panel {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: #0a0a0a;
+  border: 1px solid var(--border);
+  padding: 0.75rem;
+  font-family: var(--font);
+  font-size: 0.7rem;
+  line-height: 1.6;
+}
+
+.log-panel-inner {
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.log-empty {
+  color: var(--text-dim);
+  padding: 2rem;
+  text-align: center;
+}
+
+/* Log line styles */
+.log-line {
+  padding: 0 0.25rem;
+  border-left: 2px solid transparent;
+  display: block;
+}
+
+.log-line:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.log-line-error {
+  color: #ff4444;
+  border-left-color: #ff4444;
+}
+
+.log-line-warn {
+  color: #ffb000;
+  border-left-color: #ffb000;
+}
+
+.log-line-info {
+  color: var(--accent);
+  border-left-color: transparent;
+}
+
+.log-line-debug {
+  color: var(--text-dim);
+  border-left-color: transparent;
+}
+
+.log-ts {
+  color: var(--text-muted);
+}
+
+.log-level {
+  font-weight: 700;
+}
+
+.log-source {
+  color: var(--cool);
+}
+
+.log-msg {
+  color: inherit;
+}
+
+.log-highlight {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+/* --- Status Bar --- */
+
+.log-status-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.6rem;
+  color: var(--text-dim);
+  padding: 0.35rem 0;
+  border-top: 1px solid var(--border);
+}
+
+.log-status-live {
+  color: var(--accent);
+}
+
+.log-status-paused {
+  color: #ffb000;
+}
+</style>
+
+<script>
+(function() {
+  "use strict";
+
+  // --- State ---
+  var logLines = [];          // All parsed log entries
+  var totalLinesByFile = {};  // Track total lines per file for polling
+  var activeSources = { hypervisor: true, hyperagent: true, bridge: true };
+  var activeSeverities = { error: true, warn: true, info: true, debug: true };
+  var searchText = "";
+  var isPaused = false;
+  var autoScroll = true;
+  var pollTimer = null;
+  var POLL_INTERVAL = 2000;
+
+  // --- DOM refs ---
+  var panel = document.getElementById("log-panel");
+  var panelInner = document.getElementById("log-panel-inner");
+  var emptyMsg = document.getElementById("log-empty");
+  var searchInput = document.getElementById("log-search");
+  var pauseBtn = document.getElementById("log-pause");
+  var pauseIcon = document.getElementById("log-pause-icon");
+  var clearBtn = document.getElementById("log-clear");
+  var statusLines = document.getElementById("log-status-lines");
+  var statusPoll = document.getElementById("log-status-poll");
+
+  // --- Line Parser ---
+  // Format: 2026-07-14T12:15:03.421 [INFO ] [hypervisor.build] message
+  var LINE_RE = /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3})\s+\[(\w+)\s*\]\s+\[([^\]]+)\]\s+(.*)$/;
+
+  function parseLine(raw, source) {
+    var m = raw.match(LINE_RE);
+    if (m) {
+      return {
+        timestamp: m[1],
+        level: m[2].toLowerCase().replace("warni", "warn").replace("warning", "warn"),
+        module: m[3],
+        message: m[4],
+        source: source,
+        raw: raw,
+      };
+    }
+    // Unparseable — show as-is with info level
+    return {
+      timestamp: "",
+      level: "info",
+      module: source,
+      message: raw,
+      source: source,
+      raw: raw,
+    };
+  }
+
+  // --- Rendering ---
+  function escapeHtml(text) {
+    return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  function highlightSearch(text, term) {
+    if (!term) return escapeHtml(text);
+    var escaped = escapeHtml(text);
+    var re = new RegExp("(" + term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")", "gi");
+    return escaped.replace(re, '<span class="log-highlight">$1</span>');
+  }
+
+  function shouldShow(entry) {
+    if (!activeSources[entry.source]) return false;
+    var sev = entry.level === "error" ? "error"
+            : (entry.level === "warn" || entry.level === "warning") ? "warn"
+            : entry.level === "debug" ? "debug" : "info";
+    if (!activeSeverities[sev]) return false;
+    if (searchText && entry.raw.toLowerCase().indexOf(searchText.toLowerCase()) === -1) return false;
+    return true;
+  }
+
+  function renderAll() {
+    var visible = logLines.filter(shouldShow);
+    if (visible.length === 0) {
+      panelInner.innerHTML = '<div class="log-empty">No matching log entries</div>';
+      statusLines.textContent = "0 lines";
+      return;
+    }
+
+    var html = "";
+    for (var i = 0; i < visible.length; i++) {
+      var e = visible[i];
+      var sev = e.level === "error" ? "error"
+              : (e.level === "warn" || e.level === "warning") ? "warn"
+              : e.level === "debug" ? "debug" : "info";
+      var cls = "log-line log-line-" + sev;
+
+      html += '<span class="' + cls + '">';
+      if (e.timestamp) {
+        html += '<span class="log-ts">' + escapeHtml(e.timestamp) + '</span> ';
+        html += '<span class="log-level">[' + escapeHtml(e.level.toUpperCase()) + ']</span> ';
+        html += '<span class="log-source">[' + escapeHtml(e.module) + ']</span> ';
+      }
+      html += '<span class="log-msg">' + highlightSearch(e.message, searchText) + '</span>';
+      html += '</span>\n';
+    }
+
+    panelInner.innerHTML = html;
+    statusLines.textContent = visible.length + " / " + logLines.length + " lines";
+
+    if (autoScroll) {
+      panel.scrollTop = panel.scrollHeight;
+    }
+  }
+
+  // --- Auto-scroll detection ---
+  panel.addEventListener("scroll", function() {
+    var atBottom = panel.scrollHeight - panel.scrollTop - panel.clientHeight < 30;
+    autoScroll = atBottom;
+  });
+
+  // --- Source filter buttons ---
+  var srcBtns = document.querySelectorAll(".log-filter-btn");
+  srcBtns.forEach(function(btn) {
+    btn.addEventListener("click", function() {
+      var src = btn.getAttribute("data-source");
+      if (src === "all") {
+        // Toggle all
+        var allActive = activeSources.hypervisor && activeSources.hyperagent && activeSources.bridge;
+        activeSources.hypervisor = !allActive;
+        activeSources.hyperagent = !allActive;
+        activeSources.bridge = !allActive;
+      } else {
+        activeSources[src] = !activeSources[src];
+      }
+      updateSourceButtons();
+      renderAll();
+    });
+  });
+
+  function updateSourceButtons() {
+    srcBtns.forEach(function(btn) {
+      var src = btn.getAttribute("data-source");
+      if (src === "all") {
+        var allActive = activeSources.hypervisor && activeSources.hyperagent && activeSources.bridge;
+        btn.classList.toggle("log-filter-active", allActive);
+      } else {
+        btn.classList.toggle("log-filter-active", activeSources[src]);
+      }
+    });
+  }
+
+  // --- Severity filter buttons ---
+  var sevBtns = document.querySelectorAll(".log-severity-btn");
+  sevBtns.forEach(function(btn) {
+    btn.addEventListener("click", function() {
+      var sev = btn.getAttribute("data-severity");
+      activeSeverities[sev] = !activeSeverities[sev];
+      btn.classList.toggle("log-severity-active", activeSeverities[sev]);
+      renderAll();
+    });
+  });
+
+  // --- Text search ---
+  searchInput.addEventListener("input", function() {
+    searchText = searchInput.value;
+    renderAll();
+  });
+
+  // --- Pause/resume ---
+  pauseBtn.addEventListener("click", function() {
+    isPaused = !isPaused;
+    if (isPaused) {
+      pauseIcon.setAttribute("data-lucide", "play");
+      statusPoll.textContent = "\u25CF Paused";
+      statusPoll.className = "log-status-paused";
+      stopPolling();
+    } else {
+      pauseIcon.setAttribute("data-lucide", "pause");
+      statusPoll.textContent = "\u25CF Live";
+      statusPoll.className = "log-status-live";
+      startPolling();
+    }
+    // Re-render Lucide icon
+    if (window.lucide) lucide.createIcons({ nodes: [pauseIcon] });
+  });
+
+  // --- Clear ---
+  clearBtn.addEventListener("click", function() {
+    logLines = [];
+    totalLinesByFile = {};
+    renderAll();
+  });
+
+  // --- Polling ---
+  var LOG_FILES = ["hypervisor.log", "hyperagent.log", "bridge.log"];
+  var SOURCE_MAP = {
+    "hypervisor.log": "hypervisor",
+    "hyperagent.log": "hyperagent",
+    "bridge.log": "bridge",
+  };
+
+  function pollLogs() {
+    if (!window.pywebview || !window.pywebview.api) return;
+
+    LOG_FILES.forEach(function(filename) {
+      var afterLine = totalLinesByFile[filename] || 0;
+      var source = SOURCE_MAP[filename];
+
+      window.pywebview.api.read_log_tail(filename, 200, afterLine).then(function(result) {
+        if (!result.ok) return;
+
+        totalLinesByFile[filename] = result.total_lines;
+
+        if (result.lines.length > 0) {
+          for (var i = 0; i < result.lines.length; i++) {
+            var line = result.lines[i].trim();
+            if (line) {
+              logLines.push(parseLine(line, source));
+            }
+          }
+          renderAll();
+        }
+      });
+    });
+  }
+
+  function startPolling() {
+    if (pollTimer) return;
+    pollLogs(); // Immediate first poll
+    pollTimer = setInterval(pollLogs, POLL_INTERVAL);
+  }
+
+  function stopPolling() {
+    if (pollTimer) {
+      clearInterval(pollTimer);
+      pollTimer = null;
+    }
+  }
+
+  // --- Initial load ---
+  function initialLoad() {
+    if (!window.pywebview || !window.pywebview.api) {
+      // Wait for bridge
+      setTimeout(initialLoad, 300);
+      return;
+    }
+
+    LOG_FILES.forEach(function(filename) {
+      var source = SOURCE_MAP[filename];
+
+      window.pywebview.api.read_log_tail(filename, 200, 0).then(function(result) {
+        if (!result.ok) return;
+
+        totalLinesByFile[filename] = result.total_lines;
+
+        for (var i = 0; i < result.lines.length; i++) {
+          var line = result.lines[i].trim();
+          if (line) {
+            logLines.push(parseLine(line, source));
+          }
+        }
+
+        // Sort by timestamp after initial load of all files
+        logLines.sort(function(a, b) {
+          return (a.timestamp || "").localeCompare(b.timestamp || "");
+        });
+
+        renderAll();
+      });
+    });
+
+    // Start live polling after initial load
+    setTimeout(startPolling, 1000);
+  }
+
+  // Kick off
+  initialLoad();
+
+  // Cleanup on navigation away
+  window.addEventListener("beforeunload", stopPolling);
+})();
+</script>

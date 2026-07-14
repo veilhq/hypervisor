@@ -26,6 +26,7 @@
           '<div class="shortcut-row"><kbd>Ctrl+F4</kbd><span>Close active tab</span></div>' +
           '<div class="shortcut-row"><kbd>e</kbd><span>Export page as standalone HTML</span></div>' +
           '<div class="shortcut-row"><kbd>p</kbd><span>Go to pinboard</span></div>' +
+          '<div class="shortcut-row" id="shortcut-logs" style="display:none"><kbd>l</kbd><span>Open log viewer</span></div>' +
           '<div class="shortcut-row" id="shortcut-rebuild" style="display:none"><kbd>r</kbd><span>Rebuild site</span></div>' +
           '<div class="shortcut-row" id="shortcut-fullscreen" style="display:none"><kbd>f</kbd><span>Toggle fullscreen</span></div>' +
         '</div>' +
@@ -101,11 +102,21 @@
           window.pywebview.api.rebuild();
         }
       }
+      if (e.key === "l" && document.activeElement !== searchInput &&
+          document.activeElement.tagName !== "INPUT" &&
+          document.activeElement.tagName !== "TEXTAREA" &&
+          !overlay.classList.contains("visible")) {
+        if (window.pywebview && window.pywebview.api) {
+          window.location.href = "/_utils/log-viewer/index.html";
+        }
+      }
     });
 
     // Show rebuild shortcut row when running in PyWebView
     if (window.pywebview && window.pywebview.api) {
       var rebuildShortcutRow = document.getElementById("shortcut-rebuild");
       if (rebuildShortcutRow) rebuildShortcutRow.style.display = "";
+      var logsShortcutRow = document.getElementById("shortcut-logs");
+      if (logsShortcutRow) logsShortcutRow.style.display = "";
     }
   })();
