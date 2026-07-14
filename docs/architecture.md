@@ -3,7 +3,7 @@
 How the Hypervisor build pipeline works — from markdown source to browsable static site.
 
 - Created: 2026-04-22T00:00
-- Updated: 2026-07-14T09:43
+- Updated: 2026-07-14T13:04
 
 ## Project Structure
 
@@ -123,6 +123,14 @@ How the Hypervisor build pipeline works — from markdown source to browsable st
 │   ├── mcp-server.md
 │   └── technical-reference.md
 └── site/                       # Generated output (ephemeral, not version-controlled)
+
+# Shared ecosystem files (in .hyperspace/ root, siblings of .hypervisor/)
+.hyperspace/
+├── hyper_logging.py            # Shared structured logging setup (imported by all apps)
+└── .logs/                      # Centralized log output (gitignored)
+    ├── hypervisor.log
+    ├── hyperagent.log
+    └── bridge.log
 ```
 
 ## How the Build Works
@@ -503,3 +511,59 @@ With the SPA architecture, 404 handling is two-layered:
 ## Supported Code Block Languages
 
 The `label_code_blocks` transform recognizes: python, javascript, jsx, typescript, tsx, bash, shell, sql, json, yaml, html, css, terraform, hcl, markdown, text, nix.
+
+## Ecosystem Logging
+
+All hyper ecosystem apps share a unified logging infrastructure via `.hyperspace/hyper_logging.py`.
+
+### Setup
+
+```python
+sys.path.insert(0, str(HYPERSPACE_ROOT))
+from hyper_logging import setup_logger
+
+logger = setup_logger("hypervisor")  # or "hyperagent", "bridge"
+```
+
+### Log Format
+
+```
+2026-07-14T12:15:03.421 [INFO ] [hypervisor.build] Full build complete: 279 fragments
+```
+
+Format: `{ISO timestamp}.{ms} [{LEVEL:5}] [{logger.module}] {message}`
+
+### Log Files
+
+All logs are written to `.hyperspace/.logs/`:
+
+| File | Source | Content |
+|------|--------|---------|
+| `hypervisor.log` | Hypervisor app, build.py, watcher.py | Build events, file watch triggers, bridge calls |
+| `hyperagent.log` | Hyperagent desktop app | ACP lifecycle, session management, push events |
+| `bridge.log` | ACP bridge subprocess | JSON-RPC relay traffic, kiro-cli stderr |
+
+### Rotation
+
+- **Handler:** `RotatingFileHandler`
+- **Max size:** 2 MB per file
+- **Backups:** 3 (`.log`, `.log.1`, `.log.2`, `.log.3`)
+- **Total max disk:** ~24 MB ecosystem-wide
+
+### Severity Guidelines
+
+| Level | Use for |
+|-------|---------|
+| `ERROR` | Failures that break functionality (connection lost, file not found, crashes) |
+| `WARNING` | Recoverable issues (session load failed → creating new, auth required, operation skipped) |
+| `INFO` | Lifecycle events (app started, build complete, session connected, watcher triggered) |
+| `DEBUG` | Protocol traffic (JSON-RPC messages, push_js calls, relay byte counts) |
+
+### Bridge API (Log Viewer)
+
+The Hypervisor desktop app exposes log reading via the PyWebView bridge:
+
+- `list_log_files()` — returns available `.log` files with size and mtime
+- `read_log_tail(filename, lines, after_line)` — returns last N lines or lines after an index (for polling)
+
+The Log Viewer utility page (`utilities/log-viewer.html`) uses these to display real-time logs with source/severity filtering.
