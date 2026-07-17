@@ -25,6 +25,9 @@
         <button class="log-severity-btn log-severity-active" data-severity="debug" id="log-sev-debug">
           <span class="log-sev-dot log-sev-dot-debug"></span>DEBUG
         </button>
+        <button class="log-severity-btn log-severity-active" data-severity="trace" id="log-sev-trace">
+          <span class="log-sev-dot log-sev-dot-trace"></span>TRACE
+        </button>
       </div>
       <div class="log-toolbar-right">
         <input type="text" class="log-search-input" id="log-search" placeholder="Filter..." spellcheck="false" autocomplete="off">
@@ -144,6 +147,7 @@
 .log-sev-dot-warn { background: #ffb000; }
 .log-sev-dot-info { background: var(--accent); }
 .log-sev-dot-debug { background: var(--text-dim); }
+.log-sev-dot-trace { background: var(--cool); }
 
 .log-search-input {
   font-family: var(--font);
@@ -242,6 +246,13 @@
   border-left-color: transparent;
 }
 
+.log-line-trace {
+  color: var(--text-dim);
+  border-left-color: var(--cool);
+  font-style: italic;
+  opacity: 0.85;
+}
+
 .log-ts {
   color: var(--text-muted);
 }
@@ -292,7 +303,7 @@
   var logLines = [];          // All parsed log entries
   var totalLinesByFile = {};  // Track total lines per file for polling
   var activeSources = { hypervisor: true, hyperagent: true, bridge: true };
-  var activeSeverities = { error: true, warn: true, info: true, debug: true };
+  var activeSeverities = { error: true, warn: true, info: true, debug: true, trace: true };
   var searchText = "";
   var isPaused = false;
   var autoScroll = true;
@@ -353,6 +364,7 @@
     if (!activeSources[entry.source]) return false;
     var sev = entry.level === "error" ? "error"
             : (entry.level === "warn" || entry.level === "warning") ? "warn"
+            : entry.level === "trace" ? "trace"
             : entry.level === "debug" ? "debug" : "info";
     if (!activeSeverities[sev]) return false;
     if (searchText && entry.raw.toLowerCase().indexOf(searchText.toLowerCase()) === -1) return false;
@@ -372,6 +384,7 @@
       var e = visible[i];
       var sev = e.level === "error" ? "error"
               : (e.level === "warn" || e.level === "warning") ? "warn"
+              : e.level === "trace" ? "trace"
               : e.level === "debug" ? "debug" : "info";
       var cls = "log-line log-line-" + sev;
 
