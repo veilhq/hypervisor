@@ -85,9 +85,11 @@ For every directory that contains documents, an index page is auto-generated. Th
 ### 6. Generate Homepage
 
 The homepage is built last. It shows:
-- Recently updated documents (top 10 by date)
-- Category cards (one per top-level directory)
-- Build statistics
+- A hero band (ASCII logo + flag-style tagline)
+- A KPI strip (docs, pages, indexes, active count, build timestamp)
+- The **Workspace Pulse** panel — active work items with WI-ID pills, task-progress bars, days-in-progress, plus a day-grouped stream of the 10 most recently updated documents
+- The **Pinned** panel — client-side rendered from localStorage on page load
+- Root-level documents (any `.md` files directly in `.hyperspace/`)
 
 ## Three Entry Points
 

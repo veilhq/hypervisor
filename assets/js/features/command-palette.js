@@ -21,6 +21,7 @@
       { name: "Export Page",            icon: "package",       fn: function () { var b = document.getElementById("export-btn"); if (b) b.click(); } },
       { name: "Pin / Unpin Page",       icon: "pin",           fn: function () { var b = document.querySelector(".pin-btn"); if (b) b.click(); } },
       { name: "Go to Pinboard",         icon: "bookmark",      fn: function () { if (window.__router) window.__router.navigate("/_pins/index.html"); } },
+      { name: "Go to About",            icon: "info",          fn: function () { if (window.__router) window.__router.navigate("/_about/index.html"); } },
       { name: "Scroll to Top",          icon: "arrow-up",      fn: function () { window.scrollTo({ top: 0, behavior: "smooth" }); } },
       { name: "Launch Dev Environment", icon: "terminal",      fn: function () { if (window.pywebview && window.pywebview.api && window.pywebview.api.launch_dev) window.pywebview.api.launch_dev(); } }
     ];

@@ -72,6 +72,9 @@
           // Re-render pinboard if currently on it
           var container = document.querySelector(".pinboard-content");
           if (container) renderPinboard(container);
+          // Re-render homepage pins panel if currently on the home page
+          var homeMount = document.querySelector("[data-pins-home-list]");
+          if (homeMount) renderHomepagePins(homeMount);
           updateNavPinCount();
         };
         if (result && typeof result.then === "function") {
@@ -154,6 +157,12 @@
         if (container) renderPinboard(container);
       }
 
+      // Render homepage compact pins panel
+      if (fragment.pageType === "home") {
+        var homeMount = document.querySelector("[data-pins-home-list]");
+        if (homeMount) renderHomepagePins(homeMount);
+      }
+
       updateNavPinCount();
     }
 
@@ -163,6 +172,62 @@
         var count = getPins().length;
         countEl.textContent = count > 0 ? count : "";
       }
+    }
+
+    // --- Render homepage compact pins panel ---
+    function renderHomepagePins(container) {
+      var pins = getPins().slice();
+      // Recently pinned first
+      pins.sort(function (a, b) { return (b.pinned || 0) - (a.pinned || 0); });
+
+      // Update count in the panel header
+      var countEl = document.querySelector("[data-pins-home-count]");
+      if (countEl) countEl.textContent = pins.length ? String(pins.length) : "";
+
+      if (!pins.length) {
+        container.innerHTML =
+          '<div class="pins-home-empty">' +
+          'no pins yet &mdash; pin a doc from any page, or visit the ' +
+          '<a href="#_pins">pinboard</a>.' +
+          '</div>';
+        return;
+      }
+
+      var hrefMap = {};
+      if (typeof index !== "undefined" && index && index.length) {
+        index.forEach(function (entry) {
+          hrefMap[entry.path] = {
+            href: entry.href,
+            title: entry.title,
+            work_id: entry.work_id,
+          };
+        });
+      }
+
+      var html = "";
+      pins.forEach(function (pin) {
+        var entry = hrefMap[pin.path];
+        var href = entry ? entry.href : "#";
+        var title = entry ? entry.title : pin.title;
+        var workId = entry && entry.work_id ? entry.work_id : "";
+        var pathParts = pin.path.split("/");
+        var category = pathParts[0] || "";
+        var categoryLabel = category.replace(/-/g, " ").replace(/_/g, " ");
+
+        html += '<a class="pin-row" href="' + href + '">';
+        html += '<span class="pin-row-title">' + escapeHtml(title) + '</span>';
+        html += '<span class="pin-row-meta">';
+        if (categoryLabel) {
+          html += '<span class="pin-row-meta-category">' + escapeHtml(categoryLabel) + '</span>';
+        }
+        if (workId) {
+          html += '<span class="pin-row-meta-workid">' + escapeHtml(workId) + '</span>';
+        }
+        html += '</span>';
+        html += '</a>';
+      });
+
+      container.innerHTML = html;
     }
 
     // --- Render pinboard page content ---

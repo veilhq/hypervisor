@@ -295,6 +295,14 @@
     if (window.location.hash) {
       var hashTarget = document.getElementById(window.location.hash.slice(1));
       if (hashTarget) {
+        // If the target is inside a collapsed <details class="doc-section">,
+        // auto-open it so the section is visible when the hash lands.
+        var section = hashTarget.closest ? hashTarget.closest("details.doc-section") : null;
+        if (section && !section.open) section.open = true;
+        // Also handle the case where the hashTarget IS a doc-section
+        if (hashTarget.tagName === "DETAILS" && hashTarget.classList.contains("doc-section") && !hashTarget.open) {
+          hashTarget.open = true;
+        }
         setTimeout(function () { hashTarget.scrollIntoView(); }, 10);
       }
     }

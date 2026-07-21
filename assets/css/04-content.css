@@ -205,65 +205,196 @@
 .highlight .nc { color: var(--warm); }
 .highlight .nd, .highlight .bp, .highlight .si { color: var(--cool); }
 
-/* ---- Document metadata block ---- */
-.doc-meta {
+/* ---- Document header strip (chip-row metadata, matches Pulse rhythm) ---- */
+.doc-header-strip {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  margin: 0.75rem 0 1.75rem;
+  border-bottom: 1px solid var(--border);
+  animation: fadeSlideIn 0.3s var(--ease) 0.1s both;
+}
+/* The markdown `---` between metadata and first section renders as <hr> right
+   after the strip. Suppress it since the strip's own bottom border already
+   marks the header/body boundary. */
+.doc-header-strip + hr {
+  display: none;
+}
+
+/* Left cluster: WI + status chips */
+.doc-header-chips {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  min-width: 0;
+}
+.doc-header-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 22px;
+  padding: 0 0.6rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+/* WI: filled accent — same silhouette as Pulse's WI pill */
+.doc-header-chip-wi {
+  color: var(--bg);
+  background: var(--accent);
+  min-width: 7ch;
+  box-sizing: content-box;
+}
+/* Status "In Progress" / "In Discussion" — filled accent, active signal */
+.doc-header-chip-status-active {
+  color: var(--bg);
+  background: var(--accent);
+}
+/* Status Complete / Fixed / Approved / etc. — outlined muted, historical */
+.doc-header-chip-status-idle {
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+/* Project: outlined accent — third identity chip, quieter than filled WI/status */
+.doc-header-chip-project {
+  color: var(--accent);
+  background: transparent;
+  border: 1px solid var(--accent-border);
+}
+
+/* Middle: topic tag chips (project moved to left identity cluster) */
+.doc-header-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  min-width: 0;
+}
+.doc-header-tag {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 0.55rem;
+  font-size: 0.65rem;
+  letter-spacing: 0.04em;
+  text-transform: lowercase;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  white-space: nowrap;
+  transition: color 0.12s var(--ease), border-color 0.12s var(--ease);
+}
+.doc-header-tag:hover {
+  color: var(--text-bright);
+  border-color: var(--border-strong);
+}
+/* Project tag: legacy stub — Project now lives in .doc-header-chip-project on the left cluster */
+.doc-header-tag-project {}
+
+/* Right: dates */
+.doc-header-dates {
+  display: flex;
+  gap: 1.25rem;
+  align-items: baseline;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.doc-header-date {
+  display: flex;
+  gap: 0.45rem;
+  align-items: baseline;
+}
+.doc-header-date-label {
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.doc-header-date-value {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+/* Extras row (non-standard keys like Severity, Affected) — quiet sublist */
+.doc-header-extras {
+  grid-column: 1 / -1;
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem 1.5rem;
-  padding: 0.75rem 1rem;
-  margin: 0.75rem 0 1.5rem;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  font-size: 0.78rem;
-  animation: fadeSlideIn 0.3s var(--ease) 0.1s both;
+  padding-top: 0.6rem;
+  margin-top: 0.2rem;
+  border-top: 1px dashed var(--border);
 }
-.meta-item { display: flex; gap: 0.4rem; align-items: baseline; }
-.meta-key {
+.doc-header-extra {
+  display: flex;
+  gap: 0.4rem;
+  align-items: baseline;
+  font-size: 0.72rem;
+}
+.doc-header-extra-key {
   color: var(--text-dim);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  font-size: 0.68rem;
-  white-space: nowrap;
+  letter-spacing: 0.05em;
+  font-size: 0.62rem;
 }
-.meta-key::after { content: ':'; }
-.meta-val { color: var(--text-muted); }
-.meta-val a { color: var(--accent-dim); }
+.doc-header-extra-key::after { content: ':'; margin-right: 0.25rem; }
+.doc-header-extra-val {
+  color: var(--text-muted);
+}
 
-/* Status value — interactive in desktop app */
-.hv-desktop .meta-item-status .meta-val {
-  color: var(--accent-dim);
+/* Status chip — click-to-cycle affordance in the desktop app */
+.hv-desktop .doc-header-chip[data-writeback-key="status"] {
   cursor: pointer;
-  border-bottom: 1px dashed var(--accent-border);
-  padding-bottom: 1px;
-  transition: color 0.15s var(--ease), border-color 0.15s var(--ease);
+  position: relative;
+  transition: filter 0.12s var(--ease);
 }
-.hv-desktop .meta-item-status .meta-val:hover {
-  color: var(--accent);
-  border-bottom-color: var(--accent);
+.hv-desktop .doc-header-chip[data-writeback-key="status"]:hover {
+  filter: brightness(1.15);
 }
-.hv-desktop .meta-item-status .meta-val::after {
+.hv-desktop .doc-header-chip[data-writeback-key="status"]::after {
   content: ' ⟳';
+  margin-left: 0.35rem;
   font-size: 0.75em;
-  color: var(--text-dim);
-  transition: color 0.15s var(--ease);
+  opacity: 0.6;
 }
-.hv-desktop .meta-item-status .meta-val:hover::after {
-  color: var(--accent);
+.hv-desktop .doc-header-chip[data-writeback-key="status"]:hover::after {
+  opacity: 1;
 }
 
-/* ---- H2 section panels (collapsible) ---- */
+/* ---- Legacy metadata stubs (replaced by .doc-header-strip) ---- */
+.doc-meta {}
+.meta-item {}
+.meta-item-status {}
+.meta-key {}
+.meta-val {}
+.hv-desktop .meta-item-status .meta-val {}
+.hv-desktop .meta-item-status .meta-val:hover {}
+.hv-desktop .meta-item-status .meta-val::after {}
+.hv-desktop .meta-item-status .meta-val:hover::after {}
+
+/* ---- H2 section panels (collapsible, quiet-by-default) ----
+   Sections are frameless when closed; when open, a left accent stripe extends
+   from the summary through the content to visually anchor the section. */
 .doc-section {
-  margin: 0;
-  border: 1px solid var(--border);
-  background: var(--bg-surface);
+  margin: 0 0 0.5rem;
+  border: none;
+  border-left: 2px solid var(--border);
+  background: transparent;
+  padding-left: 1rem;
   transition: border-color 0.2s var(--ease);
   position: relative;
 }
-.doc-section:hover {
-  border-color: var(--border-strong);
+.doc-section:last-child {
+  margin-bottom: 0;
+}
+.doc-section[open] {
+  border-left-color: var(--accent);
 }
 .doc-section-summary {
-  padding: 1rem 3.5rem 1rem 1.75rem;
+  padding: 0.5rem 3.5rem 0.5rem 0;
   font-size: 1.1rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -293,11 +424,16 @@
 }
 .doc-section[open] > .doc-section-summary {
   color: var(--accent);
-  border-bottom: 1px solid var(--border);
 }
 .doc-section-content {
-  padding: 1.25rem 1.25rem 0.5rem 1.75rem;
+  padding: 1rem;
   animation: sectionExpand 250ms ease-out;
+}
+/* The markdown `---` between H2 sections gets rendered as a trailing <hr>
+   inside the previous section's content. Suppress it — inter-section
+   spacing is handled by .doc-section margin-bottom now. */
+.doc-section-content > hr:last-child {
+  display: none;
 }
 
 @keyframes sectionExpand {
@@ -412,20 +548,14 @@
   margin-left: auto;
 }
 
-/* ---- Related / See Also section (matches backlinks style) ---- */
-.related-section {
-  margin: 3rem 0 0;
-  padding: 1.25rem 1.25rem 0.75rem;
-  border: 1px solid var(--border);
-  border-left: 2px solid var(--accent);
-  background: var(--bg-surface);
-  animation: fadeSlideIn 0.3s var(--ease) 0.1s both;
-}
-/* Let long code paths in related sections wrap at slashes instead of overflowing */
-.related-section li {
+/* ---- Related / See Also section content (structured item layout) ----
+   The outer <details.doc-section> uses the shared quiet section styling.
+   These rules govern only the inner content: category grouping, item layout,
+   and overflow handling for long code paths. */
+.related-section-content li {
   overflow-wrap: anywhere;
 }
-.related-section code {
+.related-section-content code {
   overflow-wrap: anywhere;
   font-size: 0.78em;
 }
@@ -476,25 +606,20 @@
 .related-item-desc code {
   font-size: 0.85em;
 }
-.related-section h2 {
-  margin-top: 0;
-  padding-top: 0;
-  font-size: 0.9rem;
-  border-bottom: none;
-  margin-bottom: 0.5rem;
-  color: var(--accent);
-}
-.related-section a {
+.related-section-content a {
   color: var(--text);
   text-decoration: none;
   font-size: 0.8rem;
   transition: color 0.15s var(--ease);
   border: none !important;
 }
-.related-section a:hover {
+.related-section-content a:hover {
   color: var(--accent);
   border: none !important;
 }
+
+/* Legacy stub — outer .related-section wrapper is no longer emitted */
+.related-section {}
 
 /* ---- Admonition callout boxes ---- */
 .admonition {

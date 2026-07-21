@@ -89,6 +89,11 @@ TOP_BAR = """\
                 <span class="nav-link-text">Learn</span>
                 <span class="nav-link-desc">How Hypervisor works</span>
               </a>
+              <a href="/_about/index.html" class="nav-link">
+                <i data-lucide="info" class="nav-link-icon"></i>
+                <span class="nav-link-text">About</span>
+                <span class="nav-link-desc">What Hypervisor is</span>
+              </a>
               <div class="nav-link nav-link-action" id="nav-ref-btn">
                 <i data-lucide="text-search" class="nav-link-icon"></i>
                 <span class="nav-link-text">Reference</span>

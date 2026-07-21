@@ -14,7 +14,7 @@
 
 Point Hypervisor at a directory of `.md` files and it produces a self-contained HTML site with:
 
-- **Hub-and-spoke navigation** — homepage → category indexes → document pages
+- **Hub-and-spoke navigation** — site nav rail → category indexes → document pages (homepage is a status dashboard)
 - **Full-text search** — instant fuzzy search across all documents with tag filtering
 - **Live file watching** — edit markdown in your editor, site rebuilds and refreshes automatically
 - **Checkbox write-back** — click a task checkbox in the rendered view to toggle it in the source file

@@ -3,10 +3,12 @@ Directory tree helpers and index page generators (home + subdirectory indexes).
 """
 
 import re
+from datetime import datetime, date
 from pathlib import PurePosixPath
 
 from .config import (
     HYPERSPACE_ROOT, CATEGORY_DESCRIPTIONS, CATEGORY_ICONS, ASSETS_DIR,
+    hypervisor_logo_svg,
 )
 from .file_utils import (
     dir_label, nice_name, get_title, extract_dates, sort_date, display_date,
@@ -74,6 +76,69 @@ def collect_all_dirs(files):
 
 
 
+def _parse_task_progress(md_text):
+    """Return (done, total) count of task-list checkboxes in the document.
+
+    Counts markdown checkboxes: `- [ ]` (open) and `- [x]` / `- [X]` (done).
+    Only counts lines that look like task-list items (dash + checkbox), so
+    inline `[x]` inside prose is ignored.
+    """
+    done = 0
+    total = 0
+    for line in md_text.splitlines():
+        stripped = line.lstrip()
+        if stripped.startswith(("- [", "* [")):
+            if len(stripped) < 5:
+                continue
+            marker = stripped[3]
+            if marker in (" ", "x", "X"):
+                total += 1
+                if marker in ("x", "X"):
+                    done += 1
+    return done, total
+
+
+def _extract_work_id_from_text(md_text):
+    """Extract work item ID (e.g., WI-23) from dash-prefixed metadata."""
+    for line in md_text.splitlines()[:30]:
+        m = re.match(r'^-\s*ID\s*:\s*(WI-\d+)', line.strip(), re.IGNORECASE)
+        if m:
+            return m.group(1)
+    return ""
+
+
+def _pulse_day_header(date_str):
+    """Return a human day label ('TODAY', 'YESTERDAY', 'N DAYS AGO') for a
+    'YYYY-MM-DDTHH:MM' timestamp. Falls back to the date portion for old items.
+    """
+    if not date_str or date_str.startswith("0000"):
+        return "OLDER"
+    try:
+        d = datetime.strptime(date_str[:10], "%Y-%m-%d").date()
+    except ValueError:
+        return "OLDER"
+    delta = (date.today() - d).days
+    if delta <= 0:
+        return "TODAY"
+    if delta == 1:
+        return "YESTERDAY"
+    if delta < 7:
+        return f"{delta} DAYS AGO"
+    if delta < 14:
+        return "LAST WEEK"
+    if delta < 30:
+        return f"{delta} DAYS AGO"
+    return "OLDER"
+
+
+def _pulse_time_str(date_str):
+    """Return 'HH:MM' from a 'YYYY-MM-DDTHH:MM' timestamp, or empty string."""
+    if not date_str or "T" not in date_str:
+        return ""
+    parts = date_str.split("T", 1)
+    return parts[1][:5] if len(parts) == 2 else ""
+
+
 def generate_home_content(files, build_stats=None, recent_paths=None):
     """Generate the hub homepage HTML — dashboard layout."""
     if recent_paths is None:
@@ -91,25 +156,26 @@ def generate_home_content(files, build_stats=None, recent_paths=None):
 
     html = []
 
-    # --- 0. Hero ASCII text ---
-    hero_file = ASSETS_DIR / "hero.txt"
-    if hero_file.exists():
-        hero_text = hero_file.read_text(encoding="utf-8").rstrip("\n")
-        html.append('<div class="hero-wrap">')
-        html.append(f'<pre class="hero-ascii">{hero_text}</pre>')
-        html.append('<span class="hero-tagline">interactive shell for the hyperspace persistent memory (HPM) system.</span>')
-        html.append('</div>')
+    # --- 0. Anchor mark (Hypervisor icon + noise field + rotating greeting) ---
+    logo = hypervisor_logo_svg("home-anchor-icon")
+    if logo:
+        html.append(
+            '<div class="home-anchor">'
+            f'{logo}'
+            '<span class="home-anchor-greeting" data-home-greeting></span>'
+            '</div>'
+        )
 
-    # --- 1. KPI strip (compact single line) ---
+    # --- 1. Build metadata (folded into Pulse header below; no standalone strip) ---
+    build_time = ""
     if build_stats:
-        active_count = 0  # computed below
-        html.append('<div class="kpi-strip">')
-        html.append(f'<span class="kpi"><span class="kpi-val">{build_stats["files"]}</span><span class="kpi-label">docs</span></span>')
-        html.append(f'<span class="kpi"><span class="kpi-val">{build_stats["pages"]}</span><span class="kpi-label">pages</span></span>')
-        html.append(f'<span class="kpi"><span class="kpi-val">{build_stats["indexes"]}</span><span class="kpi-label">indexes</span></span>')
-        html.append(f'<span class="kpi kpi-active"><span class="kpi-val" id="kpi-active">—</span><span class="kpi-label">active</span></span>')
-        html.append(f'<span class="kpi kpi-time"><span class="kpi-val">{build_stats["timestamp"].split(" ")[1] if " " in build_stats["timestamp"] else build_stats["timestamp"]}</span><span class="kpi-label">built</span></span>')
-        html.append('</div>')
+        ts = build_stats.get("timestamp", "")
+        # Extract "HH:MM" from "YYYY-MM-DD HH:MM:SS"
+        if " " in ts:
+            time_part = ts.split(" ")[1]
+            build_time = time_part[:5] if len(time_part) >= 5 else time_part
+        else:
+            build_time = ts
 
     # --- 2. Active Work Items (in-progress from work/to-do) ---
     active_items = []
@@ -131,10 +197,31 @@ def generate_home_content(files, build_stats=None, recent_paths=None):
             title = get_title(md_text, nice_name(parts[2]))
             dates = extract_dates(md_text)
             date_str, _ = sort_date(dates)
-            active_items.append((rel_posix, title, status, date_str, rel))
-    active_items.sort(key=lambda x: x[3], reverse=True)
+            done, total = _parse_task_progress(md_text)
+            work_id = _extract_work_id_from_text(md_text)
+            # Days since Created (fallback: since Updated)
+            days_active = 0
+            created = dates.get("created") or dates.get("updated") or ""
+            if created and not created.startswith("0000"):
+                try:
+                    c = datetime.strptime(created[:10], "%Y-%m-%d").date()
+                    days_active = max(0, (date.today() - c).days)
+                except ValueError:
+                    days_active = 0
+            active_items.append({
+                "path": rel_posix,
+                "title": title,
+                "status": status,
+                "date": date_str,
+                "rel": rel,
+                "done": done,
+                "total": total,
+                "work_id": work_id,
+                "days": days_active,
+            })
+    active_items.sort(key=lambda x: x["date"], reverse=True)
 
-    # --- 3. Recent Activity (grouped by work item) ---
+    # --- 3. Recent Activity (up to 10 items, day-grouped) ---
     recent = []
     for rel in files:
         rel_posix = str(rel).replace("\\", "/")
@@ -145,63 +232,111 @@ def generate_home_content(files, build_stats=None, recent_paths=None):
             date_str, date_label = sort_date(dates)
             recent.append((rel, title, date_str, date_label))
     recent.sort(key=lambda x: x[2], reverse=True)
+    recent = recent[:10]
 
-    # Group recent items by parent directory (work items share a folder)
+    # Group recent items by day label
     from collections import OrderedDict
-    grouped_recent = OrderedDict()
-    ungrouped_recent = []
+    recent_by_day = OrderedDict()
     for rel, title, date_str, date_label in recent:
-        rel_posix = str(rel).replace("\\", "/")
-        # With flat-file work items, no grouping needed — treat all as ungrouped
-        ungrouped_recent.append((rel, title, date_str, date_label))
+        day = _pulse_day_header(date_str)
+        recent_by_day.setdefault(day, []).append((rel, title, date_str, date_label))
 
-    # --- 4. Two-panel layout: Active Work + Recent Activity side by side ---
+    # --- 4. Two-panel dashboard: Workspace Pulse + Pinned ---
     html.append('<div class="dashboard-panels">')
 
-    # Left panel: Active Work
-    html.append('<div class="hv-section active-work-section">')
-    html.append(f'<h2><i data-lucide="zap" class="section-icon"></i> Active Work ({len(active_items)})</h2>')
+    # Left panel: Workspace Pulse (in-progress + recent stream)
+    html.append('<div class="hv-section pulse-section">')
+    summary_parts = [
+        f'{len(active_items)} active',
+        f'{len(recent)} recent',
+    ]
+    if build_time:
+        summary_parts.append(f'built {build_time}')
+    pulse_summary = ' &middot; '.join(summary_parts)
+    html.append(
+        f'<h2><i data-lucide="activity" class="section-icon"></i> Pulse'
+        f' <span class="pulse-summary">{pulse_summary}</span></h2>'
+    )
+
+    # In-progress group (no header — filled accent chips carry the signal)
+    html.append('<div class="pulse-group pulse-group-active">')
     if active_items:
-        html.append('<ul class="doc-list">')
-        for work_dir, title, status, date_str, rel in active_items:
-            rel_posix = str(rel).replace("\\", "/")
-            status_cls = "status-" + status.lower().replace(" ", "-")
-            html.append(
-                f'<li><a href="{href_for(rel)}"><i data-lucide="circle-dot" class="doc-icon"></i> {title}</a>'
-                f'<span class="hv-badge {status_cls}">{status}</span>'
-                f'<span class="doc-date">{display_date(date_str)}</span></li>'
+        for it in active_items:
+            done, total = it["done"], it["total"]
+            if total > 0:
+                pct = int(round(done * 100 / total))
+                progress_html = (
+                    '<span class="pulse-progress" title="'
+                    f'{done}/{total} tasks">'
+                    f'<span class="pulse-bar">'
+                    f'<span class="pulse-fill" style="width:{pct}%"></span>'
+                    f'</span>'
+                    f'<span class="pulse-progress-label">{done}/{total}</span>'
+                    f'</span>'
+                )
+            else:
+                progress_html = (
+                    '<span class="pulse-progress pulse-progress-empty" title="No tasks defined">'
+                    '<span class="pulse-bar pulse-bar-empty"></span>'
+                    '<span class="pulse-progress-label">&mdash;/&mdash;</span>'
+                    '</span>'
+                )
+            days_str = f'{it["days"]}d'
+            chip = (
+                f'<span class="pulse-chip pulse-chip-work">{it["work_id"]}</span>'
+                if it["work_id"]
+                else '<span class="pulse-chip pulse-chip-work pulse-chip-missing">&mdash;</span>'
             )
-        html.append('</ul>')
+            html.append(
+                f'<a class="pulse-row pulse-row-active" href="{href_for(it["rel"])}">'
+                f'{chip}'
+                f'<span class="pulse-title">{it["title"]}</span>'
+                f'<span class="pulse-right">{days_str}</span>'
+                f'{progress_html}'
+                f'</a>'
+            )
     else:
-        html.append('<p class="empty-msg">No active work items.</p>')
-    html.append('</div>')
+        html.append('<div class="pulse-empty">no items in progress</div>')
+    html.append('</div>')  # /.pulse-group-active
 
-    # Right panel: Recent Activity (grouped)
-    html.append('<div class="hv-section recent-section">')
-    html.append('<h2><i data-lucide="clock" class="section-icon"></i> Recent Activity</h2>')
-    html.append('<ul class="doc-list recent-grouped">')
+    # Recent stream grouped by day
+    html.append('<div class="pulse-group pulse-group-recent">')
+    if recent_by_day:
+        for day_label, items in recent_by_day.items():
+            html.append(f'<div class="pulse-day-header">{day_label}</div>')
+            for rel, title, date_str, date_label in items:
+                is_new = date_label == "created"
+                chip_cls = "pulse-chip-new" if is_new else "pulse-chip-updated"
+                chip_label = "NEW" if is_new else "UPD"
+                time_str = _pulse_time_str(date_str) or "&mdash;&mdash;:&mdash;&mdash;"
+                html.append(
+                    f'<a class="pulse-row pulse-row-recent" href="{href_for(rel)}">'
+                    f'<span class="pulse-chip {chip_cls}">{chip_label}</span>'
+                    f'<span class="pulse-title">{title}</span>'
+                    f'<span class="pulse-right">{time_str}</span>'
+                    f'</a>'
+                )
+    else:
+        html.append('<div class="pulse-day-header">RECENT</div>')
+        html.append('<div class="pulse-empty">no recent activity</div>')
+    html.append('</div>')  # /.pulse-group-recent
 
-    # Render all recent items (flat — no grouping needed with unified work items)
-    for rel, title, date_str, date_label in ungrouped_recent:
-        if date_label == "created":
-            badge = '<span class="hv-badge recent-badge-new">new</span>'
-        else:
-            badge = '<span class="hv-badge recent-badge-updated">updated</span>'
-        type_badge = _doc_type_badge(rel)
-        html.append(
-            f'<li><a href="{href_for(rel)}"><i data-lucide="file-text" class="doc-icon"></i> {title}</a>'
-            f'<span class="doc-badges">{type_badge}{badge}</span>'
-            f'<span class="doc-date">{display_date(date_str)}</span></li>'
-        )
+    html.append('</div>')  # /.pulse-section
 
-    html.append('</ul>')
-    html.append('</div>')
+    # Right panel: Pinned (rendered client-side by pins.js)
+    html.append('<div class="hv-section pins-section" data-pins-home-mount>')
+    html.append(
+        '<h2><i data-lucide="pin" class="section-icon"></i> Pinned'
+        ' <span class="pins-home-count" data-pins-home-count></span></h2>'
+    )
+    html.append(
+        '<div class="pins-home-list" data-pins-home-list>'
+        '<div class="pins-home-loading">loading pins&hellip;</div>'
+        '</div>'
+    )
+    html.append('</div>')  # /.pins-section
 
-    html.append('</div>')  # close dashboard-panels
-
-    # Update KPI active count via inline script
-    if build_stats:
-        html.append(f'<script>document.getElementById("kpi-active").textContent="{len(active_items)}";</script>')
+    html.append('</div>')  # /.dashboard-panels
 
     # --- 5. Root-level documents (full width, bottom) ---
     if top_docs:

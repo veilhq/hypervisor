@@ -15,6 +15,7 @@ from .fragment import build_fragment, write_fragment
 _HYPERVISOR_DIR = OUTPUT_DIR.parent
 UTILITIES_DIR = _HYPERVISOR_DIR / "utilities"
 LEARN_DIR = _HYPERVISOR_DIR / "learn"
+ASSETS_DIR = _HYPERVISOR_DIR / "assets"
 
 
 def build_homepage(files, all_dirs, build_id, recent_paths=None, util_count=0):
@@ -230,6 +231,63 @@ def build_pinboard_page(build_id):
         page_type="pinboard", source_path="_pins",
     )
     fragment_path = OUTPUT_DIR / "content" / "_pins.json"
+    write_fragment(fragment, fragment_path)
+
+
+def build_about_page(build_id):
+    """Generate the About page as a content fragment.
+
+    Hosts the ASCII hero, tagline, and a short description of what Hypervisor
+    is. Kept off the homepage so the working surface stays focused on status.
+    """
+    hero_file = ASSETS_DIR / "hero.txt"
+    hero_ascii = ""
+    if hero_file.exists():
+        hero_ascii = hero_file.read_text(encoding="utf-8").rstrip("\n")
+
+    build_ts = datetime.now().strftime("%Y-%m-%d %H:%M")
+
+    hero_block = ""
+    if hero_ascii:
+        hero_block = (
+            '<div class="hero-wrap">'
+            f'<pre class="hero-ascii">{hero_ascii}</pre>'
+            '<span class="hero-tagline">interactive shell for the hyperspace persistent memory (HPM) system.</span>'
+            '</div>'
+        )
+
+    content_html = f"""\
+<div class="about-page">
+  {hero_block}
+  <section class="about-blurb">
+    <h2>What is this?</h2>
+    <p>Hypervisor is a local-only static site generator that turns a folder of markdown
+    into a browsable knowledge base. It runs inside a PyWebView desktop app with live
+    file watching, checkbox write-back, a full-text search index, and a Python MCP
+    server for programmatic access to hyperspace documents.</p>
+    <p>The homepage is a status dashboard — active work items, recent activity, and
+    pinned documents. Category navigation lives in the site nav rail; this page is
+    just for the brand.</p>
+  </section>
+  <section class="about-links">
+    <h2>Explore</h2>
+    <ul class="about-link-list">
+      <li><a href="/learn/index.html"><i data-lucide="graduation-cap" class="doc-icon"></i> Learn — how Hypervisor works</a></li>
+      <li><a href="/_pins/index.html"><i data-lucide="pin" class="doc-icon"></i> Pinboard — documents you've pinned</a></li>
+      <li><a href="/index.html"><i data-lucide="activity" class="doc-icon"></i> Home — workspace pulse</a></li>
+    </ul>
+  </section>
+  <section class="about-build">
+    <span class="about-build-label">Built</span>
+    <span class="about-build-value">{build_ts}</span>
+  </section>
+</div>"""
+
+    fragment = build_fragment(
+        content_html, "About", "_about",
+        page_type="about", source_path="_about",
+    )
+    fragment_path = OUTPUT_DIR / "content" / "_about.json"
     write_fragment(fragment, fragment_path)
 
 

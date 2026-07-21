@@ -252,54 +252,139 @@ def convert_collapsible_sections(html: str) -> str:
 
 def extract_metadata_block(html: str) -> str:
     """
-    Pull metadata lines (Date, Tags, Status, Technologies, etc.) from the
-    <ul> immediately after the first <h1> and render as a styled header block.
+    Pull metadata lines (Created, Updated, Tags, Status, Project, ID, etc.)
+    from the <ul> immediately after the first <h1> and render them as a
+    chip-strip header row that speaks the Pulse visual vocabulary.
+
+    Layout (three columns via grid):
+      [WI-XX] [status]     project-tag · topic tags        Updated / Created
     """
     # Match a <ul> right after </h1> where items look like key: value
     pattern = re.compile(
         r'(</h1>\s*)'                          # end of h1
-        r'(<p>.*?</p>\s*)?'                    # optional subtitle paragraph (may contain inline HTML)
+        r'(<p>.*?</p>\s*)?'                    # optional subtitle paragraph
         r'(<ul>\s*(?:<li>[^<]*?:.*?</li>\s*)+</ul>)',  # metadata list
         re.DOTALL
     )
+
+    KNOWN_KEYS = {"id", "status", "project", "tags", "created", "updated", "related", "type"}
+
+    def _parse_items(items):
+        """Return a dict of key.lower() -> raw value string, plus a list of
+        (key, value) tuples for unrecognized keys."""
+        parsed = {}
+        extras = []
+        for item in items:
+            item_clean = item.strip()
+            for sub in re.split(r'<br\s*/?>', item_clean):
+                sub = sub.strip()
+                if not sub:
+                    continue
+                kv = re.match(r'^(?:<strong>)?([^:<]+?)(?:</strong>)?\s*:\s*(.+)$', sub, re.DOTALL)
+                if not kv:
+                    continue
+                key = kv.group(1).strip()
+                val = kv.group(2).strip()
+                if key.lower() in KNOWN_KEYS:
+                    parsed[key.lower()] = val
+                else:
+                    extras.append((key, val))
+        return parsed, extras
+
+    def _display_date(val):
+        """Normalize 'YYYY-MM-DDTHH:MM' → 'YYYY-MM-DD HH:MM' for readability;
+        pass through anything else unchanged."""
+        m = re.match(r'^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})', val)
+        return f"{m.group(1)} {m.group(2)}" if m else val
+
+    def _build_strip(parsed, extras):
+        html_parts = ['<div class="doc-header-strip">']
+
+        # --- LEFT: WI + Status + Project chips (identity cluster) ---
+        chips = []
+        wi = parsed.get("id")
+        if wi:
+            chips.append(f'<span class="doc-header-chip doc-header-chip-wi">{wi}</span>')
+        status = parsed.get("status")
+        if status:
+            status_lower = status.lower()
+            is_active = ("progress" in status_lower) or ("discussion" in status_lower)
+            status_variant = "doc-header-chip-status-active" if is_active else "doc-header-chip-status-idle"
+            # data-writeback-key marks this chip as click-to-cycle in the desktop app
+            chips.append(
+                f'<span class="doc-header-chip doc-header-chip-status {status_variant}" '
+                f'data-writeback-key="status">{status}</span>'
+            )
+        project = parsed.get("project")
+        if project:
+            chips.append(
+                f'<span class="doc-header-chip doc-header-chip-project">{project}</span>'
+            )
+        html_parts.append('<div class="doc-header-chips">' + "".join(chips) + '</div>')
+
+        # --- MIDDLE: topic tag chips only (Project moved to left cluster) ---
+        tag_parts = []
+        tags_val = parsed.get("tags")
+        if tags_val:
+            for tag in (t.strip() for t in tags_val.split(",")):
+                if tag:
+                    tag_parts.append(f'<span class="doc-header-tag">{tag}</span>')
+        html_parts.append('<div class="doc-header-tags">' + "".join(tag_parts) + '</div>')
+
+        # --- RIGHT: dates + type (Updated → Created → Type) ---
+        right_entries = []
+        for key in ("updated", "created"):
+            val = parsed.get(key)
+            if val:
+                right_entries.append(
+                    f'<span class="doc-header-date">'
+                    f'<span class="doc-header-date-label">{key.capitalize()}</span>'
+                    f'<span class="doc-header-date-value">{_display_date(val)}</span>'
+                    f'</span>'
+                )
+        type_val = parsed.get("type")
+        if type_val:
+            right_entries.append(
+                f'<span class="doc-header-date doc-header-date-type">'
+                f'<span class="doc-header-date-label">Type</span>'
+                f'<span class="doc-header-date-value">{type_val}</span>'
+                f'</span>'
+            )
+        html_parts.append('<div class="doc-header-dates">' + "".join(right_entries) + '</div>')
+
+        # --- Non-standard fields (Severity, Affected, etc.) — small block below ---
+        # Filter out 'related' (moved to the ## Related section at the bottom).
+        if extras:
+            html_parts.append('<div class="doc-header-extras">')
+            for key, val in extras:
+                html_parts.append(
+                    f'<div class="doc-header-extra">'
+                    f'<span class="doc-header-extra-key">{key}</span>'
+                    f'<span class="doc-header-extra-val">{linkify_md_paths(val)}</span>'
+                    f'</div>'
+                )
+            html_parts.append('</div>')
+
+        html_parts.append('</div>')
+        return "\n".join(html_parts)
 
     def replace_meta(m):
         h1_end = m.group(1)
         subtitle = m.group(2) or ""
         meta_ul = m.group(3)
-
-        # Parse <li> items
         items = re.findall(r'<li>(.*?)</li>', meta_ul, re.DOTALL)
-        meta_html = ['<div class="doc-meta">']
-        for item in items:
-            item_clean = item.strip()
-            # Split on <br /> in case multiple metadata lines are joined
-            sub_items = re.split(r'<br\s*/?>', item_clean)
-            for sub in sub_items:
-                sub = sub.strip()
-                if not sub:
-                    continue
-                # Try "Key: Value" pattern
-                kv = re.match(r'^(?:<strong>)?([^:<]+?)(?:</strong>)?\s*:\s*(.+)$', sub, re.DOTALL)
-                if kv:
-                    key = kv.group(1).strip()
-                    val = linkify_md_paths(kv.group(2).strip())
-                    item_class = "meta-item meta-item-status" if key.lower() == "status" else "meta-item"
-                    meta_html.append(f'<div class="{item_class}"><span class="meta-key">{key}</span>'
-                                     f'<span class="meta-val">{val}</span></div>')
-                else:
-                    meta_html.append(f'<div class="meta-item"><span class="meta-val">{sub}</span></div>')
-        meta_html.append('</div>')
-
-        return h1_end + subtitle + "\n".join(meta_html)
+        parsed, extras = _parse_items(items)
+        # Related is handled by the ## Related section — drop from header row
+        parsed.pop("related", None)
+        return h1_end + subtitle + _build_strip(parsed, extras)
 
     result = pattern.sub(replace_meta, html, count=1)
 
-    # Also handle "Created: ...\nTags: ..." as plain <p> lines after h1
+    # Also handle "Created: ...\nTags: ..." as plain <p> lines after h1 (older docs)
     p_meta_pattern = re.compile(
         r'(</h1>\s*)'
-        r'(<p>[^<]*?</p>\s*)?'  # optional subtitle
-        r'((?:<p>[A-Z][a-z]+:\s*.+?</p>\s*)+)',  # consecutive "Key: value" paragraphs
+        r'(<p>[^<]*?</p>\s*)?'
+        r'((?:<p>[A-Z][a-z]+:\s*.+?</p>\s*)+)',
         re.DOTALL
     )
 
@@ -307,21 +392,12 @@ def extract_metadata_block(html: str) -> str:
         h1_end = m.group(1)
         subtitle = m.group(2) or ""
         meta_ps = m.group(3)
-
-        items = re.findall(r'<p>([A-Z][a-z]+:\s*.+?)</p>', meta_ps, re.DOTALL)
-        if not items:
+        raw_items = re.findall(r'<p>([A-Z][a-z]+:\s*.+?)</p>', meta_ps, re.DOTALL)
+        if not raw_items:
             return m.group(0)
-
-        meta_html = ['<div class="doc-meta">']
-        for item in items:
-            kv = re.match(r'^([^:]+?):\s*(.+)$', item.strip(), re.DOTALL)
-            if kv:
-                key = kv.group(1).strip()
-                item_class = "meta-item meta-item-status" if key.lower() == "status" else "meta-item"
-                meta_html.append(f'<div class="{item_class}"><span class="meta-key">{key}</span>'
-                                 f'<span class="meta-val">{kv.group(2).strip()}</span></div>')
-        meta_html.append('</div>')
-        return h1_end + subtitle + "\n".join(meta_html)
+        parsed, extras = _parse_items(raw_items)
+        parsed.pop("related", None)
+        return h1_end + subtitle + _build_strip(parsed, extras)
 
     result = p_meta_pattern.sub(replace_p_meta, result, count=1)
     return result
@@ -481,10 +557,12 @@ def style_related_section(html: str) -> str:
             list_html = f'<ul class="backlinks-list">{"".join(all_items)}</ul>'
 
         return (
-            f'<section class="related-section">'
-            f'<h2 id="{section_id}">'
-            f'<i data-lucide="{icon}" class="section-icon"></i> {title}</h2>'
-            f'{list_html}</section>'
+            f'<details class="doc-section" open id="{section_id}">'
+            f'<summary class="doc-section-summary">{title}</summary>'
+            f'<div class="doc-section-content related-section-content">'
+            f'{list_html}'
+            f'</div>'
+            f'</details>'
         )
 
     html = re.sub(

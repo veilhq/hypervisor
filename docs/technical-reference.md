@@ -31,7 +31,7 @@ There is no bundler, no framework, no build tool chain. The output is a director
       02-search.css           # Search input, results dropdown, tag filtering, work item filters
       03-menus.css            # Reference menu, utilities menu, width toggle, accent picker
       04-content.css          # Markdown body, code blocks, tables, related sections
-      05-cards.css            # Card grid, doc lists, build stats, homepage dock
+      05-cards.css            # Card grid, doc lists, build stats, homepage Pulse/Pinned panels
       06-pinboard.css         # Pin cards, pin button, pinboard page, pin type badges
       07-toc.css              # Floating table of contents sidebar
       08-utilities.css        # Shared utility page container, 404 page
@@ -135,7 +135,7 @@ There is no bundler, no framework, no build tool chain. The output is a director
     Write to site/{dir}/index.html
         |
         v
-  generate_home_content()  — Build homepage with category cards, stats, recent docs
+  generate_home_content()  — Build homepage: hero, KPI strip, Pulse (active work + recent), Pinned mount, root docs
   Write to site/index.html
         |
         v
@@ -181,16 +181,20 @@ The output path convention is important: `context/foo.md` becomes `site/context/
 `collect_all_dirs()` returns every directory prefix that contains documents (directly or nested). For each one, the pipeline generates an index page — unless a document page already exists at that path (collision avoidance).
 
 Directory indexes show:
-- Subdirectory cards (same grid layout as the homepage)
+- Subdirectory cards (or a dock strip for deeper directories with 2-10 subdirs)
 - A document list with date metadata, sorted newest-first for dated docs, alphabetical for undated
 
 ### Phase 3: Homepage
 
 The homepage is special-cased. It gets:
-- Build statistics (document count, page count, timestamp)
-- Category cards for every top-level directory (except `reference`, which is accessible via the header menu instead)
+- A hero band (ASCII logo from `assets/hero.txt` + flag-style tagline)
+- A KPI strip (docs, pages, indexes, active work count, build timestamp)
+- A two-panel dashboard:
+  - **Workspace Pulse** (left, 60%) — in-progress work items with WI-ID pills, task-progress bars, and days-in-progress, followed by a day-grouped stream of the 10 most recently updated documents
+  - **Pinned** (right, 40%) — a client-side mount that `pins.js` populates from localStorage, sorted newest-pinned first
 - Root-level documents (if any exist directly in `.hyperspace/`)
-- A "Recently Updated" section showing the 10 most recently dated documents
+
+Category navigation is not on the homepage — top-level directories are always reachable via the site nav rail in the topbar.
 
 ### Phase 4: Utility Pages
 
@@ -397,10 +401,12 @@ Returns every directory prefix that contains documents (at any depth). Used to d
 
 Builds the homepage HTML:
 
-1. Build stats block — scanned count, generated count, breakdown, output path, timestamp
-2. Category card grid — one card per top-level directory (except `reference`), each showing icon, label, description, and doc count
-3. Root documents section — any `.md` documents directly in `.hyperspace/`
-4. Recently Updated — top 10 documents sorted by date (prefers `updated` over `created`)
+1. Hero band — ASCII logo from `assets/hero.txt` + a flag-style tagline
+2. KPI strip — docs, pages, indexes, active work count (patched in via inline `<script>` after the strip renders), build timestamp
+3. Dashboard panels (60/40 grid):
+   - **Workspace Pulse** — collects `work/to-do/*.md` files with `Status: In Progress` (or "discussion"), extracts task-list progress via `_parse_task_progress()`, work IDs via `_extract_work_id_from_text()`, and days-in-progress from the `Created:` metadata. Below the active list, emits the 10 most recently updated documents grouped by day headers (`TODAY`, `YESTERDAY`, `N DAYS AGO`, ...) computed by `_pulse_day_header()`.
+   - **Pinned** — emits an empty container with `data-pins-home-mount` and `data-pins-home-list` hooks. `pins.js::renderHomepagePins()` fills this on page load from localStorage, newest-pinned first.
+4. Root documents section — any `.md` documents directly in `.hyperspace/`
 
 ### generate_dir_index_content(files, dir_prefix)
 

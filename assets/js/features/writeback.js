@@ -53,14 +53,21 @@
     ];
 
     document.addEventListener("click", function (e) {
-      var metaVal = e.target.closest(".meta-val");
-      if (!metaVal) return;
-
-      var metaItem = metaVal.closest(".meta-item");
-      if (!metaItem) return;
-
-      var metaKey = metaItem.querySelector(".meta-key");
-      if (!metaKey || metaKey.textContent.trim().toLowerCase() !== "status") return;
+      // New chip-strip: <span class="doc-header-chip" data-writeback-key="status">
+      var chip = e.target.closest('[data-writeback-key="status"]');
+      var metaVal = chip; // unified reference used by the writeback logic below
+      var isLegacy = false;
+      if (!metaVal) {
+        // Legacy fallback: pre-chip metadata block (kept in case any old
+        // fragment is still cached at load).
+        metaVal = e.target.closest(".meta-val");
+        if (!metaVal) return;
+        var metaItem = metaVal.closest(".meta-item");
+        if (!metaItem) return;
+        var metaKey = metaItem.querySelector(".meta-key");
+        if (!metaKey || metaKey.textContent.trim().toLowerCase() !== "status") return;
+        isLegacy = true;
+      }
 
       if (!(window.pywebview && window.pywebview.api)) return;
 
@@ -81,8 +88,22 @@
 
       metaVal.textContent = newStatus;
 
+      // Update chip variant class (active vs idle) based on new status
+      if (!isLegacy) {
+        var isActive = /progress|discussion/i.test(newStatus);
+        metaVal.classList.toggle("doc-header-chip-status-active", isActive);
+        metaVal.classList.toggle("doc-header-chip-status-idle", !isActive);
+      }
+
       window.pywebview.api.update_metadata(filePath, "Status", newStatus).then(function (result) {
-        if (!result || !result.ok) metaVal.textContent = currentStatus;
+        if (!result || !result.ok) {
+          metaVal.textContent = currentStatus;
+          if (!isLegacy) {
+            var wasActive = /progress|discussion/i.test(currentStatus);
+            metaVal.classList.toggle("doc-header-chip-status-active", wasActive);
+            metaVal.classList.toggle("doc-header-chip-status-idle", !wasActive);
+          }
+        }
       }).catch(function () { metaVal.textContent = currentStatus; });
     });
   })();

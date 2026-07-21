@@ -57,7 +57,7 @@ CATEGORY_LABELS = {
 CATEGORY_DESCRIPTIONS = {
     "context": "Project overviews and architecture docs",
     "patterns": "Reusable solutions and code templates",
-    "your-dir": "Description shown on the homepage card",
+    "your-dir": "Description shown on the directory index page",
 }
 
 CATEGORY_ICONS = {
@@ -140,4 +140,4 @@ my-project/
         └── why-postgres.md
 ```
 
-Run `python build.py` and you get a homepage with two category cards ("Notes" and "Decisions"), each linking to their document.
+Run `python build.py` and you get a browsable site: the homepage shows a Workspace Pulse (recent activity) and Pinned panel; the topbar nav rail exposes the two categories ("Notes" and "Decisions"), and each category page lists its document.

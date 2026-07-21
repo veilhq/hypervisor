@@ -44,7 +44,7 @@ Why Hypervisor is built the way it is — the reasoning behind key architectural
 
 ## Hub-and-Spoke Navigation (No Sidebar)
 
-**Decision:** Homepage → category → document. No persistent sidebar or tree view.
+**Decision:** Site nav rail (in the topbar) is the always-available spoke into every top-level category; the homepage is reserved for status (Pulse + Pinned), not category navigation. No persistent sidebar or tree view.
 
 **Why:**
 

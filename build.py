@@ -2,7 +2,7 @@
 """
 Hypervisor — Static site generator for .hyperspace markdown documents.
 
-Hub-and-spoke navigation: homepage → category indexes → doc pages.
+Hub-and-spoke navigation: site nav rail → category indexes → doc pages. The homepage is a status dashboard (Workspace Pulse + Pinned).
 No sidebar. Persistent search bar in top bar on every page.
 
 Usage:
@@ -236,7 +236,7 @@ def _prune_orphaned_outputs(files):
         expected_fragments.add(str(PurePosixPath(rel.parent / html_file.stem)) + ".json")
 
     # Special fragments (never pruned)
-    skip_prefixes = ("_utils", "learn", "_pins", "home")
+    skip_prefixes = ("_utils", "learn", "_pins", "_about", "home")
 
     # Walk content directory and find orphaned fragment files
     for root_dir, dirs, dir_files in os.walk(str(content_dir)):
@@ -265,7 +265,7 @@ def _prune_orphaned_outputs(files):
 
 from site_utils.page_builders import (
     build_homepage, build_404_page, build_utility_pages,
-    build_learn_pages, build_pinboard_page, build_raw_html_pages
+    build_learn_pages, build_pinboard_page, build_about_page, build_raw_html_pages
 )
 
 
@@ -379,6 +379,7 @@ def full_build(quiet=False):
     util_count = build_utility_pages(build_id)
     learn_count = build_learn_pages(build_id)
     build_pinboard_page(build_id)
+    build_about_page(build_id)
     raw_html_count = build_raw_html_pages()
     build_homepage(files, all_dirs, build_id,
                    recent_paths=recent_paths, util_count=util_count)
@@ -515,6 +516,7 @@ def build_single_file(changed_path):
 
     # Rebuild pinboard fragment (search index may have changed)
     build_pinboard_page(build_id)
+    build_about_page(build_id)
 
     # Rebuild homepage fragment (recently updated list may have changed)
     all_dirs = collect_all_dirs(files)

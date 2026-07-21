@@ -30,8 +30,8 @@ Constants live in `site_utils/config.py`:
 | `SKIP_DIRS` | Directories to exclude: `__pycache__`, `site` |
 | `SKIP_FILES` | Files to exclude: `.gitkeep` |
 | `CATEGORY_LABELS` | Display names for directories (e.g. `.hypervisor` → `HV-META`) |
-| `CATEGORY_DESCRIPTIONS` | Descriptions shown on homepage cards |
-| `CATEGORY_ICONS` | Lucide icon names for category cards |
+| `CATEGORY_DESCRIPTIONS` | Descriptions shown on directory index pages and in the nav rail |
+| `CATEGORY_ICONS` | Lucide icon names for directory index cards and nav rail entries |
 
 ## Extending
 

@@ -113,18 +113,14 @@
   letter-spacing: 0.04em;
 }
 
-/* ---- Active work section ---- */
-.active-work-section {
-  margin-top: 0;
-}
-.active-work-section h2 {
-  color: var(--accent);
-}
-.active-work-section .doc-list li {
-  grid-template-columns: 1fr auto auto;
-}
+/* ---- Legacy stubs (previous homepage: Active Work + Recent Activity) ---- */
+/* Kept as no-op selectors so any residual markup doesn't fall back to raw styling. */
+.active-work-section {}
+.recent-section {}
 
 /* ---- Vertical rhythm: collapse gaps between stacked blocks ---- */
+.hero-wrap + .dashboard-panels,
+.hero-ascii + .dashboard-panels,
 .hero-ascii + .kpi-strip {
   margin-top: 0;
 }
@@ -152,10 +148,10 @@ h1 + .home-dock {
   margin-top: 1rem;
 }
 .active-work-section {
-  margin-bottom: 0;
+  /* legacy — no-op */
 }
 .recent-section {
-  margin-bottom: 0;
+  /* legacy — no-op */
 }
 
 /* ---- Hero info button (?) ---- */
@@ -323,59 +319,478 @@ h1 + .home-dock {
   white-space: nowrap;
   z-index: 1;
 }
-.kpi-strip {
-  display: flex;
-  align-items: stretch;
-  gap: 0;
-  border: 1px solid var(--border);
-  margin-bottom: -1px;
-  animation: fadeSlideIn 0.3s var(--ease) both;
-}
-.kpi {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 0.6rem 1.2rem;
-  border-right: 1px solid var(--border);
-  flex: 1;
-}
-.kpi:last-child { border-right: none; }
-.kpi-val {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--text-bright);
-  letter-spacing: 0.02em;
-}
-.kpi-label {
-  font-size: 0.55rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--text-dim);
-  margin-top: 0.15rem;
-}
-.kpi-active .kpi-val { color: var(--accent); }
-.kpi-time .kpi-val { color: var(--text-muted); font-size: 0.85rem; }
+/* ---- Legacy: standalone KPI strip (folded into panel headers) ---- */
+.kpi-strip {}
+.kpi {}
+.kpi-val {}
+.kpi-label {}
+.kpi-active {}
+.kpi-time {}
+.kpi-active .kpi-val {}
+.kpi-time .kpi-val {}
 
 /* ---- Dashboard two-panel layout ---- */
 .dashboard-panels {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 3fr 2fr;
   gap: 0;
 }
 .dashboard-panels > .hv-section {
   margin-bottom: 0;
 }
-.dashboard-panels > .active-work-section {
+.dashboard-panels > .pulse-section {
   border-right: none;
 }
 
-/* Simplified grid for dashboard list items (no path column) */
+/* Legacy grid rule kept for any lingering doc-list usage on the home panel */
 .dashboard-panels .doc-list li {
   grid-template-columns: 1fr auto auto;
 }
 .recent-grouped li {
   grid-template-columns: 1fr auto auto;
+}
+
+/* =========================================================
+   Home anchor mark (Hypervisor icon on Bayer-dither noise field)
+   ========================================================= */
+.home-anchor {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  height: 260px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  overflow: hidden;
+  animation: fadeSlideIn 0.35s var(--ease) both;
+}
+.home-anchor-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  opacity: 1;
+  transition: opacity 0.5s var(--ease);
+  display: block;
+}
+.home-anchor-canvas.fade-out { opacity: 0; }
+.home-anchor-icon {
+  position: relative;
+  width: 84px;
+  height: 84px;
+  color: var(--accent);
+  z-index: 1;
+  filter: drop-shadow(0 0 8px var(--bg));
+}
+
+/* Rotating greeting text below the icon (populated by home-anchor.js) */
+.home-anchor-greeting {
+  position: relative;
+  z-index: 1;
+  color: var(--accent);
+  font-size: 0.85rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-shadow: 0 0 6px var(--bg), 0 0 6px var(--bg), 0 0 10px var(--accent-glow);
+  opacity: 0;
+  animation: fadeSlideIn 0.4s var(--ease) 0.15s forwards;
+  min-height: 1em; /* reserve space even before JS populates */
+}
+/* Kaomoji greeting variant — larger, no uppercase, no letter-spacing.
+   Compound-selector (.home-anchor-greeting.emote) beats plain .emote in
+   specificity so the combined fadeSlideIn + emote-glow animation isn't
+   overwritten by .emote's single-animation rule (which sits below and
+   would otherwise win via equal-specificity source-order cascade). */
+.home-anchor-greeting.emote {
+  letter-spacing: normal;
+  text-transform: none;
+  text-shadow: none;
+  animation: fadeSlideIn 0.4s var(--ease) 0.15s forwards,
+             emote-glow 8s infinite ease-in-out;
+}
+
+/* ---- ASCII emote glow (palette color cycling, shared with Hyperagent) ---- */
+.emote {
+  display: inline-block;
+  animation: emote-glow 8s infinite ease-in-out;
+}
+@keyframes emote-glow {
+  0%, 100% { color: var(--accent); text-shadow: 0 0 6px var(--accent), 0 0 12px var(--accent-glow); }
+  25%      { color: var(--warm);   text-shadow: 0 0 6px var(--warm),   0 0 12px var(--warm); }
+  50%      { color: var(--cool);   text-shadow: 0 0 6px var(--cool),   0 0 12px var(--cool); }
+  75%      { color: var(--comp);   text-shadow: 0 0 6px var(--comp),   0 0 12px var(--comp); }
+}
+
+/* Tighten spacing when the anchor sits directly above the dashboard */
+.home-anchor + .dashboard-panels {
+  margin-top: -1px;
+}
+
+/* =========================================================
+   About page (hero + brand blurb)
+   ========================================================= */
+.about-page {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  animation: fadeSlideIn 0.3s var(--ease) both;
+}
+.about-page .hero-wrap {
+  margin-bottom: 0;
+}
+.about-blurb h2,
+.about-links h2 {
+  color: var(--accent);
+  font-size: 0.95rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0.75rem;
+}
+.about-blurb p {
+  color: var(--text);
+  font-size: 0.85rem;
+  line-height: 1.65;
+  margin: 0 0 0.75rem;
+}
+.about-link-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.about-link-list li a {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.35rem;
+  color: var(--text);
+  text-decoration: none;
+  font-size: 0.85rem;
+  border-bottom: 1px solid transparent;
+  transition: background 0.12s var(--ease), border-color 0.12s var(--ease), padding-left 0.12s var(--ease);
+}
+.about-link-list li a:hover {
+  background: var(--bg-hover);
+  border-bottom-color: var(--accent-border);
+  padding-left: 0.6rem;
+  color: var(--accent);
+}
+.about-link-list .doc-icon {
+  width: 14px;
+  height: 14px;
+  color: var(--text-dim);
+}
+.about-link-list li a:hover .doc-icon {
+  color: var(--accent);
+}
+.about-build {
+  display: flex;
+  gap: 0.5rem;
+  color: var(--text-dim);
+  font-size: 0.7rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+.about-build-label {
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.about-build-value {
+  font-variant-numeric: tabular-nums;
+}
+.pulse-section h2 {
+  color: var(--accent);
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+.pulse-summary {
+  color: var(--text-dim);
+  font-size: 0.7rem;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  text-transform: none;
+}
+
+.pulse-group + .pulse-group {
+  margin-top: 0.5rem;
+}
+
+.pulse-day-header {
+  color: var(--text-dim);
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  padding: 0.55rem 0 0.35rem;
+  border-top: 1px solid var(--border);
+  margin-top: 0.25rem;
+}
+.pulse-group-active > .pulse-day-header:first-child,
+.pulse-group-recent > .pulse-day-header:first-child {
+  border-top: 1px solid var(--border);
+}
+.pulse-group-active + .pulse-group-recent > .pulse-day-header:first-child {
+  margin-top: 0.5rem;
+}
+
+.pulse-empty {
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  padding: 0.4rem 0.35rem;
+  font-style: italic;
+}
+
+/* ---- Unified row: chip | title | right meta (single grid row) ----
+   Active rows add a second grid row for the progress bar spanning cols 2-3. */
+.pulse-row {
+  display: grid;
+  grid-template-columns: 7ch minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 0.75rem;
+  row-gap: 0.3rem;
+  padding: 0.5rem 0.35rem;
+  border-bottom: 1px solid transparent;
+  color: var(--text);
+  text-decoration: none;
+  transition: background 0.12s var(--ease), border-color 0.12s var(--ease);
+}
+.pulse-row:hover {
+  background: var(--bg-hover);
+  border-bottom-color: var(--accent-border);
+}
+
+.pulse-title {
+  color: var(--text-bright);
+  font-size: 0.85rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.pulse-row:hover .pulse-title {
+  color: var(--accent);
+}
+
+/* Right meta: age for active, HH:MM for recent */
+.pulse-right {
+  color: var(--text-dim);
+  font-size: 0.7rem;
+  width: 5ch;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Progress bar spans title + right meta columns on grid row 2 */
+.pulse-row-active .pulse-progress {
+  grid-column: 2 / 4;
+  grid-row: 2;
+}
+/* Chip spans both rows on active items — anchors the taller two-row block */
+.pulse-row-active .pulse-chip {
+  grid-row: 1 / 3;
+  align-self: stretch;
+  height: auto;
+  margin: 5px 0;
+}
+
+/* ---- Chip: shared silhouette, three fill variants ---- */
+.pulse-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 20px;
+  width: 100%;
+  padding: 0 0.4rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  box-sizing: border-box;
+  transition: filter 0.12s var(--ease);
+}
+/* Active work: solid accent (loud) */
+.pulse-chip-work {
+  color: var(--bg);
+  background: var(--accent);
+  border: 1px solid var(--accent);
+}
+.pulse-row:hover .pulse-chip-work {
+  filter: brightness(1.15);
+}
+.pulse-chip-missing {
+  color: var(--text-dim);
+  background: transparent;
+  border: 1px dashed var(--border);
+  font-weight: 400;
+}
+.pulse-row:hover .pulse-chip-missing {
+  filter: none;
+}
+/* Recent new: outlined accent */
+.pulse-chip-new {
+  color: var(--accent);
+  background: transparent;
+  border: 1px solid var(--accent-border);
+}
+/* Recent updated: outlined muted */
+.pulse-chip-updated {
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border);
+}
+
+/* ---- Progress bar (only in active rows) ---- */
+.pulse-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+.pulse-bar {
+  flex: 1 1 auto;
+  height: 4px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  position: relative;
+  min-width: 40px;
+}
+.pulse-fill {
+  display: block;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    var(--accent-dim) 0%,
+    var(--accent) 60%,
+    var(--warm) 100%
+  );
+  transition: width 0.3s var(--ease);
+}
+.pulse-bar-empty {
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 3px,
+    var(--border) 3px,
+    var(--border) 4px
+  );
+}
+.pulse-progress-label {
+  color: var(--text-dim);
+  font-size: 0.65rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  min-width: 4ch;
+  text-align: right;
+}
+.pulse-progress-empty .pulse-progress-label {
+  opacity: 0.6;
+}
+
+/* ---- Legacy stubs (previous row selectors) ---- */
+.pulse-work-row {}
+.pulse-recent-row {}
+.pulse-work-title {}
+.pulse-work-id {}
+.pulse-work-age {}
+.pulse-recent-time {}
+.pulse-recent-verb {}
+.pulse-verb-new {}
+.pulse-verb-updated {}
+.pulse-recent-title {}
+.pulse-progress-bar {}
+.pulse-progress-fill {}
+.pulse-group-header {}
+.pulse-body {}
+
+/* =========================================================
+   Pinned (right panel) — homepage compact list
+   ========================================================= */
+.pins-section h2 {
+  color: var(--warm, var(--accent));
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+.pins-home-count {
+  color: var(--text-dim);
+  font-size: 0.7rem;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  text-transform: none;
+}
+.pins-home-list {
+  display: flex;
+  flex-direction: column;
+}
+.pins-home-loading {
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  padding: 0.5rem 0;
+  font-style: italic;
+}
+
+.pin-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.55rem 0.35rem;
+  border-bottom: 1px solid var(--border);
+  text-decoration: none;
+  transition: background 0.12s var(--ease), padding-left 0.12s var(--ease);
+}
+.pin-row:last-child {
+  border-bottom: none;
+}
+.pin-row:hover {
+  background: var(--bg-hover);
+  padding-left: 0.6rem;
+}
+.pin-row-title {
+  color: var(--text-bright);
+  font-size: 0.85rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pin-row:hover .pin-row-title {
+  color: var(--accent);
+}
+.pin-row-meta {
+  color: var(--text-dim);
+  font-size: 0.65rem;
+  letter-spacing: 0.05em;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.pin-row-meta-category {
+  text-transform: lowercase;
+}
+.pin-row-meta-workid {
+  color: var(--text-muted);
+}
+
+.pins-home-empty {
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  padding: 0.5rem 0;
+  line-height: 1.5;
+}
+.pins-home-empty a {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px dotted var(--accent-dim);
+}
+.pins-home-empty a:hover {
+  border-bottom-style: solid;
 }
 
 /* ---- Build stats (keep for reference, now replaced by KPI) ---- */

@@ -13,6 +13,37 @@ HYPERSPACE_ROOT = _HYPERVISOR_DIR.parent
 OUTPUT_DIR = _HYPERVISOR_DIR / "site"
 ASSETS_DIR = _HYPERVISOR_DIR / "assets"
 
+
+# --- Brand SVG (Hypervisor logo) ---
+# Loaded once at module import from assets/hypervisor.svg. Exposed via
+# hypervisor_logo_svg(css_class) which returns an inline <svg> string with the
+# requested class and fill=currentColor (so it inherits accent/text color).
+def _load_logo_svg():
+    """Read hypervisor.svg, extract the inner path(s), and produce a template."""
+    import re
+    svg_path = ASSETS_DIR / "hypervisor.svg"
+    if not svg_path.exists():
+        return ""
+    text = svg_path.read_text(encoding="utf-8")
+    # Extract viewBox
+    m_vb = re.search(r'viewBox="([^"]+)"', text)
+    viewbox = m_vb.group(1) if m_vb else "0 0 108.28 108.28"
+    # Extract inner content between the first <svg ...> and closing </svg>
+    m_inner = re.search(r'<svg[^>]*>(.*)</svg>', text, re.DOTALL)
+    inner = m_inner.group(1).strip() if m_inner else ""
+    return f'<svg class="{{css_class}}" xmlns="http://www.w3.org/2000/svg" viewBox="{viewbox}" fill="currentColor" aria-hidden="true">{inner}</svg>'
+
+
+_LOGO_SVG_TEMPLATE = _load_logo_svg()
+
+
+def hypervisor_logo_svg(css_class: str = "brand-icon") -> str:
+    """Return an inline <svg> element for the Hypervisor logo with the given
+    CSS class. The SVG uses fill=currentColor so it inherits the parent text
+    color (accent, muted, etc.).
+    """
+    return _LOGO_SVG_TEMPLATE.replace("{css_class}", css_class)
+
 # --- Filters ---
 SKIP_DIRS = {"__pycache__", "site", "learn", ".scratch", ".hyperagent", ".hyperagent-lite"}
 SKIP_FILES = {".gitkeep"}

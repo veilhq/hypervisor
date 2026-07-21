@@ -96,7 +96,7 @@ For every directory that contains documents, generates an index page with subcat
 build_homepage(files, all_dirs, search_json, build_id, recent_paths=recent_paths)
 ```
 
-The hub page with category cards, recent activity, and build stats.
+The hub page: hero band, KPI strip, Workspace Pulse (active work + recent activity), Pinned mount point, and root documents.
 
 ### Step 8: Write build marker
 

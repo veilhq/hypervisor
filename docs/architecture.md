@@ -63,7 +63,7 @@ How the Hypervisor build pipeline works — from markdown source to browsable st
 │   │   ├── 02-search.css       # Search input, results dropdown, tag filtering, work item filters
 │   │   ├── 03-menus.css        # Reference menu, utilities menu, width toggle, accent picker
 │   │   ├── 04-content.css      # Markdown body, code blocks, tables, blockquotes
-│   │   ├── 05-cards.css        # Card grid, doc lists, build stats, homepage dock
+│   │   ├── 05-cards.css        # Card grid, doc lists, build stats, homepage Pulse/Pinned panels
 │   │   ├── 06-pinboard.css     # Pin cards, pin button, pinboard page, pin type badges
 │   │   ├── 07-toc.css          # Floating table of contents sidebar
 │   │   ├── 08-utilities.css    # Password generator and other utility page styles
@@ -257,7 +257,7 @@ If Kiro's MCP server is not active, the desktop app handles everything via its o
 
 3. **Directory indexes** — Auto-generated fragment for every directory that contains documents. Shows sub-category cards and a date-sorted document listing. These don't correspond to any `.md` source document. (logic in `directory_index`)
 
-4. **Homepage** — `site/content/home.json` is a fragment with category cards, recent activity, and build statistics. (logic in `directory_index.generate_home_content`)
+4. **Homepage** — `site/content/home.json` is a fragment with a hero band, KPI strip, the Workspace Pulse panel (in-progress work items with task-progress bars and a day-grouped recent-activity stream), the Pinned panel (rendered client-side from localStorage), and root-level documents. (logic in `directory_index.generate_home_content`)
 
 ## Asset Pipeline
 
@@ -274,7 +274,7 @@ CSS lives in `assets/css/` as numbered modules. During build, `build.py` globs n
 | `02-search.css` | Search input, results dropdown, tag filter indicator, result snippets/tags, work item filters |
 | `03-menus.css` | Reference dropdown, utilities dropdown, width toggle button, accent picker + palette preview |
 | `04-content.css` | `.markdown-body` typography, code blocks, tables, blockquotes, metadata bar, section panels, backlinks, related sections |
-| `05-cards.css` | Card grid, card animations, doc lists, build stats, homepage dock, empty messages |
+| `05-cards.css` | Card grid, card animations, doc lists, build stats, homepage Pulse/Pinned panels, empty messages |
 | `06-pinboard.css` | Pin cards, pin button (footer), pinboard page, pin type badges, dock item |
 | `07-toc.css` | Floating TOC sidebar, active heading tracking, responsive hide |
 | `08-utilities.css` | Shared utility page container, 404 not-found page |
@@ -420,9 +420,9 @@ The sort prefers `updated` over `created`. Undated docs sort last.
 Hub-and-spoke, no sidebar:
 
 ```
-Homepage (recently updated + category cards + build stats)
-  └── Category index (subcategory cards + date-sorted document list)
-       └── Doc page (rendered markdown)
+Site nav rail (topbar) ─────────► Category index (subcategory cards + date-sorted doc list)
+                                    └── Doc page (rendered markdown)
+Homepage (Workspace Pulse + Pinned + root docs) — status, not navigation
 ```
 
 Every page has:

@@ -309,6 +309,7 @@
   var autoScroll = true;
   var pollTimer = null;
   var POLL_INTERVAL = 2000;
+  var MAX_LINES = 5000; // Ring-buffer cap — drop oldest entries beyond this
 
   // --- DOM refs ---
   var panel = document.getElementById("log-panel");
@@ -330,7 +331,7 @@
     if (m) {
       return {
         timestamp: m[1],
-        level: m[2].toLowerCase().replace("warni", "warn").replace("warning", "warn"),
+        level: m[2].toLowerCase().replace("warning", "warn"),
         module: m[3],
         message: m[4],
         source: source,
@@ -345,7 +346,35 @@
       message: raw,
       source: source,
       raw: raw,
+      continuation: true,
     };
+  }
+
+  // Push a raw line into logLines. Continuation lines (traceback bodies, etc.)
+  // inherit level/module from the most recent entry of the same source so they
+  // stay visually grouped with their originating log record.
+  function pushLine(raw, source) {
+    var entry = parseLine(raw, source);
+    if (entry.continuation) {
+      // Walk backward for the most recent entry from the same source
+      for (var j = logLines.length - 1; j >= 0; j--) {
+        if (logLines[j].source === source) {
+          entry.level = logLines[j].level;
+          entry.module = logLines[j].module;
+          // Inherit timestamp so sort keeps continuation adjacent to its header
+          entry.timestamp = logLines[j].timestamp;
+          break;
+        }
+      }
+    }
+    logLines.push(entry);
+  }
+
+  // Trim the buffer to MAX_LINES, dropping oldest entries first
+  function capBuffer() {
+    if (logLines.length > MAX_LINES) {
+      logLines.splice(0, logLines.length - MAX_LINES);
+    }
   }
 
   // --- Rendering ---
@@ -362,7 +391,7 @@
 
   function shouldShow(entry) {
     if (!activeSources[entry.source]) return false;
-    var sev = entry.level === "error" ? "error"
+    var sev = (entry.level === "error" || entry.level === "critical" || entry.level === "fatal") ? "error"
             : (entry.level === "warn" || entry.level === "warning") ? "warn"
             : entry.level === "trace" ? "trace"
             : entry.level === "debug" ? "debug" : "info";
@@ -382,14 +411,14 @@
     var html = "";
     for (var i = 0; i < visible.length; i++) {
       var e = visible[i];
-      var sev = e.level === "error" ? "error"
+      var sev = (e.level === "error" || e.level === "critical" || e.level === "fatal") ? "error"
               : (e.level === "warn" || e.level === "warning") ? "warn"
               : e.level === "trace" ? "trace"
               : e.level === "debug" ? "debug" : "info";
       var cls = "log-line log-line-" + sev;
 
       html += '<span class="' + cls + '">';
-      if (e.timestamp) {
+      if (e.timestamp && !e.continuation) {
         html += '<span class="log-ts">' + escapeHtml(e.timestamp) + '</span> ';
         html += '<span class="log-level">[' + escapeHtml(e.level.toUpperCase()) + ']</span> ';
         html += '<span class="log-source">[' + escapeHtml(e.module) + ']</span> ';
@@ -496,25 +525,37 @@
   function pollLogs() {
     if (!window.pywebview || !window.pywebview.api) return;
 
-    LOG_FILES.forEach(function(filename) {
+    var promises = LOG_FILES.map(function(filename) {
       var afterLine = totalLinesByFile[filename] || 0;
       var source = SOURCE_MAP[filename];
 
-      window.pywebview.api.read_log_tail(filename, 200, afterLine).then(function(result) {
-        if (!result.ok) return;
-
+      return window.pywebview.api.read_log_tail(filename, 200, afterLine).then(function(result) {
+        if (!result.ok) return { source: source, lines: [] };
         totalLinesByFile[filename] = result.total_lines;
+        return { source: source, lines: result.lines || [] };
+      });
+    });
 
-        if (result.lines.length > 0) {
-          for (var i = 0; i < result.lines.length; i++) {
-            var line = result.lines[i].trim();
-            if (line) {
-              logLines.push(parseLine(line, source));
-            }
+    Promise.all(promises).then(function(results) {
+      var added = 0;
+      results.forEach(function(r) {
+        for (var i = 0; i < r.lines.length; i++) {
+          var line = r.lines[i].trim();
+          if (line) {
+            pushLine(line, r.source);
+            added++;
           }
-          renderAll();
         }
       });
+      if (added > 0) {
+        // Sort newly-appended tail to keep chronological order across sources.
+        // Only re-sort the tail region to avoid re-shuffling stable history.
+        logLines.sort(function(a, b) {
+          return (a.timestamp || "").localeCompare(b.timestamp || "");
+        });
+        capBuffer();
+        renderAll();
+      }
     });
   }
 
@@ -539,28 +580,32 @@
       return;
     }
 
-    LOG_FILES.forEach(function(filename) {
+    var promises = LOG_FILES.map(function(filename) {
       var source = SOURCE_MAP[filename];
 
-      window.pywebview.api.read_log_tail(filename, 200, 0).then(function(result) {
-        if (!result.ok) return;
-
+      return window.pywebview.api.read_log_tail(filename, 200, 0).then(function(result) {
+        if (!result.ok) return { source: source, lines: [] };
         totalLinesByFile[filename] = result.total_lines;
+        return { source: source, lines: result.lines || [] };
+      });
+    });
 
-        for (var i = 0; i < result.lines.length; i++) {
-          var line = result.lines[i].trim();
+    Promise.all(promises).then(function(results) {
+      results.forEach(function(r) {
+        for (var i = 0; i < r.lines.length; i++) {
+          var line = r.lines[i].trim();
           if (line) {
-            logLines.push(parseLine(line, source));
+            pushLine(line, r.source);
           }
         }
-
-        // Sort by timestamp after initial load of all files
-        logLines.sort(function(a, b) {
-          return (a.timestamp || "").localeCompare(b.timestamp || "");
-        });
-
-        renderAll();
       });
+
+      // Sort by timestamp after all files loaded
+      logLines.sort(function(a, b) {
+        return (a.timestamp || "").localeCompare(b.timestamp || "");
+      });
+      capBuffer();
+      renderAll();
     });
 
     // Start live polling after initial load
