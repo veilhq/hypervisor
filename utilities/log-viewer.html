@@ -50,6 +50,7 @@
     <!-- Status bar -->
     <div class="log-status-bar">
       <span id="log-status-lines">0 lines</span>
+      <span class="log-status-hint">double-click a line to copy</span>
       <span id="log-status-poll" class="log-status-live">&#9679; Live</span>
     </div>
   </div>
@@ -207,6 +208,15 @@
 .log-panel-inner {
   white-space: pre-wrap;
   word-break: break-all;
+  user-select: text;
+  -webkit-user-select: text;
+  cursor: text;
+}
+
+/* Brief flash when a line is copied via double-click */
+.log-line-copied {
+  background: var(--accent-glow, rgba(0, 255, 65, 0.15)) !important;
+  transition: background 0.4s ease;
 }
 
 .log-empty {
@@ -290,6 +300,12 @@
   color: var(--accent);
 }
 
+.log-status-hint {
+  color: var(--text-dim);
+  opacity: 0.7;
+  font-style: italic;
+}
+
 .log-status-paused {
   color: #ffb000;
 }
@@ -310,6 +326,7 @@
   var pollTimer = null;
   var POLL_INTERVAL = 2000;
   var MAX_LINES = 5000; // Ring-buffer cap — drop oldest entries beyond this
+  var pendingRender = false; // Set when a render is skipped to preserve a selection
 
   // --- DOM refs ---
   var panel = document.getElementById("log-panel");
@@ -401,6 +418,19 @@
   }
 
   function renderAll() {
+    // Preserve active user selection — if the user is highlighting text inside
+    // the panel, skip this render pass and let the next poll try again.
+    // Otherwise innerHTML replacement wipes the selection mid-drag / before copy.
+    var sel = window.getSelection && window.getSelection();
+    if (sel && !sel.isCollapsed && sel.rangeCount > 0) {
+      var range = sel.getRangeAt(0);
+      if (panelInner.contains(range.commonAncestorContainer)) {
+        pendingRender = true;
+        return;
+      }
+    }
+    pendingRender = false;
+
     var visible = logLines.filter(shouldShow);
     if (visible.length === 0) {
       panelInner.innerHTML = '<div class="log-empty">No matching log entries</div>';
@@ -440,6 +470,53 @@
     var atBottom = panel.scrollHeight - panel.scrollTop - panel.clientHeight < 30;
     autoScroll = atBottom;
   });
+
+  // --- Flush deferred render when selection clears ---
+  // renderAll() skips itself while a selection is active inside the panel;
+  // once the user releases / clears the selection, catch up so live tail resumes.
+  document.addEventListener("selectionchange", function() {
+    if (!pendingRender) return;
+    var sel = window.getSelection && window.getSelection();
+    if (!sel || sel.isCollapsed || sel.rangeCount === 0) {
+      renderAll();
+      return;
+    }
+    var range = sel.getRangeAt(0);
+    if (!panelInner.contains(range.commonAncestorContainer)) {
+      renderAll();
+    }
+  });
+
+  // --- Double-click a log line to copy its raw text ---
+  panelInner.addEventListener("dblclick", function(e) {
+    var lineEl = e.target.closest && e.target.closest(".log-line");
+    if (!lineEl) return;
+    var text = lineEl.textContent || "";
+    if (!text) return;
+    // Use the clipboard API when available; fall back to a hidden textarea.
+    var done = function() {
+      lineEl.classList.add("log-line-copied");
+      setTimeout(function() { lineEl.classList.remove("log-line-copied"); }, 600);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, function() {
+        fallbackCopy(text); done();
+      });
+    } else {
+      fallbackCopy(text); done();
+    }
+  });
+
+  function fallbackCopy(text) {
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand("copy"); } catch (_) {}
+    document.body.removeChild(ta);
+  }
 
   // --- Source filter buttons ---
   var srcBtns = document.querySelectorAll(".log-filter-btn");
