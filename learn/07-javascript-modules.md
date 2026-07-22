@@ -17,8 +17,10 @@ assets/js/
 │   └── theme.js             ← Accent color picker
 │
 ├── features/                ← Self-contained features (order-independent)
+│   ├── 00-shared-modules.js ← Extractable modules: HvNoiseField, HvGreeting, HvToast
 │   ├── content.js           ← Content interactions (copy, zoom)
 │   ├── effects.js           ← Visual effects (glitch, clock)
+│   ├── home-anchor.js       ← Homepage: mounts HvNoiseField + HvGreeting
 │   ├── live-reload.js       ← Auto-reload on rebuild
 │   ├── pins.js              ← Pinboard pin management
 │   ├── shortcuts.js         ← Keyboard shortcuts
@@ -129,12 +131,40 @@ Queried once at startup, reused everywhere. Avoids repeated `getElementById` cal
 ### Toast Notifications
 
 ```javascript
-function showToast(message, duration) {
-  // Creates a temporary notification element
-}
+// Legacy — string only, defaults to info variant, 3s duration
+HvToast.show('Copied');
+
+// Full options object
+HvToast.show({
+  variant: 'success' | 'info' | 'warn' | 'error',   // default 'info'
+  title: 'Rebuild failed',                           // optional bold first line
+  message: 'Watcher lost connection to build.py',    // required body
+  icon: 'circle-x',                                   // optional Lucide name; auto per-variant
+  duration: 3000 | 'sticky',                          // ms or 'sticky' for errors
+  action: { label: 'Retry', onClick: () => reconnect() },  // optional inline button
+  dedupeKey: 'live-reload'                           // replace prior toast with same key
+});
 ```
 
-A simple notification system used by copy buttons, write-back confirmations, etc.
+Variant → color mapping (all tokens already in `00-variables.css`):
+
+| Variant | Rail color | Default icon | Default duration |
+|---------|------------|--------------|-------------------|
+| `success` | `--accent` | `check-circle` | 3000ms |
+| `info`    | `--cool`   | `info` | 3000ms |
+| `warn`    | `--warm`   | `alert-triangle` | 5000ms |
+| `error`   | `--comp`   | `circle-x` | sticky (until dismissed) |
+
+Toasts render as cards with a 2px left rail in the variant color, hard-edged border, no shadow — matching the brutalist aesthetic. `warn` and `error` variants get `role="alert"` for assertive screen-reader announcement. Errors are sticky by default and gain a close button; the same happens when an `action` is provided.
+
+**Dedupe & queue**: passing a `dedupeKey` removes any existing toast with the same key before appending the new one (prevents rebuild-notification spam). The container caps at 5 visible toasts — the oldest exits when a sixth arrives.
+
+The IIFE lives in `core/00-core.js` and is mirrored (behavior-identical) into Hyperagent's `00-core.js`. It exposes:
+- `window.HvToast.show(input)` — canonical ecosystem API
+- `window.HvToast.dismiss(toast)` — programmatic dismiss
+- `window.__hypervisorToast(input)` — legacy alias, accepts string or options (used by the Python bridge in `hypervisor-app.py`)
+
+Used by write-back confirmations, drop-import feedback, pins, ideas-dismiss, and the Python bridge for live-reload signals.
 
 ## Module 01: Navigation & Search
 

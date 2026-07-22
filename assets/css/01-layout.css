@@ -4,9 +4,9 @@
 .topbar {
   position: sticky;
   top: 0;
-  z-index: 100;
-  border-bottom: 1px solid var(--border);
-  transition: box-shadow 0.3s var(--ease);
+  z-index: var(--z-topbar);
+  border-bottom: var(--border-hair) solid var(--border);
+  transition: box-shadow var(--motion-slow) var(--ease);
 }
 .topbar::before {
   content: "";
@@ -27,11 +27,11 @@
   bottom: 0;
   right: 5rem;
   transform: translateY(100%);
-  padding: 0.4rem 1rem;
+  padding: var(--space-0-4) var(--space-4);
   background: var(--comp);
   color: var(--bg);
   font-family: var(--font);
-  font-size: 0.9rem;
+  font-size: var(--fs-heading);
   font-weight: 700;
   letter-spacing: 0.08em;
   z-index: -1;
@@ -49,7 +49,7 @@
   width: var(--site-nav-width);
   z-index: 90;
   background: var(--bg-card);
-  border-right: 1px solid var(--border);
+  border-right: var(--border-hair) solid var(--border);
   display: flex;
   flex-direction: column;
   padding-top: calc(3.75rem + 1px);
@@ -63,19 +63,19 @@
 .site-nav-item {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.6rem 0.75rem;
+  gap: var(--space-2);
+  padding: var(--space-0-6) var(--space-3);
   color: var(--text);
   text-decoration: none;
-  font-size: 0.7rem;
+  font-size: var(--fs-label);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   border-left: 3px solid transparent;
-  border-bottom: 1px solid var(--border);
+  border-bottom: var(--border-hair) solid var(--border);
   position: relative;
-  transition: background 0.15s var(--ease), color 0.15s var(--ease),
-              border-left-color 0.15s var(--ease);
+  transition: background var(--motion-fast) var(--ease), color var(--motion-fast) var(--ease),
+              border-left-color var(--motion-fast) var(--ease);
 }
 .site-nav-item:hover {
   background: var(--accent-glow);
@@ -110,7 +110,7 @@
   height: 14px;
   flex-shrink: 0;
   color: var(--text-dim);
-  transition: color 0.15s var(--ease);
+  transition: color var(--motion-fast) var(--ease);
 }
 .site-nav-label {
   flex: 1;
@@ -130,7 +130,7 @@
 .site-nav-children {
   max-height: 0;
   overflow: hidden;
-  transition: max-height 0.25s var(--ease);
+  transition: max-height var(--motion-medium) var(--ease);
 }
 .site-nav-children.open {
   max-height: 800px;
@@ -138,8 +138,8 @@
 .site-nav-child {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.4rem 0.75rem 0.4rem 1.5rem;
+  gap: var(--space-0-4);
+  padding: var(--space-0-4) var(--space-3) var(--space-0-4) var(--space-5);
   color: var(--text-muted);
   text-decoration: none;
   font-size: 0.62rem;
@@ -147,10 +147,10 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
   border-left: 3px solid transparent;
-  border-bottom: 1px solid var(--border);
+  border-bottom: var(--border-hair) solid var(--border);
   position: relative;
-  transition: background 0.15s var(--ease), color 0.15s var(--ease),
-              border-left-color 0.15s var(--ease), padding-left 0.15s var(--ease);
+  transition: background var(--motion-fast) var(--ease), color var(--motion-fast) var(--ease),
+              border-left-color var(--motion-fast) var(--ease), padding-left var(--motion-fast) var(--ease);
 }
 .site-nav-child:hover {
   background: var(--accent-glow);
@@ -172,10 +172,10 @@
   height: 11px;
   flex-shrink: 0;
   color: var(--text-dim);
-  transition: color 0.15s var(--ease);
+  transition: color var(--motion-fast) var(--ease);
 }
 .site-nav-child .site-nav-count {
-  font-size: 0.55rem;
+  font-size: var(--fs-micro);
 }
 
 /* Recent activity dot on child items */
@@ -192,11 +192,11 @@
 .topbar-inner {
   max-width: 100%;
   margin: 0 auto;
-  padding: 0.75rem 5rem 0.75rem 1rem;
+  padding: var(--space-3) 5rem var(--space-3) var(--space-4);
   display: grid;
   grid-template-columns: 1fr 2fr 1fr;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--space-3);
   position: relative;
   z-index: 1;
 }
@@ -204,25 +204,25 @@
 .topbar-left {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--space-3);
   min-width: 0;
 }
 
 .topbar-right {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--space-3);
   justify-content: flex-end;
 }
 
 .brand {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: var(--space-0-4);
   text-decoration: none;
   color: inherit;
   flex-shrink: 0;
-  transition: transform 0.2s var(--ease);
+  transition: transform var(--motion-base) var(--ease);
 }
 .brand:hover { transform: translateX(-1px); }
 .brand-icon {
@@ -231,7 +231,7 @@
   color: var(--accent);
 }
 .brand-text {
-  font-size: 0.85rem;
+  font-size: var(--fs-body);
   font-weight: 700;
   letter-spacing: 0.15em;
   text-transform: uppercase;
@@ -260,7 +260,7 @@
 .crumb-link {
   color: var(--text-muted);
   text-decoration: none;
-  transition: color 0.15s var(--ease);
+  transition: color var(--motion-fast) var(--ease);
   flex-shrink: 0;
 }
 .crumb-link:hover { color: var(--accent); }
@@ -290,13 +290,13 @@
   bottom: 0;
   left: 0;
   right: 0;
-  padding: 0.65rem 1.5rem;
-  border-top: 1px solid var(--border);
+  padding: 0.65rem var(--space-5);
+  border-top: var(--border-hair) solid var(--border);
   font-size: 0.78rem;
   color: var(--text-dim);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-2);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   background: rgba(5, 5, 5, 0.85);
@@ -317,27 +317,27 @@
   width: 14px;
   height: 14px;
   vertical-align: -2px;
-  margin-right: 0.25rem;
+  margin-right: var(--space-1);
 }
 
 /* ---- Scroll to top ---- */
 .scroll-top {
   position: fixed;
   bottom: 2.5rem;
-  right: 1rem;
-  z-index: 100;
+  right: var(--space-4);
+  z-index: var(--z-topbar);
   background: var(--bg-elevated);
-  border: 1px solid var(--border-strong);
+  border: var(--border-hair) solid var(--border-strong);
   color: var(--text-muted);
   width: 36px;
   height: 36px;
-  font-size: 0.85rem;
+  font-size: var(--fs-body);
   cursor: pointer;
   opacity: 0;
   pointer-events: none;
   transform: translateY(8px);
-  transition: opacity 0.2s var(--ease), transform 0.2s var(--ease),
-              color 0.15s var(--ease), border-color 0.15s var(--ease);
+  transition: opacity var(--motion-base) var(--ease), transform var(--motion-base) var(--ease),
+              color var(--motion-fast) var(--ease), border-color var(--motion-fast) var(--ease);
   font-family: var(--font);
 }
 .scroll-top.visible {
@@ -408,7 +408,7 @@
   height: 2px;
   width: 0%;
   background: var(--accent);
-  z-index: 200;
+  z-index: var(--z-dropdown);
   transition: width 60ms linear;
   pointer-events: none;
   opacity: 0.8;
@@ -449,11 +449,11 @@
 
 /* ---- Pin card hover lift ---- */
 .pin-card {
-  transition: transform 0.2s var(--ease), box-shadow 0.25s var(--ease), border-color 0.2s var(--ease);
+  transition: transform var(--motion-base) var(--ease), box-shadow var(--motion-medium) var(--ease), border-color var(--motion-base) var(--ease);
 }
 .pin-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4), 0 0 1px var(--accent-border);
+  box-shadow: var(--shadow-panel);
 }
 
 /* ---- Reduced motion: disable all added animations ---- */

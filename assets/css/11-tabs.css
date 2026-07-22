@@ -6,7 +6,7 @@
   top: calc(3.75rem + 1px); /* below topbar */
   z-index: 95;
   background: var(--bg-surface);
-  border-bottom: 1px solid var(--border);
+  border-bottom: var(--border-hair) solid var(--border);
   padding: 0;
   padding-left: var(--site-nav-width, 0px);
   overflow-x: auto;
@@ -28,7 +28,7 @@
   width: var(--tab-hl-width, 0);
   height: 100%;
   background: var(--accent);
-  transition: left 0.25s var(--ease), width 0.25s var(--ease);
+  transition: left var(--motion-medium) var(--ease), width var(--motion-medium) var(--ease);
   pointer-events: none;
   z-index: 0;
 }
@@ -44,12 +44,12 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  padding: 0 1rem;
+  gap: var(--space-2);
+  padding: 0 var(--space-4);
   color: var(--text-muted);
-  font-size: 0.9rem;
+  font-size: var(--fs-heading);
   cursor: pointer;
-  transition: color 0.2s var(--ease);
+  transition: color var(--motion-base) var(--ease);
   flex-shrink: 0;
 }
 
@@ -68,7 +68,7 @@
 }
 .tab-fade-in {
   opacity: 1;
-  transition: opacity 0.12s ease-in;
+  transition: opacity var(--motion-fast) ease-in;
 }
 
 /* ---- Tab title ---- */
@@ -88,9 +88,9 @@
   height: 16px;
   opacity: 1;
   color: var(--text-dim);
-  font-size: 0.7rem;
+  font-size: var(--fs-label);
   line-height: 1;
-  transition: opacity 0.15s var(--ease), color 0.15s var(--ease);
+  transition: opacity var(--motion-fast) var(--ease), color var(--motion-fast) var(--ease);
   cursor: pointer;
   background: none;
   border: none;

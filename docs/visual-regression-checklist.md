@@ -1,6 +1,6 @@
 # Hypervisor Visual Regression Checklist
 
-Surface-by-surface pre/post comparison for the [Hypervisor Aesthetic Refresh (WI-112)](../../work/to-do/hypervisor-aesthetic-refresh.md). Each surface enumerated below is the Hypervisor-owned slice of the [WI-111](../../work/to-do/hyper-ecosystem-aesthetic-refresh.md) expanded verification list.
+Surface-by-surface pre/post comparison for the [Hypervisor Aesthetic Refresh (WI-112)](../../work/done/hypervisor-aesthetic-refresh.md). Each surface enumerated below is the Hypervisor-owned slice of the [WI-111](../../work/to-do/hyper-ecosystem-aesthetic-refresh.md) expanded verification list.
 
 - Created: 2026-07-21T08:51
 - Updated: 2026-07-21T08:51

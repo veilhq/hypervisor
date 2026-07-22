@@ -73,7 +73,10 @@
 
       var skipped = files.length - mdFiles.length;
       if (skipped > 0 && window.__hypervisorToast) {
-        window.__hypervisorToast("skipped " + skipped + " non-markdown file" + (skipped > 1 ? "s" : ""));
+        window.__hypervisorToast({
+          variant: "warn",
+          message: "skipped " + skipped + " non-markdown file" + (skipped > 1 ? "s" : "")
+        });
       }
       if (mdFiles.length === 0) return;
 
@@ -95,7 +98,10 @@
               if (imported + failed === total && window.__hypervisorToast) {
                 var msg = "imported " + imported + " file" + (imported !== 1 ? "s" : "");
                 if (failed > 0) msg += " (" + failed + " failed)";
-                window.__hypervisorToast(msg);
+                window.__hypervisorToast({
+                  variant: failed > 0 ? "warn" : "success",
+                  message: msg
+                });
               }
             });
         };
@@ -136,9 +142,9 @@
           if (!ok) return;
           window.pywebview.api.delete_external_file(filename).then(function (result) {
             if (result && result.ok) {
-              if (window.__hypervisorToast) window.__hypervisorToast("deleted: " + filename);
+              if (window.__hypervisorToast) window.__hypervisorToast({ variant: "success", message: "deleted: " + filename });
             } else {
-              if (window.__hypervisorToast) window.__hypervisorToast("delete failed: " + (result.error || "unknown"));
+              if (window.__hypervisorToast) window.__hypervisorToast({ variant: "error", message: "delete failed: " + (result.error || "unknown") });
             }
           });
         });

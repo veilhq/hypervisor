@@ -16,6 +16,7 @@ from .file_utils import (
     get_dir_status, get_dir_type, get_dir_tags, infer_app_group,
     compute_badges, format_badge_html,
 )
+from .chips import render_chip
 
 
 # ---------------------------------------------------------------------------
@@ -268,8 +269,8 @@ def generate_home_content(files, build_stats=None, recent_paths=None):
                 progress_html = (
                     '<span class="pulse-progress" title="'
                     f'{done}/{total} tasks">'
-                    f'<span class="pulse-bar">'
-                    f'<span class="pulse-fill" style="width:{pct}%"></span>'
+                    f'<span class="hv-progress-track pulse-bar">'
+                    f'<span class="hv-progress-fill pulse-fill" style="width:{pct}%"></span>'
                     f'</span>'
                     f'<span class="pulse-progress-label">{done}/{total}</span>'
                     f'</span>'
@@ -277,15 +278,15 @@ def generate_home_content(files, build_stats=None, recent_paths=None):
             else:
                 progress_html = (
                     '<span class="pulse-progress pulse-progress-empty" title="No tasks defined">'
-                    '<span class="pulse-bar pulse-bar-empty"></span>'
+                    '<span class="hv-progress-track hv-progress-track-empty pulse-bar pulse-bar-empty"></span>'
                     '<span class="pulse-progress-label">&mdash;/&mdash;</span>'
                     '</span>'
                 )
             days_str = f'{it["days"]}d'
             chip = (
-                f'<span class="pulse-chip pulse-chip-work">{it["work_id"]}</span>'
+                render_chip("filled", it["work_id"], extra_class="pulse-chip pulse-chip-work")
                 if it["work_id"]
-                else '<span class="pulse-chip pulse-chip-work pulse-chip-missing">&mdash;</span>'
+                else render_chip("outlined-muted", "&mdash;", extra_class="pulse-chip pulse-chip-work pulse-chip-missing")
             )
             html.append(
                 f'<a class="pulse-row pulse-row-active" href="{href_for(it["rel"])}">'
@@ -306,12 +307,13 @@ def generate_home_content(files, build_stats=None, recent_paths=None):
             html.append(f'<div class="pulse-day-header">{day_label}</div>')
             for rel, title, date_str, date_label in items:
                 is_new = date_label == "created"
-                chip_cls = "pulse-chip-new" if is_new else "pulse-chip-updated"
+                chip_variant = "outlined-accent" if is_new else "outlined-muted"
+                specific_cls = "pulse-chip pulse-chip-new" if is_new else "pulse-chip pulse-chip-updated"
                 chip_label = "NEW" if is_new else "UPD"
                 time_str = _pulse_time_str(date_str) or "&mdash;&mdash;:&mdash;&mdash;"
                 html.append(
                     f'<a class="pulse-row pulse-row-recent" href="{href_for(rel)}">'
-                    f'<span class="pulse-chip {chip_cls}">{chip_label}</span>'
+                    f'{render_chip(chip_variant, chip_label, extra_class=specific_cls)}'
                     f'<span class="pulse-title">{title}</span>'
                     f'<span class="pulse-right">{time_str}</span>'
                     f'</a>'

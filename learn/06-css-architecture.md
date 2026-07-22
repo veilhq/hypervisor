@@ -10,7 +10,8 @@ Instead of one massive CSS file, Hypervisor splits styles into numbered modules:
 
 ```
 assets/css/
-├── 00-variables.css         ← Custom properties, resets, base classes
+├── 00-primitives.css        ← Ecosystem primitive classes (hv-chip, hv-row, hv-button, etc.)
+├── 00-variables.css         ← Custom properties, tokens, resets, base classes
 ├── 01-layout.css            ← Page structure, topbar, footer
 ├── 02-search.css            ← Search input and results
 ├── 03-menus.css             ← Dropdown menus, accent picker
@@ -19,9 +20,11 @@ assets/css/
 ├── 06-pinboard.css          ← Pin cards, pin button, pinboard page
 ├── 07-toc.css               ← Table of contents sidebar
 ├── 08-utilities.css         ← Utility page styles
-├── 09-effects.css           ← Animations, cursor effects
+├── 09-effects.css           ← Animations, cursor effects, toast system
 └── zz-accessibility.css     ← A11y overrides (always loads last)
 ```
+
+Both `00-*` files load before all numbered specifics. Load order between them (alphabetical: `00-primitives.css` before `00-variables.css`) doesn't matter for token resolution — CSS custom properties are resolved after all rules are parsed.
 
 During build, numbered files are **concatenated in sorted order**, then `zz-*` files are appended last:
 

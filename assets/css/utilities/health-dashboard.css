@@ -4,36 +4,36 @@
   margin: 0 auto;
 }
 .health-dashboard h1 {
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--space-5);
 }
 .health-dashboard h2 {
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--text-bright);
-  margin: 0 0 0.75rem;
-  padding-bottom: 0.4rem;
-  border-bottom: 1px solid var(--border);
+  margin: 0 0 var(--space-3);
+  padding-bottom: var(--space-0-4);
+  border-bottom: var(--border-hair) solid var(--border);
 }
 .health-dashboard h3 {
-  font-size: 0.65rem;
+  font-size: var(--fs-caption);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--amber);
-  margin: 1rem 0 0.5rem;
+  margin: var(--space-4) 0 var(--space-2);
 }
 
 /* Summary cards */
 .health-cards {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 0.75rem;
-  margin-bottom: 1rem;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
 }
 .health-card {
   background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  padding: 1rem 0.75rem;
+  border: var(--border-hair) solid var(--border);
+  padding: var(--space-4) var(--space-3);
   text-align: center;
 }
 .health-card-value {
@@ -41,7 +41,7 @@
   font-weight: 700;
   color: var(--text-bright);
   line-height: 1;
-  margin-bottom: 0.3rem;
+  margin-bottom: var(--space-0-3);
 }
 .health-card-label {
   font-size: 0.6rem;
@@ -57,15 +57,15 @@
 .health-trend {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  margin-bottom: 1.5rem;
-  font-size: 0.7rem;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-5);
+  font-size: var(--fs-label);
   color: var(--text-muted);
-  border-left: 2px solid var(--border);
+  border-left: var(--border-rail) solid var(--border);
 }
 .health-trend-icon {
-  font-size: 1rem;
+  font-size: var(--fs-hero);
   font-weight: 700;
 }
 .trend-good { border-left-color: var(--accent); }
@@ -78,22 +78,22 @@
 /* Modular grid layout */
 .health-grid {
   display: flex;
-  gap: 1rem;
+  gap: var(--space-4);
   align-items: stretch;
 }
 .health-col {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--space-4);
 }
 .health-col > .health-panel:last-child {
   flex: 1;
 }
 .health-panel {
   background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  padding: 1rem 1.2rem;
+  border: var(--border-hair) solid var(--border);
+  padding: var(--space-4) var(--space-1-2);
 }
 .health-panel h2 {
   margin-top: 0;
@@ -104,9 +104,9 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.35rem 0.5rem;
-  border-bottom: 1px solid var(--border-dim);
-  font-size: 0.7rem;
+  padding: 0.35rem var(--space-2);
+  border-bottom: var(--border-hair) solid var(--border-dim);
+  font-size: var(--fs-label);
 }
 .health-issue-rule {
   color: var(--text);
@@ -122,21 +122,21 @@
 /* Filter buttons */
 .health-filter-row {
   display: flex;
-  gap: 0.3rem;
-  margin-bottom: 0.75rem;
+  gap: var(--space-0-3);
+  margin-bottom: var(--space-3);
   flex-wrap: wrap;
 }
 .health-filter-btn {
   background: var(--bg);
-  border: 1px solid var(--border);
+  border: var(--border-hair) solid var(--border);
   color: var(--text-muted);
-  padding: 0.25rem 0.6rem;
+  padding: var(--space-1) var(--space-0-6);
   font-size: 0.6rem;
   font-family: var(--font);
   text-transform: uppercase;
   letter-spacing: 0.03em;
   cursor: pointer;
-  transition: border-color 0.15s, color 0.15s;
+  transition: border-color var(--motion-fast), color var(--motion-fast);
 }
 .health-filter-btn:hover {
   border-color: var(--accent-dim);
@@ -155,10 +155,10 @@
 .health-stale-row {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.3rem 0.4rem;
-  border-bottom: 1px solid var(--border-dim);
-  font-size: 0.65rem;
+  gap: var(--space-2);
+  padding: var(--space-0-3) var(--space-0-4);
+  border-bottom: var(--border-hair) solid var(--border-dim);
+  font-size: var(--fs-caption);
 }
 .health-stale-title {
   flex: 1;
@@ -168,8 +168,8 @@
   white-space: nowrap;
 }
 .health-stale-badge {
-  padding: 0.1rem 0.4rem;
-  font-size: 0.55rem;
+  padding: var(--space-0-1) var(--space-0-4);
+  font-size: var(--fs-micro);
   font-weight: 700;
   letter-spacing: 0.02em;
 }
@@ -177,7 +177,7 @@
 .stale-warning { color: var(--amber); border: 1px solid var(--amber); }
 .stale-critical { color: var(--error); border: 1px solid var(--error); }
 .health-stale-type {
-  font-size: 0.55rem;
+  font-size: var(--fs-micro);
   color: var(--text-dim);
   text-transform: uppercase;
   min-width: 4rem;
@@ -186,7 +186,7 @@
 .health-more {
   font-size: 0.6rem;
   color: var(--text-dim);
-  padding: 0.4rem;
+  padding: var(--space-0-4);
   text-align: center;
 }
 
@@ -194,24 +194,24 @@
 .health-tag-stats {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
-  margin-bottom: 1rem;
-  font-size: 0.65rem;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+  font-size: var(--fs-caption);
   color: var(--text-muted);
 }
 .health-tag-stat strong {
   color: var(--text-bright);
-  font-size: 0.85rem;
-  margin-right: 0.2rem;
+  font-size: var(--fs-body);
+  margin-right: var(--space-0-2);
 }
 
 /* Co-occurrence */
 .health-co-row {
   display: flex;
   justify-content: space-between;
-  padding: 0.25rem 0.4rem;
-  border-bottom: 1px solid var(--border-dim);
-  font-size: 0.65rem;
+  padding: var(--space-1) var(--space-0-4);
+  border-bottom: var(--border-hair) solid var(--border-dim);
+  font-size: var(--fs-caption);
 }
 .health-co-tags { color: var(--text); }
 .health-co-count { color: var(--text-muted); }
@@ -220,17 +220,17 @@
 .health-underused-row {
   display: flex;
   justify-content: space-between;
-  padding: 0.2rem 0.4rem;
-  font-size: 0.65rem;
+  padding: var(--space-0-2) var(--space-0-4);
+  font-size: var(--fs-caption);
 }
 .health-tag-name { color: var(--cyan); }
 .health-tag-count { color: var(--text-dim); }
 
 /* Merge candidates */
 .health-merge-row {
-  padding: 0.3rem 0.4rem;
-  border-bottom: 1px solid var(--border-dim);
-  font-size: 0.65rem;
+  padding: var(--space-0-3) var(--space-0-4);
+  border-bottom: var(--border-hair) solid var(--border-dim);
+  font-size: var(--fs-caption);
 }
 .health-merge-tags {
   color: var(--amber);
@@ -246,9 +246,9 @@
 .health-dir-row {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.25rem 0;
-  font-size: 0.65rem;
+  gap: var(--space-2);
+  padding: var(--space-1) 0;
+  font-size: var(--fs-caption);
 }
 .health-dir-name {
   min-width: 5rem;
@@ -258,12 +258,12 @@
   flex: 1;
   height: 6px;
   background: var(--bg);
-  border: 1px solid var(--border-dim);
+  border: var(--border-hair) solid var(--border-dim);
   overflow: hidden;
 }
 .health-dir-fill {
   height: 100%;
-  transition: width 0.3s;
+  transition: width var(--motion-slow);
 }
 .dir-bar-good { background: var(--accent); }
 .dir-bar-ok { background: var(--amber); }
@@ -276,9 +276,9 @@
 
 /* Empty state */
 .health-empty {
-  font-size: 0.65rem;
+  font-size: var(--fs-caption);
   color: var(--text-dim);
-  padding: 0.5rem 0.4rem;
+  padding: var(--space-2) var(--space-0-4);
   font-style: italic;
 }
 
@@ -292,7 +292,7 @@
   flex: 1;
 }
 .health-trend-meta {
-  font-size: 0.55rem;
+  font-size: var(--fs-micro);
   color: var(--text-dim);
 }
 
@@ -310,10 +310,10 @@
 /* Health dashboard loading state */
 .health-loading {
   text-align: center;
-  padding: 3rem 1rem;
+  padding: 3rem var(--space-4);
 }
 .health-loading-text {
-  font-size: 0.7rem;
+  font-size: var(--fs-label);
   color: var(--text-muted);
   letter-spacing: 0.03em;
 }
@@ -321,16 +321,16 @@
 /* Refresh button */
 .health-refresh-btn {
   background: var(--bg-elevated);
-  border: 1px solid var(--border);
+  border: var(--border-hair) solid var(--border);
   color: var(--text-muted);
-  padding: 0.25rem 0.6rem;
-  font-size: 0.55rem;
+  padding: var(--space-1) var(--space-0-6);
+  font-size: var(--fs-micro);
   font-family: var(--font);
   text-transform: uppercase;
   letter-spacing: 0.03em;
   cursor: pointer;
-  margin-left: 1rem;
-  transition: border-color 0.15s, color 0.15s;
+  margin-left: var(--space-4);
+  transition: border-color var(--motion-fast), color var(--motion-fast);
 }
 .health-refresh-btn:hover {
   border-color: var(--accent);
@@ -340,16 +340,16 @@
 /* Fix violations button */
 .health-fix-btn {
   background: var(--bg-elevated);
-  border: 1px solid var(--border);
+  border: var(--border-hair) solid var(--border);
   color: var(--text-muted);
-  padding: 0.25rem 0.6rem;
-  font-size: 0.55rem;
+  padding: var(--space-1) var(--space-0-6);
+  font-size: var(--fs-micro);
   font-family: var(--font);
   text-transform: uppercase;
   letter-spacing: 0.03em;
   cursor: pointer;
-  margin-left: 0.5rem;
-  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  margin-left: var(--space-2);
+  transition: border-color var(--motion-fast), color var(--motion-fast), background var(--motion-fast);
 }
 .health-fix-btn:hover {
   border-color: var(--accent);
@@ -381,39 +381,39 @@
 /* Fix violations panel */
 .health-fix-panel {
   background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  padding: 1rem 1.2rem;
-  margin-bottom: 1.5rem;
+  border: var(--border-hair) solid var(--border);
+  padding: var(--space-4) var(--space-1-2);
+  margin-bottom: var(--space-5);
 }
 .health-fix-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 0.8rem;
+  margin-bottom: var(--space-0-8);
 }
 .health-fix-header h2 {
   margin: 0;
-  font-size: 0.65rem;
+  font-size: var(--fs-caption);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--amber);
 }
 .health-fix-actions {
   display: flex;
-  gap: 0.5rem;
+  gap: var(--space-2);
 }
 .health-fix-apply-btn {
   background: var(--accent);
-  border: 1px solid var(--accent);
+  border: var(--border-hair) solid var(--accent);
   color: var(--bg);
-  padding: 0.25rem 0.8rem;
-  font-size: 0.55rem;
+  padding: var(--space-1) var(--space-0-8);
+  font-size: var(--fs-micro);
   font-family: var(--font);
   text-transform: uppercase;
   letter-spacing: 0.03em;
   cursor: pointer;
   font-weight: 700;
-  transition: opacity 0.15s;
+  transition: opacity var(--motion-fast);
 }
 .health-fix-apply-btn:hover {
   opacity: 0.85;
@@ -424,25 +424,25 @@
 }
 .health-fix-dismiss-btn {
   background: var(--bg-elevated);
-  border: 1px solid var(--border);
+  border: var(--border-hair) solid var(--border);
   color: var(--text-muted);
-  padding: 0.25rem 0.6rem;
-  font-size: 0.55rem;
+  padding: var(--space-1) var(--space-0-6);
+  font-size: var(--fs-micro);
   font-family: var(--font);
   text-transform: uppercase;
   letter-spacing: 0.03em;
   cursor: pointer;
-  transition: border-color 0.15s, color 0.15s;
+  transition: border-color var(--motion-fast), color var(--motion-fast);
 }
 .health-fix-dismiss-btn:hover {
   border-color: var(--text);
   color: var(--text);
 }
 .health-fix-summary {
-  margin-bottom: 0.6rem;
+  margin-bottom: var(--space-0-6);
 }
 .health-fix-stat {
-  font-size: 0.65rem;
+  font-size: var(--fs-caption);
   color: var(--text);
 }
 .health-fix-error {
@@ -458,13 +458,13 @@
   font-size: 0.6rem;
 }
 .health-fix-breakdown {
-  margin-bottom: 0.6rem;
+  margin-bottom: var(--space-0-6);
 }
 .health-fix-breakdown-row {
   display: flex;
   justify-content: space-between;
-  padding: 0.2rem 0;
-  border-bottom: 1px solid var(--border-subtle);
+  padding: var(--space-0-2) 0;
+  border-bottom: var(--border-hair) solid var(--border-subtle);
   font-size: 0.58rem;
 }
 .health-fix-type {
@@ -475,13 +475,13 @@
   font-weight: 700;
 }
 .health-fix-files {
-  margin-top: 0.6rem;
+  margin-top: var(--space-0-6);
 }
 .health-fix-file {
   display: flex;
   justify-content: space-between;
   padding: 0.15rem 0;
-  font-size: 0.55rem;
+  font-size: var(--fs-micro);
 }
 .health-fix-file-path {
   color: var(--text-muted);
@@ -492,30 +492,30 @@
 }
 .health-fix-more {
   color: var(--text-dim);
-  font-size: 0.55rem;
-  margin-top: 0.3rem;
+  font-size: var(--fs-micro);
+  margin-top: var(--space-0-3);
 }
 .health-fix-warning {
   color: var(--amber);
-  font-size: 0.55rem;
-  margin-top: 0.6rem;
-  padding: 0.4rem 0.6rem;
-  border-left: 2px solid var(--amber);
+  font-size: var(--fs-micro);
+  margin-top: var(--space-0-6);
+  padding: var(--space-0-4) var(--space-0-6);
+  border-left: var(--border-rail) solid var(--amber);
 }
 .health-fix-note {
-  margin-top: 0.4rem;
+  margin-top: var(--space-0-4);
 }
 .health-fix-manual {
   font-size: 0.58rem;
   color: var(--amber);
-  margin-top: 0.6rem;
-  padding: 0.5rem 0.7rem;
-  border-left: 2px solid var(--amber);
+  margin-top: var(--space-0-6);
+  padding: var(--space-2) 0.7rem;
+  border-left: var(--border-rail) solid var(--amber);
   background: rgba(255, 176, 0, 0.04);
 }
 .health-fix-manual strong {
   display: block;
-  margin-bottom: 0.4rem;
+  margin-bottom: var(--space-0-4);
 }
 .health-fix-manual-list {
   list-style: none;
@@ -523,13 +523,13 @@
   margin: 0;
 }
 .health-fix-manual-list li {
-  padding: 0.2rem 0;
+  padding: var(--space-0-2) 0;
   color: var(--text-muted);
 }
 .health-fix-manual-rule {
   color: var(--comp);
   font-weight: 700;
-  margin-right: 0.4rem;
+  margin-right: var(--space-0-4);
 }
 .health-fix-manual-msg {
   color: var(--text-muted);
@@ -541,8 +541,8 @@
   overflow-y: auto;
 }
 .health-affected-file {
-  padding: 0.4rem 0.5rem;
-  border-bottom: 1px solid var(--border-dim);
+  padding: var(--space-0-4) var(--space-2);
+  border-bottom: var(--border-hair) solid var(--border-dim);
 }
 .health-affected-file:last-child {
   border-bottom: none;
@@ -550,13 +550,13 @@
 .health-affected-path {
   font-size: 0.6rem;
   color: var(--text-bright);
-  margin-bottom: 0.25rem;
+  margin-bottom: var(--space-1);
   font-family: var(--font);
 }
 .health-affected-violation {
   display: flex;
-  gap: 0.5rem;
-  padding: 0.15rem 0 0.15rem 0.75rem;
+  gap: var(--space-2);
+  padding: 0.15rem 0 0.15rem var(--space-3);
   font-size: 0.58rem;
 }
 .health-affected-rule {

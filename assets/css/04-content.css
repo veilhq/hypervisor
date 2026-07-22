@@ -2,14 +2,24 @@
 
 /* ---- Markdown body ---- */
 .markdown-body h1 {
-  font-size: 1.5rem;
+  font-size: var(--fs-h1);
   font-weight: 700;
   color: var(--accent);
-  margin: 0 0 0.5rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 2px solid var(--accent);
+  margin: 0 0 var(--space-2);
+  padding-bottom: var(--space-2);
+  border-bottom: var(--border-rail) solid var(--accent);
   text-transform: uppercase;
   letter-spacing: 0.04em;
+}
+/* Doc description — the `<p>` immediately after the H1 is the doc description
+   (per hyperspace-conventions: "Description between H1 and metadata"). Style it
+   italicized and dimmed so it sets apart from the rest of the body text. */
+.markdown-body h1 + p {
+  font-style: italic;
+  font-size: var(--fs-body);
+  color: var(--text-muted);
+  margin-top: var(--space-2);
+  margin-bottom: var(--space-4);
 }
 .home-title-icon {
   width: 40px;
@@ -17,32 +27,32 @@
   color: var(--accent);
 }
 .markdown-body h2 {
-  font-size: 1.15rem;
+  font-size: var(--fs-h2);
   font-weight: 700;
   color: var(--text-bright);
-  margin: 2.5rem 0 0.6rem;
-  padding-bottom: 0.3rem;
-  border-bottom: 1px solid var(--border-strong);
+  margin: 2.5rem 0 var(--space-0-6);
+  padding-bottom: var(--space-0-3);
+  border-bottom: var(--border-hair) solid var(--border-strong);
   text-transform: uppercase;
   letter-spacing: 0.03em;
 }
 .markdown-body h3 {
-  font-size: 0.95rem;
+  font-size: var(--fs-h3);
   font-weight: 700;
   color: var(--warm);
-  margin: 1.8rem 0 0.5rem;
+  margin: 1.8rem 0 var(--space-2);
 }
 .markdown-body h4 {
-  font-size: 0.85rem;
+  font-size: var(--fs-body);
   font-weight: 700;
   color: var(--cool);
-  margin: 1.4rem 0 0.4rem;
+  margin: 1.4rem 0 var(--space-0-4);
 }
 .markdown-body h5, .markdown-body h6 {
-  font-size: 0.8rem;
+  font-size: var(--fs-h5-6);
   font-weight: 700;
   color: var(--text-muted);
-  margin: 1rem 0 0.3rem;
+  margin: var(--space-4) 0 var(--space-0-3);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -53,7 +63,7 @@
   color: var(--accent-dim);
   text-decoration: none;
   border-bottom: 1px dashed var(--accent-border);
-  transition: color 0.15s var(--ease), border-color 0.15s var(--ease);
+  transition: color var(--motion-fast) var(--ease), border-color var(--motion-fast) var(--ease);
 }
 .markdown-body a:hover { color: var(--accent); border-bottom-style: solid; border-bottom-color: var(--accent); }
 
@@ -69,12 +79,12 @@
 .markdown-body hr { border: none; height: 1px; background: var(--border); margin: 2rem 0; }
 
 .markdown-body blockquote {
-  border-left: 2px solid var(--warm);
-  padding: 0.6rem 1.2rem;
-  margin: 1.2rem 0;
+  border-left: var(--border-rail) solid var(--warm);
+  padding: var(--space-0-6) var(--space-1-2);
+  margin: var(--space-1-2) 0;
   color: var(--text-muted);
   background: var(--bg-card);
-  transition: border-color 0.2s var(--ease);
+  transition: border-color var(--motion-base) var(--ease);
 }
 .markdown-body blockquote:hover { border-left-color: var(--accent); }
 .markdown-body blockquote p { margin: 0.3rem 0; }
@@ -85,21 +95,21 @@
   font-size: 0.85em;
   background: var(--bg-card);
   padding: 0.1em 0.35em;
-  border: 1px solid var(--border);
+  border: var(--border-hair) solid var(--border);
   color: var(--accent-dim);
 }
 .markdown-body pre {
   background: var(--bg-card);
-  border: 1px solid var(--border-strong);
-  padding: 1rem;
+  border: var(--border-hair) solid var(--border-strong);
+  padding: var(--space-4);
   overflow-x: auto;
-  margin: 1rem 0;
+  margin: var(--space-4) 0;
 }
 .markdown-body pre code {
   background: none;
   padding: 0;
   border: none;
-  font-size: 0.8rem;
+  font-size: var(--fs-h5-6);
   line-height: 1.65;
   color: var(--text);
 }
@@ -107,19 +117,19 @@
 /* ---- Code block with language label + copy button ---- */
 .code-block {
   position: relative;
-  margin: 1rem 0;
+  margin: var(--space-4) 0;
 }
 .code-block pre { margin: 0; }
 .code-lang {
   position: absolute;
   top: 0;
   right: 0;
-  padding: 0.15rem 0.5rem;
+  padding: 0.15rem var(--space-2);
   font-size: 0.6rem;
   color: var(--text-dim);
   background: var(--bg-elevated);
-  border-left: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
+  border-left: var(--border-hair) solid var(--border);
+  border-bottom: var(--border-hair) solid var(--border);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   z-index: 1;
@@ -128,20 +138,20 @@
   position: absolute;
   top: 0;
   right: 0;
-  padding: 0.3rem 0.6rem;
+  padding: var(--space-0-3) var(--space-0-6);
   font-size: 0.6rem;
   font-family: var(--font);
   color: var(--text-dim);
   background: var(--bg-elevated);
   border: none;
-  border-left: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
+  border-left: var(--border-hair) solid var(--border);
+  border-bottom: var(--border-hair) solid var(--border);
   cursor: pointer;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   z-index: 2;
   opacity: 0;
-  transition: opacity 0.15s var(--ease), color 0.15s var(--ease);
+  transition: opacity var(--motion-fast) var(--ease), color var(--motion-fast) var(--ease);
 }
 .code-block:hover .code-copy { opacity: 1; }
 .code-block:hover .code-lang { opacity: 0; }
@@ -150,10 +160,10 @@
 
 /* ---- Mermaid diagrams ---- */
 .mermaid-wrap {
-  margin: 1.5rem 0;
-  padding: 1.5rem;
+  margin: var(--space-5) 0;
+  padding: var(--space-5);
   background: var(--bg-card);
-  border: 1px solid var(--border-strong);
+  border: var(--border-hair) solid var(--border-strong);
   overflow-x: auto;
 }
 .mermaid-wrap pre.mermaid {
@@ -171,21 +181,21 @@
 .markdown-body table {
   width: 100%;
   border-collapse: collapse;
-  margin: 1rem 0;
-  font-size: 0.8rem;
-  border: 1px solid var(--border-strong);
+  margin: var(--space-4) 0;
+  font-size: var(--fs-h5-6);
+  border: var(--border-hair) solid var(--border-strong);
 }
 .markdown-body th, .markdown-body td {
   padding: 0.45rem 0.7rem;
   text-align: left;
-  border: 1px solid var(--border);
-  transition: background 0.1s var(--ease);
+  border: var(--border-hair) solid var(--border);
+  transition: background var(--motion-tick) var(--ease);
 }
 .markdown-body th {
   background: var(--bg-elevated);
   font-weight: 700;
   color: var(--warm);
-  font-size: 0.7rem;
+  font-size: var(--fs-label);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
@@ -210,11 +220,11 @@
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 1rem;
-  padding: 0.75rem 0;
-  margin: 0.75rem 0 1.75rem;
-  border-bottom: 1px solid var(--border);
-  animation: fadeSlideIn 0.3s var(--ease) 0.1s both;
+  gap: var(--space-4);
+  padding: var(--space-3) 0;
+  margin: var(--space-3) 0 1.75rem;
+  border-bottom: var(--border-hair) solid var(--border);
+  animation: fadeSlideIn var(--motion-slow) var(--ease) var(--motion-tick) both;
 }
 /* The markdown `---` between metadata and first section renders as <hr> right
    after the strip. Suppress it since the strip's own bottom border already
@@ -226,51 +236,38 @@
 /* Left cluster: WI + status chips */
 .doc-header-chips {
   display: flex;
-  gap: 0.5rem;
+  gap: var(--space-2);
   align-items: center;
   min-width: 0;
 }
+/* ---- Doc header chips: compose with .hv-chip primitive (WI-112 Phase 2) ----
+   Base `.hv-chip` supplies display/align/font-weight/text-transform/whitespace.
+   `.doc-header-chip` retains size overrides (22px height, wider padding, larger font)
+   and letter-spacing tuning. Fill variants deprecated — markup composes with
+   .hv-chip-filled/-outlined-accent/-outlined-muted directly.
+*/
 .doc-header-chip {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   height: 22px;
-  padding: 0 0.6rem;
-  font-size: 0.65rem;
-  font-weight: 700;
+  padding: 0 var(--space-0-6);
+  font-size: var(--fs-caption);
   letter-spacing: 0.05em;
-  text-transform: uppercase;
-  white-space: nowrap;
 }
-/* WI: filled accent — same silhouette as Pulse's WI pill */
+/* WI: wider min-width so short IDs (WI-3) still read as a chip. */
 .doc-header-chip-wi {
-  color: var(--bg);
-  background: var(--accent);
   min-width: 7ch;
   box-sizing: content-box;
 }
-/* Status "In Progress" / "In Discussion" — filled accent, active signal */
-.doc-header-chip-status-active {
-  color: var(--bg);
-  background: var(--accent);
-}
-/* Status Complete / Fixed / Approved / etc. — outlined muted, historical */
-.doc-header-chip-status-idle {
-  color: var(--text-muted);
-  border: 1px solid var(--border);
-}
-/* Project: outlined accent — third identity chip, quieter than filled WI/status */
-.doc-header-chip-project {
-  color: var(--accent);
-  background: transparent;
-  border: 1px solid var(--accent-border);
-}
+/* Fill variants deprecated — .hv-chip-{filled,outlined-accent,outlined-muted} apply from primitive.
+   Kept as JS-hook stubs. */
+.doc-header-chip-status-active {}
+.doc-header-chip-status-idle {}
+.doc-header-chip-project {}
 
 /* Middle: topic tag chips (project moved to left identity cluster) */
 .doc-header-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
+  gap: var(--space-0-4);
   min-width: 0;
 }
 .doc-header-tag {
@@ -278,13 +275,13 @@
   align-items: center;
   height: 22px;
   padding: 0 0.55rem;
-  font-size: 0.65rem;
+  font-size: var(--fs-caption);
   letter-spacing: 0.04em;
   text-transform: lowercase;
   color: var(--text-muted);
-  border: 1px solid var(--border);
+  border: var(--border-hair) solid var(--border);
   white-space: nowrap;
-  transition: color 0.12s var(--ease), border-color 0.12s var(--ease);
+  transition: color var(--motion-fast) var(--ease), border-color var(--motion-fast) var(--ease);
 }
 .doc-header-tag:hover {
   color: var(--text-bright);
@@ -296,7 +293,7 @@
 /* Right: dates */
 .doc-header-dates {
   display: flex;
-  gap: 1.25rem;
+  gap: var(--space-1-25);
   align-items: baseline;
   color: var(--text-dim);
   font-variant-numeric: tabular-nums;
@@ -323,14 +320,14 @@
   grid-column: 1 / -1;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem 1.5rem;
-  padding-top: 0.6rem;
-  margin-top: 0.2rem;
+  gap: var(--space-2) var(--space-5);
+  padding-top: var(--space-0-6);
+  margin-top: var(--space-0-2);
   border-top: 1px dashed var(--border);
 }
 .doc-header-extra {
   display: flex;
-  gap: 0.4rem;
+  gap: var(--space-0-4);
   align-items: baseline;
   font-size: 0.72rem;
 }
@@ -349,7 +346,7 @@
 .hv-desktop .doc-header-chip[data-writeback-key="status"] {
   cursor: pointer;
   position: relative;
-  transition: filter 0.12s var(--ease);
+  transition: filter var(--motion-fast) var(--ease);
 }
 .hv-desktop .doc-header-chip[data-writeback-key="status"]:hover {
   filter: brightness(1.15);
@@ -379,12 +376,12 @@
    Sections are frameless when closed; when open, a left accent stripe extends
    from the summary through the content to visually anchor the section. */
 .doc-section {
-  margin: 0 0 0.5rem;
+  margin: 0 0 var(--space-2);
   border: none;
-  border-left: 2px solid var(--border);
+  border-left: var(--border-rail) solid var(--border);
   background: transparent;
-  padding-left: 1rem;
-  transition: border-color 0.2s var(--ease);
+  padding-left: var(--space-4);
+  transition: border-color var(--motion-base) var(--ease);
   position: relative;
 }
 .doc-section:last-child {
@@ -394,7 +391,7 @@
   border-left-color: var(--accent);
 }
 .doc-section-summary {
-  padding: 0.5rem 3.5rem 0.5rem 0;
+  padding: var(--space-2) 3.5rem var(--space-2) 0;
   font-size: 1.1rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -403,15 +400,15 @@
   cursor: pointer;
   user-select: none;
   list-style: none;
-  transition: color 0.15s var(--ease), background 0.15s var(--ease);
+  transition: color var(--motion-fast) var(--ease), background var(--motion-fast) var(--ease);
 }
 .doc-section-summary::-webkit-details-marker { display: none; }
 .doc-section-summary::marker { display: none; content: ""; }
 .doc-section-summary::before {
   content: "▸";
   display: inline-block;
-  margin-right: 0.6rem;
-  transition: transform 0.2s var(--ease);
+  margin-right: var(--space-0-6);
+  transition: transform var(--motion-base) var(--ease);
   color: var(--text-dim);
 }
 .doc-section[open] > .doc-section-summary::before {
@@ -426,7 +423,7 @@
   color: var(--accent);
 }
 .doc-section-content {
-  padding: 1rem;
+  padding: var(--space-4);
   animation: sectionExpand 250ms ease-out;
 }
 /* The markdown `---` between H2 sections gets rendered as a trailing <hr>
@@ -455,19 +452,19 @@
 .section-copy {
   position: absolute;
   top: 0.85rem;
-  right: 0.75rem;
-  padding: 0.2rem 0.5rem;
+  right: var(--space-3);
+  padding: var(--space-0-2) var(--space-2);
   font-size: 0.6rem;
   font-family: var(--font);
   color: var(--text-dim);
   background: var(--bg-elevated);
-  border: 1px solid var(--border);
+  border: var(--border-hair) solid var(--border);
   cursor: pointer;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   z-index: 2;
   opacity: 0;
-  transition: opacity 0.15s var(--ease), color 0.15s var(--ease), border-color 0.15s var(--ease);
+  transition: opacity var(--motion-fast) var(--ease), color var(--motion-fast) var(--ease), border-color var(--motion-fast) var(--ease);
 }
 .doc-section:hover .section-copy { opacity: 1; }
 .section-copy:hover { color: var(--accent); border-color: var(--accent-border); }
@@ -484,7 +481,7 @@
   width: 1.2rem;
   text-align: center;
   color: var(--text-dim);
-  font-size: 0.9rem;
+  font-size: var(--fs-heading);
 }
 .task-done .task-box { color: var(--accent-dim); }
 .task-done { color: var(--text-muted); }
@@ -492,18 +489,18 @@
 /* ---- Backlinks section ---- */
 .backlinks-section {
   margin: 3rem 0 0;
-  padding: 1.25rem 1.25rem 0.75rem;
-  border: 1px solid var(--border);
-  border-left: 2px solid var(--cool);
+  padding: var(--space-1-25) var(--space-1-25) var(--space-3);
+  border: var(--border-hair) solid var(--border);
+  border-left: var(--border-rail) solid var(--cool);
   background: var(--bg-surface);
-  animation: fadeSlideIn 0.3s var(--ease) 0.1s both;
+  animation: fadeSlideIn var(--motion-slow) var(--ease) var(--motion-tick) both;
 }
 .backlinks-section h2 {
   margin-top: 0;
   padding-top: 0;
-  font-size: 0.9rem;
+  font-size: var(--fs-heading);
   border-bottom: none;
-  margin-bottom: 0.5rem;
+  margin-bottom: var(--space-2);
   color: var(--cool);
 }
 .backlinks-list {
@@ -514,9 +511,9 @@
 .backlinks-list li {
   display: flex;
   align-items: baseline;
-  gap: 0.75rem;
+  gap: var(--space-3);
   padding: 0.35rem 0;
-  border-bottom: 1px solid var(--border);
+  border-bottom: var(--border-hair) solid var(--border);
 }
 .backlinks-list li:last-child {
   border-bottom: none;
@@ -524,8 +521,8 @@
 .backlinks-list a {
   color: var(--text);
   text-decoration: none;
-  font-size: 0.8rem;
-  transition: color 0.15s var(--ease);
+  font-size: var(--fs-h5-6);
+  transition: color var(--motion-fast) var(--ease);
   border: none !important;
 }
 .backlinks-list a:hover {
@@ -540,7 +537,7 @@
   color: var(--text-dim);
 }
 .backlink-path {
-  font-size: 0.65rem;
+  font-size: var(--fs-caption);
   color: var(--text-dim);
   white-space: nowrap;
   overflow: hidden;
@@ -562,20 +559,20 @@
 
 /* Related section category groups */
 .related-group {
-  margin-bottom: 0.75rem;
+  margin-bottom: var(--space-3);
 }
 .related-group:last-child {
   margin-bottom: 0;
 }
 .related-group-label {
-  font-size: 0.65rem;
+  font-size: var(--fs-caption);
   font-weight: 700;
   color: var(--warm);
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  padding: 0.4rem 0 0.2rem;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 0.25rem;
+  padding: var(--space-0-4) 0 var(--space-0-2);
+  border-bottom: var(--border-hair) solid var(--border);
+  margin-bottom: var(--space-1);
 }
 .related-group .backlinks-list {
   margin: 0;
@@ -586,11 +583,11 @@
 .related-item {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
-  padding: 0.5rem 0;
+  gap: var(--space-0-2);
+  padding: var(--space-2) 0;
 }
 .related-item-path {
-  font-size: 1rem;
+  font-size: var(--fs-hero);
   line-height: 1.5;
   overflow-wrap: anywhere;
 }
@@ -598,7 +595,7 @@
   font-size: 0.85em;
 }
 .related-item-desc {
-  font-size: 0.9rem;
+  font-size: var(--fs-heading);
   color: var(--text-muted);
   line-height: 1.5;
   overflow-wrap: anywhere;
@@ -609,8 +606,8 @@
 .related-section-content a {
   color: var(--text);
   text-decoration: none;
-  font-size: 0.8rem;
-  transition: color 0.15s var(--ease);
+  font-size: var(--fs-h5-6);
+  transition: color var(--motion-fast) var(--ease);
   border: none !important;
 }
 .related-section-content a:hover {
@@ -623,31 +620,31 @@
 
 /* ---- Admonition callout boxes ---- */
 .admonition {
-  margin: 1.5rem 0;
-  border: 1px solid var(--border);
+  margin: var(--space-5) 0;
+  border: var(--border-hair) solid var(--border);
   border-left: 3px solid var(--accent);
   background: var(--bg-surface);
-  animation: fadeSlideIn 0.3s var(--ease) both;
+  animation: fadeSlideIn var(--motion-slow) var(--ease) both;
 }
 .admonition-title {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.5rem 1rem;
+  gap: var(--space-0-4);
+  padding: var(--space-2) var(--space-4);
   font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--accent);
-  border-bottom: 1px solid var(--border);
+  border-bottom: var(--border-hair) solid var(--border);
 }
 .admonition-icon {
   width: 14px;
   height: 14px;
 }
 .admonition-content {
-  padding: 0.75rem 1rem;
-  font-size: 0.85rem;
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--fs-body);
   color: var(--text);
   line-height: 1.7;
 }
@@ -668,30 +665,30 @@
 
 /* ---- Collapsible sections (details/summary) ---- */
 .collapsible {
-  margin: 1.5rem 0;
-  border: 1px solid var(--border);
+  margin: var(--space-5) 0;
+  border: var(--border-hair) solid var(--border);
   background: var(--bg-surface);
 }
 .collapsible-title {
-  padding: 0.6rem 1rem;
-  font-size: 0.8rem;
+  padding: var(--space-0-6) var(--space-4);
+  font-size: var(--fs-h5-6);
   font-weight: 700;
   color: var(--text-bright);
   cursor: pointer;
   user-select: none;
-  transition: color 0.15s var(--ease), background 0.15s var(--ease);
+  transition: color var(--motion-fast) var(--ease), background var(--motion-fast) var(--ease);
 }
 .collapsible-title:hover {
   color: var(--accent);
   background: var(--accent-glow);
 }
 .collapsible[open] .collapsible-title {
-  border-bottom: 1px solid var(--border);
+  border-bottom: var(--border-hair) solid var(--border);
   color: var(--accent);
 }
 .collapsible-content {
-  padding: 0.75rem 1rem;
-  font-size: 0.85rem;
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--fs-body);
   line-height: 1.7;
 }
 .collapsible-content p:last-child {

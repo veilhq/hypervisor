@@ -9,7 +9,7 @@
   width: 28px;
   height: 28px;
   vertical-align: -4px;
-  margin-right: 0.3rem;
+  margin-right: var(--space-0-3);
 }
 
 
@@ -22,7 +22,7 @@
   justify-content: center;
   text-align: center;
   min-height: calc(100vh - 16rem);
-  padding: 0 1rem;
+  padding: 0 var(--space-4);
 }
 .not-found-code {
   font-size: 6rem;
@@ -33,34 +33,34 @@
   opacity: 0.25;
 }
 .not-found-label {
-  font-size: 1rem;
+  font-size: var(--fs-hero);
   color: var(--text-bright);
   text-transform: uppercase;
   letter-spacing: 0.15em;
-  margin-top: 0.5rem;
+  margin-top: var(--space-2);
 }
 .not-found-msg {
   font-size: 0.78rem;
   color: var(--text-muted);
   max-width: 400px;
-  margin-top: 1rem;
+  margin-top: var(--space-4);
   line-height: 1.7;
 }
 .not-found-home {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  margin-top: 2rem;
-  padding: 0.5rem 1.2rem;
+  gap: var(--space-0-4);
+  margin-top: var(--space-6);
+  padding: var(--space-2) var(--space-1-2);
   font-family: var(--font);
-  font-size: 0.7rem;
+  font-size: var(--fs-label);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   text-decoration: none;
   color: var(--accent);
-  border: 1px solid var(--accent);
+  border: var(--border-hair) solid var(--accent);
   background: var(--bg);
-  transition: background 0.15s var(--ease), color 0.15s var(--ease);
+  transition: background var(--motion-fast) var(--ease), color var(--motion-fast) var(--ease);
 }
 .not-found-home:hover {
   background: var(--accent);

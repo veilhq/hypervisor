@@ -6,6 +6,7 @@ import re
 import html as html_mod
 
 from .config import MD
+from .chips import render_chip
 
 
 def normalize_tables(md_text: str) -> str:
@@ -304,21 +305,33 @@ def extract_metadata_block(html: str) -> str:
         chips = []
         wi = parsed.get("id")
         if wi:
-            chips.append(f'<span class="doc-header-chip doc-header-chip-wi">{wi}</span>')
+            chips.append(render_chip("filled", wi, extra_class="doc-header-chip doc-header-chip-wi"))
         status = parsed.get("status")
         if status:
             status_lower = status.lower()
             is_active = ("progress" in status_lower) or ("discussion" in status_lower)
-            status_variant = "doc-header-chip-status-active" if is_active else "doc-header-chip-status-idle"
+            status_variant = "filled" if is_active else "outlined-muted"
+            status_specific = (
+                "doc-header-chip doc-header-chip-status "
+                + ("doc-header-chip-status-active" if is_active else "doc-header-chip-status-idle")
+            )
             # data-writeback-key marks this chip as click-to-cycle in the desktop app
             chips.append(
-                f'<span class="doc-header-chip doc-header-chip-status {status_variant}" '
-                f'data-writeback-key="status">{status}</span>'
+                render_chip(
+                    status_variant,
+                    status,
+                    extra_class=status_specific,
+                    data_attrs={"writeback-key": "status"},
+                )
             )
         project = parsed.get("project")
         if project:
             chips.append(
-                f'<span class="doc-header-chip doc-header-chip-project">{project}</span>'
+                render_chip(
+                    "outlined-accent",
+                    project,
+                    extra_class="doc-header-chip doc-header-chip-project",
+                )
             )
         html_parts.append('<div class="doc-header-chips">' + "".join(chips) + '</div>')
 

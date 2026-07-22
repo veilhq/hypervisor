@@ -772,6 +772,48 @@
 </div>
 
 <script>
+// --- Local __hvToast polyfill (WI-115) ------------------------------------
+// ado-dashboard is a standalone utility page and does not load the shared
+// hypervisor app.js, so the ecosystem HvToast primitive isn't available.
+// This minimal polyfill matches the new variant-aware visual so this page's
+// refresh/export feedback surfaces to the user. If a shared utility-page
+// bundle is introduced later, this block can be removed.
+(function initLocalToast() {
+  if (window.__hvToast) return;
+  var container = document.createElement('div');
+  container.className = 'hv-toast-container';
+  container.setAttribute('aria-live', 'polite');
+  container.style.cssText = 'position:fixed;bottom:3.5rem;right:1rem;z-index:500;display:flex;flex-direction:column-reverse;gap:0.5rem;pointer-events:none;max-width:400px;';
+  document.addEventListener('DOMContentLoaded', function () { document.body.appendChild(container); });
+  var VC = { success: '#00ff41', info: '#00cccc', warn: '#ffb000', error: '#ff3333' };
+  function show(input) {
+    var opts = typeof input === 'string' ? { variant: 'info', message: input } : (input || {});
+    var variant = VC[opts.variant] ? opts.variant : 'info';
+    var color = VC[variant];
+    var sticky = opts.duration === 'sticky' || (variant === 'error' && opts.duration == null);
+    var duration = opts.duration != null && opts.duration !== 'sticky' ? opts.duration : (variant === 'warn' ? 5000 : 3000);
+    var el = document.createElement('div');
+    el.style.cssText = 'font-family:"Departure Mono",monospace;font-size:0.7rem;line-height:1.35;color:#ccc;background:#0a0a0a;border:1px solid #333;border-left:2px solid ' + color + ';padding:0.5rem 0.75rem;opacity:0;transform:translateY(8px);transition:opacity 0.25s,transform 0.25s;pointer-events:auto;';
+    if (opts.title) {
+      var t = document.createElement('div');
+      t.textContent = opts.title;
+      t.style.cssText = 'font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#fff;margin-bottom:0.15rem;';
+      el.appendChild(t);
+    }
+    var m = document.createElement('div');
+    m.textContent = opts.message || '';
+    el.appendChild(m);
+    if (variant === 'error' || variant === 'warn') el.setAttribute('role', 'alert');
+    container.appendChild(el);
+    requestAnimationFrame(function () { el.style.opacity = '1'; el.style.transform = 'translateY(0)'; });
+    if (!sticky) setTimeout(function () {
+      el.style.opacity = '0'; el.style.transform = 'translateY(8px)';
+      setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 300);
+    }, duration);
+  }
+  window.__hvToast = show;
+})();
+
 (function() {
   // Set generation timestamp
   var genEl = document.getElementById('dash-generated');
@@ -1666,7 +1708,7 @@
 
   function doRefresh() {
     if (!window.pywebview || !window.pywebview.api) {
-      if (window.__hvToast) window.__hvToast('Refresh requires the desktop app (PyWebView)');
+      if (window.__hvToast) window.__hvToast({ variant: 'warn', message: 'Refresh requires the desktop app (PyWebView)' });
       return;
     }
 
@@ -1675,13 +1717,13 @@
       refreshBtn.classList.remove('is-loading');
       if (!result || !result.ok) {
         var msg = (result && result.error) ? result.error : 'Unknown error';
-        if (window.__hvToast) window.__hvToast('Refresh failed: ' + msg);
+        if (window.__hvToast) window.__hvToast({ variant: 'error', title: 'Refresh failed', message: msg });
         return;
       }
       renderDashboard(result);
     }).catch(function(err) {
       refreshBtn.classList.remove('is-loading');
-      if (window.__hvToast) window.__hvToast('Refresh error: ' + err);
+      if (window.__hvToast) window.__hvToast({ variant: 'error', title: 'Refresh error', message: String(err) });
     });
   }
 
@@ -1703,11 +1745,11 @@
   if (reportBtn) {
     reportBtn.addEventListener('click', function() {
       if (!lastDashData) {
-        if (window.__hvToast) window.__hvToast('No data yet — refresh first');
+        if (window.__hvToast) window.__hvToast({ variant: 'warn', message: 'No data yet — refresh first' });
         return;
       }
       if (!window.pywebview || !window.pywebview.api) {
-        if (window.__hvToast) window.__hvToast('Report export requires the desktop app');
+        if (window.__hvToast) window.__hvToast({ variant: 'warn', message: 'Report export requires the desktop app' });
         return;
       }
 
@@ -1879,9 +1921,9 @@
       var filename = 'sprint-report-' + sprintName.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '.html';
       window.pywebview.api.save_export(htmlReport, filename).then(function(result) {
         if (result && result.ok) {
-          if (window.__hvToast) window.__hvToast('Report saved: ' + result.path);
+          if (window.__hvToast) window.__hvToast({ variant: 'success', message: 'Report saved: ' + result.path });
         } else if (result && result.error !== 'cancelled') {
-          if (window.__hvToast) window.__hvToast('Save failed: ' + result.error);
+          if (window.__hvToast) window.__hvToast({ variant: 'error', title: 'Save failed', message: result.error });
         }
       });
     });

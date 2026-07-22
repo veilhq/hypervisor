@@ -137,12 +137,12 @@
               removePin(relPath);
               pinBtn.classList.remove("pinned");
               pinLabel.textContent = "pin";
-              if (window.__hypervisorToast) window.__hypervisorToast("unpinned");
+              if (window.__hypervisorToast) window.__hypervisorToast({ variant: "success", message: "unpinned" });
             } else {
               addPin(relPath, pageTitle);
               pinBtn.classList.add("pinned");
               pinLabel.textContent = "unpin";
-              if (window.__hypervisorToast) window.__hypervisorToast("pinned to board");
+              if (window.__hypervisorToast) window.__hypervisorToast({ variant: "success", message: "pinned to board" });
             }
             updateNavPinCount();
           });
@@ -302,7 +302,7 @@
               removePin(path);
               renderPinboard(container);
               updateNavPinCount();
-              if (window.__hypervisorToast) window.__hypervisorToast("unpinned");
+              if (window.__hypervisorToast) window.__hypervisorToast({ variant: "success", message: "unpinned" });
             }, 200);
           } else {
             removePin(path);

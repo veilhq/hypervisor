@@ -4,10 +4,10 @@
   text-transform: uppercase;
   font-size: 1.4rem;
   letter-spacing: 0.05em;
-  margin-bottom: 0.5rem;
+  margin-bottom: var(--space-2);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-2);
 }
 .pinboard-page h1 .section-icon {
   width: 20px;
@@ -16,15 +16,15 @@
 }
 .pinboard-intro {
   color: var(--text-muted);
-  font-size: 0.85rem;
-  margin-bottom: 2rem;
+  font-size: var(--fs-body);
+  margin-bottom: var(--space-6);
 }
 .pinboard-empty {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 4rem 2rem;
+  padding: 4rem var(--space-6);
   text-align: center;
   color: var(--text-dim);
   border: 1px dashed var(--border-strong);
@@ -33,12 +33,12 @@
   width: 48px;
   height: 48px;
   color: var(--text-dim);
-  margin-bottom: 1rem;
+  margin-bottom: var(--space-4);
   opacity: 0.5;
 }
 .pinboard-empty p {
-  font-size: 0.85rem;
-  margin-bottom: 0.5rem;
+  font-size: var(--fs-body);
+  margin-bottom: var(--space-2);
 }
 .pinboard-empty-hint {
   font-size: 0.75rem;
@@ -58,17 +58,17 @@
 /* ---- Individual pin card ---- */
 .pin-card {
   background: var(--bg-card);
-  border: 1px solid var(--border);
-  padding: 1.25rem 1.5rem 1rem;
+  border: var(--border-hair) solid var(--border);
+  padding: var(--space-1-25) var(--space-5) var(--space-4);
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: var(--space-0-6);
   cursor: pointer;
-  transition: border-color 0.2s var(--ease), box-shadow 0.25s var(--ease),
+  transition: border-color var(--motion-base) var(--ease), box-shadow var(--motion-medium) var(--ease),
               transform 0.2s var(--ease), opacity 0.2s var(--ease);
   opacity: 0;
-  animation: cardIn 0.4s var(--ease) both;
+  animation: cardIn var(--motion-slow) var(--ease) both;
 }
 .pin-card:hover {
   border-color: var(--warm);
@@ -84,8 +84,8 @@
 .pin-card-header {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.1rem;
+  gap: var(--space-2);
+  margin-bottom: var(--space-0-1);
 }
 .pin-card-indicator {
   display: flex;
@@ -109,8 +109,8 @@
   font-weight: 700;
   letter-spacing: 0.04em;
   color: var(--accent);
-  border: 1px solid var(--accent-border);
-  padding: 0.05rem 0.3rem;
+  border: var(--border-hair) solid var(--accent-border);
+  padding: 0.05rem var(--space-0-3);
 }
 .pin-card-remove {
   margin-left: auto;
@@ -120,11 +120,11 @@
   width: 22px;
   height: 22px;
   background: none;
-  border: 1px solid transparent;
+  border: var(--border-hair) solid transparent;
   color: var(--text-dim);
   padding: 0;
   opacity: 0;
-  transition: opacity 0.15s var(--ease), color 0.15s var(--ease), border-color 0.15s var(--ease);
+  transition: opacity var(--motion-fast) var(--ease), color var(--motion-fast) var(--ease), border-color var(--motion-fast) var(--ease);
 }
 .pin-card:hover .pin-card-remove {
   opacity: 1;
@@ -140,12 +140,12 @@
 
 /* Pin card title */
 .pin-card-title {
-  font-size: 1rem;
+  font-size: var(--fs-hero);
   font-weight: 700;
   color: var(--text-bright);
   text-decoration: none;
   line-height: 1.4;
-  transition: color 0.15s var(--ease);
+  transition: color var(--motion-fast) var(--ease);
   border: none !important;
 }
 .pin-card-title:hover {
@@ -169,13 +169,13 @@
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 1rem;
+  gap: var(--space-4);
   margin-top: auto;
-  padding-top: 0.5rem;
-  border-top: 1px solid var(--border);
+  padding-top: var(--space-2);
+  border-top: var(--border-hair) solid var(--border);
 }
 .pin-card-path {
-  font-size: 0.65rem;
+  font-size: var(--fs-caption);
   color: var(--text-dim);
   white-space: nowrap;
   overflow: hidden;
@@ -193,18 +193,18 @@
 .pin-card-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.3rem;
-  margin-top: 0.2rem;
+  gap: var(--space-0-3);
+  margin-top: var(--space-0-2);
 }
 .pin-card-tag {
-  font-size: 0.55rem;
+  font-size: var(--fs-micro);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  padding: 0.1rem 0.35rem;
-  border: 1px solid var(--border-strong);
+  padding: var(--space-0-1) 0.35rem;
+  border: var(--border-hair) solid var(--border-strong);
   color: var(--text-dim);
-  transition: color 0.15s var(--ease), border-color 0.15s var(--ease);
+  transition: color var(--motion-fast) var(--ease), border-color var(--motion-fast) var(--ease);
 }
 .pin-card:hover .pin-card-tag {
   color: var(--text-muted);
@@ -244,10 +244,10 @@
   width: 20px;
   height: 20px;
   background: none;
-  border: 1px solid transparent;
+  border: var(--border-hair) solid transparent;
   color: var(--text-dim);
   padding: 0;
-  transition: color 0.15s var(--ease), border-color 0.15s var(--ease);
+  transition: color var(--motion-fast) var(--ease), border-color var(--motion-fast) var(--ease);
 }
 .pin-remove-btn:hover {
   color: var(--comp);

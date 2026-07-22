@@ -418,7 +418,7 @@ class HypervisorAPI:
             win.evaluate_js(
                 "if(window.__router){"
                 "  window.__router.navigate('" + nav_path + "');"
-                "  if(window.__hypervisorToast)window.__hypervisorToast('deleted');"
+                "  if(window.__hypervisorToast)window.__hypervisorToast({variant:'success',message:'deleted'});"
                 "}else{window.location.href='" + nav_path + "';}"
             )
 
@@ -653,7 +653,7 @@ class HypervisorAPI:
                 win.evaluate_js(
                     "if(window.__router){"
                     "  window.__router.navigate('/work/to-do/index.html');"
-                    "  if(window.__hypervisorToast)window.__hypervisorToast('moved to done');"
+                    "  if(window.__hypervisorToast)window.__hypervisorToast({variant:'success',message:'moved to done'});"
                     "}else{window.location.href='/work/to-do/index.html';}"
                 )
 
@@ -1177,12 +1177,12 @@ def on_file_changed(rel_path):
                 safe_path = rel_path.replace("\\", "/").replace("'", "\\'")
                 js_code = (
                     "window.__hypervisorReload();"
-                    "if(window.__hypervisorToast)window.__hypervisorToast('updated: " + safe_path + "');"
+                    "if(window.__hypervisorToast)window.__hypervisorToast({variant:'info',message:'updated: " + safe_path + "',dedupeKey:'live-reload'});"
                 )
             else:
                 js_code = (
                     "window.__hypervisorReload();"
-                    "if(window.__hypervisorToast)window.__hypervisorToast('full rebuild complete');"
+                    "if(window.__hypervisorToast)window.__hypervisorToast({variant:'info',message:'full rebuild complete',dedupeKey:'live-reload'});"
                 )
             for win in webview.windows:
                 try:

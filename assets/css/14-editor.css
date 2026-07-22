@@ -14,7 +14,7 @@
   padding: 0;
   margin-left: auto;
   cursor: pointer;
-  transition: color 0.15s var(--ease);
+  transition: color var(--motion-fast) var(--ease);
 }
 
 .actions-trigger:hover,
@@ -25,12 +25,12 @@
 .actions-drawer {
   position: fixed;
   bottom: 44px;
-  right: 1.5rem;
+  right: var(--space-5);
   z-index: 500;
   opacity: 0;
   transform: translateY(8px);
   pointer-events: none;
-  transition: opacity 0.15s var(--ease), transform 0.15s var(--ease);
+  transition: opacity var(--motion-fast) var(--ease), transform var(--motion-fast) var(--ease);
 }
 
 .actions-drawer.open {
@@ -44,28 +44,28 @@
   flex-direction: column;
   gap: 2px;
   background: var(--bg-card);
-  border: 1px solid var(--border-strong);
-  border-bottom: 2px solid var(--accent);
-  padding: 0.4rem;
+  border: var(--border-hair) solid var(--border-strong);
+  border-bottom: var(--border-rail) solid var(--accent);
+  padding: var(--space-0-4);
   min-width: 140px;
 }
 
 .action-item {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-2);
   width: 100%;
-  padding: 0.45rem 0.6rem;
+  padding: 0.45rem var(--space-0-6);
   background: transparent;
   border: none;
   color: var(--text-muted);
   font-family: var(--font);
-  font-size: 0.7rem;
+  font-size: var(--fs-label);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   cursor: pointer;
-  transition: color 0.12s var(--ease), background 0.12s var(--ease);
+  transition: color var(--motion-fast) var(--ease), background var(--motion-fast) var(--ease);
   text-align: left;
 }
 
@@ -115,20 +115,20 @@
   min-height: 400px;
   display: flex;
   flex-direction: column;
-  animation: fadeSlideIn 0.2s var(--ease) both;
+  animation: fadeSlideIn var(--motion-base) var(--ease) both;
 }
 
 /* Textarea — full-width, matches app aesthetic */
 .hv-editor-textarea {
   width: 100%;
   min-height: 70vh;
-  padding: 1.25rem;
+  padding: var(--space-1-25);
   font-family: var(--font);
-  font-size: 0.85rem;
+  font-size: var(--fs-body);
   line-height: 1.7;
   color: var(--text-bright);
   background: var(--bg-surface);
-  border: 1px solid var(--border-strong);
+  border: var(--border-hair) solid var(--border-strong);
   resize: vertical;
   outline: none;
   tab-size: 2;
@@ -150,8 +150,8 @@
 /* Save indicator — floats top-right of the editor */
 .hv-editor-indicator {
   position: absolute;
-  top: 0.5rem;
-  right: 0.75rem;
+  top: var(--space-2);
+  right: var(--space-3);
   font-family: var(--font);
   font-size: 0.6rem;
   font-weight: 700;
@@ -159,7 +159,7 @@
   letter-spacing: 0.06em;
   color: var(--accent);
   opacity: 0;
-  transition: opacity 0.2s var(--ease);
+  transition: opacity var(--motion-base) var(--ease);
   pointer-events: none;
   z-index: 10;
 }
@@ -172,23 +172,23 @@
 .hv-editor-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
 }
 
 .hv-editor-save,
 .hv-editor-cancel {
   font-family: var(--font);
-  font-size: 0.7rem;
+  font-size: var(--fs-label);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  padding: 0.4rem 1rem;
-  border: 1px solid var(--border-strong);
+  padding: var(--space-0-4) var(--space-4);
+  border: var(--border-hair) solid var(--border-strong);
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
-  transition: color 0.15s var(--ease), border-color 0.15s var(--ease), background 0.15s var(--ease);
+  transition: color var(--motion-fast) var(--ease), border-color var(--motion-fast) var(--ease), background var(--motion-fast) var(--ease);
 }
 
 .hv-editor-save:hover {

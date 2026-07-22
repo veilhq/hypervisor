@@ -196,16 +196,16 @@
 
           window.pywebview.api.mark_done(filePath).then(function (result) {
             if (result && result.ok) {
-              if (window.__hypervisorToast) window.__hypervisorToast("moved to done");
+              if (window.__hypervisorToast) window.__hypervisorToast({ variant: "success", message: "moved to done" });
             } else {
               btn.disabled = false;
               btn.classList.remove("mark-done-pending");
-              if (window.__hypervisorToast) window.__hypervisorToast("failed: " + (result.error || "unknown error"));
+              if (window.__hypervisorToast) window.__hypervisorToast({ variant: "error", title: "mark done failed", message: result.error || "unknown error" });
             }
           }).catch(function () {
             btn.disabled = false;
             btn.classList.remove("mark-done-pending");
-            if (window.__hypervisorToast) window.__hypervisorToast("mark done failed");
+            if (window.__hypervisorToast) window.__hypervisorToast({ variant: "error", message: "mark done failed" });
           });
         });
       });
@@ -267,12 +267,12 @@
           window.pywebview.api.delete_document(filePath).then(function (result) {
             if (!result || !result.ok) {
               btn.disabled = false;
-              if (window.__hypervisorToast) window.__hypervisorToast("failed: " + (result.error || "unknown error"));
+              if (window.__hypervisorToast) window.__hypervisorToast({ variant: "error", title: "delete failed", message: (result && result.error) || "unknown error" });
             }
             // On success, the bridge navigates away — no UI cleanup needed.
           }).catch(function () {
             btn.disabled = false;
-            if (window.__hypervisorToast) window.__hypervisorToast("delete failed");
+            if (window.__hypervisorToast) window.__hypervisorToast({ variant: "error", message: "delete failed" });
           });
         });
       });

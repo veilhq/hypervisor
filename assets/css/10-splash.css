@@ -9,7 +9,7 @@ html.hv-splash-active body {
 .hv-splash {
   position: fixed;
   inset: 0;
-  z-index: 99999;
+  z-index: var(--z-splash);
   background: #000000;
   display: flex;
   align-items: center;
@@ -32,7 +32,7 @@ html.hv-splash-active body {
   height: 48px;
   background: var(--comp, #ff3333);
   opacity: 0;
-  animation: splash-fade-in 0.3s ease 0.1s forwards;
+  animation: splash-fade-in var(--motion-slow) ease var(--motion-tick) forwards;
 }
 
 .hv-splash-eye {
@@ -51,5 +51,5 @@ html.hv-splash-active body {
 .a11y-reduce-motion .hv-splash-flag {
   animation: none;
   opacity: 1;
-  transition: opacity 0.1s ease;
+  transition: opacity var(--motion-tick) ease;
 }

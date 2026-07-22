@@ -8,12 +8,12 @@
   bottom: 0;
   width: clamp(320px, 40vw, 560px);
   background: var(--bg);
-  border-left: 1px solid var(--border);
+  border-left: var(--border-hair) solid var(--border);
   z-index: 9000;
   display: flex;
   flex-direction: column;
   transform: translateX(100%);
-  transition: transform 0.2s var(--ease);
+  transition: transform var(--motion-base) var(--ease);
   box-shadow: -4px 0 20px rgba(0, 0, 0, 0.6);
 }
 .scratch-panel.open {
@@ -25,36 +25,36 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.6rem 1rem;
-  border-bottom: 1px solid var(--border);
+  padding: var(--space-0-6) var(--space-4);
+  border-bottom: var(--border-hair) solid var(--border);
   flex-shrink: 0;
 }
 .scratch-date-flag {
-  font-size: 0.65rem;
+  font-size: var(--fs-caption);
   font-weight: 700;
   letter-spacing: 0.03em;
   color: var(--bg);
   background: var(--comp);
-  padding: 0.3rem 0.6rem;
+  padding: var(--space-0-3) var(--space-0-6);
   white-space: nowrap;
 }
 .scratch-actions {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: var(--space-0-4);
 }
 .scratch-btn {
   background: none;
-  border: 1px solid var(--border);
+  border: var(--border-hair) solid var(--border);
   color: var(--text-muted);
   font-family: inherit;
-  font-size: 0.55rem;
+  font-size: var(--fs-micro);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  padding: 0.25rem 0.5rem;
+  padding: var(--space-1) var(--space-2);
   cursor: pointer;
-  transition: color 0.15s var(--ease), border-color 0.15s var(--ease);
+  transition: color var(--motion-fast) var(--ease), border-color var(--motion-fast) var(--ease);
 }
 .scratch-btn:hover {
   color: var(--accent);
@@ -79,7 +79,7 @@
   border: none;
   color: var(--text-dim);
   font-size: 0.75rem;
-  padding: 0.2rem 0.4rem;
+  padding: var(--space-0-2) var(--space-0-4);
 }
 .scratch-btn-close:hover {
   color: var(--comp);
@@ -89,27 +89,27 @@
 .scratch-body {
   flex: 1;
   overflow-y: auto;
-  padding: 0.6rem 0;
+  padding: var(--space-0-6) 0;
   display: flex;
   flex-direction: column;
 }
 
 /* --- Input area (active entry at top) --- */
 .scratch-input-area {
-  padding: 0.5rem 1rem;
-  border-bottom: 1px solid var(--border);
+  padding: var(--space-2) var(--space-4);
+  border-bottom: var(--border-hair) solid var(--border);
   flex-shrink: 0;
 }
 .scratch-input-row {
   display: flex;
-  gap: 0.5rem;
+  gap: var(--space-2);
   align-items: flex-start;
 }
 .scratch-input-time {
   font-size: 0.6rem;
   color: var(--text-dim);
   min-width: 3rem;
-  padding-top: 0.3rem;
+  padding-top: var(--space-0-3);
   flex-shrink: 0;
   font-weight: 700;
 }
@@ -119,7 +119,7 @@
   background: var(--comp);
   animation: scratchBlink 1s step-end infinite;
   flex-shrink: 0;
-  margin-top: 0.25rem;
+  margin-top: var(--space-1);
 }
 .scratch-input-row:focus-within .scratch-input-cursor {
   display: none;
@@ -135,12 +135,12 @@
   outline: none;
   color: var(--text);
   font-family: inherit;
-  font-size: 0.7rem;
+  font-size: var(--fs-label);
   line-height: 1.5;
   resize: none;
   min-height: 2.5rem;
   max-height: 8rem;
-  padding: 0.2rem 0;
+  padding: var(--space-0-2) 0;
   caret-color: var(--comp);
 }
 .scratch-textarea::placeholder {
@@ -151,13 +151,13 @@
 .scratch-entries {
   flex: 1;
   overflow-y: auto;
-  padding: 0 1rem;
+  padding: 0 var(--space-4);
 }
 .scratch-entry {
   display: flex;
-  gap: 0.5rem;
-  padding: 0.4rem 0;
-  border-bottom: 1px solid var(--bg-elevated);
+  gap: var(--space-2);
+  padding: var(--space-0-4) 0;
+  border-bottom: var(--border-hair) solid var(--bg-elevated);
   align-items: flex-start;
 }
 .scratch-entry:last-child {
@@ -169,10 +169,10 @@
   min-width: 3rem;
   flex-shrink: 0;
   font-weight: 700;
-  padding-top: 0.1rem;
+  padding-top: var(--space-0-1);
 }
 .scratch-entry-text {
-  font-size: 0.7rem;
+  font-size: var(--fs-label);
   color: var(--text);
   line-height: 1.5;
   white-space: pre-wrap;
@@ -183,16 +183,16 @@
 .scratch-history {
   flex: 1;
   overflow-y: auto;
-  padding: 0.4rem 0.6rem;
+  padding: var(--space-0-4) var(--space-0-6);
 }
 .scratch-history-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.4rem 0.6rem;
+  padding: var(--space-0-4) var(--space-0-6);
   cursor: pointer;
-  border-left: 2px solid transparent;
-  transition: border-color 0.15s var(--ease), background 0.15s var(--ease);
+  border-left: var(--border-rail) solid transparent;
+  transition: border-color var(--motion-fast) var(--ease), background var(--motion-fast) var(--ease);
 }
 .scratch-history-item:hover {
   background: var(--bg-surface);
@@ -203,14 +203,14 @@
   background: var(--bg-elevated);
 }
 .scratch-history-date {
-  font-size: 0.65rem;
+  font-size: var(--fs-caption);
   font-weight: 700;
   color: var(--text-bright);
 }
 .scratch-history-meta {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: var(--space-0-4);
 }
 .scratch-history-badge {
   font-size: 0.5rem;
@@ -218,8 +218,8 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--accent);
-  border: 1px solid var(--accent-border);
-  padding: 0.1rem 0.3rem;
+  border: var(--border-hair) solid var(--accent-border);
+  padding: var(--space-0-1) var(--space-0-3);
 }
 .scratch-history-delete {
   background: none;
@@ -228,9 +228,9 @@
   font-family: inherit;
   font-size: 0.6rem;
   cursor: pointer;
-  padding: 0.15rem 0.3rem;
+  padding: 0.15rem var(--space-0-3);
   opacity: 0;
-  transition: opacity 0.15s var(--ease), color 0.15s var(--ease);
+  transition: opacity var(--motion-fast) var(--ease), color var(--motion-fast) var(--ease);
 }
 .scratch-history-item:hover .scratch-history-delete {
   opacity: 1;
@@ -246,7 +246,7 @@
   justify-content: center;
   flex: 1;
   color: var(--text-dim);
-  font-size: 0.65rem;
+  font-size: var(--fs-caption);
   text-transform: uppercase;
   letter-spacing: 0.1em;
 }

@@ -52,13 +52,17 @@
             .then(function (result) {
               if (result && result.ok) {
                 if (window.__hypervisorToast) {
-                  window.__hypervisorToast("removed: " + slug.replace(/-/g, " "));
+                  window.__hypervisorToast({
+                    variant: "success",
+                    message: "removed: " + slug.replace(/-/g, " ")
+                  });
                 }
               } else {
                 if (window.__hypervisorToast) {
-                  window.__hypervisorToast(
-                    "remove failed: " + (result.error || "unknown")
-                  );
+                  window.__hypervisorToast({
+                    variant: "error",
+                    message: "remove failed: " + (result.error || "unknown")
+                  });
                 }
               }
             });

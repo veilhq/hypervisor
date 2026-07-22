@@ -17,7 +17,7 @@
   width: 520px;
   max-width: 90vw;
   background: #0a0a0a;
-  border: 1px solid var(--accent);
+  border: var(--border-hair) solid var(--accent);
   box-shadow: 0 0 24px rgba(0, 255, 65, 0.08), 0 8px 32px rgba(0, 0, 0, 0.8);
   display: flex;
   flex-direction: column;
@@ -27,9 +27,9 @@
 .cmd-palette-input-wrap {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid var(--accent-border);
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: var(--border-hair) solid var(--accent-border);
   background: #050505;
 }
 .cmd-palette-input-wrap .cmd-palette-icon {
@@ -55,14 +55,14 @@
 .cmd-palette-results {
   overflow-y: auto;
   flex: 1;
-  padding: 0.25rem 0;
+  padding: var(--space-1) 0;
 }
 .cmd-palette-results:empty::after {
   content: 'type to search...';
   display: block;
-  padding: 1rem 0.75rem;
+  padding: var(--space-4) var(--space-3);
   color: var(--text-dim);
-  font-size: 0.7rem;
+  font-size: var(--fs-label);
 }
 .cmd-palette-results.has-query:empty::after {
   content: 'no results';
@@ -71,18 +71,18 @@
 .cmd-palette-item {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.4rem 0.75rem;
+  gap: var(--space-2);
+  padding: var(--space-0-4) var(--space-3);
   cursor: pointer;
   font-size: 0.72rem;
   color: var(--text);
-  transition: background 0.1s var(--ease), padding-left 0.1s var(--ease);
+  transition: background var(--motion-tick) var(--ease), padding-left var(--motion-tick) var(--ease);
 }
 .cmd-palette-item:hover,
 .cmd-palette-item.selected {
   background: var(--accent-glow);
   color: var(--accent);
-  padding-left: 1rem;
+  padding-left: var(--space-4);
 }
 .cmd-palette-item-icon {
   width: 14px;
@@ -118,16 +118,16 @@
 .cmd-palette-footer {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.35rem 0.75rem;
-  border-top: 1px solid var(--border);
+  gap: var(--space-3);
+  padding: 0.35rem var(--space-3);
+  border-top: var(--border-hair) solid var(--border);
   font-size: 0.58rem;
   color: var(--text-dim);
 }
 .cmd-palette-footer kbd {
   font-family: var(--font);
-  font-size: 0.55rem;
-  padding: 0.1rem 0.3rem;
-  border: 1px solid var(--border);
+  font-size: var(--fs-micro);
+  padding: var(--space-0-1) var(--space-0-3);
+  border: var(--border-hair) solid var(--border);
   color: var(--text-muted);
 }

@@ -9,7 +9,7 @@
   overflow-y: auto;
   z-index: 40;
   background: var(--bg-card);
-  border-right: 1px solid var(--border);
+  border-right: var(--border-hair) solid var(--border);
   font-size: 0.68rem;
   transform: translateX(-100%);
   opacity: 0;
@@ -23,16 +23,16 @@
   pointer-events: auto;
 }
 .toc-sidebar .hv-panel-header {
-  padding: 0.6rem 0.75rem;
-  font-size: 0.7rem;
-  gap: 0.5rem;
+  padding: var(--space-0-6) var(--space-3);
+  font-size: var(--fs-label);
+  gap: var(--space-2);
 }
 .toc-icon {
   width: 14px;
   height: 14px;
 }
 .toc-body {
-  padding: 0.4rem 0;
+  padding: var(--space-0-4) 0;
 }
 .toc-body ul {
   list-style: none;
@@ -44,11 +44,11 @@
 }
 .toc-body a {
   display: block;
-  padding: 0.25rem 0.75rem;
+  padding: var(--space-1) var(--space-3);
   color: var(--text-muted);
   text-decoration: none;
-  border-left: 2px solid transparent;
-  transition: color 0.15s var(--ease), border-color 0.15s var(--ease), background 0.15s var(--ease);
+  border-left: var(--border-rail) solid transparent;
+  transition: color var(--motion-fast) var(--ease), border-color var(--motion-fast) var(--ease), background var(--motion-fast) var(--ease);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -64,7 +64,7 @@
 }
 /* Indent nested levels */
 .toc-body ul ul a {
-  padding-left: 1.5rem;
+  padding-left: var(--space-5);
   font-size: 0.62rem;
 }
 .toc-body ul ul ul a {

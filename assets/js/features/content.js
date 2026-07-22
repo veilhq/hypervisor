@@ -401,12 +401,12 @@
             window.pywebview.api.save_export_zip(html, zipFilename, sourceRelPath).then(function (result) {
               if (result && result.ok) {
                 if (label) label.textContent = "done!";
-                if (window.__hypervisorToast) window.__hypervisorToast("exported: " + zipFilename);
+                if (window.__hypervisorToast) window.__hypervisorToast({ variant: "success", message: "exported: " + zipFilename });
               } else if (result && result.error === "cancelled") {
                 if (label) label.textContent = "export";
               } else {
                 if (label) label.textContent = "error";
-                if (window.__hypervisorToast) window.__hypervisorToast("export failed: " + (result && result.error || "unknown"));
+                if (window.__hypervisorToast) window.__hypervisorToast({ variant: "error", message: "export failed: " + (result && result.error || "unknown") });
               }
               setTimeout(function () {
                 btn.classList.remove("exporting");
@@ -511,7 +511,7 @@
       if (window.pywebview && window.pywebview.api && window.pywebview.api.save_export) {
         window.pywebview.api.save_export(content, filename).then(function (result) {
           if (result && result.ok) {
-            if (window.__hypervisorToast) window.__hypervisorToast("exported: " + filename);
+            if (window.__hypervisorToast) window.__hypervisorToast({ variant: "success", message: "exported: " + filename });
           }
         }).catch(function () {});
         return;
