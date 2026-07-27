@@ -1,5 +1,8 @@
 /* === Screensaver Mode: Dither === */
 
+(function () {
+  "use strict";
+
     // ========== MODE: Dither ==========
     var ditherState = { time: 0 };
 
@@ -98,3 +101,4 @@
     }
 
     ssModes.dither = { init: ditherInit, draw: ditherDraw, resize: ditherResize };
+})();

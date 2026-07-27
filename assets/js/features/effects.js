@@ -148,3 +148,14 @@
       setTimeout(function () { box.classList.remove("blink"); }, 350);
     });
   })();
+
+
+  // --- WebGL cursor trail (WI-119) ---
+  // Sits directly below the .cursor-box companion (z-index 549 vs 550) and
+  // stamps the sitewide pointer SVG along the motion segment each frame.
+  // Idempotent, idle-suspending, and a11y-gated internally — no coordination
+  // needed with the cursor-box above.
+  (function initCursorTrail() {
+    if (!window.HvCursorTrail) return;
+    HvCursorTrail.start(document.body);
+  })();

@@ -78,6 +78,7 @@ def post_process(html: str, source_path: str | None = None, md_text: str | None 
     html = convert_mermaid_blocks(html)
     html = label_code_blocks(html)
     html = style_task_lists(html, source_path=source_path, md_text=md_text)
+    html = convert_bookmark_links(html)
     return html
 
 
@@ -180,31 +181,41 @@ def convert_admonitions(html: str) -> str:
             para_clean = re.sub(r'^\s*<p>\s*', '', para)
             para_clean = re.sub(r'\s*</p>\s*$', '', para_clean)
 
-            adm_match = ADMONITION_PATTERN.match(para_clean)
-            if adm_match:
-                admonition_type = adm_match.group(1).upper()
-                content = para_clean[adm_match.end():].strip()
-                icon = ADMONITION_ICONS.get(admonition_type, "info")
-                css_class = admonition_type.lower()
-                label = admonition_type.capitalize()
+            # Further split on <br> or newlines in case the markdown engine
+            # merged consecutive admonitions into a single paragraph.
+            segments = re.split(r'(?:<br\s*/?>|\n)\s*(?=\[!(?:NOTE|TIP|WARNING|CAUTION|IMPORTANT)\])', para_clean, flags=re.IGNORECASE)
 
-                result_parts.append(
-                    f'<div class="admonition admonition-{css_class}">'
-                    f'<div class="admonition-title">'
-                    f'<i data-lucide="{icon}" class="admonition-icon"></i> {label}</div>'
-                    f'<div class="admonition-content"><p>{content}</p></div>'
-                    f'</div>'
-                )
-            else:
-                # Non-admonition paragraph inside a blockquote that has admonitions
-                # Append to the previous admonition's content if possible
-                if result_parts and result_parts[-1].endswith('</div></div>'):
-                    # Insert before the closing </div></div>
-                    last = result_parts[-1]
-                    insert_point = last.rfind('</div></div>')
-                    result_parts[-1] = last[:insert_point] + f'<p>{para_clean}</p></div></div>'
+            for segment in segments:
+                segment = segment.strip()
+                if not segment:
+                    continue
+
+                adm_match = ADMONITION_PATTERN.match(segment)
+                if adm_match:
+                    admonition_type = adm_match.group(1).upper()
+                    # Content may contain <br> for multi-line within the same admonition
+                    content = segment[adm_match.end():].strip()
+                    # Convert remaining <br> to paragraph breaks for cleaner rendering
+                    content = re.sub(r'\s*<br\s*/?>\s*', '</p><p>', content)
+                    icon = ADMONITION_ICONS.get(admonition_type, "info")
+                    css_class = admonition_type.lower()
+                    label = admonition_type.capitalize()
+
+                    result_parts.append(
+                        f'<div class="admonition admonition-{css_class}">'
+                        f'<div class="admonition-title">'
+                        f'<i data-lucide="{icon}" class="admonition-icon"></i> {label}</div>'
+                        f'<div class="admonition-content"><p>{content}</p></div>'
+                        f'</div>'
+                    )
                 else:
-                    result_parts.append(f'<blockquote><p>{para_clean}</p></blockquote>')
+                    # Non-admonition content — append to the previous admonition if possible
+                    if result_parts and result_parts[-1].endswith('</div></div>'):
+                        last = result_parts[-1]
+                        insert_point = last.rfind('</div></div>')
+                        result_parts[-1] = last[:insert_point] + f'<p>{segment}</p></div></div>'
+                    else:
+                        result_parts.append(f'<blockquote><p>{segment}</p></blockquote>')
 
         return '\n'.join(result_parts)
 
@@ -726,3 +737,44 @@ def style_task_lists(html: str, source_path: str | None = None, md_text: str | N
         pos = match.end()
 
     return "".join(result)
+
+
+def convert_bookmark_links(html: str) -> str:
+    """Convert standalone links (a <p> containing only an <a>) into bookmark cards.
+
+    Detects patterns like:
+        <p><a href="https://example.com">https://example.com</a></p>
+        <p><a href="https://example.com">Link Title</a></p>
+
+    Wraps them in a styled bookmark-card container with the URL displayed
+    separately from the link text. Only triggers when the <p> contains nothing
+    but the link (no surrounding text).
+    """
+    import re
+    from urllib.parse import urlparse
+
+    BOOKMARK_PATTERN = re.compile(
+        r'<p>\s*<a\s+href="(https?://[^"]+)"[^>]*>(.*?)</a>\s*</p>',
+        re.IGNORECASE | re.DOTALL
+    )
+
+    def make_bookmark(m):
+        url = m.group(1)
+        link_text = m.group(2).strip()
+        parsed = urlparse(url)
+        domain = parsed.netloc
+
+        # If the link text is just the URL itself, use the domain as the title
+        if link_text == url or link_text.startswith("http"):
+            title = domain
+        else:
+            title = link_text
+
+        return (
+            f'<a class="bookmark-card" href="{url}" target="_blank" rel="noopener">'
+            f'<span class="bookmark-card-title">{title}</span>'
+            f'<span class="bookmark-card-url">{domain}{parsed.path if parsed.path != "/" else ""}</span>'
+            f'</a>'
+        )
+
+    return BOOKMARK_PATTERN.sub(make_bookmark, html)

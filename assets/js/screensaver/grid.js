@@ -1,5 +1,8 @@
 /* === Screensaver Mode: Grid === */
 
+(function () {
+  "use strict";
+
     // ========== MODE: Infinite Perspective Grid ==========
     // Continuously scrolling perspective grid — lines move smoothly toward the viewer.
     var gridState = {
@@ -175,3 +178,4 @@
       gridState.mouseX = -1;
       gridState.mouseY = -1;
     });
+})();

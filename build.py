@@ -76,43 +76,23 @@ def copy_assets():
         if src.exists():
             shutil.copy2(src, OUTPUT_DIR / "style.css")
 
-    # Concatenate JS modules into site/app.js
-    # Order: core/ → features/ → webgl/ → screensaver/
+    # Concatenate JS modules into site/app.js (backward compat for utility pages)
+    # AND copy each module to site/js/{subdir}/{name}.js for per-module <script>
+    # tag delivery (parse-error isolation — WI-118).
+    # Order: core/ → features/ (non-zz) → webgl/ → screensaver/ (non-zz) →
+    # screensaver/zz-* → features/zz-*
+    from site_utils.config import list_js_modules
     if JS_DIR.exists():
+        module_paths = list_js_modules()
         js_parts = []
-        # Core modules (sorted — 00-core.js must be first)
-        core_dir = JS_DIR / "core"
-        if core_dir.exists():
-            for js_file in sorted(core_dir.glob("*.js")):
-                js_parts.append(js_file.read_text(encoding="utf-8"))
-        # Feature modules (sorted, zz-* last)
-        features_dir = JS_DIR / "features"
-        if features_dir.exists():
-            for js_file in sorted(features_dir.glob("*.js")):
-                if js_file.name.startswith("zz-"):
-                    continue
-                js_parts.append(js_file.read_text(encoding="utf-8"))
-        # WebGL modules (sorted — HyperGL layer, loads before screensaver)
-        webgl_dir = JS_DIR / "webgl"
-        if webgl_dir.exists():
-            for js_file in sorted(webgl_dir.glob("*.js")):
-                if js_file.name.startswith("zz-"):
-                    continue
-                js_parts.append(js_file.read_text(encoding="utf-8"))
-        # Screensaver modules (sorted — 00-engine-head first, zz-engine-tail last)
-        ss_dir = JS_DIR / "screensaver"
-        if ss_dir.exists():
-            for js_file in sorted(ss_dir.glob("*.js")):
-                if js_file.name.startswith("zz-"):
-                    continue
-                js_parts.append(js_file.read_text(encoding="utf-8"))
-            # Screensaver tail
-            for js_file in sorted(ss_dir.glob("zz-*.js")):
-                js_parts.append(js_file.read_text(encoding="utf-8"))
-        # Feature zz-* files last (accessibility closes the IIFE)
-        if features_dir.exists():
-            for js_file in sorted(features_dir.glob("zz-*.js")):
-                js_parts.append(js_file.read_text(encoding="utf-8"))
+        for rel in module_paths:
+            src_file = JS_DIR / str(rel)
+            src_text = src_file.read_text(encoding="utf-8")
+            js_parts.append(src_text)
+            # Copy to site/js/<subdir>/<name>.js
+            dst = OUTPUT_DIR / "js" / str(rel)
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            dst.write_text(src_text, encoding="utf-8")
         if js_parts:
             (OUTPUT_DIR / "app.js").write_text("\n".join(js_parts), encoding="utf-8")
 

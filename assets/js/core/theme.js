@@ -1,5 +1,6 @@
 /* === Hypervisor: Theme (accent color, palette) === */
-
+(function () {
+  "use strict";
   // --- Accent color picker with complementary palette ---
   var colorPicker = document.getElementById("accent-color");
   var STORAGE_KEY = "hypervisor-accent";
@@ -246,23 +247,11 @@
   var userGradientMaps = {};
 
   var GRADIENT_MAPS = {
-    "frost": {
-      name: "Frost",
-      description: "Icy blue-white — clean and clinical",
-      accent: "#d2ebfe", warm: "#c0caff", cool: "#ceb0e4", comp: "#7bc5d3",
-      semantics: { success: "#7edba6", warning: "#c0caff", error: "#f78c8c", info: "#7bc5d3" }
-    },
-    "slate": {
-      name: "Slate",
-      description: "Industrial blue-grey — subdued and moody",
-      accent: "#7a9bb5", warm: "#8a8fad", cool: "#6a9fa3", comp: "#a3757b",
-      semantics: { success: "#7aad8a", warning: "#ad9a6a", error: "#a3757b", info: "#6a9fa3" }
-    },
-    "mono": {
-      name: "Mono",
-      description: "True monochrome — cool grey-blue only",
-      accent: "#94abbe", warm: "#7b93a8", cool: "#adbfcc", comp: "#687f8f",
-      semantics: { success: "#94abbe", warning: "#adbfcc", error: "#7b93a8", info: "#94abbe" }
+    "frost2": {
+      name: "Frost2",
+      description: "Icy blue-white base with a hot crimson punch",
+      accent: "#d2ebfe", warm: "#c0caff", cool: "#ceb0e4", comp: "#ff0059",
+      semantics: { success: "#00ff7b", warning: "#ff6600", error: "#ff0000", info: "#a1d3dd" }
     },
     "cyberdeck": {
       name: "Cyberdeck",
@@ -270,35 +259,89 @@
       accent: "#00ff9f", warm: "#ffe600", cool: "#00e5ff", comp: "#ff003c",
       semantics: { success: "#00ff9f", warning: "#ffe600", error: "#ff003c", info: "#00e5ff" }
     },
-    "ember": {
-      name: "Ember",
-      description: "Red-orange hue ladder — hot to dark",
-      accent: "#ff6551", warm: "#de1d3f", cool: "#ffa565", comp: "#b21f41",
-      semantics: { success: "#ffa565", warning: "#ff6551", error: "#b21f41", info: "#de1d3f" }
-    },
-    "spectrum": {
-      name: "Spectrum",
-      description: "Equal perceptual brightness at 90° intervals",
-      accent: "#43b2e1", warm: "#c68bd3", cool: "#7bb76e", comp: "#e08d5d",
-      semantics: { success: "#7bb76e", warning: "#e08d5d", error: "#c68bd3", info: "#43b2e1" }
-    },
-    "smoke": {
-      name: "Smoke",
-      description: "Near-achromatic — the faintest blue haze",
-      accent: "#9ba6b1", warm: "#80878f", cool: "#b2bfce", comp: "#657383",
-      semantics: { success: "#9ba6b1", warning: "#b2bfce", error: "#80878f", info: "#9ba6b1" }
-    },
-    "voltage": {
-      name: "Voltage",
-      description: "Complementary clash — cyan vs magenta at full chroma",
-      accent: "#00d4bb", warm: "#ec6094", cool: "#50ddd5", comp: "#d43b86",
-      semantics: { success: "#00d4bb", warning: "#50ddd5", error: "#d43b86", info: "#ec6094" }
-    },
     "thermal": {
       name: "Thermal",
       description: "Infrared heat map — cool blue to hot yellow",
       accent: "#ffc250", warm: "#fb5a46", cool: "#5480c7", comp: "#d10054",
       semantics: { success: "#ffc250", warning: "#fb5a46", error: "#d10054", info: "#5480c7" }
+    },
+    "tundra": {
+      name: "Tundra",
+      description: "Frost2 base with an electric lime punch",
+      accent: "#d2ebfe", warm: "#c0caff", cool: "#ceb0e4", comp: "#c8ff5c",
+      semantics: { success: "#c8ff5c", warning: "#ffb000", error: "#ff3355", info: "#a1d3dd" }
+    },
+    "cryo": {
+      name: "Cryo",
+      description: "Icy base with a UV violet punch — laboratory clean",
+      accent: "#d2ebfe", warm: "#c8d8ff", cool: "#c0b8e8", comp: "#a855f7",
+      semantics: { success: "#7edba6", warning: "#ffb000", error: "#ff3355", info: "#a855f7" }
+    },
+    "nordic": {
+      name: "Nordic",
+      description: "Muted blue-grey base with a warm amber punch — ice and gold",
+      accent: "#b8ccd8", warm: "#a8b8c8", cool: "#c0d0dc", comp: "#ffb000",
+      semantics: { success: "#7aad8a", warning: "#ffb000", error: "#c76b4a", info: "#a8b8c8" }
+    },
+    "frostbite": {
+      name: "Frostbite",
+      description: "All-blue family — visual tension between shades of cold",
+      accent: "#c2e8ff", warm: "#a0d0f0", cool: "#8ac0e8", comp: "#00c0ff",
+      semantics: { success: "#7edba6", warning: "#ffb000", error: "#ff3355", info: "#00c0ff" }
+    },
+    "hazmat": {
+      name: "Hazmat",
+      description: "Toxic biohazard — green-dominant with a hot pink shock",
+      accent: "#c8ff00", warm: "#ffea00", cool: "#00ff88", comp: "#ff00cc",
+      semantics: { success: "#c8ff00", warning: "#ffea00", error: "#ff00cc", info: "#00ff88" }
+    },
+    "laser": {
+      name: "Laser",
+      description: "Pure laser wavelengths — RGB primaries with a violet punch",
+      accent: "#00ff41", warm: "#ff0044", cool: "#0044ff", comp: "#8b00ff",
+      semantics: { success: "#00ff41", warning: "#ffea00", error: "#ff0044", info: "#0044ff" }
+    },
+    "prism": {
+      name: "Prism",
+      description: "Full spectrum at max chroma — evenly loud everywhere",
+      accent: "#ff2020", warm: "#ffea00", cool: "#00e0ff", comp: "#ff00e5",
+      semantics: { success: "#00ff44", warning: "#ffea00", error: "#ff2020", info: "#00e0ff" }
+    },
+    "emergency": {
+      name: "Emergency",
+      description: "Hi-vis safety colors — orange lead, all warm-forward",
+      accent: "#ff5500", warm: "#ffd500", cool: "#00ff44", comp: "#ff003c",
+      semantics: { success: "#00ff44", warning: "#ffd500", error: "#ff003c", info: "#ff5500" }
+    },
+    "ignite": {
+      name: "Ignite",
+      description: "Dark base bursting into fire — orange, yellow, hot red",
+      accent: "#4a4a4a", warm: "#ff6600", cool: "#ffea00", comp: "#ff003c",
+      semantics: { success: "#00ff44", warning: "#ffea00", error: "#ff003c", info: "#ff6600" }
+    },
+    "bloom": {
+      name: "Bloom",
+      description: "Dark base bursting into floral — magenta, violet, pink",
+      accent: "#4a4a4a", warm: "#ff00d4", cool: "#a855f7", comp: "#ff77e9",
+      semantics: { success: "#00ff88", warning: "#ffea00", error: "#ff00d4", info: "#a855f7" }
+    },
+    "verdigris": {
+      name: "Verdigris",
+      description: "Dark base bursting into oxidation patina — green, cyan, lime",
+      accent: "#4a4a4a", warm: "#00ff88", cool: "#00e0ff", comp: "#c8ff00",
+      semantics: { success: "#00ff88", warning: "#c8ff00", error: "#ff3355", info: "#00e0ff" }
+    },
+    "spectra": {
+      name: "Spectra",
+      description: "Dark base bursting into full rainbow — red, cyan, lime",
+      accent: "#4a4a4a", warm: "#ff2020", cool: "#00e0ff", comp: "#c8ff00",
+      semantics: { success: "#c8ff00", warning: "#ffea00", error: "#ff2020", info: "#00e0ff" }
+    },
+    "coldsnap": {
+      name: "Coldsnap",
+      description: "Dark base bursting into aurora — mint, periwinkle, lavender",
+      accent: "#4a4a4a", warm: "#7cffb0", cool: "#7a8cff", comp: "#c0a0ff",
+      semantics: { success: "#7cffb0", warning: "#ffea00", error: "#ff3355", info: "#7a8cff" }
     }
   };
 
@@ -354,10 +397,10 @@
 
   // Current palette mode
   var PALETTE_MODE_KEY = "hypervisor-palette-mode";
-  var paletteMode = "split";
-  try { paletteMode = localStorage.getItem(PALETTE_MODE_KEY) || "split"; } catch (e) {}
+  window.paletteMode = "split";
+  try { window.paletteMode = localStorage.getItem(PALETTE_MODE_KEY) || "split"; } catch (e) {}
   // Validate stored mode against known modes
-  if (PALETTE_MODES.indexOf(paletteMode) === -1) paletteMode = "split";
+  if (PALETTE_MODES.indexOf(paletteMode) === -1) window.paletteMode = "split";
 
   function applyAccent(hex) {
     var root = document.documentElement;
@@ -584,7 +627,7 @@
 
     modeToggle.addEventListener("click", function () {
       var idx = PALETTE_MODES.indexOf(paletteMode);
-      paletteMode = PALETTE_MODES[(idx + 1) % PALETTE_MODES.length];
+      window.paletteMode = PALETTE_MODES[(idx + 1) % PALETTE_MODES.length];
       updateModeButton();
       savePreference(PALETTE_MODE_KEY, paletteMode);
       applyAccent(colorPicker ? colorPicker.value : "#00ff41");
@@ -764,3 +807,15 @@
       }
     }
   };
+
+  // --- Cross-file exports (WI-118 IIFE rework) ---
+  // These are consumed by 00-core.js, zz-accessibility.js, and screensaver modes.
+  // Promoted to window so they remain reachable after per-file IIFE split.
+  window.applyAccent = applyAccent;
+  window.applyGradientMap = applyGradientMap;
+  window.populatePresetSelect = populatePresetSelect;
+  window.updateModeButton = updateModeButton;
+  window.updatePresetSelector = updatePresetSelector;
+  window.hexToRgb = hexToRgb;
+  window.colorPicker = colorPicker;
+})();

@@ -5,7 +5,33 @@ HTML page templates, breadcrumbs, and top bar builders.
 import json
 from pathlib import Path, PurePosixPath
 
-from .config import OUTPUT_DIR, CATEGORY_ICONS, CATEGORY_LABELS
+from .config import OUTPUT_DIR, CATEGORY_ICONS, CATEGORY_LABELS, list_js_modules
+
+
+# ---------------------------------------------------------------------------
+# Per-module <script> tags — WI-118
+# ---------------------------------------------------------------------------
+# We emit one <script src="/js/..."> tag per module (instead of a single
+# <script src="/app.js">) so that a parse error in one module does not
+# abort execution of the rest of the bundle. Each <script> tag is a
+# separate execution context; a SyntaxError or uncaught exception in one
+# only kills that tag.
+#
+# Order matches the historical concat exactly (see list_js_modules).
+# `defer` ensures scripts execute in document order after HTML parsing
+# completes, preserving the previous "bottom-of-body" semantics.
+def _render_module_script_tags():
+    modules = list_js_modules()
+    lines = []
+    for rel in modules:
+        lines.append(f'  <script src="/js/{rel}" defer></script>')
+    return "\n".join(lines)
+
+
+# Rendered at module import time — build.py runs before page_generation
+# is called for individual pages, so list_js_modules() reflects the
+# current on-disk source layout.
+MODULE_SCRIPT_TAGS = _render_module_script_tags()
 
 
 # ---------------------------------------------------------------------------
@@ -325,7 +351,7 @@ LEGACY_PAGE_TEMPLATE = """\
       sequence: { useMaxWidth: true, mirrorActors: false }
     });
   </script>
-  <script src="/app.js"></script>
+{{MODULE_SCRIPTS}}
 </body>
 </html>"""
 
@@ -443,6 +469,7 @@ def build_page(content_html, title, rel_path_str, toc_html="", backlinks_html=""
         .replace("{{BUILD_ID}}", build_id)
         .replace("{{REL_PATH}}", rel_path_str)
         .replace("{{CONTENT}}", full_content)
+        .replace("{{MODULE_SCRIPTS}}", MODULE_SCRIPT_TAGS)
     )
 
 
@@ -513,7 +540,7 @@ SHELL_TEMPLATE = """\
   </div>
   <button class="scroll-top" id="scroll-top" aria-label="Scroll to top"><i data-lucide="arrow-up"></i></button>
   <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
-  <script src="/app.js"></script>
+{{MODULE_SCRIPTS}}
 </body>
 </html>"""
 
@@ -548,4 +575,5 @@ def build_shell(build_id, site_nav_html=None):
         .replace("{{TOPBAR}}", topbar)
         .replace("{{SITE_NAV}}", site_nav_html)
         .replace("{{BUILD_ID}}", build_id)
+        .replace("{{MODULE_SCRIPTS}}", MODULE_SCRIPT_TAGS)
     )

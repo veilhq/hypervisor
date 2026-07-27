@@ -1,5 +1,8 @@
 /* === Screensaver Mode: Particles (SPH Fluid Simulation) === */
 
+(function () {
+  "use strict";
+
     // ========== MODE: Particles ==========
     var particleState = {
       particles: [],
@@ -304,3 +307,5 @@
 
     // Expose particleState for mouse tracking in engine
     var ssParticleState = particleState;
+    window.ssParticleState = particleState;
+})();

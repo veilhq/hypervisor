@@ -1,5 +1,6 @@
 /* === HyperGL — WebGL2 Integration Layer === */
-
+(function () {
+  "use strict";
     // A thin, zero-dependency WebGL2 runtime layer for the hyper ecosystem.
     // Any consumer (screensaver modes, page backgrounds, effects) can use
     // HyperGL.create() to spin up GPU-accelerated shader effects.
@@ -507,3 +508,7 @@
 
       return { create: create };
     })();
+
+    // Cross-file export (WI-118 IIFE rework) — consumed by screensaver modes
+    window.HyperGL = HyperGL;
+})();

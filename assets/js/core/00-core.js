@@ -9,22 +9,22 @@
   // We can't check it at parse time. Instead, use a mutable flag that gets
   // set when the "pywebviewready" event fires, and defer desktop-only init
   // to that event.
-  var isDesktopApp = false;
+  window.isDesktopApp = false;
 
   // --- Persistent preferences (desktop app) ---
   // Single source of truth: preferences.json on disk.
   // localStorage is an expendable cache — losing it is fine, prefs.json has the truth.
   // One load on init, direct writes via bridge after that. No queue, no coordination.
 
-  function savePreference(key, value) {
+  window.savePreference = function savePreference(key, value) {
     try { localStorage.setItem(key, value); } catch (e) {}
-    if (isDesktopApp && window.pywebview && window.pywebview.api) {
+    if (window.isDesktopApp && window.pywebview && window.pywebview.api) {
       try { window.pywebview.api.save_preference(key, value); } catch (e) {}
     }
-  }
+  };
 
   function initDesktopFeatures() {
-    isDesktopApp = true;
+    window.isDesktopApp = true;
     document.body.classList.add("hv-desktop");
     var api = window.pywebview.api;
 
@@ -142,7 +142,7 @@
 
     // --- Theme: palette mode, accent, gradient map ---
     if (data["hypervisor-palette-mode"]) {
-      paletteMode = data["hypervisor-palette-mode"];
+      window.paletteMode = data["hypervisor-palette-mode"];
     }
     var accentHex = data["hypervisor-accent"];
     var cp = document.getElementById("accent-color");
@@ -468,12 +468,12 @@
   // Re-check after a11y restore (the a11y init runs later and may add the class)
   // This is handled in the a11y init itself via the restore loop.
 
-  var searchInput = document.getElementById("search");
-  var resultsBox = document.getElementById("search-results");
-  var scrollBtn = document.getElementById("scroll-top");
-  var topbar = document.querySelector(".topbar");
-  var index = [];
-  var selectedIdx = -1;
+  window.searchInput = document.getElementById("search");
+  window.resultsBox = document.getElementById("search-results");
+  window.scrollBtn = document.getElementById("scroll-top");
+  window.topbar = document.querySelector(".topbar");
+  window.index = [];
+  window.selectedIdx = -1;
 
   // Load search index from external JSON file
   fetch("/search-index.json").then(function (res) {
@@ -481,8 +481,10 @@
     return res.json();
   }).then(function (data) {
     if (data && Array.isArray(data)) {
-      index = data;
+      window.index = data;
       // Fire a custom event so other modules know the index is ready
       window.dispatchEvent(new CustomEvent("searchIndexReady"));
     }
   }).catch(function () {});
+
+})();

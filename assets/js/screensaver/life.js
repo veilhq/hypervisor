@@ -1,5 +1,8 @@
 /* === Screensaver Mode: Game of Life === */
 
+(function () {
+  "use strict";
+
     // ========== MODE: Game of Life ==========
     var lifeState = { grid: null, cols: 0, rows: 0, cell: 6, frame: 0, staleCount: 0, lastPop: 0 };
 
@@ -169,3 +172,4 @@
     }
 
     ssModes.life = { init: lifeInit, draw: lifeDraw, resize: lifeResize };
+})();

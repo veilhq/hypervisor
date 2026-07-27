@@ -1,313 +1,339 @@
 # JavaScript Modules
 
-How Hypervisor's interactivity works — the IIFE pattern, module structure, and DOM manipulation.
+How Hypervisor's interactivity works — per-file IIFEs, per-module `<script>` loading, and cross-file state via `window.*`.
 
 ---
 
 ## The Module System
 
-JavaScript is organized into three subdirectories that get concatenated in order:
+JavaScript is organized into four subdirectories:
 
 ```
 assets/js/
 ├── core/                    ← Foundation (loads first, order matters)
-│   ├── 00-core.js           ← IIFE open, shared utilities, DOM refs
+│   ├── 00-core.js           ← Bridge, preferences, toasts, DOM refs
+│   ├── 01-router.js         ← SPA shell + route transitions
 │   ├── navigation.js        ← Search, menus, code copy
-│   ├── toc.js               ← Table of contents sidebar
-│   └── theme.js             ← Accent color picker
+│   ├── theme.js             ← Accent color + palette modes
+│   └── toc.js               ← Table of contents sidebar
 │
-├── features/                ← Self-contained features (order-independent)
-│   ├── 00-shared-modules.js ← Extractable modules: HvNoiseField, HvGreeting, HvToast
+├── features/                ← Self-contained features (order-independent within dir)
+│   ├── 00-shared-modules.js ← Extractable ecosystem modules (HvNoiseField, HvGreeting, HvCursorTrail)
+│   ├── actions-drawer.js
+│   ├── command-palette.js
 │   ├── content.js           ← Content interactions (copy, zoom)
-│   ├── effects.js           ← Visual effects (glitch, clock)
-│   ├── home-anchor.js       ← Homepage: mounts HvNoiseField + HvGreeting
-│   ├── live-reload.js       ← Auto-reload on rebuild
+│   ├── drop-import.js
+│   ├── editor.js
+│   ├── effects.js           ← Glitch, footer clock, cursor-box, cursor trail
+│   ├── home-anchor.js       ← Homepage noise-field + greeting mount
+│   ├── ideas-dismiss.js
+│   ├── live-reload.js       ← Poll _build.json for rebuilds
 │   ├── pins.js              ← Pinboard pin management
-│   ├── shortcuts.js         ← Keyboard shortcuts
-│   ├── writeback.js         ← Checkbox/metadata write-back
-│   └── zz-accessibility.js  ← A11y panel + IIFE close (must be last)
+│   ├── scratch.js           ← Scratch pad
+│   ├── shortcuts.js         ← Keyboard shortcuts overlay
+│   ├── splash.js            ← Boot splash screen
+│   ├── tabs.js              ← Tab bar
+│   ├── writeback.js         ← Task/status writeback
+│   └── zz-accessibility.js  ← A11y panel (loads last within features/)
+│
+├── webgl/                   ← WebGL2 integration layer
+│   └── 00-hypergl.js        ← Shared HyperGL factory (ping-pong FBOs, transform feedback)
 │
 └── screensaver/             ← Screensaver engine + modes
-    ├── 00-engine-head.js    ← Engine open, helpers, overlay
-    ├── particles.js         ← Mode: fluid particles
-    ├── starfield.js         ← Mode: starfield fly-through
-    ├── worm.js              ← Mode: wandering worm trails
-    ├── dither.js            ← Mode: dithered gradients
+    ├── 00-engine-head.js    ← DOM/state setup, promotes window.__ss + window.ss*
     ├── bounce.js            ← Mode: bouncing text
+    ├── dither.js            ← Mode: 2D dithered gradients
+    ├── gl-dither.js         ← Mode: WebGL dither (GPU)
+    ├── gl-noise.js          ← Mode: WebGL FBM noise
+    ├── gl-particles.js      ← Mode: WebGL fluid particles
+    ├── grid.js              ← Mode: perspective grid
     ├── life.js              ← Mode: Conway's Game of Life
-    └── zz-engine-tail.js    ← Engine tail: API, idle timer
+    ├── particles.js         ← Mode: 2D SPH fluid
+    ├── starfield.js         ← Mode: starfield fly-through
+    ├── worm.js              ← Mode: wandering worms
+    └── zz-engine-tail.js    ← API, activation, keydown handlers
 ```
 
-Build order: `core/` → `features/` → `screensaver/`. Within each directory, files sort alphabetically with `zz-*` files loading last. Concatenated into `site/app.js`.
+**Load order** (from `site_utils/config.py`): `core/` → `features/` (non-`zz-*`) → `webgl/` → `screensaver/` (non-`zz-*`) → `screensaver/zz-*` → `features/zz-*`. Within each group, files sort alphabetically with `zz-*` last.
 
 **Naming conventions:**
-- `00-` prefix = must load first in its directory
-- `zz-` prefix = must load last in its directory
-- No prefix = order-independent, sorts alphabetically
+- `00-` prefix — must load first in its directory
+- `zz-` prefix — must load last in its directory
+- No prefix — order-independent, sorts alphabetically
 
-## The IIFE Pattern
+## Per-Module `<script>` Loading
 
-All modules are wrapped in a single **Immediately Invoked Function Expression**:
+Every JS module is emitted as its own `<script defer>` tag in the page HTML:
+
+```html
+<script src="/js/core/00-core.js" defer></script>
+<script src="/js/core/01-router.js" defer></script>
+<script src="/js/core/navigation.js" defer></script>
+...
+<script src="/js/screensaver/zz-engine-tail.js" defer></script>
+```
+
+`defer` guarantees execution order (top-to-bottom, after HTML is parsed) while allowing parallel download.
+
+**Why per-module `<script>` instead of one concatenated bundle?** Parse-error isolation. A syntax error in any one module fails only that module's `<script>` block — every other module still parses and runs. Under a single bundled `app.js`, one broken module kills the entire application.
+
+The build also emits a concatenated `site/app.js` as a backward-compat fallback for utility pages that want a single-file include, but the main pages use per-module scripts.
+
+## Per-File IIFE Pattern
+
+Each module wraps its top-level code in a self-contained IIFE:
 
 ```javascript
-// core/00-core.js opens it:
-(function() {
-"use strict";
+/* === Hypervisor: Foo === */
+(function () {
+  "use strict";
 
-// ... all module code lives here ...
+  var localVar = "private to this file";
+  function helper() { /* ... */ }
 
-// features/zz-accessibility.js closes it:
+  // ... module body ...
 })();
 ```
 
-### What is an IIFE?
+**What this gives us:**
+- No global pollution — locals stay local
+- No cross-file collisions on common names like `canvas`, `ctx`, `state`
+- Strict mode per file, no leakage
+- Runtime error containment — a throw inside one IIFE stops that IIFE, not others
+
+### Cross-file symbols go on `window.*`
+
+Because each file has its own closure, modules can't see each other's locals. When a symbol needs to be visible across files, promote it to `window.*`:
 
 ```javascript
-(function() {
-  // Everything in here is private
-  var secret = "can't be accessed from outside";
+// core/00-core.js
+(function () {
+  "use strict";
+  window.savePreference = function (key, value) {
+    try { localStorage.setItem(key, value); } catch (e) {}
+    if (window.isDesktopApp && window.pywebview) {
+      window.pywebview.api.save_preference(key, value);
+    }
+  };
 })();
-
-// secret is undefined here
 ```
-
-An IIFE creates a **closure** — a private scope. Variables declared inside can't leak into the global scope or conflict with other scripts on the page.
-
-### Why use it?
-
-- **No global pollution** — all Hypervisor variables are private
-- **No conflicts** — won't clash with Lucide, Mermaid, or any other library
-- **Shared scope between modules** — since all modules are inside the same IIFE, they can share variables without `export`/`import`
-
-### How modules share data
-
-Because all modules are concatenated inside one IIFE, a variable declared in `core/00-core.js` is accessible in `features/pins.js`:
 
 ```javascript
-// In core/00-core.js:
-var searchInput = document.getElementById('search');
-
-// In core/navigation.js (can use searchInput directly):
-searchInput.addEventListener('focus', function() { ... });
+// features/pins.js
+(function () {
+  "use strict";
+  // Bare `savePreference` resolves through the global object.
+  savePreference("hypervisor-pins", JSON.stringify(pins));
+})();
 ```
 
-No import/export needed. Order matters — a module can only reference variables from modules that come before it in the concatenation order (core → features → screensaver).
+**Convention**: bare `window.savePreference`, `window.isDesktopApp`, `window.paletteMode` etc. for utilities; `window.HvNoiseField`, `window.HvGreeting`, `window.HvCursorTrail`, `window.HvToast` for larger public-API objects that ship as ecosystem modules.
+
+**Reads via bare identifier** — safe. `savePreference(...)` in a strict-mode IIFE resolves through the global scope to `window.savePreference`.
+
+**Writes via bare identifier** — unsafe. In strict mode, `foo = 5` without prior declaration throws `ReferenceError`. Always assign via `window.foo = 5` when updating cross-file state.
+
+## The File-Sort Trap
+
+Within a subdirectory, files load in alphabetical order (with `zz-*` last). Two hazards to avoid:
+
+**1. Cross-file dependencies must respect sort order.** If `features/foo.js` calls `bar()` defined in `features/init-bar.js`, that only works if `foo.js` sorts *after* `init-bar.js`. Renaming can silently reorder execution. Prefer `window.*` promotion for anything called across files — bare `bar` succeeds regardless of load order as long as `init-bar.js` runs first, and even that constraint disappears with `defer` script tags because `bar` is set by the time other scripts execute.
+
+**2. The `zz-` tail matters.** `features/zz-accessibility.js` runs last in `features/` intentionally — it depends on DOM shapes that earlier modules set up (accent picker, palette buttons, dropdown panels). If you add a new file that names itself `zz-something-else.js`, be aware that alphabetical ordering among `zz-*` files still applies (`zz-accessibility.js` < `zz-something-else.js`).
+
+## The Screensaver's Cross-File State Namespace
+
+The screensaver directory has enough shared state that it uses a dedicated namespace object. `00-engine-head.js` builds the overlay + state and promotes everything to `window`:
+
+```javascript
+// screensaver/00-engine-head.js
+(function () {
+  "use strict";
+  var overlay = document.createElement("div");
+  overlay.className = "screensaver-overlay";
+  // ... build canvas, ctx, helpers ...
+
+  // Stable refs + helpers
+  window.ssCanvas = canvas;
+  window.ssCtx = ctx;
+  window.ssModes = {};
+  window.ssGetAccent = getAccentColor;
+  window.ssHexToRgba = hexToRgba;
+  // ...
+
+  // Mutable config primitives (readers must see updates)
+  window.__ss = {
+    currentMode: "particles",
+    ditherPattern: "trig",
+    isActive: false,
+    overlay: overlay,
+    canvas: canvas,
+    // ... plus all the localStorage keys
+  };
+})();
+```
+
+Mode files each self-wrap and reference the namespace:
+
+```javascript
+// screensaver/particles.js
+(function () {
+  "use strict";
+  function particleDraw() {
+    var w = ssCanvas.width;              // bare read → window.ssCanvas
+    ssCtx.fillStyle = ssGetAccent();     // same
+    // ...
+  }
+  ssModes.particles = { init: particleInit, draw: particleDraw, resize: particleResize };
+  window.ssParticleState = particleState;  // explicit write — cross-file
+})();
+```
+
+`zz-engine-tail.js` registers the API and event handlers, reading and writing via `window.__ss` for mutable primitives:
+
+```javascript
+// screensaver/zz-engine-tail.js
+(function () {
+  "use strict";
+  var $ = window.__ss;
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "s" && document.activeElement.tagName !== "INPUT") {
+      // ...activate...
+      $.isActive = true;
+      window.ssCtx.fillRect(0, 0, window.ssCanvas.width, window.ssCanvas.height);
+      window.ssModes[$.currentMode].init();
+    }
+  });
+})();
+```
+
+**Why this pattern for screensaver but not everywhere?** The screensaver has ~20 shared symbols across 12 files that all need to touch the same overlay + canvas + mode registry. A namespace object keeps that visible in one place. Most features share only a handful of symbols — `window.savePreference`, `window.HvToast` — and don't need a namespace.
 
 ## Module: core/00-core.js
 
-Sets up the foundation that all other modules depend on:
+Sets up the foundation:
 
 ### PyWebView Bridge
 
 ```javascript
-var isDesktop = window.pywebview && window.pywebview.api;
+window.isDesktopApp = false;   // flipped to true by the pywebviewready event
 ```
 
-Detects whether the app is running in PyWebView (desktop) or a regular browser. Desktop-only features (write-back, file explorer button) check this flag.
+Desktop-only features (write-back, file explorer button) check `window.isDesktopApp`.
 
 ### Preferences
 
 ```javascript
-function savePreference(key, value) {
-  if (isDesktop) {
+window.savePreference = function (key, value) {
+  try { localStorage.setItem(key, value); } catch (e) {}
+  if (window.isDesktopApp && window.pywebview && window.pywebview.api) {
     window.pywebview.api.save_preference(key, value);
   }
-  localStorage.setItem('hv_' + key, value);
-}
+};
 ```
 
-Preferences are saved to both `localStorage` (for browser mode) and the PyWebView bridge (for desktop mode, which persists to `preferences.json`).
-
-### Shared DOM References
-
-```javascript
-var searchInput = document.getElementById('search');
-var searchResults = document.getElementById('search-results');
-var scrollTopBtn = document.getElementById('scroll-top');
-```
-
-Queried once at startup, reused everywhere. Avoids repeated `getElementById` calls.
+Preferences persist to `localStorage` (browser-mode cache) and, in desktop mode, to `preferences.json` via the PyWebView bridge. The JSON file is the source of truth.
 
 ### Toast Notifications
 
-```javascript
-// Legacy — string only, defaults to info variant, 3s duration
-HvToast.show('Copied');
+`window.HvToast.show({ variant, title, message, icon, duration, action, dedupeKey })`. Variants map to accent/cool/warm/comp rails (see `00-primitives.css`). Legacy string form (`HvToast.show('Copied')`) still works. Byte-mirrored into Hyperagent for parity.
 
-// Full options object
-HvToast.show({
-  variant: 'success' | 'info' | 'warn' | 'error',   // default 'info'
-  title: 'Rebuild failed',                           // optional bold first line
-  message: 'Watcher lost connection to build.py',    // required body
-  icon: 'circle-x',                                   // optional Lucide name; auto per-variant
-  duration: 3000 | 'sticky',                          // ms or 'sticky' for errors
-  action: { label: 'Retry', onClick: () => reconnect() },  // optional inline button
-  dedupeKey: 'live-reload'                           // replace prior toast with same key
-});
-```
+## Module: core/navigation.js — Client-Side Search
 
-Variant → color mapping (all tokens already in `00-variables.css`):
-
-| Variant | Rail color | Default icon | Default duration |
-|---------|------------|--------------|-------------------|
-| `success` | `--accent` | `check-circle` | 3000ms |
-| `info`    | `--cool`   | `info` | 3000ms |
-| `warn`    | `--warm`   | `alert-triangle` | 5000ms |
-| `error`   | `--comp`   | `circle-x` | sticky (until dismissed) |
-
-Toasts render as cards with a 2px left rail in the variant color, hard-edged border, no shadow — matching the brutalist aesthetic. `warn` and `error` variants get `role="alert"` for assertive screen-reader announcement. Errors are sticky by default and gain a close button; the same happens when an `action` is provided.
-
-**Dedupe & queue**: passing a `dedupeKey` removes any existing toast with the same key before appending the new one (prevents rebuild-notification spam). The container caps at 5 visible toasts — the oldest exits when a sixth arrives.
-
-The IIFE lives in `core/00-core.js` and is mirrored (behavior-identical) into Hyperagent's `00-core.js`. It exposes:
-- `window.HvToast.show(input)` — canonical ecosystem API
-- `window.HvToast.dismiss(toast)` — programmatic dismiss
-- `window.__hypervisorToast(input)` — legacy alias, accepts string or options (used by the Python bridge in `hypervisor-app.py`)
-
-Used by write-back confirmations, drop-import feedback, pins, ideas-dismiss, and the Python bridge for live-reload signals.
-
-## Module 01: Navigation & Search
-
-### Client-Side Search
-
-The search index is embedded in every page as JSON:
-
-```html
-<script>window.SEARCH_INDEX = [{"title":"...", "path":"...", "tags":["..."], "snippet":"..."}];</script>
-```
-
-When you type in the search box, JavaScript filters this array in real-time:
+The search index is fetched once at load and filtered in memory:
 
 ```javascript
-searchInput.addEventListener('input', function() {
-  var query = this.value.toLowerCase();
-  var results = window.SEARCH_INDEX.filter(function(doc) {
-    return doc.title.toLowerCase().includes(query)
-        || doc.path.toLowerCase().includes(query)
-        || doc.tags.some(function(t) { return t.includes(query); });
+(function () {
+  "use strict";
+  var searchInput = document.getElementById("search");
+  var index = [];
+  fetch("/search-index.json").then(function (res) { return res.json(); }).then(function (data) {
+    index = data;
   });
-  renderResults(results);
-});
+
+  searchInput.addEventListener("input", function () {
+    var query = this.value.toLowerCase();
+    var results = index.filter(function (doc) {
+      return doc.title.toLowerCase().includes(query)
+          || doc.tags.some(function (t) { return t.includes(query); });
+    });
+    renderResults(results);
+  });
+})();
 ```
 
 No server needed — the entire index is in memory. Fast for hundreds of documents.
 
-### Code Block Copy
+## Module: core/theme.js — Accent Color
+
+The color picker updates CSS custom properties in real time:
 
 ```javascript
-// For each code block, add a copy button
-document.querySelectorAll('.highlight pre').forEach(function(pre) {
-  var btn = document.createElement('button');
-  btn.textContent = 'copy';
-  btn.addEventListener('click', function() {
-    navigator.clipboard.writeText(pre.textContent);
-    showToast('Copied');
-  });
-  pre.parentElement.appendChild(btn);
-});
-```
-
-Uses the [Clipboard API](https://developer.mozilla.org/en-US/docs/Web/API/Clipboard_API) to copy code block contents.
-
-## Module 03: Theme (Accent Color)
-
-The color picker updates CSS custom properties in real-time:
-
-```javascript
-var picker = document.getElementById('accent-color');
-picker.addEventListener('input', function() {
-  applyAccent(this.value);
-});
-
-function applyAccent(hex) {
+window.applyAccent = function (hex) {
   var root = document.documentElement.style;
-  root.setProperty('--accent', hex);
-  root.setProperty('--accent-dim', hex + '26');      // 15% opacity
-  root.setProperty('--accent-glow', hex + '4d');     // 30% opacity
-  root.setProperty('--accent-border', hex + '66');   // 40% opacity
-  savePreference('accent', hex);
-}
+  root.setProperty("--accent", hex);
+  root.setProperty("--accent-dim", hex + "26");      // 15% opacity
+  root.setProperty("--accent-glow", hex + "4d");     // 30% opacity
+  root.setProperty("--accent-border", hex + "66");   // 40% opacity
+  window.savePreference("hypervisor-accent", hex);
+};
 ```
 
-### Color math
+`applyAccent`, `applyGradientMap`, `populatePresetSelect`, `updateModeButton`, `updatePresetSelector`, `hexToRgb`, `colorPicker`, and `paletteMode` are all promoted to `window` so other modules (screensaver GL modes, the a11y panel) can read them.
 
-The palette mode feature generates complementary colors from the accent. This involves converting hex → HSL, rotating the hue, and converting back:
+## Module: features/live-reload.js
+
+Polls `_build.json` every 2 seconds:
 
 ```javascript
-function hexToHsl(hex) {
-  // Convert #rrggbb to {h, s, l}
-}
-function hslToHex(h, s, l) {
-  // Convert {h, s, l} back to #rrggbb
-}
-// Complementary = rotate hue by 180°
-var comp = hslToHex((h + 180) % 360, s, l);
+(function () {
+  "use strict";
+  var currentBuildId = document.querySelector('meta[name="build-id"]').content;
+  setInterval(function () {
+    fetch(rootPrefix + "_build.json")
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (data.buildId !== currentBuildId) location.reload();
+      })
+      .catch(function () {});  // silently ignore fetch errors (file:// mode)
+  }, 2000);
+})();
 ```
 
-## Module 07: Live Reload
-
-Polls `_build.json` every 2 seconds to detect new builds:
-
-```javascript
-var currentBuildId = document.querySelector('meta[name="build-id"]').content;
-
-setInterval(function() {
-  fetch(rootPrefix + '_build.json')
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-      if (data.buildId !== currentBuildId) {
-        location.reload();
-      }
-    })
-    .catch(function() {}); // Ignore fetch errors (file:// mode)
-}, 2000);
-```
-
-When the build ID changes, the page reloads itself. Simple, no WebSocket needed.
+When the build ID changes, the page reloads. No WebSocket needed.
 
 ## Key Patterns
 
 ### Event Delegation
 
-Instead of attaching listeners to every element:
+Instead of a listener per element, one listener on the parent:
 
 ```javascript
-// Bad: listener per card (100 cards = 100 listeners)
-document.querySelectorAll('.card').forEach(function(card) {
-  card.addEventListener('click', handler);
-});
-
-// Good: one listener on the parent
-document.querySelector('.card-grid').addEventListener('click', function(e) {
-  var card = e.target.closest('.card');
+document.querySelector(".card-grid").addEventListener("click", function (e) {
+  var card = e.target.closest(".card");
   if (card) handler(card);
 });
 ```
 
-### `DOMContentLoaded` vs inline `<script>`
-
-Hypervisor's `app.js` loads at the bottom of `<body>`, so the DOM is already parsed when it runs. No need for `DOMContentLoaded` wrapper — the elements exist by the time the script executes.
-
 ### Feature Detection
 
 ```javascript
-if (navigator.clipboard) {
-  // Use modern clipboard API
-} else {
-  // Fallback: create a textarea, select, execCommand('copy')
-}
+if (navigator.clipboard) { /* modern API */ } else { /* legacy fallback */ }
 ```
 
-Always check if an API exists before using it. Not all browsers support everything.
+### Deferred vs. inline `<script>`
+
+All Hypervisor modules use `defer`. That means (a) they load in parallel with parsing, (b) they execute in document order after DOM is ready. No need for a `DOMContentLoaded` wrapper.
 
 ## Reference Links
 
 - [IIFE (MDN)](https://developer.mozilla.org/en-US/docs/Glossary/IIFE) — the pattern explained
-- [DOM manipulation (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/Document_Object_Model) — working with HTML elements in JS
-- [addEventListener (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener) — how event handling works
-- [Clipboard API (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/Clipboard_API) — copying text programmatically
-- [CSS Custom Properties + JS (MDN)](https://developer.mozilla.org/en-US/docs/Web/CSS/Using_CSS_custom_properties#values_in_javascript) — reading/writing CSS variables from JS
-- [localStorage (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage) — persisting data in the browser
+- [defer attribute (MDN)](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script#defer) — how deferred script loading works
+- [strict mode (MDN)](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Strict_mode) — what `"use strict"` enforces
+- [globalThis / window (MDN)](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/globalThis) — the global object
+- [DOM manipulation (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/Document_Object_Model)
+- [Clipboard API (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/Clipboard_API)
+- [localStorage (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage)
 
 ## Next
 

@@ -69,33 +69,36 @@
 
 .markdown-body strong { color: var(--text-bright); font-weight: 700; }
 
-.markdown-body ul, .markdown-body ol { margin: 0.5rem 0; }
-.markdown-body ul { padding-left: 2rem; }
-.markdown-body ol { padding-left: 4rem; }
-.markdown-body li { margin: 0.2rem 0; }
+.markdown-body ul, .markdown-body ol { margin: var(--space-3) 0; }
+.markdown-body ul { padding-left: 1.5rem; }
+.markdown-body ol { padding-left: 2rem; }
+.markdown-body li { margin: var(--space-1) 0; line-height: 1.7; }
 .markdown-body li::marker { color: var(--accent-dim); }
 .markdown-body ul > li::marker { content: '› '; }
+/* Nested lists: tighter spacing, dimmer markers */
+.markdown-body li ul, .markdown-body li ol { margin: var(--space-1) 0; }
+.markdown-body li li { margin: 0.1rem 0; }
+.markdown-body li li::marker { color: var(--text-dim); }
 
 .markdown-body hr { border: none; height: 1px; background: var(--border); margin: 2rem 0; }
 
 .markdown-body blockquote {
-  border-left: var(--border-rail) solid var(--warm);
-  padding: var(--space-0-6) var(--space-1-2);
-  margin: var(--space-1-2) 0;
+  padding: var(--space-3) var(--space-4);
+  margin: var(--space-4) 0;
   color: var(--text-muted);
-  background: var(--bg-card);
-  transition: border-color var(--motion-base) var(--ease);
+  background: var(--bg-surface);
+  border: var(--border-hair) solid var(--border);
+  font-style: italic;
 }
-.markdown-body blockquote:hover { border-left-color: var(--accent); }
 .markdown-body blockquote p { margin: 0.3rem 0; }
 
 /* ---- Code ---- */
 .markdown-body code {
   font-family: var(--font);
   font-size: 0.85em;
-  background: var(--bg-card);
-  padding: 0.1em 0.35em;
-  border: var(--border-hair) solid var(--border);
+  background: var(--bg-elevated);
+  padding: 0.15em 0.45em;
+  border: var(--border-hair) solid var(--border-strong);
   color: var(--accent-dim);
 }
 .markdown-body pre {
@@ -181,23 +184,27 @@
 .markdown-body table {
   width: 100%;
   border-collapse: collapse;
-  margin: var(--space-4) 0;
+  margin: var(--space-5) 0;
   font-size: var(--fs-h5-6);
   border: var(--border-hair) solid var(--border-strong);
 }
 .markdown-body th, .markdown-body td {
-  padding: 0.45rem 0.7rem;
+  padding: 0.55rem 0.8rem;
   text-align: left;
   border: var(--border-hair) solid var(--border);
   transition: background var(--motion-tick) var(--ease);
 }
 .markdown-body th {
-  background: var(--bg-elevated);
+  background: color-mix(in srgb, var(--warm) 8%, var(--bg));
   font-weight: 700;
   color: var(--warm);
   font-size: var(--fs-label);
   text-transform: uppercase;
   letter-spacing: 0.06em;
+  border-bottom: var(--border-rail) solid var(--warm);
+}
+.markdown-body tbody tr:nth-child(even) td {
+  background: var(--bg-surface);
 }
 .markdown-body tr:hover td { background: var(--accent-glow); }
 
@@ -373,22 +380,17 @@
 .hv-desktop .meta-item-status .meta-val:hover::after {}
 
 /* ---- H2 section panels (collapsible, quiet-by-default) ----
-   Sections are frameless when closed; when open, a left accent stripe extends
-   from the summary through the content to visually anchor the section. */
+   Sections use typography and spacing to communicate structure — no rail.
+   The ▸/▾ marker glyph and heading color shift signal open/closed state. */
 .doc-section {
   margin: 0 0 var(--space-2);
   border: none;
-  border-left: var(--border-rail) solid var(--border);
   background: transparent;
   padding-left: var(--space-4);
-  transition: border-color var(--motion-base) var(--ease);
   position: relative;
 }
 .doc-section:last-child {
   margin-bottom: 0;
-}
-.doc-section[open] {
-  border-left-color: var(--accent);
 }
 .doc-section-summary {
   padding: var(--space-2) 3.5rem var(--space-2) 0;
@@ -491,7 +493,6 @@
   margin: 3rem 0 0;
   padding: var(--space-1-25) var(--space-1-25) var(--space-3);
   border: var(--border-hair) solid var(--border);
-  border-left: var(--border-rail) solid var(--cool);
   background: var(--bg-surface);
   animation: fadeSlideIn var(--motion-slow) var(--ease) var(--motion-tick) both;
 }
@@ -618,12 +619,15 @@
 /* Legacy stub — outer .related-section wrapper is no longer emitted */
 .related-section {}
 
-/* ---- Admonition callout boxes ---- */
+/* ---- Admonition callout cards ----
+   Full-width tinted background with icon. No left rail — the background fill
+   and icon color carry the type signal. Feels like a Notion callout block. */
 .admonition {
+  --adm-color: var(--accent);
   margin: var(--space-5) 0;
-  border: var(--border-hair) solid var(--border);
-  border-left: 3px solid var(--accent);
-  background: var(--bg-surface);
+  padding: 0;
+  border: var(--border-hair) solid color-mix(in srgb, var(--adm-color) 20%, var(--border));
+  background: color-mix(in srgb, var(--adm-color) 4%, var(--bg));
   animation: fadeSlideIn var(--motion-slow) var(--ease) both;
 }
 .admonition-title {
@@ -635,8 +639,8 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--accent);
-  border-bottom: var(--border-hair) solid var(--border);
+  color: var(--adm-color);
+  border-bottom: var(--border-hair) solid color-mix(in srgb, var(--adm-color) 15%, var(--border));
 }
 .admonition-icon {
   width: 14px;
@@ -651,17 +655,43 @@
 .admonition-content p:last-child {
   margin-bottom: 0;
 }
-/* Type-specific border colors */
-.admonition-note    { border-left-color: var(--cool); }
-.admonition-note .admonition-title { color: var(--cool); }
-.admonition-tip     { border-left-color: var(--accent); }
-.admonition-tip .admonition-title { color: var(--accent); }
-.admonition-warning { border-left-color: var(--warning); }
-.admonition-warning .admonition-title { color: var(--warning); }
-.admonition-caution { border-left-color: var(--error); }
-.admonition-caution .admonition-title { color: var(--error); }
-.admonition-important { border-left-color: #cc66ff; }
-.admonition-important .admonition-title { color: #cc66ff; }
+/* Type-specific tint colors */
+.admonition-note    { --adm-color: var(--cool); }
+.admonition-tip     { --adm-color: var(--accent); }
+.admonition-warning { --adm-color: var(--warning); }
+.admonition-caution { --adm-color: var(--error); }
+.admonition-important { --adm-color: #cc66ff; }
+
+/* ---- Bookmark cards ----
+   Standalone links rendered as a clickable card with title + URL domain. */
+.bookmark-card {
+  display: block;
+  padding: var(--space-3) var(--space-4);
+  margin: var(--space-4) 0;
+  border: var(--border-hair) solid var(--border);
+  background: var(--bg-surface);
+  text-decoration: none;
+  transition: border-color var(--motion-fast) var(--ease),
+              background var(--motion-fast) var(--ease);
+}
+.bookmark-card:hover {
+  border-color: var(--accent-border);
+  background: var(--bg-card-hover);
+}
+.bookmark-card-title {
+  display: block;
+  font-size: var(--fs-body);
+  font-weight: 700;
+  color: var(--text-bright);
+  margin-bottom: var(--space-1);
+}
+.bookmark-card:hover .bookmark-card-title { color: var(--accent); }
+.bookmark-card-url {
+  display: block;
+  font-size: var(--fs-micro);
+  color: var(--text-dim);
+  letter-spacing: 0.02em;
+}
 
 /* ---- Collapsible sections (details/summary) ---- */
 .collapsible {

@@ -12,6 +12,47 @@ _HYPERVISOR_DIR = Path(__file__).resolve().parent.parent
 HYPERSPACE_ROOT = _HYPERVISOR_DIR.parent
 OUTPUT_DIR = _HYPERVISOR_DIR / "site"
 ASSETS_DIR = _HYPERVISOR_DIR / "assets"
+JS_DIR = ASSETS_DIR / "js"
+
+
+def list_js_modules():
+    """Return ordered list of JS module paths (relative to JS_DIR) in concat order.
+
+    Order matches the historical bundle concat:
+    core/ → features/ (non-zz) → webgl/ → screensaver/ (non-zz) →
+    screensaver/zz-* → features/zz-*
+
+    Each entry is a PurePosixPath relative to JS_DIR, e.g. 'core/00-core.js'.
+    This is used by build.py (to copy + concat) and by page_generation.py
+    (to emit per-module <script> tags for parse-error isolation — WI-118).
+    """
+    from pathlib import PurePosixPath
+    if not JS_DIR.exists():
+        return []
+    modules = []
+
+    def _rel(p):
+        return PurePosixPath(p.relative_to(JS_DIR).as_posix())
+
+    def _add_sorted(subdir, skip_zz=False, only_zz=False):
+        d = JS_DIR / subdir
+        if not d.exists():
+            return
+        for f in sorted(d.glob("*.js")):
+            is_zz = f.name.startswith("zz-")
+            if skip_zz and is_zz:
+                continue
+            if only_zz and not is_zz:
+                continue
+            modules.append(_rel(f))
+
+    _add_sorted("core")
+    _add_sorted("features", skip_zz=True)
+    _add_sorted("webgl", skip_zz=True)
+    _add_sorted("screensaver", skip_zz=True)
+    _add_sorted("screensaver", only_zz=True)
+    _add_sorted("features", only_zz=True)
+    return modules
 
 
 # --- Brand SVG (Hypervisor logo) ---

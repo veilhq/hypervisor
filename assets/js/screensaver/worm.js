@@ -1,5 +1,8 @@
 /* === Screensaver Mode: Worm === */
 
+(function () {
+  "use strict";
+
     // ========== MODE: Worm ==========
     var wormState = { worms: [] };
 
@@ -80,3 +83,4 @@
     }
 
     ssModes.worm = { init: wormInit, draw: wormDraw, resize: wormResize };
+})();

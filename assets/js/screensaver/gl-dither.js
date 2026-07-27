@@ -190,7 +190,7 @@
         var glCanvas = ssGetGLCanvas();
         glCanvas.width = window.innerWidth;
         glCanvas.height = window.innerHeight;
-        var patternKey = ditherPattern || 'trig';
+        var patternKey = (window.__ss && window.__ss.ditherPattern) || 'trig';
         if (!PATTERN_MAIN[patternKey]) patternKey = 'trig';
 
         if (!instance || !instance.gl || instance.gl.isContextLost() || compiledPattern !== patternKey) {
@@ -208,7 +208,7 @@
 
       function glDitherDraw() {
         // Hot-swap if pattern changed while active
-        var patternKey = ditherPattern || 'trig';
+        var patternKey = (window.__ss && window.__ss.ditherPattern) || 'trig';
         if (!PATTERN_MAIN[patternKey]) patternKey = 'trig';
         if (compiledPattern !== patternKey) {
           var glCanvas = ssGetGLCanvas();

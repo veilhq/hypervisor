@@ -1,5 +1,8 @@
 /* === Screensaver Mode: Starfield === */
 
+(function () {
+  "use strict";
+
     // ========== MODE: Starfield ==========
     var starState = { stars: [], count: 400, speed: 4 };
 
@@ -58,3 +61,4 @@
     }
 
     ssModes.starfield = { init: starInit, draw: starDraw, resize: starResize };
+})();

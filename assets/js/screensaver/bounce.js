@@ -1,5 +1,8 @@
 /* === Screensaver Mode: Bounce === */
 
+(function () {
+  "use strict";
+
     // ========== MODE: Bounce ==========
     var bounceState = { x: 0, y: 0, vx: 2, vy: 1.5, hue: 0, colorIdx: 0, size: 64 };
 
@@ -71,3 +74,4 @@
     }
 
     ssModes.bounce = { init: bounceInit, draw: bounceDraw, resize: bounceResize };
+})();
