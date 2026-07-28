@@ -424,6 +424,19 @@ def extract_metadata_block(html: str) -> str:
         return h1_end + subtitle + _build_strip(parsed, extras)
 
     result = p_meta_pattern.sub(replace_p_meta, result, count=1)
+
+    # --- Inject WI-ID badge before H1 title text (if doc has a work item ID) ---
+    wi_match = re.search(r'doc-header-chip-wi[^>]*>([^<]+)<', result)
+    if wi_match:
+        wi_id = wi_match.group(1)
+        # Insert parenthesized ID right after the <h1 ...> opening tag
+        result = re.sub(
+            r'(<h1[^>]*>)',
+            rf'\1<span class="doc-header-wi-label">({wi_id})</span> ',
+            result,
+            count=1,
+        )
+
     return result
 
 
@@ -433,6 +446,40 @@ def wrap_h2_sections(html: str) -> str:
     Each H2 section becomes a <details open> with the H2 text as the <summary>,
     allowing users to collapse/expand sections while keeping them open by default.
     """
+    # Section title → Lucide icon name mapping
+    SECTION_ICONS = {
+        "overview": "eye",
+        "design": "drafting-compass",
+        "design details": "drafting-compass",
+        "tasks": "square-check-big",
+        "acceptance criteria": "clipboard-check",
+        "implementation notes": "wrench",
+        "implementation": "wrench",
+        "pr notes": "git-pull-request",
+        "related": "link",
+        "problem": "alert-triangle",
+        "concept": "lightbulb",
+        "open questions": "help-circle",
+        "key questions": "help-circle",
+        "summary": "file-text",
+        "findings": "search",
+        "risk summary": "shield-alert",
+        "next steps": "arrow-right",
+        "next": "arrow-right",
+        "references": "book-open",
+        "reference links": "book-open",
+        "considerations": "scale",
+        "examples in codebase": "code",
+        "proposed approach": "route",
+        "rough solution plan": "route",
+        "purpose": "target",
+        "best practices": "star",
+        "overall assessment": "bar-chart-2",
+        "pattern overview": "layers",
+        "key patterns": "layers",
+        "directory structure": "folder-tree",
+    }
+
     parts = re.split(r'(<h2[^>]*>)', html)
 
     if len(parts) <= 1:
@@ -460,9 +507,16 @@ def wrap_h2_sections(html: str) -> str:
             section_content = content
 
         id_attr = f' id="{h2_id}"' if h2_id else ""
+        # Resolve section icon from plain text of heading
+        plain_title = re.sub(r'<[^>]+>', '', h2_inner).strip().lower()
+        icon_name = SECTION_ICONS.get(plain_title)
+        icon_html = (
+            f'<i data-lucide="{icon_name}" class="section-icon"></i>'
+            if icon_name else ""
+        )
         output.append(
             f'<details class="doc-section" open{id_attr}>'
-            f'<summary class="doc-section-summary">{h2_inner}</summary>'
+            f'<summary class="doc-section-summary">{icon_html}{h2_inner}</summary>'
             f'<div class="doc-section-content">{section_content}</div>'
             f'</details>'
         )

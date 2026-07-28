@@ -276,17 +276,53 @@
         if (!summary) return;
 
         summary.addEventListener("click", function (e) {
-          // Only animate the close — open animation is handled by CSS keyframes
-          if (!section.hasAttribute("open")) return;
-
-          e.preventDefault();
           var content = section.querySelector(".doc-section-content");
+
+          if (!section.hasAttribute("open")) {
+            // Opening — drawer slides open
+            // Let the browser add [open] so content exists in DOM
+            // We need a rAF to measure after the content renders
+            requestAnimationFrame(function () {
+              if (!content) content = section.querySelector(".doc-section-content");
+              if (!content) return;
+              var height = content.scrollHeight;
+              content.style.overflow = "hidden";
+              content.style.maxHeight = "0";
+              content.classList.add("section-expanding");
+              // Force reflow
+              content.offsetHeight; // eslint-disable-line no-unused-expressions
+              content.style.maxHeight = height + "px";
+
+              content.addEventListener("transitionend", function handler(ev) {
+                if (ev.propertyName !== "max-height") return;
+                content.removeEventListener("transitionend", handler);
+                content.classList.remove("section-expanding");
+                content.style.maxHeight = "";
+                content.style.overflow = "";
+              }, { once: true });
+            });
+            return; // let native <details> open happen
+          }
+
+          // Closing — drawer slides closed
+          e.preventDefault();
           if (!content) { section.removeAttribute("open"); return; }
 
+          // Drawer-style slide closed: set explicit max-height, then collapse to 0
+          var height = content.scrollHeight;
+          content.style.maxHeight = height + "px";
+          content.style.overflow = "hidden";
+          // Force reflow so the browser registers the starting height
+          content.offsetHeight; // eslint-disable-line no-unused-expressions
           content.classList.add("section-collapsing");
-          content.addEventListener("animationend", function handler() {
-            content.removeEventListener("animationend", handler);
+          content.style.maxHeight = "0";
+
+          content.addEventListener("transitionend", function handler(ev) {
+            if (ev.propertyName !== "max-height") return;
+            content.removeEventListener("transitionend", handler);
             content.classList.remove("section-collapsing");
+            content.style.maxHeight = "";
+            content.style.overflow = "";
             section.removeAttribute("open");
           }, { once: true });
         });

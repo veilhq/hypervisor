@@ -29,6 +29,7 @@
   transform: translateY(100%);
   padding: var(--space-0-4) var(--space-4);
   background: var(--comp);
+  border-radius: 0 0 var(--radius) var(--radius);
   color: var(--bg);
   font-family: var(--font);
   font-size: var(--fs-heading);

@@ -31,6 +31,7 @@ html.hv-splash-active body {
   width: 48px;
   height: 48px;
   background: var(--comp, #ff3333);
+  border-radius: var(--radius);
   opacity: 0;
   animation: splash-fade-in var(--motion-slow) ease var(--motion-tick) forwards;
 }

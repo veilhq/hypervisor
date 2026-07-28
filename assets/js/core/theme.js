@@ -496,6 +496,21 @@
     if (!preset) return false;
 
     var root = document.documentElement;
+
+    // In B&W mode, force blue palette regardless of preset
+    if (root.classList.contains("a11y-bw-theme")) {
+      // Still persist the preset choice so it's restored when B&W is toggled off
+      themeMode = "preset";
+      activeGradientMap = presetKey;
+      try {
+        localStorage.setItem(THEME_MODE_KEY, "preset");
+        localStorage.setItem(GRADIENT_MAP_KEY, presetKey);
+        localStorage.setItem(STORAGE_KEY, preset.accent);
+      } catch (e) {}
+      applyAccent(preset.accent); // applyAccent handles the B&W override
+      return true;
+    }
+
     var hex = preset.accent;
     var rgb = hexToRgb(hex);
 

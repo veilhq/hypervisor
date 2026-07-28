@@ -23,6 +23,7 @@
   text-transform: uppercase;
   white-space: nowrap;
   line-height: var(--chip-height);
+  border-radius: var(--radius);
   box-sizing: border-box;
   transition: filter var(--motion-fast) var(--ease),
               background var(--motion-fast) var(--ease),
@@ -108,6 +109,30 @@
   margin-bottom: var(--space-2);
 }
 
+/* ---- Tab card primitive — bordered card for open tabs -----------------------
+   Visually identical to a regular card. Distinguished from session cards by
+   the dither grid and state rail, not by shape.
+
+   Compose: .hv-tab + specific class for size/state overrides.
+*/
+.hv-tab {
+  --tab-notch: 10px;
+  position: relative;
+  border: var(--border-hair) solid var(--border);
+  background: var(--bg-card);
+  transition: background var(--motion-fast) var(--ease),
+              border-color var(--motion-fast) var(--ease);
+}
+.hv-tab:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--accent-border);
+}
+.hv-tab.active,
+.hv-tab.hv-tab-active {
+  background: var(--accent-glow);
+  border-color: var(--accent-border);
+}
+
 /* ---- Hover primitives -------------------------------------------------------- */
 
 /* Lift: translateY on hover + accent border. Use on card-like containers. */
@@ -162,6 +187,7 @@
   height: 4px;
   background: var(--bg-card);
   border: var(--border-hair) solid var(--border);
+  border-radius: var(--radius);
   min-width: 40px;
   position: relative;
 }
@@ -194,6 +220,7 @@
   width: 100%;
   background: var(--bg);
   border: var(--border-hair) solid var(--border);
+  border-radius: var(--radius);
   color: var(--text-bright);
   font-family: var(--font);
   font-size: var(--fs-label);
@@ -238,6 +265,7 @@
   padding: var(--space-2) var(--space-4);
   background: transparent;
   border: var(--border-hair) solid var(--border-strong);
+  border-radius: var(--radius);
   color: var(--text-muted);
   font-family: var(--font);
   font-size: var(--fs-label);
@@ -321,6 +349,7 @@
 .hv-panel-modal {
   background: var(--bg-card);
   border: var(--border-hair) solid var(--border-strong);
+  border-radius: var(--radius);
   padding: var(--space-5) var(--space-6);
   max-width: 500px;
   width: 90%;

@@ -36,6 +36,7 @@
     'uniform vec2 u_resolution;',
     'uniform float u_time;',
     'uniform vec3 u_tint;',
+    'uniform vec3 u_bg;',
     'uniform float u_cellDivisor;',
     'out vec4 fragColor;',
     '',
@@ -77,7 +78,7 @@
     '',
     '    // Bayer 8x8 dither — clean on/off, gradient via pixel density',
     '    float threshold = bayer8(gl_FragCoord.xy / cellSize);',
-    '    if (val < threshold) { fragColor = vec4(0.0, 0.0, 0.0, 1.0); return; }',
+    '    if (val < threshold) { fragColor = vec4(u_bg, 1.0); return; }',
     '',
     '    fragColor = vec4(u_tint, 1.0);',
     '}'
@@ -98,6 +99,24 @@
       }
     } catch (e) {}
     return [0.09, 0.09, 0.09];
+  }
+
+  function readBgColor() {
+    // Read --bg CSS variable for the shader background (off-pixels).
+    // Defaults to black for the normal dark theme.
+    try {
+      var raw = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+      var m = /^#?([0-9a-f]{6})$/i.exec(raw);
+      if (m) {
+        var hex = m[1];
+        return [
+          parseInt(hex.substr(0, 2), 16) / 255,
+          parseInt(hex.substr(2, 2), 16) / 255,
+          parseInt(hex.substr(4, 2), 16) / 255
+        ];
+      }
+    } catch (e) {}
+    return [0.0, 0.0, 0.0];
   }
 
   function initGL() {
@@ -139,6 +158,8 @@
     _gl.uniform1f(_gl.getUniformLocation(_prog, 'u_cellDivisor'), _cellDivisor);
     var tint = readAccentTint();
     _gl.uniform3f(_gl.getUniformLocation(_prog, 'u_tint'), tint[0], tint[1], tint[2]);
+    var bg = readBgColor();
+    _gl.uniform3f(_gl.getUniformLocation(_prog, 'u_bg'), bg[0], bg[1], bg[2]);
     _gl.drawArrays(_gl.TRIANGLE_STRIP, 0, 4);
     _t += 1 / 60;
     _raf = requestAnimationFrame(frame);

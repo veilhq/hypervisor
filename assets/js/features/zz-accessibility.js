@@ -24,6 +24,14 @@
       }
     });
 
+    // If B&W theme was restored, re-apply accent to force the blue palette
+    // (applyAccent sets inline style vars which override CSS class rules)
+    if (document.documentElement.classList.contains("a11y-bw-theme")) {
+      var colorPicker = document.getElementById("accent-color");
+      var hex = colorPicker ? colorPicker.value : "#00ff41";
+      if (typeof applyAccent === "function") applyAccent(hex);
+    }
+
     // Auto-detect system preferences on first visit
     (function detectSystemPrefs() {
       var hasAnyPref = false;

@@ -102,6 +102,9 @@
   --shadow-panel: 0 6px 24px rgba(0, 0, 0, 0.4), 0 0 1px var(--accent-border);
   --shadow-glow:  0 0 12px var(--accent-glow);
 
+  /* Border radius — ecosystem toggle. Set to 0 for pure brutalist. */
+  --radius: 1px;
+
   /* Chip primitives — silhouette for all chip variants */
   --chip-height:         1.4;       /* line-height unit; sizes via padding */
   --chip-padding-x:      0.4rem;
@@ -315,6 +318,7 @@ body.a11y-cursors-active *.disabled {
   letter-spacing: var(--chip-letter-spacing);
   padding: 0.1rem var(--chip-padding-x);
   border: var(--border-hair) solid var(--border-strong);
+  border-radius: var(--radius);
   background: transparent;
   color: var(--text-muted);
   white-space: nowrap;
@@ -339,6 +343,7 @@ body.a11y-cursors-active *.disabled {
   flex-shrink: 0;
   background: var(--bg);
   border: var(--border-hair) solid var(--border-strong);
+  border-radius: var(--radius);
   color: var(--text-dim);
   font-family: var(--font);
   padding: 0;
@@ -369,6 +374,7 @@ body.a11y-cursors-active *.disabled {
   flex-shrink: 0;
   background: var(--bg);
   border: var(--border-hair) solid var(--border-strong);
+  border-radius: var(--radius);
   color: var(--text-dim);
   font-family: var(--font);
   font-size: 0.68rem;
@@ -416,6 +422,7 @@ body.a11y-cursors-active *.disabled {
   right: 0;
   background: var(--bg-card);
   border: var(--border-hair) solid var(--border-strong);
+  border-radius: var(--radius);
   max-height: 0;
   overflow: hidden;
   z-index: var(--z-topbar);
@@ -469,6 +476,7 @@ body.a11y-cursors-active *.disabled {
   background: var(--bg-card);
   border: var(--border-hair) solid var(--border-strong);
   border-top: var(--border-rail) solid var(--error);
+  border-radius: var(--radius);
   padding: var(--space-5) var(--space-6);
   max-width: 400px;
   width: 90%;

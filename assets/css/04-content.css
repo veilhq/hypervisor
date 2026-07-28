@@ -11,6 +11,14 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
+/* WI-ID label inline before title text */
+.doc-header-wi-label {
+  color: var(--cool);
+  font-size: var(--fs-h1);
+  font-weight: 400;
+  font-style: italic;
+  letter-spacing: 0.04em;
+}
 /* Doc description — the `<p>` immediately after the H1 is the doc description
    (per hyperspace-conventions: "Description between H1 and metadata"). Style it
    italicized and dimmed so it sets apart from the rest of the body text. */
@@ -40,7 +48,15 @@
   font-size: var(--fs-h3);
   font-weight: 700;
   color: var(--warm);
-  margin: 1.8rem 0 var(--space-2);
+  margin: 2.2rem 0 var(--space-2);
+  padding-top: var(--space-3);
+  border-top: var(--border-hair) solid var(--border);
+}
+/* No double-divider when H3 is first child after a section heading */
+.doc-section-content > h3:first-child {
+  border-top: none;
+  margin-top: 0;
+  padding-top: 0;
 }
 .markdown-body h4 {
   font-size: var(--fs-body);
@@ -57,7 +73,7 @@
   letter-spacing: 0.05em;
 }
 
-.markdown-body p { margin: 0.6rem 0; }
+.markdown-body p { margin: 0.85rem 0; line-height: 1.75; }
 
 .markdown-body a {
   color: var(--accent-dim);
@@ -91,6 +107,23 @@
   font-style: italic;
 }
 .markdown-body blockquote p { margin: 0.3rem 0; }
+
+/* ---- Block-level breathing room ----
+   Different content types get extra air between them so the page doesn't
+   read as a uniform wall. Targets transitions between block types. */
+.markdown-body p + pre,
+.markdown-body p + table,
+.markdown-body p + ul,
+.markdown-body p + ol,
+.markdown-body pre + p,
+.markdown-body table + p,
+.markdown-body ul + p,
+.markdown-body ol + p,
+.markdown-body pre + pre { margin-top: var(--space-5); }
+
+/* First paragraph after a heading: slightly brighter to anchor the eye */
+.markdown-body h2 + p,
+.markdown-body h3 + p { color: var(--text-bright); }
 
 /* ---- Code ---- */
 .markdown-body code {
@@ -393,8 +426,8 @@
   margin-bottom: 0;
 }
 .doc-section-summary {
-  padding: var(--space-2) 3.5rem var(--space-2) 0;
-  font-size: 1.1rem;
+  padding: var(--space-3) var(--space-3) var(--space-3) 0;
+  font-size: var(--fs-h2);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -402,52 +435,56 @@
   cursor: pointer;
   user-select: none;
   list-style: none;
-  transition: color var(--motion-fast) var(--ease), background var(--motion-fast) var(--ease);
+  border-bottom: var(--border-hair) solid var(--border);
+  transition: color var(--motion-fast) var(--ease);
 }
 .doc-section-summary::-webkit-details-marker { display: none; }
 .doc-section-summary::marker { display: none; content: ""; }
-.doc-section-summary::before {
-  content: "▸";
-  display: inline-block;
-  margin-right: var(--space-0-6);
-  transition: transform var(--motion-base) var(--ease);
+/* Collapse indicator — subtle, appears on hover only */
+.doc-section-summary::after {
+  content: "▾";
+  float: right;
   color: var(--text-dim);
+  opacity: 0;
+  transition: opacity var(--motion-fast) var(--ease), transform var(--motion-base) var(--ease);
 }
-.doc-section[open] > .doc-section-summary::before {
-  transform: rotate(90deg);
-  color: var(--accent);
+.doc-section-summary:hover::after {
+  opacity: 1;
+}
+.doc-section:not([open]) > .doc-section-summary::after {
+  content: "▸";
 }
 .doc-section-summary:hover {
   color: var(--accent);
-  background: var(--accent-glow);
+}
+/* Section header icons — slightly larger with extra spacing */
+.doc-section-summary .section-icon {
+  width: 16px;
+  height: 16px;
+  margin-right: var(--space-4);
+  stroke: var(--cool);
+  stroke-width: 2.5;
+  opacity: 1;
 }
 .doc-section[open] > .doc-section-summary {
-  color: var(--accent);
+  border-bottom-color: var(--accent-border);
 }
 .doc-section-content {
   padding: var(--space-4);
-  animation: sectionExpand 250ms ease-out;
+  overflow: hidden;
 }
 /* The markdown `---` between H2 sections gets rendered as a trailing <hr>
    inside the previous section's content. Suppress it — inter-section
    spacing is handled by .doc-section margin-bottom now. */
-.doc-section-content > hr:last-child {
+.doc-section-content > hr:last-child,
+.doc-section-content > hr:first-child {
   display: none;
 }
 
-@keyframes sectionExpand {
-  from { opacity: 0; transform: translateY(-6px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-/* Closing animation (applied by JS before removing open attribute) */
-.doc-section-content.section-collapsing {
-  animation: sectionCollapse 200ms ease-in forwards;
-}
-
-@keyframes sectionCollapse {
-  from { opacity: 1; transform: translateY(0); }
-  to   { opacity: 0; transform: translateY(-6px); }
+/* Drawer transitions — max-height collapses/expands, text clips away */
+.doc-section-content.section-collapsing,
+.doc-section-content.section-expanding {
+  transition: max-height var(--motion-slow) var(--ease);
 }
 
 /* ---- Section copy button ---- */
