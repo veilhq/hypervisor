@@ -33,6 +33,8 @@ Point Hypervisor at a directory of `.md` files and it produces a self-contained 
 
 ## Quick Start
 
+> **Requires Hyperkit.** Both build paths below read shared CSS/JS from `.hyperspace/.hyperkit/` and fail with a `FileNotFoundError` if it's missing. Hyperkit must exist as a sibling of `.hypervisor/` (i.e. `.hyperspace/.hyperkit/`) before either command below will succeed. See [Dependencies](#dependencies) below.
+
 ### Static Site (browser)
 
 ```bash
@@ -75,12 +77,30 @@ mcp>=1.0
 rapidfuzz>=3.0
 ```
 
+## Dependencies
+
+### Hyperkit (required, not a package)
+
+Hypervisor is not self-contained — it depends on **Hyperkit**, the shared design system package at `.hyperspace/.hyperkit/`. Hyperkit supplies:
+
+- `css/tokens.css` + `css/primitives.css` — the universal `:root` custom properties and shared component classes (`hv-chip`, `hv-row`, `hv-button`, etc.), prepended ahead of every file in `assets/css/`
+- Four JS modules (`noise-field.js`, `greeting.js`, `cursor-trail.js`, `toast.js`) — copied into `site/js/kit/` and loaded before every file in `assets/js/`
+- `python/hyper_logging.py` — the structured logging setup imported by `build.py`, `hypervisor-app.py`, and `watcher.py`
+
+This isn't a pip package — it's a sibling directory that must physically exist at `.hyperspace/.hyperkit/` relative to this repo. If you're cloning Hypervisor standalone into a workspace that doesn't already have `.hyperkit/`, copy or clone it in before running `build.py`. Both `build.py` and `hypervisor-app.py` raise `FileNotFoundError` immediately (not a silent fallback) if any required Hyperkit file is missing.
+
+See [`.hyperspace/.hyperkit/README.md`](../.hyperkit/README.md) for what lives there and the override pattern for anything Hypervisor needs to render differently than Hyperagent.
+
 ## How It Works
 
-Hypervisor expects to live one level inside your content directory:
+Hypervisor expects to live one level inside your content directory, alongside Hyperkit:
 
 ```
 your-knowledge-base/        ← content root (any folder of .md files)
+├── .hyperkit/              ← REQUIRED sibling — shared CSS tokens/primitives + JS modules
+│   ├── css/
+│   ├── js/
+│   └── python/
 ├── .hypervisor/            ← this repo
 │   ├── build.py
 │   ├── hypervisor-app.py

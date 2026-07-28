@@ -66,6 +66,26 @@ _PATH_LINE_RE = re.compile(
     re.IGNORECASE,
 )
 
+# Regex: markdown table row containing a backtick-wrapped path in one cell
+# and a "line N" / "lines N-M" / bare "N" or "N, M" reference in another cell.
+# Matches the real variants seen in Design-section location tables:
+#   | `Historic_Session_Log` | `api/historic_logs/models.py` line 16 | `user_id` (CharField) |
+#   | `Course_Log` / `Content_Log` | `api/cms_logs/models.py` lines 63, 90 | `created_by_user_id` |
+#
+# Unlike _PATH_LINE_RE, the path and the line reference are not required to
+# be adjacent — they can sit in the same table row (line) separated by other
+# cell content (`|`). This regex scans the whole row for a path cell, then
+# looks for a line reference anywhere later in the same row. A comma-
+# separated list ("lines 63, 90") produces one claim per number; a dash
+# range ("lines 16-20") produces a single start-end claim. See
+# _extract_table_claims for the full splitting logic.
+_TABLE_ROW_RE = re.compile(r'^\s*\|.*\|\s*$')
+_TABLE_PATH_CELL_RE = re.compile(r'`([\w\-]+(?:/[\w\-.]+)+\.\w+)`')
+_TABLE_LINE_REF_RE = re.compile(
+    r'\blines?\s*~?(\d+)(?:\s*[-,]\s*(\d+))*',
+    re.IGNORECASE,
+)
+
 # Rough identifier extractor for token-overlap verification: function/class
 # names, decorator names, and short quoted strings mentioned near a claim.
 _IDENTIFIER_RE = re.compile(r'@?\b[A-Za-z_][A-Za-z0-9_]{3,}\b')
@@ -85,13 +105,15 @@ _STOPWORDS = {
 
 def _resolve_work_item(slug: str) -> tuple[str | None, str | None]:
     """Resolve a slug or WI-N id to a relative path. Returns (rel_path, error)."""
+    from .config import normalize_work_id
     from .index import get_index_lock, _index
 
-    if slug.upper().startswith("WI-"):
+    norm_id = normalize_work_id(slug)
+    if norm_id:
         with get_index_lock():
             entries = list(_index)
         match = next(
-            (e for e in entries if e.get("work_id") and e["work_id"].upper() == slug.upper()),
+            (e for e in entries if e.get("work_id") and e["work_id"].upper() == norm_id.upper()),
             None,
         )
         if match:
@@ -110,7 +132,7 @@ def _resolve_work_item(slug: str) -> tuple[str | None, str | None]:
                 for line in text.splitlines()[:30]:
                     stripped = line.strip().lstrip("- ")
                     m = re.match(r'ID\s*:\s*(WI-\d+)', stripped, re.IGNORECASE)
-                    if m and m.group(1).upper() == slug.upper():
+                    if m and m.group(1).upper() == norm_id.upper():
                         return f"{subdir}/{md_file.name}", None
         return None, f"No work item found with ID '{slug}'."
 
@@ -151,6 +173,12 @@ def _extract_claims(text: str, source_section: str) -> list[dict]:
     Returns a list of dicts: {path, line_start, line_end, context, section}.
     `context` is the sentence/line the reference was found in, used later for
     token-overlap verification.
+
+    Checks two shapes per line:
+    1. Inline prose: `` `path` lines X-Y `` (path and line ref adjacent)
+    2. Markdown table rows: a `` `path` `` cell plus a "line N" / "lines N-M"
+       reference elsewhere in the same row (location tables in Design/
+       Implementation Notes sections use this shape).
     """
     claims = []
     for line in text.splitlines():
@@ -163,7 +191,70 @@ def _extract_claims(text: str, source_section: str) -> list[dict]:
                 "context": line.strip(),
                 "section": source_section,
             })
+        claims.extend(_extract_table_claims(line, source_section))
     return claims
+
+
+def _extract_table_claims(line: str, source_section: str) -> list[dict]:
+    """Extract claims from a single markdown table row.
+
+    A table row may reference a path once but list multiple line numbers
+    (e.g. "lines 63, 90" covering two sibling models in the same row) — each
+    number produces its own claim so a stale reference to just one of them
+    is still caught. Rows with a path cell but no line reference are treated
+    as existence-only claims (line_start/line_end = None), matching the
+    "unverifiable" / existence-check behavior of _verify_claim.
+
+    May produce claims that duplicate ones already found by the inline-prose
+    regex in _extract_claims (e.g. when a table cell happens to also satisfy
+    the adjacent `` `path` line N `` shape) — this is intentional. The caller
+    (validate_work_item_claims) de-dupes by (path, line_start, line_end), so
+    an overlapping single-number match collapses harmlessly while additional
+    numbers in a comma-separated list (like the "90" in "lines 63, 90") still
+    surface as their own claims.
+    """
+    if not _TABLE_ROW_RE.match(line):
+        return []
+
+    path_match = _TABLE_PATH_CELL_RE.search(line)
+    if not path_match:
+        return []
+    path = path_match.group(1)
+
+    ref_match = _TABLE_LINE_REF_RE.search(line)
+    if not ref_match:
+        return [{
+            "path": path,
+            "line_start": None,
+            "line_end": None,
+            "context": line.strip(),
+            "section": source_section,
+        }]
+
+    # Collect every distinct number mentioned in the line-ref phrase
+    # ("lines 63, 90" -> [63, 90]; "lines 16-20" -> range handled as one claim).
+    numbers = [int(n) for n in re.findall(r'\d+', ref_match.group(0))]
+    if len(numbers) >= 2 and '-' in ref_match.group(0):
+        # Range form: one claim spanning start-end
+        return [{
+            "path": path,
+            "line_start": numbers[0],
+            "line_end": numbers[-1],
+            "context": line.strip(),
+            "section": source_section,
+        }]
+
+    # Comma-separated or single form: one claim per number
+    return [
+        {
+            "path": path,
+            "line_start": n,
+            "line_end": n,
+            "context": line.strip(),
+            "section": source_section,
+        }
+        for n in numbers
+    ]
 
 
 def _extract_unchecked_tasks(md_text: str) -> list[str]:
@@ -382,12 +473,14 @@ def validate_work_item_claims(slug: str, apply_updates: bool = False) -> dict:
         return {"error": f"Could not read {rel_path}: {e}"}
 
     # --- Extract claims from the sections that carry file/line references ---
+    design_text = _extract_section(md_text, "design")
     impl_notes = _extract_section(md_text, "implementation notes")
     tasks_text = _extract_section(md_text, "tasks")
     ac_text = _extract_section(md_text, "acceptance criteria")
 
     all_claims = (
-        _extract_claims(impl_notes, "Implementation Notes")
+        _extract_claims(design_text, "Design")
+        + _extract_claims(impl_notes, "Implementation Notes")
         + _extract_claims(tasks_text, "Tasks")
         + _extract_claims(ac_text, "Acceptance Criteria")
     )

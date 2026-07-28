@@ -11,6 +11,7 @@ from pathlib import Path
 from site_utils.config import HYPERSPACE_ROOT
 
 from .backlinks import get_backlinks_for, get_outlinks_for
+from .config import normalize_work_id
 from .dates import parse_date, days_since, best_activity_date
 from .index import get_index_lock
 
@@ -401,12 +402,13 @@ def context_for_work_item(slug: str) -> dict:
     """
     entries = _get_index_snapshot()
 
-    # Check if slug is actually a work item ID (WI-N format)
+    # Check if slug is actually a work item ID (WI-N format, dash/case optional)
     target_path = None
     target_entry = None
-    if slug.upper().startswith("WI-"):
+    norm_id = normalize_work_id(slug)
+    if norm_id:
         for entry in entries:
-            if entry.get("work_id") and entry["work_id"].upper() == slug.upper():
+            if entry.get("work_id") and entry["work_id"].upper() == norm_id.upper():
                 target_path = entry["path"]
                 target_entry = entry
                 break
@@ -425,7 +427,7 @@ def context_for_work_item(slug: str) -> dict:
                     for line in text.splitlines()[:30]:
                         stripped = line.strip().lstrip("- ")
                         m = re.match(r'ID\s*:\s*(WI-\d+)', stripped, re.IGNORECASE)
-                        if m and m.group(1).upper() == slug.upper():
+                        if m and m.group(1).upper() == norm_id.upper():
                             rel = f"{subdir}/{md_file.name}"
                             target_path = rel
                             # Build a minimal entry for context assembly

@@ -115,7 +115,10 @@ def hypervisor_logo_svg(css_class: str = "brand-icon") -> str:
     return _LOGO_SVG_TEMPLATE.replace("{css_class}", css_class)
 
 # --- Filters ---
-SKIP_DIRS = {"__pycache__", "site", "learn", ".scratch", ".hyperagent", ".hyperagent-lite"}
+SKIP_DIRS = {
+    "__pycache__", "site", "learn", ".scratch",
+    ".hyperagent", ".hyperagent-lite", ".hyperkit",
+}
 SKIP_FILES = {".gitkeep"}
 
 # --- Markdown engine ---

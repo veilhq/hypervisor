@@ -11,7 +11,7 @@ from pathlib import Path
 from site_utils.config import HYPERSPACE_ROOT
 from site_utils.file_utils import _extract_status_from_text
 
-from .config import load_projects, next_work_id
+from .config import load_projects, next_work_id, normalize_work_id
 from .helpers import (
     generate_slug, resolve_slug_collision,
     validate_tags, validate_project, validate_status_transition,
@@ -295,11 +295,12 @@ def update_document(
 
 def move_work_item(slug: str) -> dict:
     """Move a work item from to-do to done (mark as complete)."""
-    # Support WI-N ID format — resolve to slug
-    if slug.upper().startswith("WI-"):
+    # Support WI-N ID format (case/dash-insensitive) — resolve to slug
+    norm_id = normalize_work_id(slug)
+    if norm_id:
         from .index import get_index_lock, _index
         with get_index_lock():
-            match = next((e for e in _index if e.get("work_id") and e["work_id"].upper() == slug.upper()), None)
+            match = next((e for e in _index if e.get("work_id") and e["work_id"].upper() == norm_id.upper()), None)
         if not match:
             return {"error": f"No work item found with ID '{slug}'."}
         # Extract slug from path (e.g., "work/to-do/my-item.md" → "my-item")

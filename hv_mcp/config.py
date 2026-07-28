@@ -4,6 +4,7 @@ Shared configuration: paths, constants, registries, transition maps.
 
 import json
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -85,6 +86,23 @@ def load_projects() -> list[str]:
 # ---------------------------------------------------------------------------
 # Work Item ID Counter
 # ---------------------------------------------------------------------------
+
+_WORK_ID_RE = re.compile(r'^WI-?(\d+)$', re.IGNORECASE)
+
+
+def normalize_work_id(slug: str) -> str | None:
+    """Normalize a possible work item ID to canonical 'WI-N' form.
+
+    Accepts case-insensitive input with or without the dash: 'WI-141',
+    'wi141', 'Wi-141', 'wi-141' all normalize to 'WI-141'. Returns None
+    if the input doesn't match the WI-N pattern at all (i.e. it's a
+    plain filename slug, not an ID).
+    """
+    m = _WORK_ID_RE.match(slug.strip())
+    if not m:
+        return None
+    return f"WI-{m.group(1)}"
+
 
 def next_work_id() -> str:
     """Allocate and return the next work item ID (e.g., 'WI-27').
