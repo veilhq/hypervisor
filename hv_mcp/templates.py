@@ -43,7 +43,7 @@ def apply_work_item_template(
     title: str, description: str, tags: list[str], project: str,
     doc_type: str, overview: str, design: str | None = None,
     acceptance_criteria: dict | None = None, tasks: list[str] | None = None,
-    work_id: str | None = None,
+    work_id: str | None = None, open_questions: list[str] | None = None,
 ) -> str:
     """Generate a work-item markdown document."""
     now = datetime.now().strftime("%Y-%m-%dT%H:%M")
@@ -106,6 +106,13 @@ def apply_work_item_template(
     lines.append("> [!NOTE]")
     lines.append("> Populate this section during implementation. Capture decisions that differ from the original design.")
     lines.append("")
+
+    if open_questions:
+        lines.append("**Open Questions:**")
+        lines.append("")
+        for question in open_questions:
+            lines.append(f"- {question}")
+        lines.append("")
 
     return "\n".join(lines)
 

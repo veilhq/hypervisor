@@ -14,6 +14,20 @@ OUTPUT_DIR = _HYPERVISOR_DIR / "site"
 ASSETS_DIR = _HYPERVISOR_DIR / "assets"
 JS_DIR = ASSETS_DIR / "js"
 
+# Hyperkit — shared design system package (WI-142 Phase 1). Canonical source
+# for tokens.css / primitives.css and the ecosystem JS modules (HvNoiseField,
+# HvGreeting, HvCursorTrail, HvToast). Lives one level up from .hypervisor/,
+# alongside .hyperagent/ — a sibling app dir, not owned by either consumer.
+HYPERKIT_DIR = HYPERSPACE_ROOT / ".hyperkit"
+HYPERKIT_CSS_DIR = HYPERKIT_DIR / "css"
+HYPERKIT_JS_DIR = HYPERKIT_DIR / "js"
+
+# Hyperkit JS modules, in load order. These must run before any app-local
+# module that references window.HvNoiseField / HvGreeting / HvCursorTrail /
+# HvToast (i.e. before core/00-core.js and features/*), so they are
+# prepended ahead of everything list_js_modules() would otherwise return.
+HYPERKIT_JS_MODULES = ["noise-field.js", "greeting.js", "cursor-trail.js", "toast.js"]
+
 
 def list_js_modules():
     """Return ordered list of JS module paths (relative to JS_DIR) in concat order.
@@ -25,6 +39,10 @@ def list_js_modules():
     Each entry is a PurePosixPath relative to JS_DIR, e.g. 'core/00-core.js'.
     This is used by build.py (to copy + concat) and by page_generation.py
     (to emit per-module <script> tags for parse-error isolation — WI-118).
+
+    Note: Hyperkit JS modules are NOT included here — they live outside
+    JS_DIR and are emitted separately via list_hyperkit_js_modules() /
+    copy_assets(), always ordered before this list's output.
     """
     from pathlib import PurePosixPath
     if not JS_DIR.exists():
@@ -53,6 +71,17 @@ def list_js_modules():
     _add_sorted("screensaver", only_zz=True)
     _add_sorted("features", only_zz=True)
     return modules
+
+
+def list_hyperkit_js_modules():
+    """Return the Hyperkit JS module filenames that exist on disk, in load order.
+
+    Missing files are skipped rather than raising — lets partial Hyperkit
+    checkouts still build (a warning is logged by the caller in build.py).
+    """
+    if not HYPERKIT_JS_DIR.exists():
+        return []
+    return [name for name in HYPERKIT_JS_MODULES if (HYPERKIT_JS_DIR / name).exists()]
 
 
 # --- Brand SVG (Hypervisor logo) ---

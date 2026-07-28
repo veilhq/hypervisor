@@ -17,12 +17,12 @@ import time
 from datetime import datetime
 from pathlib import PurePosixPath
 
-from site_utils.config import HYPERSPACE_ROOT, OUTPUT_DIR, ASSETS_DIR, SKIP_DIRS
+from site_utils.config import HYPERSPACE_ROOT, OUTPUT_DIR, ASSETS_DIR, SKIP_DIRS, HYPERKIT_CSS_DIR, HYPERKIT_JS_DIR, HYPERKIT_JS_MODULES
 from site_utils.file_utils import collect_files, html_dir_for, nice_name, get_title, extract_dates, sort_date, count_docs_under
 from site_utils.build_cache import BuildCache
 
 # Structured logging (shared ecosystem logger)
-sys.path.insert(0, str(OUTPUT_DIR.parent.parent.resolve()))
+sys.path.insert(0, str(OUTPUT_DIR.parent.parent.resolve() / ".hyperkit" / "python"))
 from hyper_logging import setup_logger  # noqa: E402
 
 logger = setup_logger("hypervisor")
@@ -52,11 +52,31 @@ def prepare_output():
 
 
 def copy_assets():
-    """Concatenate CSS and JS modules, copy static assets to the output directory."""
+    """Concatenate CSS and JS modules, copy static assets to the output directory.
+
+    Hyperkit (WI-142 Phase 1) supplies the shared tokens.css + primitives.css
+    and four shared JS modules (noise-field, greeting, cursor-trail, toast).
+    Hyperkit CSS loads first so app-local CSS can override shared primitives
+    (e.g. Hypervisor's bordered .hv-tab) via normal cascade order. Missing
+    Hyperkit files fail the build loudly rather than silently falling back to
+    a stale local copy — see the ValueError below.
+    """
+    # --- Hyperkit CSS (tokens + primitives) — must exist, no silent fallback ---
+    hyperkit_css_parts = []
+    for name in ("tokens.css", "primitives.css"):
+        f = HYPERKIT_CSS_DIR / name
+        if not f.exists():
+            raise FileNotFoundError(
+                f"Hyperkit CSS file missing: {f}\n"
+                "Hypervisor's build.py requires .hyperspace/.hyperkit/css/tokens.css "
+                "and primitives.css. Run WI-142 setup or restore the .hyperkit/ directory."
+            )
+        hyperkit_css_parts.append(f.read_text(encoding="utf-8"))
+
     # Concatenate CSS modules into site/style.css
-    # Order: numbered files first (sorted), then zz-* files last
+    # Order: Hyperkit (tokens, primitives) → numbered app-local files (sorted) → zz-* last
     if CSS_DIR.exists():
-        css_parts = []
+        css_parts = list(hyperkit_css_parts)
         # Main CSS files (numbered, sorted)
         for css_file in sorted(CSS_DIR.glob("*.css")):
             if css_file.name.startswith("zz-"):
@@ -76,15 +96,38 @@ def copy_assets():
         if src.exists():
             shutil.copy2(src, OUTPUT_DIR / "style.css")
 
+    # --- Hyperkit JS modules — copy to site/js/kit/ for per-module <script> delivery ---
+    if not HYPERKIT_JS_DIR.exists():
+        raise FileNotFoundError(
+            f"Hyperkit JS directory missing: {HYPERKIT_JS_DIR}\n"
+            "Hypervisor's build.py requires .hyperspace/.hyperkit/js/. "
+            "Run WI-142 setup or restore the .hyperkit/ directory."
+        )
+    kit_js_dst_dir = OUTPUT_DIR / "js" / "kit"
+    kit_js_dst_dir.mkdir(parents=True, exist_ok=True)
+    hyperkit_js_parts = []
+    for name in HYPERKIT_JS_MODULES:
+        src_file = HYPERKIT_JS_DIR / name
+        if not src_file.exists():
+            raise FileNotFoundError(
+                f"Hyperkit JS module missing: {src_file}\n"
+                "Hypervisor's build.py expects all of "
+                f"{HYPERKIT_JS_MODULES} in .hyperspace/.hyperkit/js/."
+            )
+        src_text = src_file.read_text(encoding="utf-8")
+        hyperkit_js_parts.append(src_text)
+        (kit_js_dst_dir / name).write_text(src_text, encoding="utf-8")
+
     # Concatenate JS modules into site/app.js (backward compat for utility pages)
     # AND copy each module to site/js/{subdir}/{name}.js for per-module <script>
     # tag delivery (parse-error isolation — WI-118).
-    # Order: core/ → features/ (non-zz) → webgl/ → screensaver/ (non-zz) →
-    # screensaver/zz-* → features/zz-*
+    # Order: Hyperkit (noise-field, greeting, cursor-trail, toast) → core/ →
+    # features/ (non-zz) → webgl/ → screensaver/ (non-zz) → screensaver/zz-* →
+    # features/zz-*
     from site_utils.config import list_js_modules
+    js_parts = list(hyperkit_js_parts)
     if JS_DIR.exists():
         module_paths = list_js_modules()
-        js_parts = []
         for rel in module_paths:
             src_file = JS_DIR / str(rel)
             src_text = src_file.read_text(encoding="utf-8")
@@ -93,8 +136,8 @@ def copy_assets():
             dst = OUTPUT_DIR / "js" / str(rel)
             dst.parent.mkdir(parents=True, exist_ok=True)
             dst.write_text(src_text, encoding="utf-8")
-        if js_parts:
-            (OUTPUT_DIR / "app.js").write_text("\n".join(js_parts), encoding="utf-8")
+    if js_parts:
+        (OUTPUT_DIR / "app.js").write_text("\n".join(js_parts), encoding="utf-8")
 
 
 def build_doc_pages(files, backlink_index, build_id, cache=None):

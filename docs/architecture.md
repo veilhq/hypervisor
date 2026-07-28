@@ -126,7 +126,12 @@ How the Hypervisor build pipeline works — from markdown source to browsable st
 
 # Shared ecosystem files (in .hyperspace/ root, siblings of .hypervisor/)
 .hyperspace/
-├── hyper_logging.py            # Shared structured logging setup (imported by all apps)
+├── hyper_logging.py            # Back-compat shim (WI-142) — real module moved to .hyperkit/python/
+├── .hyperkit/                  # Shared design system package (WI-142)
+│   ├── css/                    #   tokens.css, primitives.css — shared with Hyperagent
+│   ├── js/                     #   noise-field.js, greeting.js, cursor-trail.js, toast.js
+│   └── python/
+│       └── hyper_logging.py    #   Canonical source — shared structured logging setup
 └── .logs/                      # Centralized log output (gitignored)
     ├── hypervisor.log
     ├── hyperagent.log
@@ -514,12 +519,12 @@ The `label_code_blocks` transform recognizes: python, javascript, jsx, typescrip
 
 ## Ecosystem Logging
 
-All hyper ecosystem apps share a unified logging infrastructure via `.hyperspace/hyper_logging.py`.
+All hyper ecosystem apps share a unified logging infrastructure via `.hyperspace/.hyperkit/python/hyper_logging.py` (relocated there by WI-142; a back-compat shim remains at the old `.hyperspace/hyper_logging.py` location).
 
 ### Setup
 
 ```python
-sys.path.insert(0, str(HYPERSPACE_ROOT))
+sys.path.insert(0, str(HYPERSPACE_ROOT / ".hyperkit" / "python"))
 from hyper_logging import setup_logger
 
 logger = setup_logger("hypervisor")  # or "hyperagent", "bridge"

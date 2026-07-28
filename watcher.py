@@ -22,7 +22,7 @@ from watchdog.events import FileSystemEventHandler
 from site_utils.config import HYPERSPACE_ROOT, OUTPUT_DIR
 
 # Structured logging (shared ecosystem logger)
-sys.path.insert(0, str(Path(__file__).parent.parent.resolve()))
+sys.path.insert(0, str(Path(__file__).parent.parent.resolve() / ".hyperkit" / "python"))
 from hyper_logging import setup_logger  # noqa: E402
 
 logger = setup_logger("hypervisor")

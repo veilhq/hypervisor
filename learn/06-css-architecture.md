@@ -6,12 +6,19 @@ How Hypervisor's styling is organized — modular files, CSS custom properties, 
 
 ## The Modular Approach
 
-Instead of one massive CSS file, Hypervisor splits styles into numbered modules:
+Instead of one massive CSS file, Hypervisor splits styles into numbered modules — plus a shared package that lives outside Hypervisor entirely.
+
+**Hyperkit (WI-142):** `.hyperspace/.hyperkit/css/tokens.css` and `primitives.css` are the canonical source for the universal `:root` custom properties and the shared component classes (`hv-chip`, `hv-row`, `hv-button`, etc.). They're shared byte-for-byte with Hyperagent and loaded **before** every file in `assets/css/`. `build.py` fails loudly if either file is missing — see `.hyperkit/README.md` for the full pattern.
 
 ```
+.hyperspace/.hyperkit/css/     ← Loads first, before anything below
+├── tokens.css                  ← Universal :root custom properties
+└── primitives.css              ← Shared component classes (hv-chip, hv-row, hv-button, etc.)
+
 assets/css/
-├── 00-primitives.css        ← Ecosystem primitive classes (hv-chip, hv-row, hv-button, etc.)
-├── 00-variables.css         ← Custom properties, tokens, resets, base classes
+├── 00-primitives.css        ← Local override only — the one primitive Hypervisor's local
+│                                 CSS shapes differently than Hyperagent (the bordered .hv-tab)
+├── 00-variables.css         ← App-local globals only — cursor SVGs, scrollbar, legacy base classes
 ├── 01-layout.css            ← Page structure, topbar, footer
 ├── 02-search.css            ← Search input and results
 ├── 03-menus.css             ← Dropdown menus, accent picker
@@ -24,12 +31,20 @@ assets/css/
 └── zz-accessibility.css     ← A11y overrides (always loads last)
 ```
 
-Both `00-*` files load before all numbered specifics. Load order between them (alphabetical: `00-primitives.css` before `00-variables.css`) doesn't matter for token resolution — CSS custom properties are resolved after all rules are parsed.
+Hyperkit's two files load before both local `00-*` files. Load order between the two Hyperkit files, and between the two local `00-*` files, doesn't matter for token resolution — CSS custom properties are resolved after all rules are parsed. Load order *does* matter between Hyperkit and local files for primitives: `00-primitives.css` only contains an override (e.g. `.hv-tab`'s border), and overrides must load after the base rule they're overriding.
 
-During build, numbered files are **concatenated in sorted order**, then `zz-*` files are appended last:
+During build, `copy_assets()` reads Hyperkit's two files first, then concatenates the local numbered files in sorted order, then appends `zz-*` files last:
 
 ```python
-css_parts = []
+# Hyperkit CSS — must exist, no silent fallback
+hyperkit_css_parts = []
+for name in ("tokens.css", "primitives.css"):
+    f = HYPERKIT_CSS_DIR / name
+    if not f.exists():
+        raise FileNotFoundError(f"Hyperkit CSS file missing: {f}")
+    hyperkit_css_parts.append(f.read_text(encoding="utf-8"))
+
+css_parts = list(hyperkit_css_parts)
 for css_file in sorted(CSS_DIR.glob("*.css")):
     if css_file.name.startswith("zz-"):
         continue
@@ -51,7 +66,7 @@ CSS is order-dependent — later rules override earlier ones. The numeric prefix
 
 ## CSS Custom Properties (Variables)
 
-The entire color system and spacing is defined as CSS custom properties in `00-variables.css`:
+The entire color system and spacing is defined as CSS custom properties in `.hyperspace/.hyperkit/css/tokens.css` (relocated there by WI-142 — previously lived in `00-variables.css`, now shared verbatim with Hyperagent):
 
 ```css
 :root {
@@ -101,9 +116,13 @@ This instantly recolors every element that uses `var(--accent)` — no page relo
 
 ## Module Responsibilities
 
-### `00-variables.css` — Foundation
+### `.hyperkit/css/tokens.css` — Foundation (shared, not app-local)
 
-Defines all custom properties, resets (`* { box-sizing: border-box }`), and reusable base classes:
+Defines all custom properties and the box-sizing reset (`* { box-sizing: border-box }`). Lives in `.hyperspace/.hyperkit/`, not in Hypervisor's `assets/css/` — shared byte-for-byte with Hyperagent.
+
+### `00-variables.css` — App-Local Globals
+
+Post-WI-142, this file holds only what's specific to Hypervisor: custom cursor SVGs, scrollbar styling, shared keyframes, focus ring, responsive breakpoints, and the legacy reusable base classes that Hyperagent never adopted:
 
 - `.hv-badge` — small inline labels
 - `.hv-icon-btn` — topbar icon buttons

@@ -5,11 +5,11 @@ HTML page templates, breadcrumbs, and top bar builders.
 import json
 from pathlib import Path, PurePosixPath
 
-from .config import OUTPUT_DIR, CATEGORY_ICONS, CATEGORY_LABELS, list_js_modules
+from .config import OUTPUT_DIR, CATEGORY_ICONS, CATEGORY_LABELS, list_js_modules, list_hyperkit_js_modules
 
 
 # ---------------------------------------------------------------------------
-# Per-module <script> tags — WI-118
+# Per-module <script> tags — WI-118 (app-local), extended WI-142 (Hyperkit)
 # ---------------------------------------------------------------------------
 # We emit one <script src="/js/..."> tag per module (instead of a single
 # <script src="/app.js">) so that a parse error in one module does not
@@ -17,12 +17,19 @@ from .config import OUTPUT_DIR, CATEGORY_ICONS, CATEGORY_LABELS, list_js_modules
 # separate execution context; a SyntaxError or uncaught exception in one
 # only kills that tag.
 #
-# Order matches the historical concat exactly (see list_js_modules).
-# `defer` ensures scripts execute in document order after HTML parsing
-# completes, preserving the previous "bottom-of-body" semantics.
+# Hyperkit modules (noise-field, greeting, cursor-trail, toast) load first —
+# app-local code (core/00-core.js onward) references window.HvNoiseField /
+# HvGreeting / HvCursorTrail / HvToast and must find them already defined.
+# They're copied to site/js/kit/ by copy_assets() in build.py.
+#
+# Order for app-local modules matches the historical concat exactly (see
+# list_js_modules). `defer` ensures scripts execute in document order after
+# HTML parsing completes, preserving the previous "bottom-of-body" semantics.
 def _render_module_script_tags():
-    modules = list_js_modules()
     lines = []
+    for name in list_hyperkit_js_modules():
+        lines.append(f'  <script src="/js/kit/{name}" defer></script>')
+    modules = list_js_modules()
     for rel in modules:
         lines.append(f'  <script src="/js/{rel}" defer></script>')
     return "\n".join(lines)

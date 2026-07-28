@@ -38,6 +38,7 @@ def create_document(
     design: str | None = None,
     acceptance_criteria: dict | None = None,
     tasks: list[str] | None = None,
+    open_questions: list[str] | None = None,
     concept: str | None = None,
     key_questions: list[str] | None = None,
     content: str | None = None,
@@ -90,7 +91,7 @@ def create_document(
             title=title, description=description, tags=valid_tags,
             project=project, doc_type=doc_type, overview=overview,
             design=design, acceptance_criteria=acceptance_criteria, tasks=tasks,
-            work_id=work_id,
+            work_id=work_id, open_questions=open_questions,
         )
         target_dir = HYPERSPACE_ROOT / "work" / "to-do"
 

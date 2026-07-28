@@ -6,19 +6,24 @@ How Hypervisor's interactivity works — per-file IIFEs, per-module `<script>` l
 
 ## The Module System
 
-JavaScript is organized into four subdirectories:
+JavaScript is organized into four subdirectories inside `assets/js/`, plus a fifth source that lives outside Hypervisor entirely: `.hyperspace/.hyperkit/js/` (WI-142). Hyperkit supplies four ecosystem modules — `HvNoiseField`, `HvGreeting`, `HvCursorTrail`, `HvToast` — shared byte-for-byte with Hyperagent. The build copies them into `site/js/kit/` and loads them **before** everything below; app code assumes `window.HvNoiseField` etc. already exist by the time `core/00-core.js` runs.
 
 ```
+.hyperspace/.hyperkit/js/    ← Loads first, before core/ — see below
+├── noise-field.js            ← window.HvNoiseField
+├── greeting.js                ← window.HvGreeting
+├── cursor-trail.js           ← window.HvCursorTrail
+└── toast.js                  ← window.HvToast + window.__hypervisorToast
+
 assets/js/
-├── core/                    ← Foundation (loads first, order matters)
-│   ├── 00-core.js           ← Bridge, preferences, toasts, DOM refs
+├── core/                    ← Foundation (loads first among local modules, order matters)
+│   ├── 00-core.js           ← Bridge, preferences, DOM refs (HvToast itself now lives in Hyperkit)
 │   ├── 01-router.js         ← SPA shell + route transitions
 │   ├── navigation.js        ← Search, menus, code copy
-│   ├── theme.js             ← Accent color + palette modes
-│   └── toc.js               ← Table of contents sidebar
+│   ├── theme.js              ← Accent color + palette modes
+│   └── toc.js                ← Table of contents sidebar
 │
 ├── features/                ← Self-contained features (order-independent within dir)
-│   ├── 00-shared-modules.js ← Extractable ecosystem modules (HvNoiseField, HvGreeting, HvCursorTrail)
 │   ├── actions-drawer.js
 │   ├── command-palette.js
 │   ├── content.js           ← Content interactions (copy, zoom)
@@ -54,7 +59,7 @@ assets/js/
     └── zz-engine-tail.js    ← API, activation, keydown handlers
 ```
 
-**Load order** (from `site_utils/config.py`): `core/` → `features/` (non-`zz-*`) → `webgl/` → `screensaver/` (non-`zz-*`) → `screensaver/zz-*` → `features/zz-*`. Within each group, files sort alphabetically with `zz-*` last.
+**Load order** (from `site_utils/config.py`): Hyperkit's 4 modules → `core/` → `features/` (non-`zz-*`) → `webgl/` → `screensaver/` (non-`zz-*`) → `screensaver/zz-*` → `features/zz-*`. Within each local group, files sort alphabetically with `zz-*` last. Hyperkit modules load in a fixed order (noise-field, greeting, cursor-trail, toast) ahead of everything else — no alphabetical sort applies to them.
 
 **Naming conventions:**
 - `00-` prefix — must load first in its directory
@@ -127,7 +132,7 @@ Because each file has its own closure, modules can't see each other's locals. Wh
 })();
 ```
 
-**Convention**: bare `window.savePreference`, `window.isDesktopApp`, `window.paletteMode` etc. for utilities; `window.HvNoiseField`, `window.HvGreeting`, `window.HvCursorTrail`, `window.HvToast` for larger public-API objects that ship as ecosystem modules.
+**Convention**: bare `window.savePreference`, `window.isDesktopApp`, `window.paletteMode` etc. for utilities; `window.HvNoiseField`, `window.HvGreeting`, `window.HvCursorTrail`, `window.HvToast` for larger public-API objects that ship as ecosystem modules. Post-WI-142, these four live in `.hyperspace/.hyperkit/js/` (not app-local `assets/js/`) and load before every local module.
 
 **Reads via bare identifier** — safe. `savePreference(...)` in a strict-mode IIFE resolves through the global scope to `window.savePreference`.
 
@@ -209,9 +214,9 @@ Mode files each self-wrap and reference the namespace:
 
 **Why this pattern for screensaver but not everywhere?** The screensaver has ~20 shared symbols across 12 files that all need to touch the same overlay + canvas + mode registry. A namespace object keeps that visible in one place. Most features share only a handful of symbols — `window.savePreference`, `window.HvToast` — and don't need a namespace.
 
-## Module: core/00-core.js
+## Module: core/00-core.js (+ Hyperkit's toast.js)
 
-Sets up the foundation:
+`core/00-core.js` sets up the foundation:
 
 ### PyWebView Bridge
 
@@ -236,7 +241,7 @@ Preferences persist to `localStorage` (browser-mode cache) and, in desktop mode,
 
 ### Toast Notifications
 
-`window.HvToast.show({ variant, title, message, icon, duration, action, dedupeKey })`. Variants map to accent/cool/warm/comp rails (see `00-primitives.css`). Legacy string form (`HvToast.show('Copied')`) still works. Byte-mirrored into Hyperagent for parity.
+`window.HvToast.show({ variant, title, message, icon, duration, action, dedupeKey })`. Variants map to accent/cool/warm/comp rails (see `00-primitives.css`). Legacy string form (`HvToast.show('Copied')`) still works. Defined in `.hyperspace/.hyperkit/js/toast.js` (WI-142) — shared verbatim with Hyperagent, loaded before this file.
 
 ## Module: core/navigation.js — Client-Side Search
 

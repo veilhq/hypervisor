@@ -441,6 +441,59 @@ class ADOClient:
 
         return runs
 
+    def get_branch_diffs(self, project, repos, branches, base_branch="dev"):
+        """Get file-level diffs for each active branch vs a base branch.
+
+        Calls the Diffs API per branch to determine which files were changed.
+        Used for merge conflict risk detection.
+
+        Args:
+            project: Project name.
+            repos: List of repo dicts (from get_repos) for ID lookup.
+            branches: List of branch dicts (from get_branches_overview).
+            base_branch: Branch to compare against (default: "dev").
+
+        Returns:
+            Dict of {branch_name: {"files": [path, ...], "repo": repo_name, "repo_id": str}}
+        """
+        # Build repo name → id map
+        repo_map = {r.get("name", ""): r.get("id", "") for r in repos}
+
+        branch_diffs = {}
+        for branch in branches:
+            branch_name = branch.get("name", "")
+            repo_name = branch.get("repo", "")
+            repo_id = repo_map.get(repo_name, "")
+            if not branch_name or not repo_id:
+                continue
+
+            try:
+                path = f"{project}/_apis/git/repositories/{repo_id}/diffs/commits"
+                data = self.get(path, params={
+                    "baseVersion": base_branch,
+                    "baseVersionType": "branch",
+                    "targetVersion": branch_name,
+                    "targetVersionType": "branch",
+                })
+                files = []
+                for change in data.get("changes", []):
+                    item = change.get("item", {})
+                    file_path = item.get("path", "")
+                    # Skip folder entries
+                    if file_path and not item.get("isFolder", False):
+                        files.append(file_path)
+
+                branch_diffs[branch_name] = {
+                    "files": files,
+                    "repo": repo_name,
+                    "repo_id": repo_id,
+                }
+            except Exception:
+                # Non-fatal — skip branches where diff fails
+                continue
+
+        return branch_diffs
+
     def get_burndown_history(self, org, project, iteration_path, start_date, finish_date):
         """Get daily burndown data from Analytics OData.
 

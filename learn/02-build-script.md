@@ -67,8 +67,9 @@ copy_assets()     # Concatenate CSS/JS, copy to site/
 ```
 
 `copy_assets()` is where the CSS and JS modules get concatenated:
-- CSS: numbered files in `assets/css/` sorted, then `zz-*` files appended last → `site/style.css`
-- JS: `assets/js/core/` → `assets/js/features/` → `assets/js/screensaver/` (with `zz-*` last in each group) → `site/app.js`
+- CSS: Hyperkit's `tokens.css` + `primitives.css` (from `.hyperspace/.hyperkit/css/`, WI-142) prepended first, then numbered files in `assets/css/` sorted, then `zz-*` files appended last → `site/style.css`
+- JS: Hyperkit's 4 modules (`noise-field.js`, `greeting.js`, `cursor-trail.js`, `toast.js`) copied to `site/js/kit/` and prepended first, then `assets/js/core/` → `assets/js/features/` → `assets/js/screensaver/` (with `zz-*` last in each group) → `site/app.js`
+- Both Hyperkit reads raise `FileNotFoundError` if the source files are missing — no silent fallback to a stale local copy
 
 ### Step 5: Build pages
 

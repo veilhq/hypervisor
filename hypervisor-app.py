@@ -28,7 +28,7 @@ import webview
 # ---------------------------------------------------------------------------
 # Structured logging (shared ecosystem logger)
 # ---------------------------------------------------------------------------
-sys.path.insert(0, str(Path(__file__).parent.parent.resolve()))
+sys.path.insert(0, str(Path(__file__).parent.parent.resolve() / ".hyperkit" / "python"))
 from hyper_logging import setup_logger  # noqa: E402
 
 logger = setup_logger("hypervisor")
@@ -959,7 +959,7 @@ class HypervisorAPI:
             tools_dir = Path(__file__).parent / "tools"
             sys.path.insert(0, str(tools_dir))
             from ado_collector import load_config, ADOClient, extract_top_level_items, ADOConfigError
-            from ado_dashboard import build_dashboard_payload
+            from ado_dashboard import build_dashboard_payload, detect_conflicts
             sys.path.pop(0)
         except ImportError as e:
             return {"ok": False, "error": f"Failed to import ado modules: {e}"}
@@ -1027,12 +1027,23 @@ class HypervisorAPI:
             branches = []
             pipeline_runs = []
             active_pipelines = []
+            conflicts = []
             try:
                 repos = client.get_repos(config["project"])
                 commits = client.get_recent_commits(config["project"], repos=repos, top=30)
                 branches = client.get_branches_overview(config["project"], repos=repos)
             except Exception as e:
                 logger.warning("Failed to fetch source control data: %s", e)
+
+            # Detect potential merge conflicts between active branches
+            if branches:
+                try:
+                    branch_diffs = client.get_branch_diffs(
+                        config["project"], repos, branches
+                    )
+                    conflicts = detect_conflicts(branch_diffs)
+                except Exception as e:
+                    logger.warning("Failed to detect branch conflicts: %s", e)
 
             # Fetch pipeline data
             try:
@@ -1046,6 +1057,7 @@ class HypervisorAPI:
                 iteration, work_items, pull_requests, work_requests, config,
                 burndown_history, commits=commits, branches=branches,
                 pipeline_runs=pipeline_runs, active_pipelines=active_pipelines,
+                conflicts=conflicts,
             )
 
         except Exception as e:

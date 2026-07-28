@@ -25,6 +25,7 @@ from hv_mcp.index_file import regenerate_index_file
 from hv_mcp.search import search_hyperspace, recent_activity, get_work_items
 from hv_mcp.tags import get_tags, add_tag
 from hv_mcp.validation import validate_single, validate_all
+from hv_mcp.claims import validate_work_item_claims
 from hv_mcp.crud import create_document, update_document, move_work_item
 from hv_mcp.analytics import stale_documents, health_report, tag_analytics
 from hv_mcp.intelligence import session_brief, suggest_next_action, context_for_work_item
@@ -159,6 +160,37 @@ def validate_document_tool(path: str = "") -> dict:
     return validate_single(path)
 
 
+@server.tool(name="validate_work_item_claims")
+def validate_work_item_claims_tool(slug: str, apply_updates: bool = False) -> dict:
+    """Sweep a work item's claims against the actual codebase and surface gaps.
+
+    Checks file/line references in Implementation Notes, Tasks, and Acceptance
+    Criteria against the real repos (resolved from paths like
+    'cyber-portal/api/apps/views.py' relative to the workspace root). Detects
+    missing files, stale line references, and lines that likely drifted from
+    edits. Also flags unchecked tasks whose described behavior already appears
+    to exist in the codebase, as an open question for human review.
+
+    This is heuristic pattern-matching against source, not proof — it never
+    auto-completes a task or removes an acceptance criterion. Findings are
+    always advisory. Defaults to dry-run (apply_updates=False); pass True to
+    write findings into the document's Implementation Notes section.
+
+    Args:
+        slug: The filename (without .md) of the work item in work/to-do/ or
+              work/done/, OR a work item ID (e.g., 'WI-23').
+        apply_updates: If True, write findings into Implementation Notes and
+                       bump Updated. Defaults to False (review before writing).
+
+    Returns:
+        When clean: {"clean": True, "message": ..., "claims_checked": N}.
+        When gaps found: findings grouped by category (file_missing, gaps,
+        line_moved, possibly_done_tasks), a summary count, and either a
+        diff_preview (dry-run) or confirmation of the applied write.
+    """
+    return validate_work_item_claims(slug=slug, apply_updates=apply_updates)
+
+
 # ---------------------------------------------------------------------------
 # Tool Registration — CRUD
 # ---------------------------------------------------------------------------
@@ -176,6 +208,7 @@ def create_document_tool(
     design: str | None = None,
     acceptance_criteria: dict | None = None,
     tasks: list[str] | None = None,
+    open_questions: list[str] | None = None,
     concept: str | None = None,
     key_questions: list[str] | None = None,
     content: str | None = None,
@@ -208,6 +241,9 @@ def create_document_tool(
         design: Technical design content (optional, work-items).
         acceptance_criteria: Dict of {section_name: [criteria_list]} (optional, work-items).
         tasks: List of task descriptions (optional, work-items).
+        open_questions: List of unresolved implementation questions — scoping ambiguities,
+            decisions that need to be made before coding starts (optional, work-items).
+            Rendered under Implementation Notes so they're visible before work begins.
         concept: Freeform concept text (required for ideas).
         key_questions: List of open questions to explore (optional, ideas).
         solution_plan: High-level approach or implementation sketch (optional, ideas).
@@ -233,7 +269,7 @@ def create_document_tool(
         type=type, title=title, tags=tags, description=description,
         project=project, doc_type=doc_type, directory=directory,
         overview=overview, design=design, acceptance_criteria=acceptance_criteria,
-        tasks=tasks, concept=concept, key_questions=key_questions,
+        tasks=tasks, open_questions=open_questions, concept=concept, key_questions=key_questions,
         content=content, related=related, solution_plan=solution_plan,
         number=number, context_text=context_text, decision=decision,
         rationale=rationale, consequences=consequences,

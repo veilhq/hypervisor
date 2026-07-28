@@ -6,12 +6,57 @@ Separated from hypervisor-app.py so the business logic is testable independently
 
 from collections import defaultdict
 from datetime import datetime
+from itertools import combinations
+
+
+def detect_conflicts(branch_diffs):
+    """Cross-reference branch diffs to find file overlap (potential merge conflicts).
+
+    Args:
+        branch_diffs: Dict of {branch_name: {"files": [...], "repo": str, "repo_id": str}}
+
+    Returns:
+        List of conflict entries:
+        [{"branch_a": str, "branch_b": str, "repo": str,
+          "overlapping_files": [str], "file_count": int}]
+    """
+    # Invert: (repo, file_path) → set of branches that touch it
+    file_map = defaultdict(set)
+    branch_repo = {}
+    for branch, data in branch_diffs.items():
+        repo = data.get("repo", "")
+        branch_repo[branch] = repo
+        for f in data.get("files", []):
+            file_map[(repo, f)].add(branch)
+
+    # Find branch pairs that share files
+    pair_files = defaultdict(list)
+    for (repo, file_path), branches in file_map.items():
+        if len(branches) >= 2:
+            for pair in combinations(sorted(branches), 2):
+                pair_files[(repo, pair)].append(file_path)
+
+    # Build output
+    conflicts = []
+    for (repo, (branch_a, branch_b)), files in sorted(
+        pair_files.items(), key=lambda x: -len(x[1])
+    ):
+        conflicts.append({
+            "branch_a": branch_a,
+            "branch_b": branch_b,
+            "repo": repo,
+            "overlapping_files": sorted(files),
+            "file_count": len(files),
+        })
+
+    return conflicts
 
 
 def build_dashboard_payload(iteration, work_items, pull_requests, work_requests=None,
                             config=None, burndown_history=None,
                             commits=None, branches=None,
-                            pipeline_runs=None, active_pipelines=None):
+                            pipeline_runs=None, active_pipelines=None,
+                            conflicts=None):
     """Build the full dashboard response payload from raw ADO data.
 
     Args:
@@ -164,4 +209,5 @@ def build_dashboard_payload(iteration, work_items, pull_requests, work_requests=
         "pipeline_runs": pipeline_runs or [],
         "active_pipelines": active_pipelines or [],
         "repo_count": len(repo_names),
+        "conflicts": conflicts or [],
     }
