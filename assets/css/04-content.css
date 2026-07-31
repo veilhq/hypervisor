@@ -440,20 +440,6 @@
 }
 .doc-section-summary::-webkit-details-marker { display: none; }
 .doc-section-summary::marker { display: none; content: ""; }
-/* Collapse indicator — subtle, appears on hover only */
-.doc-section-summary::after {
-  content: "▾";
-  float: right;
-  color: var(--text-dim);
-  opacity: 0;
-  transition: opacity var(--motion-fast) var(--ease), transform var(--motion-base) var(--ease);
-}
-.doc-section-summary:hover::after {
-  opacity: 1;
-}
-.doc-section:not([open]) > .doc-section-summary::after {
-  content: "▸";
-}
 .doc-section-summary:hover {
   color: var(--accent);
 }

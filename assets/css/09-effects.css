@@ -1,28 +1,8 @@
 /* ===== Effects: Cursor Box, Keyboard Shortcuts ===== */
 
 /* ---- Cursor companion box ---- */
-.cursor-box {
-  position: fixed;
-  width: 8px;
-  height: 8px;
-  border: var(--border-hair) solid var(--cool);
-  background: transparent;
-  pointer-events: none;
-  z-index: var(--z-cursor);
-  opacity: 0;
-  transition: opacity var(--motion-fast) var(--ease), background var(--motion-tick) var(--ease);
-}
-.cursor-box.visible {
-  opacity: 1;
-}
-.cursor-box.blink {
-  animation: cursorBoxBlink var(--motion-slow) ease-out 1;
-}
-@keyframes cursorBoxBlink {
-  0%, 30%  { background: var(--cool); }
-  50%      { background: transparent; }
-  70%, 100% { background: var(--cool); }
-}
+/* Relocated to Hyperkit (.hyperkit/css/primitives.css) — was byte-identical
+   between Hypervisor and Hyperagent. Edit there, not here. */
 
 /* ---- Keyboard shortcuts overlay ---- */
 .shortcuts-overlay {

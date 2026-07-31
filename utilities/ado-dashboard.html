@@ -541,9 +541,60 @@
   color: var(--accent);
   border-color: var(--accent);
 }
+
+/* Skeleton loading state */
+.dash-loading-overlay {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 0;
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.dash-loading-overlay::after {
+  content: '';
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  background: var(--accent);
+  margin-left: 0.5rem;
+  animation: dash-blink 1s step-end infinite;
+}
+@keyframes dash-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+.dash-tab-loading {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 2rem 0;
+  text-align: center;
+}
+.dash-loading .dash-card,
+.dash-loading .dash-meta-strip {
+  opacity: 0;
+}
+.dash-loaded .dash-card,
+.dash-loaded .dash-meta-strip {
+  animation: dash-fade-in 0.3s ease forwards;
+}
+@keyframes dash-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.dash-loading .dash-meta-strip-value,
+.dash-loading #dash-dates,
+.dash-loading #dash-generated {
+  visibility: hidden;
+}
 </style>
 
-<div class="dash">
+<div class="dash dash-loading">
   <!-- Header -->
   <div class="dash-header">
     <h1><i data-lucide="bar-chart-3"></i> Sprint Dashboard</h1>
@@ -584,6 +635,8 @@
   <!-- Sprint Tab -->
   <div class="dash-tab-panel is-active" id="tab-sprint">
 
+  <div class="dash-loading-overlay" id="sprint-loading">Fetching sprint data</div>
+
   <!-- Velocity Sparkline -->
   <div class="dash-card dash-full">
     <div class="dash-card-title"><i data-lucide="activity"></i> Velocity (last 6 sprints)</div>
@@ -597,20 +650,8 @@
 
   <div class="dash-card dash-full">
     <div class="dash-card-title"><i data-lucide="trending-up"></i> Sprint Progress</div>
-    <div class="dash-stacked" id="progress-bar">
-      <div class="dash-stacked-seg" style="width:35%;background:var(--accent)"></div>
-      <div class="dash-stacked-seg" style="width:25%;background:var(--warm)"></div>
-      <div class="dash-stacked-seg" style="width:20%;background:var(--cool)"></div>
-      <div class="dash-stacked-seg" style="width:10%;background:var(--text-muted)"></div>
-      <div class="dash-stacked-seg" style="width:10%;background:var(--comp)"></div>
-    </div>
-    <div class="dash-legend" id="progress-legend">
-      <div class="dash-legend-item"><div class="dash-legend-swatch" style="background:var(--accent)"></div>Closed (7)</div>
-      <div class="dash-legend-item"><div class="dash-legend-swatch" style="background:var(--warm)"></div>Review (5)</div>
-      <div class="dash-legend-item"><div class="dash-legend-swatch" style="background:var(--cool)"></div>In Progress (4)</div>
-      <div class="dash-legend-item"><div class="dash-legend-swatch" style="background:var(--text-muted)"></div>Ready (2)</div>
-      <div class="dash-legend-item"><div class="dash-legend-swatch" style="background:var(--comp)"></div>Hold/Bug (2)</div>
-    </div>
+    <div class="dash-stacked" id="progress-bar"></div>
+    <div class="dash-legend" id="progress-legend"></div>
   </div>
 
   <!-- Burndown Chart -->
@@ -634,173 +675,61 @@
   <!-- State Breakdown -->
   <div class="dash-card">
     <div class="dash-card-title"><i data-lucide="bar-chart"></i> By State</div>
-    <div class="dash-bars" id="state-bars">
-      <div class="dash-bar-row">
-        <span class="dash-bar-label">Closed</span>
-        <div class="dash-bar-track"><div class="dash-bar-fill" style="width:100%;background:var(--accent)"></div></div>
-        <span class="dash-bar-val">7</span>
-      </div>
-      <div class="dash-bar-row">
-        <span class="dash-bar-label">Review</span>
-        <div class="dash-bar-track"><div class="dash-bar-fill" style="width:71%;background:var(--warm)"></div></div>
-        <span class="dash-bar-val">5</span>
-      </div>
-      <div class="dash-bar-row">
-        <span class="dash-bar-label">In Progress</span>
-        <div class="dash-bar-track"><div class="dash-bar-fill" style="width:57%;background:var(--cool)"></div></div>
-        <span class="dash-bar-val">4</span>
-      </div>
-      <div class="dash-bar-row">
-        <span class="dash-bar-label">Ready</span>
-        <div class="dash-bar-track"><div class="dash-bar-fill" style="width:29%;background:var(--text-muted)"></div></div>
-        <span class="dash-bar-val">2</span>
-      </div>
-      <div class="dash-bar-row">
-        <span class="dash-bar-label">Hold</span>
-        <div class="dash-bar-track"><div class="dash-bar-fill" style="width:14%;background:var(--comp)"></div></div>
-        <span class="dash-bar-val">1</span>
-      </div>
-      <div class="dash-bar-row">
-        <span class="dash-bar-label">Active Bug</span>
-        <div class="dash-bar-track"><div class="dash-bar-fill" style="width:14%;background:var(--comp)"></div></div>
-        <span class="dash-bar-val">1</span>
-      </div>
-    </div>
+    <div class="dash-bars" id="state-bars"></div>
   </div>
 
   <!-- Team Workload -->
   <div class="dash-card">
     <div class="dash-card-title"><i data-lucide="users"></i> Team Workload</div>
-    <div class="dash-team" id="team-grid">
-      <div class="dash-team-row">
-        <span class="dash-team-name">Adam Toepfer</span>
-        <div class="dash-team-bar">
-          <div class="dash-team-seg" style="width:33%;background:var(--accent)"></div>
-          <div class="dash-team-seg" style="width:33%;background:var(--warm)"></div>
-          <div class="dash-team-seg" style="width:34%;background:var(--cool)"></div>
-        </div>
-        <span class="dash-team-pts">18 pts</span>
-      </div>
-      <div class="dash-team-row">
-        <span class="dash-team-name">Josh Wooten</span>
-        <div class="dash-team-bar">
-          <div class="dash-team-seg" style="width:67%;background:var(--warm)"></div>
-          <div class="dash-team-seg" style="width:33%;background:var(--cool)"></div>
-        </div>
-        <span class="dash-team-pts">15 pts</span>
-      </div>
-      <div class="dash-team-row">
-        <span class="dash-team-name">Kennedy Ford</span>
-        <div class="dash-team-bar">
-          <div class="dash-team-seg" style="width:47%;background:var(--accent)"></div>
-          <div class="dash-team-seg" style="width:27%;background:var(--warm)"></div>
-          <div class="dash-team-seg" style="width:26%;background:var(--cool)"></div>
-        </div>
-        <span class="dash-team-pts">18 pts</span>
-      </div>
-      <div class="dash-team-row">
-        <span class="dash-team-name">Matt Kinmon</span>
-        <div class="dash-team-bar">
-          <div class="dash-team-seg" style="width:33%;background:var(--accent)"></div>
-          <div class="dash-team-seg" style="width:25%;background:var(--warm)"></div>
-          <div class="dash-team-seg" style="width:25%;background:var(--text-muted)"></div>
-          <div class="dash-team-seg" style="width:17%;background:var(--cool)"></div>
-        </div>
-        <span class="dash-team-pts">12 pts</span>
-      </div>
-    </div>
+    <div class="dash-team" id="team-grid"></div>
   </div>
 
   <!-- Pull Requests -->
   <div class="dash-card dash-full">
     <div class="dash-card-title"><i data-lucide="git-pull-request"></i> Active Pull Requests</div>
-    <div class="dash-pr-list" id="pr-list">
-      <div class="dash-pr-item">
-        <span class="dash-pr-id">#844</span>
-        <span class="dash-pr-title">REST API Restructure Wave 5 — Classrooms & Participants</span>
-        <span class="dash-pr-repo">cyber-portal</span>
-        <span class="dash-pr-age dash-pr-age-fresh">1d</span>
-      </div>
-      <div class="dash-pr-item">
-        <span class="dash-pr-id">#843</span>
-        <span class="dash-pr-title">Portal UI Modernization - Phase 2</span>
-        <span class="dash-pr-repo">cyber-portal</span>
-        <span class="dash-pr-age dash-pr-age-fresh">1d</span>
-      </div>
-      <div class="dash-pr-item">
-        <span class="dash-pr-id">#841</span>
-        <span class="dash-pr-title">CMS: License-Specific Courses</span>
-        <span class="dash-pr-repo">portal-cms</span>
-        <span class="dash-pr-age dash-pr-age-fresh">2d</span>
-      </div>
-      <div class="dash-pr-item">
-        <span class="dash-pr-id">#839</span>
-        <span class="dash-pr-title">Portal UI Modernization - Phase 1</span>
-        <span class="dash-pr-repo">cyber-portal</span>
-        <span class="dash-pr-age dash-pr-age-mid">7d</span>
-      </div>
-    </div>
+    <div class="dash-pr-list" id="pr-list"></div>
   </div>
 
   <!-- Work Requests -->
   <div class="dash-card dash-full">
     <div class="dash-card-title"><i data-lucide="inbox"></i> Outstanding Work Requests <span id="wr-count" style="color:var(--accent);margin-left:0.4rem;"></span></div>
     <div class="dash-wr-filters" id="wr-filters"></div>
-    <div class="dash-pr-list" id="wr-list">
-      <div style="font-size:0.7rem;color:var(--text-muted)">Click refresh to load work requests</div>
-    </div>
+    <div class="dash-pr-list" id="wr-list"></div>
   </div>
 
   <!-- Risks -->
   <div class="dash-card dash-full">
     <div class="dash-card-title"><i data-lucide="alert-triangle"></i> Risks & Blockers</div>
-    <div class="dash-risks" id="risks">
-      <div class="dash-risk">
-        <span class="dash-risk-tag">hold</span>
-        Range Performance Hardening (5219) — on hold, assigned to Adam
-      </div>
-      <div class="dash-risk">
-        <span class="dash-risk-tag">carryover</span>
-        Guacamole Load Balancing SPIKE (5279) — tagged as likely carryover
-      </div>
-      <div class="dash-risk">
-        <span class="dash-risk-tag">bug</span>
-        Portal Login for Friday Institute (5544) — active, needs investigation
-      </div>
-    </div>
+    <div class="dash-risks" id="risks"></div>
   </div>
 
   </div><!-- /tab-sprint -->
 
   <!-- Source Tab -->
   <div class="dash-tab-panel" id="tab-source">
+    <div class="dash-tab-loading" id="source-loading">Loading source data</div>
     <!-- Active Branches -->
     <div class="dash-card dash-full">
       <div class="dash-card-title"><i data-lucide="git-branch"></i> Active Branches</div>
-      <div class="dash-branch-list" id="branch-list">
-        <div class="dash-empty">Click refresh to load branches</div>
-      </div>
+      <div class="dash-branch-list" id="branch-list"></div>
     </div>
 
     <!-- Conflict Risk -->
     <div class="dash-card dash-full">
       <div class="dash-card-title"><i data-lucide="git-merge"></i> Conflict Risk</div>
-      <div class="dash-conflict-list" id="conflict-list">
-        <div class="dash-empty">Click refresh to analyze conflicts</div>
-      </div>
+      <div class="dash-conflict-list" id="conflict-list"></div>
     </div>
 
     <!-- Recent Commits -->
     <div class="dash-card dash-full">
       <div class="dash-card-title"><i data-lucide="git-commit"></i> Recent Commits</div>
-      <div class="dash-commit-list" id="commit-list">
-        <div class="dash-empty">Click refresh to load commits</div>
-      </div>
+      <div class="dash-commit-list" id="commit-list"></div>
     </div>
   </div><!-- /tab-source -->
 
   <!-- Pipelines Tab -->
   <div class="dash-tab-panel" id="tab-pipelines">
+    <div class="dash-tab-loading" id="pipelines-loading">Loading pipeline data</div>
     <!-- Active/Queued Pipelines -->
     <div class="dash-card dash-full">
       <div class="dash-card-title"><i data-lucide="play-circle"></i> Active / Queued Pipelines</div>
@@ -812,9 +741,7 @@
     <!-- Recent Runs -->
     <div class="dash-card dash-full">
       <div class="dash-card-title"><i data-lucide="history"></i> Recent Pipeline Runs</div>
-      <div class="dash-pipeline-list" id="pipeline-runs-list">
-        <div class="dash-empty">Click refresh to load pipeline runs</div>
-      </div>
+      <div class="dash-pipeline-list" id="pipeline-runs-list"></div>
     </div>
   </div><!-- /tab-pipelines -->
 
@@ -893,11 +820,14 @@
   } catch(e) {}
 
   // --- Pipeline Auto-Poll ---
-  var pipelinePollTimer = null;
+  // The timer handle lives on window, not in this closure: the SPA router
+  // re-executes this script on every navigation to the page, so a closure-local
+  // handle would be invisible to the next execution and leak an orphaned
+  // interval (each one firing another ADO fetch every 60s, forever).
 
   function startPipelinePoll() {
     stopPipelinePoll();
-    pipelinePollTimer = setInterval(function() {
+    window.__adoPipelinePoll = setInterval(function() {
       if (!window.pywebview || !window.pywebview.api) return;
       window.pywebview.api.refresh_ado_pipelines().then(function(result) {
         if (result && result.ok) {
@@ -908,7 +838,18 @@
   }
 
   function stopPipelinePoll() {
-    if (pipelinePollTimer) { clearInterval(pipelinePollTimer); pipelinePollTimer = null; }
+    if (window.__adoPipelinePoll) {
+      clearInterval(window.__adoPipelinePoll);
+      window.__adoPipelinePoll = null;
+    }
+  }
+
+  // Stop polling when the router swaps this page out. Registered once per
+  // session — teardown hooks accumulate globally, so guard against re-adding
+  // on every visit.
+  if (window.__router && !window.__adoPollTeardownRegistered) {
+    window.__adoPollTeardownRegistered = true;
+    window.__router.onNavigate(function() { stopPipelinePoll(); }, null);
   }
 
   // --- Burndown Chart ---
@@ -1290,6 +1231,15 @@
   }
 
   function renderDashboard(data) {
+    // Remove loading state
+    var dashEl = document.querySelector('.dash');
+    if (dashEl) {
+      dashEl.classList.remove('dash-loading');
+      dashEl.classList.add('dash-loaded');
+    }
+    var sprintLoading = document.getElementById('sprint-loading');
+    if (sprintLoading) sprintLoading.style.display = 'none';
+
     // Metadata strip
     var kpiTotal = document.getElementById('kpi-total-pts');
     var kpiRemaining = document.getElementById('kpi-remaining-pts');
@@ -1585,19 +1535,19 @@
     }
 
     // --- Source Tab: Commits ---
-    renderCommits(data.commits || [], data.repo_count || 0);
+    if (data.commits) renderCommits(data.commits, data.repo_count || 0);
 
     // --- Source Tab: Branches ---
-    renderBranches(data.branches || [], data.repo_count || 0);
+    if (data.branches) renderBranches(data.branches, data.repo_count || 0);
 
     // --- Source Tab: Conflicts ---
-    renderConflicts(data.conflicts || [], (data.branches || []).length);
+    if (data.conflicts) renderConflicts(data.conflicts, (data.branches || []).length);
 
     // --- Pipelines Tab: Active/Queued ---
-    renderActivePipelines(data.active_pipelines || []);
+    if (data.active_pipelines) renderActivePipelines(data.active_pipelines);
 
     // --- Pipelines Tab: Recent Runs ---
-    renderPipelineRuns(data.pipeline_runs || []);
+    if (data.pipeline_runs) renderPipelineRuns(data.pipeline_runs);
 
     // Re-init Lucide icons for any new elements
     if (window.lucide) window.lucide.createIcons();
@@ -1790,6 +1740,46 @@
   // Wire up the refresh button
   var refreshBtn = document.getElementById('dash-refresh-btn');
 
+  // --- Tab-by-tab loading ---
+  function loadSprint() {
+    if (!window.pywebview || !window.pywebview.api) return Promise.resolve();
+    return window.pywebview.api.refresh_ado_sprint().then(function(result) {
+      var el = document.getElementById('sprint-loading');
+      if (el) el.style.display = 'none';
+      if (!result || !result.ok) {
+        var msg = (result && result.error) ? result.error : 'Unknown error';
+        if (window.__hvToast) window.__hvToast({ variant: 'error', title: 'Sprint load failed', message: msg });
+        return;
+      }
+      renderDashboard(result);
+    });
+  }
+
+  function loadSource() {
+    if (!window.pywebview || !window.pywebview.api) return Promise.resolve();
+    return window.pywebview.api.refresh_ado_source().then(function(result) {
+      var el = document.getElementById('source-loading');
+      if (el) el.style.display = 'none';
+      if (!result || !result.ok) return;
+      renderCommits(result.commits || [], result.repo_count || 0);
+      renderBranches(result.branches || [], result.repo_count || 0);
+      renderConflicts(result.conflicts || [], (result.branches || []).length);
+      if (window.lucide) window.lucide.createIcons();
+    });
+  }
+
+  function loadPipelines() {
+    if (!window.pywebview || !window.pywebview.api) return Promise.resolve();
+    return window.pywebview.api.refresh_ado_pipelines_full().then(function(result) {
+      var el = document.getElementById('pipelines-loading');
+      if (el) el.style.display = 'none';
+      if (!result || !result.ok) return;
+      renderActivePipelines(result.active_pipelines || []);
+      renderPipelineRuns(result.pipeline_runs || []);
+      if (window.lucide) window.lucide.createIcons();
+    });
+  }
+
   function doRefresh() {
     if (!window.pywebview || !window.pywebview.api) {
       if (window.__hvToast) window.__hvToast({ variant: 'warn', message: 'Refresh requires the desktop app (PyWebView)' });
@@ -1805,6 +1795,11 @@
         return;
       }
       renderDashboard(result);
+      // Hide all tab loading indicators
+      ['source-loading', 'pipelines-loading'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+      });
     }).catch(function(err) {
       refreshBtn.classList.remove('is-loading');
       if (window.__hvToast) window.__hvToast({ variant: 'error', title: 'Refresh error', message: String(err) });
@@ -2013,7 +2008,10 @@
     });
   }
 
-  // Auto-refresh on page load
-  doRefresh();
+  // Auto-refresh on page load — sprint first, then background-load others
+  loadSprint().then(function() {
+    loadSource();
+    loadPipelines();
+  });
 })();
 </script>

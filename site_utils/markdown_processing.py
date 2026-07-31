@@ -443,8 +443,12 @@ def extract_metadata_block(html: str) -> str:
 def wrap_h2_sections(html: str) -> str:
     """Wrap content between <h2> tags in collapsible <details> elements.
 
-    Each H2 section becomes a <details open> with the H2 text as the <summary>,
-    allowing users to collapse/expand sections while keeping them open by default.
+    Each H2 section becomes a <details> with the H2 text as the <summary>,
+    allowing users to collapse/expand sections. Only the document's first
+    H2 section defaults open (typically "Overview", but templates vary —
+    "Problem", "Context", "Overall Assessment", etc.) — every other section
+    starts collapsed, so a freshly opened document leads with its summary
+    instead of a wall of expanded content.
     """
     # Section title → Lucide icon name mapping
     SECTION_ICONS = {
@@ -489,6 +493,7 @@ def wrap_h2_sections(html: str) -> str:
     output = [parts[0]]
 
     i = 1
+    is_first_section = True
     while i < len(parts):
         h2_tag = parts[i]
         # Content after this h2 until the next h2
@@ -514,8 +519,15 @@ def wrap_h2_sections(html: str) -> str:
             f'<i data-lucide="{icon_name}" class="section-icon"></i>'
             if icon_name else ""
         )
+        # Only the document's first H2 section defaults open (typically
+        # "Overview", but templates vary — Problem, Context, Overall
+        # Assessment, etc.) — every other section starts collapsed, so a
+        # freshly opened document leads with just its summary rather than
+        # a wall of expanded sections.
+        open_attr = " open" if is_first_section else ""
+        is_first_section = False
         output.append(
-            f'<details class="doc-section" open{id_attr}>'
+            f'<details class="doc-section"{open_attr}{id_attr}>'
             f'<summary class="doc-section-summary">{icon_html}{h2_inner}</summary>'
             f'<div class="doc-section-content">{section_content}</div>'
             f'</details>'

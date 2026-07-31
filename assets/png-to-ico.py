@@ -1,14 +1,23 @@
-"""Convert a PNG to a proper multi-size ICO with transparency preserved."""
+"""Convert a PNG to individual ICO files per size and a combined multi-size ICO."""
 import sys
 from PIL import Image
 
 if len(sys.argv) < 2:
-    print("Usage: python png-to-ico.py <input.png> [output.ico]")
+    print("Usage: python png-to-ico.py <input.png> [output_prefix]")
     sys.exit(1)
 
 src = sys.argv[1]
-dst = sys.argv[2] if len(sys.argv) > 2 else src.rsplit(".", 1)[0] + ".ico"
+prefix = sys.argv[2] if len(sys.argv) > 2 else src.rsplit(".", 1)[0]
 
 img = Image.open(src).convert("RGBA")
-img.save(dst, format="ICO", sizes=[(256, 256), (48, 48), (32, 32), (16, 16)])
-print(f"Saved: {dst}")
+
+sizes = [256, 48, 32, 16]
+for s in sizes:
+    out = f"{prefix}-{s}.ico"
+    img.save(out, format="ICO", sizes=[(s, s)])
+    print(f"Saved: {out}")
+
+# Combined (all sizes)
+combined = f"{prefix}.ico"
+img.save(combined, format="ICO", sizes=[(s, s) for s in sizes])
+print(f"Saved (combined): {combined}")

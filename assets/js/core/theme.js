@@ -251,97 +251,97 @@
       name: "Frost2",
       description: "Icy blue-white base with a hot crimson punch",
       accent: "#d2ebfe", warm: "#c0caff", cool: "#ceb0e4", comp: "#ff0059",
-      semantics: { success: "#00ff7b", warning: "#ff6600", error: "#ff0000", info: "#a1d3dd" }
+      semantics: { success: "#1dff7d", warning: "#fdca18", error: "#fb110b", info: "#1be1fd" }
     },
     "cyberdeck": {
       name: "Cyberdeck",
       description: "High-voltage hacker terminal",
       accent: "#00ff9f", warm: "#ffe600", cool: "#00e5ff", comp: "#ff003c",
-      semantics: { success: "#00ff9f", warning: "#ffe600", error: "#ff003c", info: "#00e5ff" }
+      semantics: { success: "#1efea0", warning: "#fee51b", error: "#fc113e", info: "#1de5fe" }
     },
     "thermal": {
       name: "Thermal",
       description: "Infrared heat map — cool blue to hot yellow",
       accent: "#ffc250", warm: "#fb5a46", cool: "#5480c7", comp: "#d10054",
-      semantics: { success: "#ffc250", warning: "#fb5a46", error: "#d10054", info: "#5480c7" }
+      semantics: { success: "#21ff7b", warning: "#fdca18", error: "#fd1369", info: "#086ffd" }
     },
     "tundra": {
       name: "Tundra",
       description: "Frost2 base with an electric lime punch",
       accent: "#d2ebfe", warm: "#c0caff", cool: "#ceb0e4", comp: "#c8ff5c",
-      semantics: { success: "#c8ff5c", warning: "#ffb000", error: "#ff3355", info: "#a1d3dd" }
+      semantics: { success: "#bffe1c", warning: "#fdb015", error: "#fd154c", info: "#1be1fd" }
     },
     "cryo": {
       name: "Cryo",
       description: "Icy base with a UV violet punch — laboratory clean",
       accent: "#d2ebfe", warm: "#c8d8ff", cool: "#c0b8e8", comp: "#a855f7",
-      semantics: { success: "#7edba6", warning: "#ffb000", error: "#ff3355", info: "#a855f7" }
+      semantics: { success: "#1efea1", warning: "#fdb015", error: "#fd154c", info: "#a01efd" }
     },
     "nordic": {
       name: "Nordic",
       description: "Muted blue-grey base with a warm amber punch — ice and gold",
       accent: "#b8ccd8", warm: "#a8b8c8", cool: "#c0d0dc", comp: "#ffb000",
-      semantics: { success: "#7aad8a", warning: "#ffb000", error: "#c76b4a", info: "#a8b8c8" }
+      semantics: { success: "#1dfd91", warning: "#fdb015", error: "#fc5c0d", info: "#0f9afc" }
     },
     "frostbite": {
       name: "Frostbite",
       description: "All-blue family — visual tension between shades of cold",
       accent: "#c2e8ff", warm: "#a0d0f0", cool: "#8ac0e8", comp: "#00c0ff",
-      semantics: { success: "#7edba6", warning: "#ffb000", error: "#ff3355", info: "#00c0ff" }
+      semantics: { success: "#1efea1", warning: "#fdb015", error: "#fd154c", info: "#15bffc" }
     },
     "hazmat": {
       name: "Hazmat",
       description: "Toxic biohazard — green-dominant with a hot pink shock",
       accent: "#c8ff00", warm: "#ffea00", cool: "#00ff88", comp: "#ff00cc",
-      semantics: { success: "#c8ff00", warning: "#ffea00", error: "#ff00cc", info: "#00ff88" }
+      semantics: { success: "#c8fe1c", warning: "#ffea1c", error: "#fe13cb", info: "#15c1fd" }
     },
     "laser": {
       name: "Laser",
       description: "Pure laser wavelengths — RGB primaries with a violet punch",
       accent: "#00ff41", warm: "#ff0044", cool: "#0044ff", comp: "#8b00ff",
-      semantics: { success: "#00ff41", warning: "#ffea00", error: "#ff0044", info: "#0044ff" }
+      semantics: { success: "#1dfd46", warning: "#ffea1c", error: "#fc1145", info: "#1f5efc" }
     },
     "prism": {
       name: "Prism",
       description: "Full spectrum at max chroma — evenly loud everywhere",
       accent: "#ff2020", warm: "#ffea00", cool: "#00e0ff", comp: "#ff00e5",
-      semantics: { success: "#00ff44", warning: "#ffea00", error: "#ff2020", info: "#00e0ff" }
+      semantics: { success: "#1dfd49", warning: "#ffea1c", error: "#fd151a", info: "#1adffd" }
     },
     "emergency": {
       name: "Emergency",
       description: "Hi-vis safety colors — orange lead, all warm-forward",
       accent: "#ff5500", warm: "#ffd500", cool: "#00ff44", comp: "#ff003c",
-      semantics: { success: "#00ff44", warning: "#ffd500", error: "#ff003c", info: "#ff5500" }
+      semantics: { success: "#1dfd49", warning: "#fdd419", error: "#fc113e", info: "#15c1fd" }
     },
     "ignite": {
       name: "Ignite",
       description: "Dark base bursting into fire — orange, yellow, hot red",
       accent: "#4a4a4a", warm: "#ff6600", cool: "#ffea00", comp: "#ff003c",
-      semantics: { success: "#00ff44", warning: "#ffea00", error: "#ff003c", info: "#ff6600" }
+      semantics: { success: "#1dfd49", warning: "#ffea1c", error: "#fc113e", info: "#15c1fd" }
     },
     "bloom": {
       name: "Bloom",
       description: "Dark base bursting into floral — magenta, violet, pink",
       accent: "#4a4a4a", warm: "#ff00d4", cool: "#a855f7", comp: "#ff77e9",
-      semantics: { success: "#00ff88", warning: "#ffea00", error: "#ff00d4", info: "#a855f7" }
+      semantics: { success: "#1dfe8a", warning: "#ffea1c", error: "#fe18d3", info: "#a01efd" }
     },
     "verdigris": {
       name: "Verdigris",
       description: "Dark base bursting into oxidation patina — green, cyan, lime",
       accent: "#4a4a4a", warm: "#00ff88", cool: "#00e0ff", comp: "#c8ff00",
-      semantics: { success: "#00ff88", warning: "#c8ff00", error: "#ff3355", info: "#00e0ff" }
+      semantics: { success: "#1dfe8a", warning: "#fdca18", error: "#fd154c", info: "#1adffd" }
     },
     "spectra": {
       name: "Spectra",
       description: "Dark base bursting into full rainbow — red, cyan, lime",
       accent: "#4a4a4a", warm: "#ff2020", cool: "#00e0ff", comp: "#c8ff00",
-      semantics: { success: "#c8ff00", warning: "#ffea00", error: "#ff2020", info: "#00e0ff" }
+      semantics: { success: "#c8fe1c", warning: "#ffea1c", error: "#fd151a", info: "#1adffd" }
     },
     "coldsnap": {
       name: "Coldsnap",
       description: "Dark base bursting into aurora — mint, periwinkle, lavender",
       accent: "#4a4a4a", warm: "#7cffb0", cool: "#7a8cff", comp: "#c0a0ff",
-      semantics: { success: "#7cffb0", warning: "#ffea00", error: "#ff3355", info: "#7a8cff" }
+      semantics: { success: "#1dfd95", warning: "#ffea1c", error: "#fd154c", info: "#5155fd" }
     }
   };
 

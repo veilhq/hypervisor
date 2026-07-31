@@ -945,21 +945,22 @@ class HypervisorAPI:
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
-    def refresh_ado_dashboard(self):
-        """Fetch fresh ADO sprint data and return it as JSON for the dashboard.
+    def refresh_ado_sprint(self):
+        """Fetch core sprint data: iteration, work items, PRs, work requests, burndown.
 
-        Uses the ado_collector module to pull current iteration, work items,
-        and pull requests from Azure DevOps. Response shaping is delegated
-        to tools.ado_dashboard.
+        This is the fast-path call for the Sprint tab — skips source control
+        and pipeline data entirely.
 
         Returns:
-            dict with sprint data or error information.
+            dict with sprint payload or error information.
         """
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+
         try:
             tools_dir = Path(__file__).parent / "tools"
             sys.path.insert(0, str(tools_dir))
             from ado_collector import load_config, ADOClient, extract_top_level_items, ADOConfigError
-            from ado_dashboard import build_dashboard_payload, detect_conflicts
+            from ado_dashboard import build_dashboard_payload
             sys.path.pop(0)
         except ImportError as e:
             return {"ok": False, "error": f"Failed to import ado modules: {e}"}
@@ -972,29 +973,29 @@ class HypervisorAPI:
         try:
             client = ADOClient(config["org"], pat=config.get("pat"), use_entra=config.get("use_entra", False))
 
-            # Get current iteration
+            # Step 1: Get current iteration (required by everything else)
             iteration = client.get_current_iteration(config["project"], config["team"])
             if not iteration:
                 return {"ok": False, "error": "No current iteration found."}
 
-            # Get work items for the iteration
+            attrs = iteration.get("attributes", {})
+            iter_path = iteration.get("path", "")
+            start_date = attrs.get("startDate", "")[:10]
+            finish_date = attrs.get("finishDate", "")[:10]
+
+            # Step 2: Get work item IDs
             iter_data = client.get_iteration_work_items(
                 config["project"], config["team"], iteration["id"]
             )
             top_level_ids = extract_top_level_items(iter_data)
 
-            # Get work item details
+            # Step 3: Parallel fetch — work items + PRs + work requests + burndown
             fields = [
                 "System.Id", "System.Title", "System.State",
                 "System.WorkItemType", "System.AssignedTo", "System.Tags",
                 "Microsoft.VSTS.Scheduling.StoryPoints",
             ]
-            work_items = client.get_work_items(config["project"], top_level_ids, fields=fields)
 
-            # Get active PRs
-            pull_requests = client.get_pull_requests(config["project"])
-
-            # Get outstanding work requests
             wiql = (
                 "SELECT [System.Id], [System.Title], [System.State], "
                 "[System.AssignedTo], [System.CreatedDate] "
@@ -1006,59 +1007,206 @@ class HypervisorAPI:
                 "AND [System.State] <> 'Removed' "
                 "ORDER BY [System.CreatedDate] DESC"
             )
-            work_requests = client.query_work_items_wiql(config["project"], wiql, top=50)
 
-            # Get historical burndown from Analytics OData
-            iter_path = iteration.get("path", "")
-            start_date = iteration.get("attributes", {}).get("startDate", "")[:10]
-            finish_date = iteration.get("attributes", {}).get("finishDate", "")[:10]
+            work_items = []
+            pull_requests = []
+            work_requests = []
             burndown_history = []
-            if iter_path and start_date and finish_date:
-                try:
-                    burndown_history = client.get_burndown_history(
+
+            def fetch_work_items():
+                return client.get_work_items(config["project"], top_level_ids, fields=fields)
+
+            def fetch_pull_requests():
+                return client.get_pull_requests(config["project"])
+
+            def fetch_work_requests():
+                return client.query_work_items_wiql(config["project"], wiql, top=50)
+
+            def fetch_burndown():
+                if iter_path and start_date and finish_date:
+                    return client.get_burndown_history(
                         config["org"], config["project"], iter_path, start_date, finish_date
                     )
-                except Exception as e:
-                    logger.warning("Failed to fetch burndown history: %s", e)
-                    pass  # Non-fatal — dashboard still works without history
+                return []
 
-            # Fetch source control data
-            commits = []
-            branches = []
-            pipeline_runs = []
-            active_pipelines = []
-            conflicts = []
-            try:
-                repos = client.get_repos(config["project"])
-                commits = client.get_recent_commits(config["project"], repos=repos, top=30)
-                branches = client.get_branches_overview(config["project"], repos=repos)
-            except Exception as e:
-                logger.warning("Failed to fetch source control data: %s", e)
+            with ThreadPoolExecutor(max_workers=4) as executor:
+                futures = {
+                    executor.submit(fetch_work_items): "work_items",
+                    executor.submit(fetch_pull_requests): "pull_requests",
+                    executor.submit(fetch_work_requests): "work_requests",
+                    executor.submit(fetch_burndown): "burndown",
+                }
+                for future in as_completed(futures):
+                    key = futures[future]
+                    try:
+                        result = future.result()
+                        if key == "work_items":
+                            work_items = result
+                        elif key == "pull_requests":
+                            pull_requests = result
+                        elif key == "work_requests":
+                            work_requests = result
+                        elif key == "burndown":
+                            burndown_history = result
+                    except Exception as e:
+                        logger.warning("Failed to fetch %s: %s", key, e)
 
-            # Detect potential merge conflicts between active branches
-            if branches:
-                try:
-                    branch_diffs = client.get_branch_diffs(
-                        config["project"], repos, branches
-                    )
-                    conflicts = detect_conflicts(branch_diffs)
-                except Exception as e:
-                    logger.warning("Failed to detect branch conflicts: %s", e)
-
-            # Fetch pipeline data
-            try:
-                pipeline_runs = client.get_pipeline_runs(config["project"], top=5)
-                active_pipelines = client.get_active_pipeline_runs(config["project"])
-            except Exception as e:
-                logger.warning("Failed to fetch pipeline data: %s", e)
-
-            # Build and return the dashboard payload
             return build_dashboard_payload(
                 iteration, work_items, pull_requests, work_requests, config,
-                burndown_history, commits=commits, branches=branches,
-                pipeline_runs=pipeline_runs, active_pipelines=active_pipelines,
-                conflicts=conflicts,
+                burndown_history,
             )
+
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+
+    def refresh_ado_source(self):
+        """Fetch source control data: repos, commits, branches, conflict detection.
+
+        Separate from sprint data so it can be loaded lazily when the Source
+        tab is activated.
+
+        Returns:
+            dict with source payload or error information.
+        """
+        from concurrent.futures import ThreadPoolExecutor
+
+        try:
+            tools_dir = Path(__file__).parent / "tools"
+            sys.path.insert(0, str(tools_dir))
+            from ado_collector import load_config, ADOClient, ADOConfigError
+            from ado_dashboard import detect_conflicts
+            sys.path.pop(0)
+        except ImportError as e:
+            return {"ok": False, "error": f"Failed to import ado modules: {e}"}
+
+        try:
+            config = load_config()
+        except ADOConfigError as e:
+            return {"ok": False, "error": str(e)}
+
+        try:
+            client = ADOClient(config["org"], pat=config.get("pat"), use_entra=config.get("use_entra", False))
+            repos = client.get_repos(config["project"])
+
+            commits = []
+            branches = []
+            conflicts = []
+
+            if repos:
+                with ThreadPoolExecutor(max_workers=2) as executor:
+                    commit_future = executor.submit(
+                        client.get_recent_commits, config["project"], repos, 30
+                    )
+                    branch_future = executor.submit(
+                        client.get_branches_overview, config["project"], repos
+                    )
+
+                    try:
+                        commits = commit_future.result()
+                    except Exception as e:
+                        logger.warning("Failed to fetch commits: %s", e)
+
+                    try:
+                        branches = branch_future.result()
+                    except Exception as e:
+                        logger.warning("Failed to fetch branches: %s", e)
+
+                if branches:
+                    try:
+                        branch_diffs = client.get_branch_diffs(
+                            config["project"], repos, branches
+                        )
+                        conflicts = detect_conflicts(branch_diffs)
+                    except Exception as e:
+                        logger.warning("Failed to detect branch conflicts: %s", e)
+
+            return {
+                "ok": True,
+                "commits": commits,
+                "branches": branches,
+                "conflicts": conflicts,
+                "repo_count": len(repos),
+            }
+
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+
+    def refresh_ado_dashboard(self):
+        """Full dashboard refresh — fetches all tabs in parallel.
+
+        Calls refresh_ado_sprint, refresh_ado_source, and pipeline data
+        concurrently, then merges the results into one payload.
+
+        Returns:
+            dict with complete dashboard data or error information.
+        """
+        from concurrent.futures import ThreadPoolExecutor
+
+        with ThreadPoolExecutor(max_workers=3) as executor:
+            sprint_future = executor.submit(self.refresh_ado_sprint)
+            source_future = executor.submit(self.refresh_ado_source)
+            pipelines_future = executor.submit(self.refresh_ado_pipelines_full)
+
+        sprint_data = sprint_future.result()
+        if not sprint_data or not sprint_data.get("ok"):
+            return sprint_data
+
+        # Merge source data
+        source_data = source_future.result()
+        if source_data and source_data.get("ok"):
+            sprint_data["commits"] = source_data.get("commits", [])
+            sprint_data["branches"] = source_data.get("branches", [])
+            sprint_data["conflicts"] = source_data.get("conflicts", [])
+            sprint_data["repo_count"] = source_data.get("repo_count", 0)
+
+        # Merge pipeline data
+        pipeline_data = pipelines_future.result()
+        if pipeline_data and pipeline_data.get("ok"):
+            sprint_data["pipeline_runs"] = pipeline_data.get("pipeline_runs", [])
+            sprint_data["active_pipelines"] = pipeline_data.get("active_pipelines", [])
+
+        return sprint_data
+
+    def refresh_ado_pipelines_full(self):
+        """Fetch both recent and active pipeline runs.
+
+        Returns:
+            dict with pipeline_runs and active_pipelines or error.
+        """
+        from concurrent.futures import ThreadPoolExecutor
+
+        try:
+            tools_dir = Path(__file__).parent / "tools"
+            sys.path.insert(0, str(tools_dir))
+            from ado_collector import load_config, ADOClient, ADOConfigError
+            sys.path.pop(0)
+        except ImportError as e:
+            return {"ok": False, "error": f"Failed to import ado modules: {e}"}
+
+        try:
+            config = load_config()
+        except ADOConfigError as e:
+            return {"ok": False, "error": str(e)}
+
+        try:
+            client = ADOClient(config["org"], pat=config.get("pat"), use_entra=config.get("use_entra", False))
+
+            with ThreadPoolExecutor(max_workers=2) as executor:
+                runs_future = executor.submit(client.get_pipeline_runs, config["project"], 5)
+                active_future = executor.submit(client.get_active_pipeline_runs, config["project"])
+
+                pipeline_runs = []
+                active_pipelines = []
+                try:
+                    pipeline_runs = runs_future.result()
+                except Exception as e:
+                    logger.warning("Failed to fetch pipeline runs: %s", e)
+                try:
+                    active_pipelines = active_future.result()
+                except Exception as e:
+                    logger.warning("Failed to fetch active pipelines: %s", e)
+
+            return {"ok": True, "pipeline_runs": pipeline_runs, "active_pipelines": active_pipelines}
 
         except Exception as e:
             return {"ok": False, "error": str(e)}

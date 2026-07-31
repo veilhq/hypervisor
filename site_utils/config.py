@@ -26,7 +26,7 @@ HYPERKIT_JS_DIR = HYPERKIT_DIR / "js"
 # module that references window.HvNoiseField / HvGreeting / HvCursorTrail /
 # HvToast (i.e. before core/00-core.js and features/*), so they are
 # prepended ahead of everything list_js_modules() would otherwise return.
-HYPERKIT_JS_MODULES = ["noise-field.js", "greeting.js", "cursor-trail.js", "toast.js"]
+HYPERKIT_JS_MODULES = ["noise-field.js", "greeting.js", "cursor-trail.js", "toast.js", "cursor-box.js"]
 
 
 def list_js_modules():

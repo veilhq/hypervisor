@@ -6,7 +6,7 @@ Pulls Azure DevOps sprint data and generates a hyperspace-compatible markdown
 dashboard file.
 
 Authentication:
-    Primary:   Azure CLI cached credentials (run 'az login' first)
+    Primary:   Entra ID via the cached Azure CLI session (run 'az login' first)
     Fallback:  ADO_PAT environment variable (Personal Access Token)
 
 Usage:
@@ -20,7 +20,8 @@ Usage:
     python ado_collector.py --output ../../prototypes/ado-dashboard.md
 
 Requirements:
-    pip install requests azure-identity
+    pip install requests
+    Azure CLI on PATH (for Entra ID auth)
 
 Configuration:
     ADO_ORG          - Organization name (default: CyberInnovationCenter)
@@ -31,8 +32,13 @@ Configuration:
 
 import argparse
 import base64
+import json
 import os
+import shutil
+import subprocess
 import sys
+import threading
+import time
 from collections import Counter, defaultdict
 from datetime import datetime
 from pathlib import Path
@@ -59,11 +65,116 @@ class ADOConfigError(Exception):
     pass
 
 
+# ---------------------------------------------------------------------------
+# Entra ID token acquisition (Azure CLI, no console flash)
+# ---------------------------------------------------------------------------
+#
+# We shell out to 'az account get-access-token' ourselves instead of using
+# azure-identity's AzureCliCredential for two reasons:
+#
+#   1. No console popup. azure-identity calls subprocess.check_output without
+#      creationflags, so under pythonw (the PyWebView app has no console) every
+#      token fetch spawns a visible cmd.exe window for az.cmd. We pass
+#      CREATE_NO_WINDOW.
+#   2. Caching. AzureCliCredential explicitly does not cache tokens, so every
+#      ADOClient construction meant another ~2s CLI invocation. Tokens here are
+#      cached process-wide until shortly before expiry.
+
+ADO_RESOURCE_ID = "499b84ac-1321-427f-aa17-267ca6975798"
+
+# Refresh this many seconds before the token actually expires.
+_TOKEN_EXPIRY_SKEW = 300
+# Fallback lifetime if the CLI response omits an expiry (older az versions).
+_TOKEN_FALLBACK_TTL = 2700
+
+_token_cache = {"token": None, "expires_at": 0.0}
+_token_lock = threading.Lock()
+
+
+def find_az():
+    """Locate the Azure CLI executable, or None if it isn't on PATH."""
+    if sys.platform.startswith("win"):
+        # On Windows the entry point is az.cmd (a batch file).
+        return shutil.which("az.cmd") or shutil.which("az")
+    return shutil.which("az")
+
+
+def get_entra_token(force=False):
+    """Return a bearer token for Azure DevOps, using the cached 'az login' session.
+
+    Args:
+        force: Bypass the cache and fetch a fresh token (used on HTTP 401).
+
+    Returns:
+        The access token string.
+
+    Raises:
+        ADOConfigError: If the Azure CLI is missing, not logged in, or errors.
+    """
+    with _token_lock:
+        now = time.time()
+        if not force and _token_cache["token"] and now < _token_cache["expires_at"]:
+            return _token_cache["token"]
+
+        az_path = find_az()
+        if not az_path:
+            raise ADOConfigError(
+                "Azure CLI ('az') not found on PATH. Install it and run 'az login'."
+            )
+
+        kwargs = {
+            "stderr": subprocess.PIPE,
+            "stdin": subprocess.DEVNULL,
+            "text": True,
+            "timeout": 60,
+        }
+        if sys.platform.startswith("win"):
+            # Suppress the console window az.cmd would otherwise create when
+            # the parent process has no console (pythonw / PyWebView app).
+            kwargs["creationflags"] = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+
+        args = [az_path, "account", "get-access-token",
+                "--resource", ADO_RESOURCE_ID, "-o", "json"]
+
+        try:
+            raw = subprocess.check_output(args, **kwargs)
+        except subprocess.TimeoutExpired as e:
+            raise ADOConfigError("Azure CLI timed out acquiring a token.") from e
+        except subprocess.CalledProcessError as e:
+            detail = (e.stderr or "").strip().splitlines()
+            hint = detail[-1] if detail else f"exit code {e.returncode}"
+            raise ADOConfigError(
+                f"Azure CLI could not acquire a token ({hint}). Run 'az login'."
+            ) from e
+        except OSError as e:
+            raise ADOConfigError(f"Failed to invoke Azure CLI: {e}") from e
+
+        try:
+            data = json.loads(raw)
+        except ValueError as e:
+            raise ADOConfigError("Unexpected Azure CLI output (not JSON).") from e
+
+        token = data.get("accessToken")
+        if not token:
+            raise ADOConfigError("Azure CLI response contained no access token.")
+
+        expires_at = now + _TOKEN_FALLBACK_TTL
+        if data.get("expires_on"):
+            try:
+                expires_at = float(data["expires_on"])
+            except (TypeError, ValueError):
+                pass
+
+        _token_cache["token"] = token
+        _token_cache["expires_at"] = max(now + 60, expires_at - _TOKEN_EXPIRY_SKEW)
+        return token
+
+
 def load_config():
     """Load configuration from environment variables.
 
     Auth priority:
-      1. AzureCliCredential (cached 'az login' session) — preferred
+      1. Azure CLI cached 'az login' session (Entra ID) — preferred
       2. ADO_PAT environment variable — legacy fallback
 
     Returns:
@@ -83,18 +194,13 @@ def load_config():
 
     pat = os.environ.get("ADO_PAT")
 
-    # Determine auth method — prefer AzureCliCredential (uses cached az login)
-    use_entra = False
-    try:
-        from azure.identity import AzureCliCredential  # noqa: F401
-        use_entra = True
-    except ImportError:
-        pass
+    # Determine auth method — prefer Entra ID via the cached 'az login' session
+    use_entra = find_az() is not None
 
     if not use_entra and not pat:
         raise ADOConfigError(
             "No auth method available. "
-            "Run 'az login' (requires azure-identity package), "
+            "Install the Azure CLI and run 'az login', "
             "or set ADO_PAT environment variable."
         )
 
@@ -115,22 +221,18 @@ class ADOClient:
     """Minimal Azure DevOps REST API client.
 
     Supports two auth modes:
-      - AzureCliCredential (cached 'az login' session) — preferred
+      - Entra ID via the cached 'az login' session — preferred
       - PAT (Basic auth) — legacy fallback
     """
 
-    # Azure DevOps resource ID for token scoping
-    _ADO_RESOURCE = "499b84ac-1321-427f-aa17-267ca6975798/.default"
-
     def __init__(self, org, pat=None, use_entra=False):
         self.base_url = BASE_URL_TEMPLATE.format(org=org)
-        self._credential = None
+        self._can_refresh_token = False
         self.session = requests.Session()
         self.session.headers.update({"Content-Type": "application/json"})
 
         if use_entra:
-            from azure.identity import AzureCliCredential
-            self._credential = AzureCliCredential()
+            self._can_refresh_token = True
             self._refresh_token()
         elif pat:
             token = base64.b64encode(f":{pat}".encode()).decode()
@@ -138,10 +240,13 @@ class ADOClient:
         else:
             raise ValueError("Either use_entra=True or provide a PAT")
 
-    def _refresh_token(self):
-        """Get a fresh bearer token from Entra ID."""
-        token = self._credential.get_token(self._ADO_RESOURCE)
-        self.session.headers["Authorization"] = f"Bearer {token.token}"
+    def _refresh_token(self, force=False):
+        """Set the Authorization header from a (cached) Entra ID token.
+
+        Args:
+            force: Bypass the token cache — used after an HTTP 401.
+        """
+        self.session.headers["Authorization"] = f"Bearer {get_entra_token(force=force)}"
 
     def get(self, path, params=None):
         """Make a GET request to the ADO API."""
@@ -150,8 +255,8 @@ class ADOClient:
         params.setdefault("api-version", "7.1")
         resp = self.session.get(url, params=params)
         # Retry once with a fresh token on 401 (Entra tokens expire)
-        if resp.status_code == 401 and self._credential:
-            self._refresh_token()
+        if resp.status_code == 401 and self._can_refresh_token:
+            self._refresh_token(force=True)
             resp = self.session.get(url, params=params)
         resp.raise_for_status()
         return resp.json()
@@ -206,8 +311,8 @@ class ADOClient:
         url = f"{self.base_url}/{path}"
         params = {"api-version": "7.1", "$top": str(top)}
         resp = self.session.post(url, params=params, json={"query": wiql})
-        if resp.status_code == 401 and self._credential:
-            self._refresh_token()
+        if resp.status_code == 401 and self._can_refresh_token:
+            self._refresh_token(force=True)
             resp = self.session.post(url, params=params, json={"query": wiql})
         resp.raise_for_status()
         data = resp.json()
@@ -511,8 +616,8 @@ class ADOClient:
             f")/groupby((DateValue,StateCategory),aggregate(StoryPoints with sum as TotalPoints))"
         )
         resp = self.session.get(base, params={"$apply": apply_str, "$orderby": "DateValue"})
-        if resp.status_code == 401 and self._credential:
-            self._refresh_token()
+        if resp.status_code == 401 and self._can_refresh_token:
+            self._refresh_token(force=True)
             resp = self.session.get(base, params={"$apply": apply_str, "$orderby": "DateValue"})
         if resp.status_code != 200:
             return []

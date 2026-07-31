@@ -114,39 +114,11 @@
   })();
 
   // --- Cursor companion box ---
+  // Relocated to Hyperkit (WI-142 follow-up) — window.HvCursorBox is loaded
+  // before this file. Edit the module in .hyperkit/js/cursor-box.js, not here.
   (function initCursorBox() {
-    var box = document.createElement("div");
-    box.className = "cursor-box";
-    document.body.appendChild(box);
-
-    var OFFSET_X = 14;
-    var OFFSET_Y = -4;
-    var hovering = false;
-    var CLICKABLE = "a, button, [role='button'], input[type='color'], .card, .pin-card, .swatch, .palette-mode-btn, .code-copy, .sr-tag, .ref-menu-btn, .util-menu-btn, .width-toggle, .settings-menu-btn, .a11y-toggle, .a11y-reset, .cell-copyable, .section-copy, .quiz-option, .quiz-btn, .quiz-tab, .guide-nav-btn";
-
-    document.addEventListener("mousemove", function (e) {
-      box.style.left = (e.clientX + OFFSET_X) + "px";
-      box.style.top = (e.clientY + OFFSET_Y) + "px";
-
-      var over = document.elementFromPoint(e.clientX, e.clientY);
-      var isClickable = over && over.closest(CLICKABLE);
-      if (isClickable && !hovering) {
-        hovering = true;
-        box.classList.add("visible");
-      } else if (!isClickable && hovering) {
-        hovering = false;
-        box.classList.remove("visible", "blink");
-      }
-    });
-
-    document.addEventListener("mousedown", function (e) {
-      var over = document.elementFromPoint(e.clientX, e.clientY);
-      if (!over || !over.closest(CLICKABLE)) return;
-      box.classList.remove("blink");
-      void box.offsetWidth;
-      box.classList.add("blink");
-      setTimeout(function () { box.classList.remove("blink"); }, 350);
-    });
+    if (!window.HvCursorBox) return;
+    HvCursorBox.start(document.body);
   })();
 
 
