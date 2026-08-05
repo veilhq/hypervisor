@@ -28,18 +28,11 @@
     function init(fragment) {
       // The router already updated the TOC body innerHTML and visibility.
       // We just need to set up active heading tracking.
+      // The build gates TOC inclusion on li_count >= 3, so if the router
+      // injected TOC content, trust that decision — no runtime height check.
       var article = document.getElementById("content-target");
       if (!article) return;
 
-      // Check visibility — only track if page is long enough
-      var articleHeight = article.scrollHeight || article.offsetHeight;
-      if (articleHeight <= 800) {
-        tocSidebar.classList.remove("visible");
-        if (pageMain) pageMain.classList.remove("has-toc");
-        return;
-      }
-
-      // If TOC has content, it's already visible (router set it)
       var tocLinks = tocBody.querySelectorAll("a[href]");
       if (!tocLinks.length) return;
 

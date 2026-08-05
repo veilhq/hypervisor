@@ -137,6 +137,8 @@
     window.ssCtx.fillRect(0, 0, window.ssCanvas.width, window.ssCanvas.height);
     if (mode) mode.init();
     $.overlay.classList.add("active");
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
     $.clockEl.style.display = $.showClock ? "" : "none";
     if ($.showClock) {
       updateClock();
@@ -151,6 +153,8 @@
     var m = window.ssModes[$.currentMode];
     if (m && m.cleanup) m.cleanup();
     $.overlay.classList.remove("active");
+    document.body.style.overflow = "";
+    document.documentElement.style.overflow = "";
     if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
     if (clockInterval) { clearInterval(clockInterval); clockInterval = null; }
     if (window.ssGLCanvas) window.ssGLCanvas.style.display = "none";

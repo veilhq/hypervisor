@@ -7,3 +7,9 @@
 mcp>=1.0
 watchdog>=4.0
 rapidfuzz>=3.0
+
+# Semantic RAG (WI-123) — pinned to versions verified against this codebase.
+# fastembed pulls onnxruntime (CPU-only, no GPU/PyTorch required).
+# First run downloads BAAI/bge-small-en-v1.5 (~67 MB), cached permanently.
+fastembed==0.8.0
+sqlite-vec==0.1.9

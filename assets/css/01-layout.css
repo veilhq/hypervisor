@@ -195,7 +195,7 @@
   margin: 0 auto;
   padding: var(--space-3) 5rem var(--space-3) var(--space-4);
   display: grid;
-  grid-template-columns: 1fr 2fr 1fr;
+  grid-template-columns: 1fr auto;
   align-items: center;
   gap: var(--space-3);
   position: relative;

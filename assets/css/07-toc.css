@@ -108,3 +108,6 @@
 .a11y-reduce-motion .toc-sidebar {
   transition: none;
 }
+
+/* ===== Related Docs (inline section, RAG-powered) ===== */
+/* Styling handled by .backlinks-section reuse — no additional rules needed. */

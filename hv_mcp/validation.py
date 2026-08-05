@@ -7,7 +7,7 @@ import re
 from difflib import get_close_matches
 
 from site_utils.config import HYPERSPACE_ROOT
-from site_utils.file_utils import collect_files
+from site_utils.file_utils import collect_files, read_md
 
 from .config import (
     VALIDATION_SKIP_DIRS, VALIDATION_SKIP_FILES, VALIDATION_SKIP_PATHS,
@@ -106,7 +106,7 @@ def validate_single(rel_path: str) -> dict:
     if not full_path.exists():
         return {"error": f"File not found: {rel_path}"}
 
-    md_text = full_path.read_text(encoding="utf-8")
+    md_text = read_md(full_path)
     violations = []
     registry = load_tags()
     projects = load_projects()

@@ -42,6 +42,7 @@ hv_mcp/
 ├── index.py            ← In-memory document index + file watcher
 ├── index_file.py       ← Regenerates _index.md after write operations
 ├── search.py           ← search_hyperspace, recent_activity, get_work_items
+├── rag.py              ← Semantic RAG engine: chunking, embedding, hybrid search
 ├── tags.py             ← get_tags, add_tag (tag registry CRUD)
 ├── validation.py       ← validate_single, validate_all (convention checks)
 ├── crud.py             ← create_document, update_document, move_work_item
@@ -76,10 +77,11 @@ This index powers search, recent activity, session briefs, and all analytics too
 | Tool | Purpose |
 |------|---------|
 | `search_hyperspace` | Text + tag + type search across all documents |
+| `semantic_search` | Hybrid vector + keyword search by meaning (embedding similarity + FTS5, fused via RRF, MMR-reranked) |
 | `recent_activity` | Documents updated within N days |
 | `get_work_items` | Work items filtered by status, tags, project |
 
-These read from the in-memory index — no disk I/O needed.
+`search_hyperspace` reads from the in-memory index — no disk I/O needed. `semantic_search` queries the RAG engine (`hv_mcp/rag.py`): sqlite-vec for dense vector similarity and FTS5 for keyword matching, fused via Reciprocal Rank Fusion, then reranked with MMR for diversity. First call triggers an index build (~5 min once, then cached at `state/rag.db`); subsequent calls run an incremental check (~1s) before searching (~120ms).
 
 ### Document CRUD
 

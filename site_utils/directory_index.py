@@ -14,9 +14,9 @@ from .file_utils import (
     dir_label, nice_name, get_title, extract_dates, sort_date, display_date,
     href_for, count_docs_under, get_dir_snippet,
     get_dir_status, get_dir_type, get_dir_tags, infer_app_group,
-    compute_badges, format_badge_html,
+    compute_badges, format_badge_html, read_md,
 )
-from .chips import render_chip
+from chips import render_chip
 
 
 # ---------------------------------------------------------------------------
@@ -191,7 +191,7 @@ def generate_home_content(files, build_stats=None, recent_paths=None):
         # Skip _conventions.md
         if parts[2].startswith("_"):
             continue
-        md_text = (HYPERSPACE_ROOT / rel).read_text(encoding="utf-8")
+        md_text = read_md(HYPERSPACE_ROOT / rel)
         from .file_utils import _extract_status_from_text
         status = _extract_status_from_text(md_text)
         if status and ("progress" in status.lower() or "discussion" in status.lower()):
@@ -227,7 +227,7 @@ def generate_home_content(files, build_stats=None, recent_paths=None):
     for rel in files:
         rel_posix = str(rel).replace("\\", "/")
         if rel_posix in recent_paths:
-            md_text = (HYPERSPACE_ROOT / rel).read_text(encoding="utf-8")
+            md_text = read_md(HYPERSPACE_ROOT / rel)
             title = get_title(md_text, nice_name(rel.name))
             dates = extract_dates(md_text)
             date_str, date_label = sort_date(dates)
@@ -348,7 +348,7 @@ def generate_home_content(files, build_stats=None, recent_paths=None):
 
         enriched = []
         for rel in top_docs:
-            md_text = (HYPERSPACE_ROOT / rel).read_text(encoding="utf-8")
+            md_text = read_md(HYPERSPACE_ROOT / rel)
             title = get_title(md_text, nice_name(rel.name))
             dates = extract_dates(md_text)
             date_str, date_label = sort_date(dates)
@@ -383,7 +383,7 @@ def generate_dir_index_content(files, dir_prefix, recent_paths=None):
     for candidate in ("_meta.md",):
         candidate_path = HYPERSPACE_ROOT / dir_prefix / candidate
         if candidate_path.exists():
-            md_text = candidate_path.read_text(encoding="utf-8")
+            md_text = read_md(candidate_path)
             extracted = get_title(md_text, "")
             if extracted:
                 title = extracted
@@ -454,7 +454,7 @@ def _render_dir_header(html, files, dir_prefix, title):
             continue
         md_path = HYPERSPACE_ROOT / rel
         if md_path.exists():
-            md_text = md_path.read_text(encoding="utf-8")
+            md_text = read_md(md_path)
             dates = extract_dates(md_text)
             date_str, _ = sort_date(dates)
             if date_str > last_activity:
@@ -511,7 +511,7 @@ def _render_subdirs_single(html, files, dir_prefix, sd, recent_paths):
         html.append('<ul class="doc-list">')
         enriched_child = []
         for rel, name in child_docs:
-            md_text = (HYPERSPACE_ROOT / rel).read_text(encoding="utf-8")
+            md_text = read_md(HYPERSPACE_ROOT / rel)
             doc_title = get_title(md_text, name)
             dates = extract_dates(md_text)
             date_str, date_label = sort_date(dates)
@@ -676,7 +676,7 @@ def _render_work_items_list(html, files, dir_prefix, doc_entries, recent_paths, 
     _APP_GROUP_ORDER = ["portal", "portal-cms", "hyperspace", "infrastructure", "other"]
 
     for rel, name in doc_entries:
-        md_text = (HYPERSPACE_ROOT / rel).read_text(encoding="utf-8")
+        md_text = read_md(HYPERSPACE_ROOT / rel)
         doc_title = get_title(md_text, name)
         dates = extract_dates(md_text)
         date_str, date_label = sort_date(dates)
@@ -802,7 +802,7 @@ def _render_doc_list_standard(html, files, dir_prefix, doc_entries, recent_paths
     # Enrich entries with date metadata for sorting
     enriched = []
     for rel, name in doc_entries:
-        md_text = (HYPERSPACE_ROOT / rel).read_text(encoding="utf-8")
+        md_text = read_md(HYPERSPACE_ROOT / rel)
         doc_title = get_title(md_text, name)
         dates = extract_dates(md_text)
         date_str, date_label = sort_date(dates)

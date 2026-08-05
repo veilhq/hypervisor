@@ -21,6 +21,13 @@ JS_DIR = ASSETS_DIR / "js"
 HYPERKIT_DIR = HYPERSPACE_ROOT / ".hyperkit"
 HYPERKIT_CSS_DIR = HYPERKIT_DIR / "css"
 HYPERKIT_JS_DIR = HYPERKIT_DIR / "js"
+HYPERKIT_PYTHON_DIR = HYPERKIT_DIR / "python"
+
+# Make Hyperkit Python modules importable from site_utils submodules.
+# This runs before __init__.py imports directory_index / markdown_processing,
+# both of which import from chips (now in .hyperkit/python/).
+import sys
+sys.path.insert(0, str(HYPERKIT_PYTHON_DIR))
 
 # Hyperkit JS modules, in load order. These must run before any app-local
 # module that references window.HvNoiseField / HvGreeting / HvCursorTrail /
@@ -116,8 +123,8 @@ def hypervisor_logo_svg(css_class: str = "brand-icon") -> str:
 
 # --- Filters ---
 SKIP_DIRS = {
-    "__pycache__", "site", "learn", ".scratch",
-    ".hyperagent", ".hyperagent-lite", ".hyperkit",
+    "__pycache__", "site", "learn", ".scratch", ".kb",
+    ".hyperagent", ".hyperagent-lite", ".hyperkit", ".hypereye", ".events",
 }
 SKIP_FILES = {".gitkeep"}
 

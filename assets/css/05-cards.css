@@ -803,8 +803,10 @@ h1 + .home-dock {
   border: var(--border-hair) solid var(--border);
   position: relative;
   overflow: hidden;
-  transition: transform var(--motion-base) var(--ease), border-color var(--motion-base) var(--ease),
-              box-shadow 0.25s var(--ease), background 0.2s var(--ease);
+  transition: transform var(--motion-base) var(--ease),
+              border-color var(--motion-base) var(--ease),
+              box-shadow var(--motion-base) var(--ease),
+              background 0.2s var(--ease);
   opacity: 0;
   animation: cardIn var(--motion-slow) var(--ease) both;
 }
@@ -826,9 +828,6 @@ h1 + .home-dock {
 
 .card:hover {
   background: var(--bg-card-hover);
-  border-color: var(--accent-border);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-hover);
 }
 .card:active {
   transform: translateY(0);

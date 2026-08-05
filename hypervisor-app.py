@@ -36,6 +36,7 @@ logger = setup_logger("hypervisor")
 import webview.http
 
 from site_utils.config import HYPERSPACE_ROOT, OUTPUT_DIR, ASSETS_DIR
+from site_utils.file_utils import read_md
 from site_utils.work_items import mark_done as _mark_done
 from site_utils.external_files import import_external_file as _import_external, delete_external_file as _delete_external
 from site_utils.ideas import delete_idea as _delete_idea
@@ -165,6 +166,7 @@ class HypervisorAPI:
         self._window = None
         self._watcher = watcher
         self._prefs_lock = __import__("threading").Lock()
+        self._writeback_lock = __import__("threading").Lock()
 
     def set_window(self, window):
         """Set the window reference after creation (needed for evaluate_js)."""
@@ -190,22 +192,25 @@ class HypervisorAPI:
         if not full_path.exists():
             return {"ok": False, "error": f"File not found: {file_path}"}
 
-        # Tell the watcher to ignore events for this file — covers both the
-        # immediate write and any delayed filesystem notifications on Windows.
-        self._watcher.ignore_path(str(full_path), grace_seconds=2.0)
+        # Serialize all write operations on the same file — PyWebView dispatches
+        # bridge calls on worker threads, so rapid checkbox clicks can race.
+        with self._writeback_lock:
+            # Tell the watcher to ignore events for this file — covers both the
+            # immediate write and any delayed filesystem notifications on Windows.
+            self._watcher.ignore_path(str(full_path), grace_seconds=2.0)
 
-        lines = full_path.read_text(encoding="utf-8").splitlines()
+            lines = read_md(full_path).splitlines()
 
-        if line_number < 0 or line_number >= len(lines):
-            return {"ok": False, "error": f"Line {line_number} out of range"}
+            if line_number < 0 or line_number >= len(lines):
+                return {"ok": False, "error": f"Line {line_number} out of range"}
 
-        line = lines[line_number]
-        if checked:
-            lines[line_number] = line.replace("- [x]", "- [ ]", 1).replace("- [X]", "- [ ]", 1)
-        else:
-            lines[line_number] = line.replace("- [ ]", "- [x]", 1)
+            line = lines[line_number]
+            if checked:
+                lines[line_number] = line.replace("- [x]", "- [ ]", 1).replace("- [X]", "- [ ]", 1)
+            else:
+                lines[line_number] = line.replace("- [ ]", "- [x]", 1)
 
-        full_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+            full_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
         # Rebuild the HTML on disk in the background — no page reload.
         # The JS side already did an optimistic visual toggle, so reloading
@@ -226,26 +231,27 @@ class HypervisorAPI:
         if not full_path.exists():
             return {"ok": False, "error": f"File not found: {file_path}"}
 
-        # Tell the watcher to ignore events for this file
-        self._watcher.ignore_path(str(full_path), grace_seconds=2.0)
+        with self._writeback_lock:
+            # Tell the watcher to ignore events for this file
+            self._watcher.ignore_path(str(full_path), grace_seconds=2.0)
 
-        text = full_path.read_text(encoding="utf-8")
-        lines = text.splitlines()
+            text = read_md(full_path)
+            lines = text.splitlines()
 
-        # Find the metadata line matching "- Field: value" pattern
-        pattern = re.compile(r'^(\s*-\s*' + re.escape(field) + r'\s*:\s*)(.+)$', re.IGNORECASE)
-        found = False
-        for i, line in enumerate(lines):
-            m = pattern.match(line)
-            if m:
-                lines[i] = m.group(1) + value
-                found = True
-                break
+            # Find the metadata line matching "- Field: value" pattern
+            pattern = re.compile(r'^(\s*-\s*' + re.escape(field) + r'\s*:\s*)(.+)$', re.IGNORECASE)
+            found = False
+            for i, line in enumerate(lines):
+                m = pattern.match(line)
+                if m:
+                    lines[i] = m.group(1) + value
+                    found = True
+                    break
 
-        if not found:
-            return {"ok": False, "error": f"Field '{field}' not found in {file_path}"}
+            if not found:
+                return {"ok": False, "error": f"Field '{field}' not found in {file_path}"}
 
-        full_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+            full_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
         # Rebuild in the background — no page reload.
         # The JS side already updated the status text optimistically.
@@ -266,6 +272,41 @@ class HypervisorAPI:
             except (OSError, RuntimeError) as e:
                 logger.debug("Reload broadcast failed for window %s: %s", win.title, e)
         return {"ok": True}
+
+    def semantic_search(self, query, top_k=5, tags=None, doc_type=None, project=None, source_type=None):
+        """Search hyperspace by meaning — direct Python call, no MCP round-trip.
+
+        Called from the Hypervisor frontend (search bar, related sidebar) via
+        window.pywebview.api.semantic_search(). Returns results directly since
+        the RAG engine lives in the same process.
+
+        Args:
+            query: Natural language search query.
+            top_k: Max results (default 5).
+            tags: Filter by tags (AND logic).
+            doc_type: Filter by document type.
+            project: Filter by project name.
+            source_type: Filter by 'doc' or 'kb'.
+
+        Returns:
+            List of dicts with: path, title, section, content, similarity,
+            score, doc_type, source_type, tags, updated.
+        """
+        try:
+            from hv_mcp.rag import get_rag
+            rag = get_rag()
+            rag.reindex_changed()
+            return rag.search(
+                query=query,
+                top_k=top_k,
+                tags=tags,
+                doc_type=doc_type,
+                project=project,
+                source_type=source_type,
+            )
+        except Exception as e:
+            logger.error("semantic_search bridge failed: %s", e)
+            return []
 
     def launch_hyperagent(self):
         """Launch Hyperagent as a detached subprocess."""
@@ -437,7 +478,7 @@ class HypervisorAPI:
         if not full_path.exists():
             return {"ok": False, "error": f"File not found: {file_path}"}
         try:
-            content = full_path.read_text(encoding="utf-8")
+            content = read_md(full_path)
             return {"ok": True, "content": content}
         except Exception as e:
             return {"ok": False, "error": str(e)}
@@ -766,7 +807,7 @@ class HypervisorAPI:
             return {"ok": False, "error": f"Source file not found: {source_rel_path}"}
 
         try:
-            md_content = md_path.read_text(encoding="utf-8")
+            md_content = read_md(md_path)
         except Exception as e:
             return {"ok": False, "error": f"Failed to read source: {e}"}
 
@@ -823,7 +864,7 @@ class HypervisorAPI:
             file_path.write_text(f"# Scratch \u2014 {target_date}\n\n", encoding="utf-8")
             created = True
 
-        content = file_path.read_text(encoding="utf-8")
+        content = read_md(file_path)
         return {"ok": True, "date": target_date, "content": content, "created": created}
 
     def save_scratch(self, date, content):
@@ -860,7 +901,7 @@ class HypervisorAPI:
         for f in sorted(scratch_dir.glob("*.md"), reverse=True):
             # Date is the filename stem (YYYY-MM-DD)
             date = f.stem
-            content = f.read_text(encoding="utf-8")
+            content = read_md(f)
             # Count entries by counting ## HH:MM headings
             entries = content.count("\n## ")
             files.append({"date": date, "entries": entries, "size": len(content)})
@@ -946,299 +987,30 @@ class HypervisorAPI:
             return {"ok": False, "error": str(e)}
 
     def refresh_ado_sprint(self):
-        """Fetch core sprint data: iteration, work items, PRs, work requests, burndown.
-
-        This is the fast-path call for the Sprint tab — skips source control
-        and pipeline data entirely.
-
-        Returns:
-            dict with sprint payload or error information.
-        """
-        from concurrent.futures import ThreadPoolExecutor, as_completed
-
-        try:
-            tools_dir = Path(__file__).parent / "tools"
-            sys.path.insert(0, str(tools_dir))
-            from ado_collector import load_config, ADOClient, extract_top_level_items, ADOConfigError
-            from ado_dashboard import build_dashboard_payload
-            sys.path.pop(0)
-        except ImportError as e:
-            return {"ok": False, "error": f"Failed to import ado modules: {e}"}
-
-        try:
-            config = load_config()
-        except ADOConfigError as e:
-            return {"ok": False, "error": str(e)}
-
-        try:
-            client = ADOClient(config["org"], pat=config.get("pat"), use_entra=config.get("use_entra", False))
-
-            # Step 1: Get current iteration (required by everything else)
-            iteration = client.get_current_iteration(config["project"], config["team"])
-            if not iteration:
-                return {"ok": False, "error": "No current iteration found."}
-
-            attrs = iteration.get("attributes", {})
-            iter_path = iteration.get("path", "")
-            start_date = attrs.get("startDate", "")[:10]
-            finish_date = attrs.get("finishDate", "")[:10]
-
-            # Step 2: Get work item IDs
-            iter_data = client.get_iteration_work_items(
-                config["project"], config["team"], iteration["id"]
-            )
-            top_level_ids = extract_top_level_items(iter_data)
-
-            # Step 3: Parallel fetch — work items + PRs + work requests + burndown
-            fields = [
-                "System.Id", "System.Title", "System.State",
-                "System.WorkItemType", "System.AssignedTo", "System.Tags",
-                "Microsoft.VSTS.Scheduling.StoryPoints",
-            ]
-
-            wiql = (
-                "SELECT [System.Id], [System.Title], [System.State], "
-                "[System.AssignedTo], [System.CreatedDate] "
-                "FROM WorkItems "
-                "WHERE [System.TeamProject] = @project "
-                "AND [System.WorkItemType] = 'Work Request' "
-                "AND [System.State] <> 'Done' "
-                "AND [System.State] <> 'Closed' "
-                "AND [System.State] <> 'Removed' "
-                "ORDER BY [System.CreatedDate] DESC"
-            )
-
-            work_items = []
-            pull_requests = []
-            work_requests = []
-            burndown_history = []
-
-            def fetch_work_items():
-                return client.get_work_items(config["project"], top_level_ids, fields=fields)
-
-            def fetch_pull_requests():
-                return client.get_pull_requests(config["project"])
-
-            def fetch_work_requests():
-                return client.query_work_items_wiql(config["project"], wiql, top=50)
-
-            def fetch_burndown():
-                if iter_path and start_date and finish_date:
-                    return client.get_burndown_history(
-                        config["org"], config["project"], iter_path, start_date, finish_date
-                    )
-                return []
-
-            with ThreadPoolExecutor(max_workers=4) as executor:
-                futures = {
-                    executor.submit(fetch_work_items): "work_items",
-                    executor.submit(fetch_pull_requests): "pull_requests",
-                    executor.submit(fetch_work_requests): "work_requests",
-                    executor.submit(fetch_burndown): "burndown",
-                }
-                for future in as_completed(futures):
-                    key = futures[future]
-                    try:
-                        result = future.result()
-                        if key == "work_items":
-                            work_items = result
-                        elif key == "pull_requests":
-                            pull_requests = result
-                        elif key == "work_requests":
-                            work_requests = result
-                        elif key == "burndown":
-                            burndown_history = result
-                    except Exception as e:
-                        logger.warning("Failed to fetch %s: %s", key, e)
-
-            return build_dashboard_payload(
-                iteration, work_items, pull_requests, work_requests, config,
-                burndown_history,
-            )
-
-        except Exception as e:
-            return {"ok": False, "error": str(e)}
+        """Fetch core sprint data (delegated to ado_bridge)."""
+        from ado_bridge import refresh_ado_sprint
+        return refresh_ado_sprint()
 
     def refresh_ado_source(self):
-        """Fetch source control data: repos, commits, branches, conflict detection.
-
-        Separate from sprint data so it can be loaded lazily when the Source
-        tab is activated.
-
-        Returns:
-            dict with source payload or error information.
-        """
-        from concurrent.futures import ThreadPoolExecutor
-
-        try:
-            tools_dir = Path(__file__).parent / "tools"
-            sys.path.insert(0, str(tools_dir))
-            from ado_collector import load_config, ADOClient, ADOConfigError
-            from ado_dashboard import detect_conflicts
-            sys.path.pop(0)
-        except ImportError as e:
-            return {"ok": False, "error": f"Failed to import ado modules: {e}"}
-
-        try:
-            config = load_config()
-        except ADOConfigError as e:
-            return {"ok": False, "error": str(e)}
-
-        try:
-            client = ADOClient(config["org"], pat=config.get("pat"), use_entra=config.get("use_entra", False))
-            repos = client.get_repos(config["project"])
-
-            commits = []
-            branches = []
-            conflicts = []
-
-            if repos:
-                with ThreadPoolExecutor(max_workers=2) as executor:
-                    commit_future = executor.submit(
-                        client.get_recent_commits, config["project"], repos, 30
-                    )
-                    branch_future = executor.submit(
-                        client.get_branches_overview, config["project"], repos
-                    )
-
-                    try:
-                        commits = commit_future.result()
-                    except Exception as e:
-                        logger.warning("Failed to fetch commits: %s", e)
-
-                    try:
-                        branches = branch_future.result()
-                    except Exception as e:
-                        logger.warning("Failed to fetch branches: %s", e)
-
-                if branches:
-                    try:
-                        branch_diffs = client.get_branch_diffs(
-                            config["project"], repos, branches
-                        )
-                        conflicts = detect_conflicts(branch_diffs)
-                    except Exception as e:
-                        logger.warning("Failed to detect branch conflicts: %s", e)
-
-            return {
-                "ok": True,
-                "commits": commits,
-                "branches": branches,
-                "conflicts": conflicts,
-                "repo_count": len(repos),
-            }
-
-        except Exception as e:
-            return {"ok": False, "error": str(e)}
+        """Fetch source control data (delegated to ado_bridge)."""
+        from ado_bridge import refresh_ado_source
+        return refresh_ado_source()
 
     def refresh_ado_dashboard(self):
-        """Full dashboard refresh — fetches all tabs in parallel.
-
-        Calls refresh_ado_sprint, refresh_ado_source, and pipeline data
-        concurrently, then merges the results into one payload.
-
-        Returns:
-            dict with complete dashboard data or error information.
-        """
-        from concurrent.futures import ThreadPoolExecutor
-
-        with ThreadPoolExecutor(max_workers=3) as executor:
-            sprint_future = executor.submit(self.refresh_ado_sprint)
-            source_future = executor.submit(self.refresh_ado_source)
-            pipelines_future = executor.submit(self.refresh_ado_pipelines_full)
-
-        sprint_data = sprint_future.result()
-        if not sprint_data or not sprint_data.get("ok"):
-            return sprint_data
-
-        # Merge source data
-        source_data = source_future.result()
-        if source_data and source_data.get("ok"):
-            sprint_data["commits"] = source_data.get("commits", [])
-            sprint_data["branches"] = source_data.get("branches", [])
-            sprint_data["conflicts"] = source_data.get("conflicts", [])
-            sprint_data["repo_count"] = source_data.get("repo_count", 0)
-
-        # Merge pipeline data
-        pipeline_data = pipelines_future.result()
-        if pipeline_data and pipeline_data.get("ok"):
-            sprint_data["pipeline_runs"] = pipeline_data.get("pipeline_runs", [])
-            sprint_data["active_pipelines"] = pipeline_data.get("active_pipelines", [])
-
-        return sprint_data
+        """Full dashboard refresh (delegated to ado_bridge)."""
+        from ado_bridge import refresh_ado_dashboard
+        return refresh_ado_dashboard()
 
     def refresh_ado_pipelines_full(self):
-        """Fetch both recent and active pipeline runs.
-
-        Returns:
-            dict with pipeline_runs and active_pipelines or error.
-        """
-        from concurrent.futures import ThreadPoolExecutor
-
-        try:
-            tools_dir = Path(__file__).parent / "tools"
-            sys.path.insert(0, str(tools_dir))
-            from ado_collector import load_config, ADOClient, ADOConfigError
-            sys.path.pop(0)
-        except ImportError as e:
-            return {"ok": False, "error": f"Failed to import ado modules: {e}"}
-
-        try:
-            config = load_config()
-        except ADOConfigError as e:
-            return {"ok": False, "error": str(e)}
-
-        try:
-            client = ADOClient(config["org"], pat=config.get("pat"), use_entra=config.get("use_entra", False))
-
-            with ThreadPoolExecutor(max_workers=2) as executor:
-                runs_future = executor.submit(client.get_pipeline_runs, config["project"], 5)
-                active_future = executor.submit(client.get_active_pipeline_runs, config["project"])
-
-                pipeline_runs = []
-                active_pipelines = []
-                try:
-                    pipeline_runs = runs_future.result()
-                except Exception as e:
-                    logger.warning("Failed to fetch pipeline runs: %s", e)
-                try:
-                    active_pipelines = active_future.result()
-                except Exception as e:
-                    logger.warning("Failed to fetch active pipelines: %s", e)
-
-            return {"ok": True, "pipeline_runs": pipeline_runs, "active_pipelines": active_pipelines}
-
-        except Exception as e:
-            return {"ok": False, "error": str(e)}
+        """Fetch recent + active pipeline runs (delegated to ado_bridge)."""
+        from ado_bridge import refresh_ado_pipelines_full
+        return refresh_ado_pipelines_full()
 
     def refresh_ado_pipelines(self):
-        """Lightweight poll — fetch only active/queued pipeline runs.
+        """Lightweight pipeline poll (delegated to ado_bridge)."""
+        from ado_bridge import refresh_ado_pipelines
+        return refresh_ado_pipelines()
 
-        Used by the 60s auto-poll on the Pipelines tab to avoid re-fetching
-        the entire dashboard payload.
-
-        Returns:
-            dict with active_pipelines list or error.
-        """
-        try:
-            tools_dir = Path(__file__).parent / "tools"
-            sys.path.insert(0, str(tools_dir))
-            from ado_collector import load_config, ADOClient, ADOConfigError
-            sys.path.pop(0)
-        except ImportError as e:
-            return {"ok": False, "error": f"Failed to import ado modules: {e}"}
-
-        try:
-            config = load_config()
-        except ADOConfigError as e:
-            return {"ok": False, "error": str(e)}
-
-        try:
-            client = ADOClient(config["org"], pat=config.get("pat"), use_entra=config.get("use_entra", False))
-            active_pipelines = client.get_active_pipeline_runs(config["project"])
-            return {"ok": True, "active_pipelines": active_pipelines}
-        except Exception as e:
-            return {"ok": False, "error": str(e)}
 
     # -----------------------------------------------------------------------
     # Log Viewer
@@ -1329,21 +1101,35 @@ def on_file_changed(rel_path):
         print("  File deleted or moved — full rebuild")
         full_build(quiet=True)
 
+    # RAG incremental reindex (desktop-app path — fires alongside the MCP
+    # server's watcher hook, but only one will do real work because the DB
+    # uses content-hash dedup).
+    rag_msg = _rag_index_file(rel_path)
+
     if _window:
         try:
             # With the SPA router, __hypervisorReload re-fetches the current fragment.
             # Show a toast notification after reload completes.
             if rel_path:
                 safe_path = rel_path.replace("\\", "/").replace("'", "\\'")
-                js_code = (
+                reload_toast = (
                     "window.__hypervisorReload();"
                     "if(window.__hypervisorToast)window.__hypervisorToast({variant:'info',message:'updated: " + safe_path + "',dedupeKey:'live-reload'});"
                 )
             else:
-                js_code = (
+                reload_toast = (
                     "window.__hypervisorReload();"
                     "if(window.__hypervisorToast)window.__hypervisorToast({variant:'info',message:'full rebuild complete',dedupeKey:'live-reload'});"
                 )
+            # RAG toast (separate from the reload toast — uses its own dedupeKey)
+            rag_toast = ""
+            if rag_msg:
+                safe_rag = rag_msg.replace("'", "\\'")
+                rag_toast = (
+                    "if(window.__hypervisorToast)window.__hypervisorToast("
+                    "{variant:'info',icon:'brain',message:'" + safe_rag + "',dedupeKey:'rag-index'});"
+                )
+            js_code = reload_toast + rag_toast
             for win in webview.windows:
                 try:
                     win.evaluate_js(js_code)
@@ -1351,6 +1137,87 @@ def on_file_changed(rel_path):
                     logger.debug("Reload broadcast failed: %s", e)
         except (OSError, RuntimeError):
             pass  # Window may be closing during shutdown
+
+
+def _rag_index_file(rel_path):
+    """Index a single file into the RAG and return a toast message, or None.
+
+    Returns None when the RAG hasn't been initialized yet (first semantic_search
+    call triggers the cold build — until then the desktop app doesn't load the
+    embedding model eagerly).
+    """
+    try:
+        from hv_mcp.rag import is_initialized, is_indexable, get_rag
+        if not is_initialized():
+            return None
+        if rel_path and not is_indexable(rel_path):
+            return None
+        rag = get_rag()
+        if rel_path:
+            n = rag.index_document(rel_path)
+            if n > 0:
+                short = rel_path.rsplit("/", 1)[-1].replace(".md", "")
+                return f"RAG indexed {short} ({n} chunks)"
+        else:
+            # Full rebuild — just reindex changed documents
+            result = rag.reindex_changed()
+            indexed = result.get("documents_indexed", 0)
+            if indexed > 0:
+                return f"RAG reindexed {indexed} docs ({result.get('chunks_written', 0)} chunks)"
+        return None
+    except Exception as exc:
+        from hv_mcp.rag import logger as rag_logger
+        rag_logger.warning("desktop index failed: %s", exc)
+        return None
+
+
+def _init_rag_background():
+    """Eagerly initialize the RAG engine on a background thread at app start.
+
+    Loads the embedding model (~3-5s) and runs reindex_changed() to sync any
+    docs modified since last session. Once complete, the watcher's toast path
+    and the bridge's semantic_search method work immediately.
+    """
+    import threading
+
+    def _run():
+        try:
+            from hv_mcp.rag import get_rag, logger as rag_logger
+            rag = get_rag()
+            result = rag.reindex_changed()
+            indexed = result.get("documents_indexed", 0)
+            total = result.get("total_chunks", 0)
+            rag_logger.info(
+                "eager init complete — %d indexed, %d total chunks",
+                indexed, total,
+            )
+            # Toast success
+            msg = f"RAG ready — {total} chunks"
+            if indexed > 0:
+                msg += f" ({indexed} docs updated)"
+            for win in webview.windows:
+                try:
+                    win.evaluate_js(
+                        "if(window.__hypervisorToast)window.__hypervisorToast("
+                        "{variant:'success',icon:'brain',message:'" + msg + "',dedupeKey:'rag-init'});"
+                    )
+                except (OSError, RuntimeError):
+                    pass
+        except Exception as exc:
+            from hv_mcp.rag import logger as rag_logger
+            rag_logger.warning("eager init failed: %s", exc)
+            err_msg = str(exc).replace("'", "\\'")[:80]
+            for win in webview.windows:
+                try:
+                    win.evaluate_js(
+                        "if(window.__hypervisorToast)window.__hypervisorToast("
+                        "{variant:'error',icon:'brain',message:'RAG init failed: " + err_msg + "',dedupeKey:'rag-init'});"
+                    )
+                except (OSError, RuntimeError):
+                    pass
+
+    t = threading.Thread(target=_run, daemon=True, name="rag-init")
+    t.start()
 
 
 def start_watcher_thread(watcher):
@@ -1439,6 +1306,9 @@ def main():
         time.sleep(1)
         _apply_window_chrome("Hypervisor", str((ASSETS_DIR / "hv-box.ico").resolve()))
         start_watcher_thread(watcher)
+        # Eager RAG init: load the embedding model and sync the index so
+        # semantic search and watcher toasts work immediately, not on first query.
+        _init_rag_background()
 
     # Start PyWebView — pass our custom server class so the internal HTTP
     # server uses our 404 handler instead of Bottle's default white page.

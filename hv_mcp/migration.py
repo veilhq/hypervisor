@@ -21,7 +21,7 @@ from difflib import get_close_matches
 from pathlib import Path
 
 from site_utils.config import HYPERSPACE_ROOT
-from site_utils.file_utils import collect_files
+from site_utils.file_utils import collect_files, read_md
 
 from .config import VALIDATION_SKIP_DIRS, VALIDATION_SKIP_FILES, VALIDATION_SKIP_PATHS
 from .index import refresh_single
@@ -286,7 +286,7 @@ def migrate_single(rel_path: str, dry_run: bool = True) -> dict:
         return {"error": f"File not found: {rel_path}"}
 
     try:
-        content = full_path.read_text(encoding="utf-8")
+        content = read_md(full_path)
     except (OSError, UnicodeDecodeError) as e:
         return {"error": f"Cannot read file: {e}"}
 

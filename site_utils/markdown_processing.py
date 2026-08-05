@@ -6,7 +6,7 @@ import re
 import html as html_mod
 
 from .config import MD
-from .chips import render_chip
+from chips import render_chip
 
 
 def normalize_tables(md_text: str) -> str:

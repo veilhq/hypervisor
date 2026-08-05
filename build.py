@@ -18,7 +18,7 @@ from datetime import datetime
 from pathlib import PurePosixPath
 
 from site_utils.config import HYPERSPACE_ROOT, OUTPUT_DIR, ASSETS_DIR, SKIP_DIRS, HYPERKIT_CSS_DIR, HYPERKIT_JS_DIR, HYPERKIT_JS_MODULES
-from site_utils.file_utils import collect_files, html_dir_for, nice_name, get_title, extract_dates, sort_date, count_docs_under
+from site_utils.file_utils import collect_files, html_dir_for, nice_name, get_title, extract_dates, sort_date, count_docs_under, read_md
 from site_utils.build_cache import BuildCache
 
 # Structured logging (shared ecosystem logger)
@@ -149,7 +149,7 @@ def build_doc_pages(files, backlink_index, build_id, cache=None):
     rendered = 0
     for rel in files:
         md_path = HYPERSPACE_ROOT / rel
-        md_text = md_path.read_text(encoding="utf-8")
+        md_text = read_md(md_path)
 
         # Check cache — skip rendering if content unchanged and output exists
         if cache and cache.is_unchanged(rel, md_text):
@@ -187,7 +187,7 @@ def compute_recent_paths(files):
     recent_paths = set()
     candidates = []
     for rel in files:
-        md_text = (HYPERSPACE_ROOT / rel).read_text(encoding="utf-8")
+        md_text = read_md(HYPERSPACE_ROOT / rel)
         dates = extract_dates(md_text)
         date_str, _ = sort_date(dates)
         if date_str != "0000-00-00T00:00":
@@ -503,7 +503,7 @@ def build_single_file(changed_path):
     rel = PurePosixPath(changed_path)
     md_path = HYPERSPACE_ROOT / rel
     if md_path.exists():
-        md_text = md_path.read_text(encoding="utf-8")
+        md_text = read_md(md_path)
         title = get_title(md_text, nice_name(rel.name))
         content_html, toc_html = render_markdown(md_text, source_path=str(rel))
         hdir = html_dir_for(rel)

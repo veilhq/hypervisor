@@ -10,6 +10,7 @@
         <button class="log-filter-btn log-filter-active" data-source="hypervisor" id="log-src-hypervisor">Hypervisor</button>
         <button class="log-filter-btn log-filter-active" data-source="hyperagent" id="log-src-hyperagent">Hyperagent</button>
         <button class="log-filter-btn log-filter-active" data-source="bridge" id="log-src-bridge">Bridge</button>
+        <button class="log-filter-btn log-filter-active" data-source="rag" id="log-src-rag">RAG</button>
       </div>
       <div class="log-toolbar-center">
         <!-- Severity toggles -->
@@ -318,7 +319,7 @@
   // --- State ---
   var logLines = [];          // All parsed log entries
   var totalLinesByFile = {};  // Track total lines per file for polling
-  var activeSources = { hypervisor: true, hyperagent: true, bridge: true };
+  var activeSources = { hypervisor: true, hyperagent: true, bridge: true, rag: true };
   var activeSeverities = { error: true, warn: true, info: true, debug: true, trace: true };
   var searchText = "";
   var isPaused = false;
@@ -525,10 +526,11 @@
       var src = btn.getAttribute("data-source");
       if (src === "all") {
         // Toggle all
-        var allActive = activeSources.hypervisor && activeSources.hyperagent && activeSources.bridge;
+        var allActive = activeSources.hypervisor && activeSources.hyperagent && activeSources.bridge && activeSources.rag;
         activeSources.hypervisor = !allActive;
         activeSources.hyperagent = !allActive;
         activeSources.bridge = !allActive;
+        activeSources.rag = !allActive;
       } else {
         activeSources[src] = !activeSources[src];
       }
@@ -541,7 +543,7 @@
     srcBtns.forEach(function(btn) {
       var src = btn.getAttribute("data-source");
       if (src === "all") {
-        var allActive = activeSources.hypervisor && activeSources.hyperagent && activeSources.bridge;
+        var allActive = activeSources.hypervisor && activeSources.hyperagent && activeSources.bridge && activeSources.rag;
         btn.classList.toggle("log-filter-active", allActive);
       } else {
         btn.classList.toggle("log-filter-active", activeSources[src]);
@@ -592,11 +594,12 @@
   });
 
   // --- Polling ---
-  var LOG_FILES = ["hypervisor.log", "hyperagent.log", "bridge.log"];
+  var LOG_FILES = ["hypervisor.log", "hyperagent.log", "bridge.log", "rag.log"];
   var SOURCE_MAP = {
     "hypervisor.log": "hypervisor",
     "hyperagent.log": "hyperagent",
     "bridge.log": "bridge",
+    "rag.log": "rag",
   };
 
   function pollLogs() {

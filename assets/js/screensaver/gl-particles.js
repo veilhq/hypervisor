@@ -6,7 +6,7 @@
     // the fluid look through high particle count + viscous damping + mouse interaction.
 
     (function () {
-      var PARTICLE_COUNT = 50000;
+      var PARTICLE_COUNT = 250000;
       var FLOATS_PER_PARTICLE = 4; // pos.x, pos.y, vel.x, vel.y
 
       // --- Update vertex shader ---

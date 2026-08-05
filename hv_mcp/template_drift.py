@@ -10,6 +10,7 @@ import re
 from pathlib import Path
 
 from site_utils.config import HYPERSPACE_ROOT
+from site_utils.file_utils import read_md
 
 from .templates import (
     apply_work_item_template,
@@ -181,7 +182,7 @@ def check_template_drift() -> dict:
             continue
 
         # Read markdown template
-        md_text = md_path.read_text(encoding="utf-8")
+        md_text = read_md(md_path)
         md_structure = _extract_structure(md_text)
 
         # Generate programmatic sample

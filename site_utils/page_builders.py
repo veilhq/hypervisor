@@ -7,7 +7,7 @@ import shutil
 from datetime import datetime
 
 from .config import HYPERSPACE_ROOT, OUTPUT_DIR, SKIP_DIRS
-from .file_utils import get_title, nice_name
+from .file_utils import get_title, nice_name, read_md
 from .markdown_processing import render_markdown
 from .directory_index import generate_home_content
 from .fragment import build_fragment, write_fragment
@@ -143,7 +143,7 @@ def build_learn_pages(build_id):
     # Build individual learn page fragments
     learn_entries = []  # (slug, title, description, order) for the index
     for md_file in learn_files:
-        md_text = md_file.read_text(encoding="utf-8")
+        md_text = read_md(md_file)
         title = get_title(md_text, nice_name(md_file.name))
         content_html, toc_html = render_markdown(md_text, source_path=f"learn/{md_file.name}")
 
@@ -191,7 +191,7 @@ def _build_learn_index(entries, build_id):
     for i, (slug, title, desc) in enumerate(entries):
         card_num = f"{i + 1:02d}"
         cards_html += (
-            f'<a href="/learn/{slug}/index.html" class="card">'
+            f'<a href="/learn/{slug}/index.html" class="hv-hover-lift card">'
             f'<span class="card-num">{card_num}</span>'
             f'<span class="card-title">{title}</span>'
             f'<span class="card-desc">{desc}</span>'

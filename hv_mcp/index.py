@@ -10,7 +10,7 @@ from pathlib import Path
 
 from site_utils.config import HYPERSPACE_ROOT, SKIP_DIRS
 from site_utils.file_utils import (
-    collect_files, extract_dates, get_title,
+    collect_files, extract_dates, get_title, read_md,
     _extract_tags_from_text, _extract_status_from_text, _extract_type_from_text,
 )
 from site_utils.search import _extract_snippet
@@ -106,7 +106,7 @@ def _build_index_entry(rel_path: Path) -> dict | None:
     if not full_path.exists():
         return None
     try:
-        md_text = full_path.read_text(encoding="utf-8")
+        md_text = read_md(full_path)
     except (OSError, UnicodeDecodeError):
         return None
 
@@ -212,6 +212,9 @@ def start_watcher():
                 import time
                 time.sleep(0.1)  # Let writes flush on Windows
                 refresh_single(rel)
+                # RAG incremental reindex for this file (no-op if RAG not yet initialized)
+                from .rag import on_file_changed
+                on_file_changed(rel)
 
             def on_created(self, event):
                 if event.is_directory:
@@ -233,6 +236,8 @@ def start_watcher():
                 rel = self._rel(event.src_path)
                 if not self._should_skip(rel):
                     remove_from_index(rel)
+                    from .rag import on_file_deleted
+                    on_file_deleted(rel)
 
             def on_moved(self, event):
                 if event.is_directory:
@@ -241,6 +246,8 @@ def start_watcher():
                 new_rel = self._rel(event.dest_path)
                 if old_rel and not self._should_skip(old_rel):
                     remove_from_index(old_rel)
+                    from .rag import on_file_deleted
+                    on_file_deleted(old_rel)
                 if new_rel and not self._should_skip(new_rel):
                     self._safe_refresh(new_rel)
 

@@ -92,11 +92,6 @@ TOP_BAR = """\
       </a>
       <nav class="breadcrumbs" aria-label="Breadcrumb">{{BREADCRUMBS}}</nav>
     </div>
-    <div class="search-wrap">
-      <i data-lucide="search" class="search-icon"></i>
-      <input type="text" id="search" placeholder="search...  ( / )" autocomplete="off" spellcheck="false">
-      <div class="search-results" id="search-results"></div>
-    </div>
     <div class="topbar-right">
       <div class="nav-menu-wrap">
         <button class="nav-menu-btn" id="nav-menu-btn" aria-label="Menu">
@@ -104,7 +99,7 @@ TOP_BAR = """\
         </button>
         <div class="nav-backdrop" id="nav-backdrop"></div>
         <aside class="nav-panel" id="nav-panel" role="region" aria-label="Navigation">
-          <div class="nav-panel-header">
+          <div class="hv-panel-header nav-panel-header">
             <i data-lucide="menu" style="width:11px;height:11px"></i>
             <span>Menu</span>
             <button class="nav-panel-close" id="nav-panel-close" aria-label="Close menu">&times;</button>
@@ -327,6 +322,16 @@ LEGACY_PAGE_TEMPLATE = """\
       </button>
     </div>
   </div>
+  <div class="hv-overlay search-overlay" id="search-overlay">
+    <div class="hv-panel-modal search-modal" id="search-modal">
+      <div class="search-input-row">
+        <i data-lucide="search" class="search-input-icon"></i>
+        <input type="text" id="search" placeholder="search hyperspace..." autocomplete="off" spellcheck="false">
+        <span class="search-input-shortcut">esc</span>
+      </div>
+      <div class="search-results" id="search-results"></div>
+    </div>
+  </div>
   <button class="scroll-top" id="scroll-top" aria-label="Scroll to top"><i data-lucide="arrow-up"></i></button>
   <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
@@ -543,6 +548,16 @@ SHELL_TEMPLATE = """\
         <i data-lucide="terminal" class="action-icon"></i>
         <span class="action-label">launch dev</span>
       </button>
+    </div>
+  </div>
+  <div class="hv-overlay search-overlay" id="search-overlay">
+    <div class="hv-panel-modal search-modal" id="search-modal">
+      <div class="search-input-row">
+        <i data-lucide="search" class="search-input-icon"></i>
+        <input type="text" id="search" placeholder="search hyperspace..." autocomplete="off" spellcheck="false">
+        <span class="search-input-shortcut">esc</span>
+      </div>
+      <div class="search-results" id="search-results"></div>
     </div>
   </div>
   <button class="scroll-top" id="scroll-top" aria-label="Scroll to top"><i data-lucide="arrow-up"></i></button>

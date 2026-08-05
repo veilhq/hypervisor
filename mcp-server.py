@@ -23,6 +23,7 @@ from mcp.server.fastmcp import FastMCP
 from hv_mcp.index import rebuild_index, start_watcher
 from hv_mcp.index_file import regenerate_index_file
 from hv_mcp.search import search_hyperspace, recent_activity, get_work_items
+from hv_mcp.rag import get_rag
 from hv_mcp.tags import get_tags, add_tag
 from hv_mcp.validation import validate_single, validate_all
 from hv_mcp.claims import validate_work_item_claims
@@ -104,6 +105,47 @@ def get_work_items_tool(
         Work item summaries with path, title, status, tags, project, dates, and work_id (e.g., 'WI-23').
     """
     return get_work_items(status=status, tags=tags, project=project)
+
+
+@server.tool(name="semantic_search")
+def semantic_search_tool(
+    query: str,
+    top_k: int = 5,
+    tags: list[str] | None = None,
+    doc_type: str | None = None,
+    project: str | None = None,
+    source_type: str | None = None,
+) -> list[dict] | dict:
+    """Search hyperspace documents by meaning — finds conceptually related
+    content even when exact keywords don't match. Use this when looking for
+    'how does X work', 'what was decided about Y', or 'anything related to Z'.
+    Use search_hyperspace instead for exact tag/title filtering.
+
+    Hybrid retrieval: dense embedding similarity (sqlite-vec) fused with keyword
+    search (FTS5) via Reciprocal Rank Fusion, then MMR-reranked for diversity.
+
+    Args:
+        query: Natural language question or topic to search for.
+        top_k: Maximum results to return (default 5).
+        tags: Filter by tags — results must contain ALL specified tags (optional).
+        doc_type: Filter by document type: work-item, idea, research, context, etc. (optional).
+        project: Filter by project name (optional).
+        source_type: Filter by source type: 'doc' (authored docs) or 'kb' (agent knowledge bank) (optional).
+
+    Returns:
+        List of matching chunks with: content, path, title, section, similarity
+        score, doc_type, tags, updated date. Results are ordered by fused
+        relevance with diversity enforced.
+    """
+    rag = get_rag()
+    return rag.search(
+        query=query,
+        top_k=top_k,
+        tags=tags,
+        doc_type=doc_type,
+        project=project,
+        source_type=source_type,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -533,6 +575,12 @@ def launch_hypervisor_tool() -> dict:
 
 rebuild_index()
 start_watcher()
+
+# Eagerly initialize the RAG engine so the first semantic_search call doesn't
+# pay the model-load + reindex cost. The hypervisor app's watcher keeps the DB
+# warm between sessions; this just ensures the MCP process is caught up at boot.
+_rag_instance = get_rag()
+_rag_instance.reindex_changed()
 
 
 # ---------------------------------------------------------------------------

@@ -19,6 +19,7 @@ from datetime import datetime
 from pathlib import Path
 
 from site_utils.config import HYPERSPACE_ROOT
+from site_utils.file_utils import read_md
 
 from .config import HYPERVISOR_DIR
 from .helpers import trigger_site_build
@@ -126,7 +127,7 @@ def _resolve_work_item(slug: str) -> tuple[str | None, str | None]:
                 continue
             for md_file in dir_path.glob("*.md"):
                 try:
-                    text = md_file.read_text(encoding="utf-8")
+                    text = read_md(md_file)
                 except (OSError, UnicodeDecodeError):
                     continue
                 for line in text.splitlines()[:30]:
@@ -468,7 +469,7 @@ def validate_work_item_claims(slug: str, apply_updates: bool = False) -> dict:
 
     full_path = HYPERSPACE_ROOT / rel_path.replace("/", "\\")
     try:
-        md_text = full_path.read_text(encoding="utf-8")
+        md_text = read_md(full_path)
     except OSError as e:
         return {"error": f"Could not read {rel_path}: {e}"}
 

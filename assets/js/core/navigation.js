@@ -60,7 +60,131 @@
     });
   }
 
-  // --- Search ---
+  // --- Search Overlay ---
+  var searchOverlay = document.getElementById("search-overlay");
+  var searchModal = document.getElementById("search-modal");
+  var searchTrigger = document.getElementById("search-trigger");
+  var _searchNoise = null; // independent noise field for search (avoids clobbering home-anchor's HvNoiseField)
+
+  // Lightweight standalone noise field — mirrors HvNoiseField's shader but runs independently
+  function _createSearchNoise(host) {
+    var canvas = document.createElement("canvas");
+    canvas.className = "hv-noise-field-canvas";
+    host.insertBefore(canvas, host.firstChild);
+    canvas.width = host.clientWidth || 1;
+    canvas.height = host.clientHeight || 1;
+    var gl = canvas.getContext("webgl2", { alpha: false, antialias: false });
+    if (!gl) { canvas.remove(); return null; }
+
+    var VERT = "#version 300 es\nvoid main(){float x=float(gl_VertexID%2)*4.0-1.0;float y=float(gl_VertexID/2)*4.0-1.0;gl_Position=vec4(x,y,0,1);}";
+    var FRAG = [
+      "#version 300 es", "precision highp float;",
+      "uniform vec2 u_resolution;", "uniform float u_time;", "uniform vec3 u_tint;", "uniform vec3 u_bg;", "uniform float u_cellDivisor;",
+      "out vec4 fragColor;",
+      "float bayer8(vec2 pos){ivec2 p=ivec2(mod(pos,8.0));float m[64]=float[64](0.0,32.0,8.0,40.0,2.0,34.0,10.0,42.0,48.0,16.0,56.0,24.0,50.0,18.0,58.0,26.0,12.0,44.0,4.0,36.0,14.0,46.0,6.0,38.0,60.0,28.0,52.0,20.0,62.0,30.0,54.0,22.0,3.0,35.0,11.0,43.0,1.0,33.0,9.0,41.0,51.0,19.0,59.0,27.0,49.0,17.0,57.0,25.0,15.0,47.0,7.0,39.0,13.0,45.0,5.0,37.0,63.0,31.0,55.0,23.0,61.0,29.0,53.0,21.0);return m[p.x+p.y*8]/64.0;}",
+      "void main(){float t=u_time;float cellSize=max(2.0,floor(min(u_resolution.x,u_resolution.y)/u_cellDivisor));vec2 cellUv=floor(gl_FragCoord.xy/cellSize)*cellSize;vec2 cellPos=cellUv/u_resolution;float cx=0.5+sin(t*0.4)*0.3;float cy=0.5+cos(t*0.3)*0.3;vec2 d=cellPos-vec2(cx,cy);float dist=length(d);float g1=0.5+0.5*sin(dist*6.0-t*0.8);float g2=0.5+0.5*sin((cellUv.x+cellUv.y)*0.0032+t*0.5);float g3=0.5+0.5*cos((cellUv.y-cellUv.x)*0.0041-t*0.3);float val=g1*0.5+g2*0.25+g3*0.25;val=val*val;float threshold=bayer8(gl_FragCoord.xy/cellSize);if(val<threshold){fragColor=vec4(u_bg,1.0);return;}fragColor=vec4(u_tint,1.0);}"
+    ].join("\n");
+
+    var vs = gl.createShader(gl.VERTEX_SHADER);
+    gl.shaderSource(vs, VERT); gl.compileShader(vs);
+    var fs = gl.createShader(gl.FRAGMENT_SHADER);
+    gl.shaderSource(fs, FRAG); gl.compileShader(fs);
+    if (!gl.getShaderParameter(fs, gl.COMPILE_STATUS)) { canvas.remove(); return null; }
+    var prog = gl.createProgram();
+    gl.attachShader(prog, vs); gl.attachShader(prog, fs); gl.linkProgram(prog);
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { canvas.remove(); return null; }
+    var vao = gl.createVertexArray();
+    var t = Math.random() * 1000;
+    var raf = null;
+
+    function readTint() {
+      try {
+        var raw = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim();
+        var m = /^#?([0-9a-f]{6})$/i.exec(raw);
+        if (m) { var h = m[1]; return [parseInt(h.substr(0,2),16)/255*0.15, parseInt(h.substr(2,2),16)/255*0.15, parseInt(h.substr(4,2),16)/255*0.15]; }
+      } catch(e){}
+      return [0.09,0.09,0.09];
+    }
+    function readBg() {
+      try {
+        var raw = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim();
+        var m = /^#?([0-9a-f]{6})$/i.exec(raw);
+        if (m) { var h = m[1]; return [parseInt(h.substr(0,2),16)/255, parseInt(h.substr(2,2),16)/255, parseInt(h.substr(4,2),16)/255]; }
+      } catch(e){}
+      return [0,0,0];
+    }
+
+    function frame() {
+      var w = host.clientWidth || 1, h2 = host.clientHeight || 1;
+      if (canvas.width !== w || canvas.height !== h2) { canvas.width = w; canvas.height = h2; }
+      gl.viewport(0, 0, w, h2);
+      gl.useProgram(prog); gl.bindVertexArray(vao);
+      gl.uniform2f(gl.getUniformLocation(prog, "u_resolution"), w, h2);
+      gl.uniform1f(gl.getUniformLocation(prog, "u_time"), t);
+      gl.uniform1f(gl.getUniformLocation(prog, "u_cellDivisor"), 300);
+      var tint = readTint(); gl.uniform3f(gl.getUniformLocation(prog, "u_tint"), tint[0], tint[1], tint[2]);
+      var bg = readBg(); gl.uniform3f(gl.getUniformLocation(prog, "u_bg"), bg[0], bg[1], bg[2]);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      t += 1/60;
+      raf = requestAnimationFrame(frame);
+    }
+
+    raf = requestAnimationFrame(frame);
+    return { canvas: canvas, stop: function (fadeMs) {
+      if (raf) { cancelAnimationFrame(raf); raf = null; }
+      if (prog) gl.deleteProgram(prog);
+      if (!fadeMs) { canvas.remove(); } else {
+        canvas.style.transition = "opacity " + fadeMs + "ms";
+        canvas.style.opacity = "0";
+        setTimeout(function () { canvas.remove(); }, fadeMs);
+      }
+    }};
+  }
+
+  function openSearch() {
+    if (!searchOverlay) return;
+    searchOverlay.classList.add("visible");
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+    // Mount independent noise field behind the modal
+    if (!_searchNoise) {
+      _searchNoise = _createSearchNoise(searchOverlay);
+    }
+    setTimeout(function () {
+      if (searchInput) searchInput.focus();
+    }, 50);
+  }
+
+  function closeSearch() {
+    if (!searchOverlay) return;
+    searchOverlay.classList.remove("visible");
+    document.body.style.overflow = "";
+    document.documentElement.style.overflow = "";
+    if (searchInput) {
+      searchInput.value = "";
+    }
+    if (resultsBox) {
+      resultsBox.innerHTML = "";
+    }
+    activeTagFilter = null;
+    updateTagIndicator();
+    window.selectedIdx = -1;
+    _cancelSemantic();
+    // Tear down noise field
+    if (_searchNoise) {
+      _searchNoise.stop(300);
+      _searchNoise = null;
+    }
+  }
+
+  // Trigger button in topbar
+  if (searchTrigger) {
+    searchTrigger.addEventListener("click", function (e) {
+      e.preventDefault();
+      openSearch();
+    });
+  }
+
   if (searchInput && resultsBox) {
     // Build tag index from search data (rebuilt when index loads)
     var allTags = {};
@@ -81,12 +205,14 @@
     window.addEventListener("searchIndexReady", rebuildTagIndex);
 
     var activeTagFilter = null;
+    var _semanticTimer = null;
+    var _lastSemanticQuery = "";
 
     function doSearch(query) {
       if (!query && !activeTagFilter) {
-        resultsBox.classList.remove("open");
         resultsBox.innerHTML = "";
         window.selectedIdx = -1;
+        _cancelSemantic();
         return;
       }
 
@@ -120,34 +246,162 @@
           ? 'no results for tag: ' + activeTagFilter + (query ? ' + "' + query + '"' : '')
           : 'no results';
         resultsBox.innerHTML = '<div class="sr-empty">' + emptyMsg + '</div>';
-        resultsBox.classList.add("open");
         window.selectedIdx = -1;
-        return;
+      } else {
+        _renderClientResults(matches);
       }
 
+      // Semantic mode: trigger bridge call for question-shaped queries (>=3 words)
+      if (query && _isSemanticCandidate(query) && window.isDesktopApp) {
+        _scheduleSemanticSearch(query);
+      } else {
+        _cancelSemantic();
+      }
+    }
+
+    function _isSemanticCandidate(query) {
+      var words = query.trim().split(/\s+/);
+      return words.length >= 3;
+    }
+
+    function _cancelSemantic() {
+      if (_semanticTimer) { clearTimeout(_semanticTimer); _semanticTimer = null; }
+      _lastSemanticQuery = "";
+      var existing = resultsBox.querySelector(".sr-semantic-divider");
+      if (existing) {
+        // Remove divider and all cards after it
+        while (existing.nextSibling) existing.nextSibling.remove();
+        existing.remove();
+      }
+    }
+
+    function _scheduleSemanticSearch(query) {
+      if (query === _lastSemanticQuery) return;
+      if (_semanticTimer) clearTimeout(_semanticTimer);
+      _semanticTimer = setTimeout(function () {
+        _lastSemanticQuery = query;
+        _doSemanticSearch(query);
+      }, 400);
+    }
+
+    function _doSemanticSearch(query) {
+      if (!window.pywebview || !window.pywebview.api || !window.pywebview.api.semantic_search) return;
+      window.pywebview.api.semantic_search(query, 5, null, null, null, null).then(function (results) {
+        if (!results || !results.length) return;
+        if (searchInput.value.trim() !== query) return; // stale response
+        // Remove existing semantic results
+        var existing = resultsBox.querySelector(".sr-semantic-divider");
+        if (existing) {
+          while (existing.nextSibling) existing.nextSibling.remove();
+          existing.remove();
+        }
+        // Add divider
+        var divider = document.createElement("div");
+        divider.className = "sr-semantic-divider";
+        divider.textContent = "related";
+        resultsBox.appendChild(divider);
+        // Add result cards
+        results.forEach(function (r, i) {
+          var href = "/" + r.path.replace(/\.md$/, "") + "/index.html";
+          var pathParts = r.path.replace(/\.md$/, "").split("/");
+          var category = pathParts[0] ? pathParts[0].replace(/-/g, " ").replace(/_/g, " ") : "";
+          var snippet = r.content ? r.content.substring(0, 140) + (r.content.length > 140 ? "..." : "") : "";
+          var card = document.createElement("a");
+          card.href = href;
+          card.className = "sr-card";
+          card.style.animationDelay = (i * 0.04) + "s";
+          card.setAttribute("data-section", r.section || "");
+          card.innerHTML =
+            '<span class="hv-chip hv-chip-outlined-muted sr-partial-badge">\u2248 partial</span>' +
+            '<div class="sr-card-header">' +
+              (category ? '<span class="sr-card-category">' + category + '</span>' : '') +
+            '</div>' +
+            '<div class="sr-card-title">' + r.title + (r.section ? ' \u00A7 ' + r.section : '') + '</div>' +
+            (snippet ? '<div class="sr-card-snippet">' + snippet + '</div>' : '') +
+            '<div class="sr-card-footer">' +
+              '<span class="sr-card-path">' + r.path.replace(/\.md$/, "") + '</span>' +
+            '</div>';
+          resultsBox.appendChild(card);
+        });
+      }).catch(function () {});
+    }
+
+    function _formatPath(path) {
+      // Convert "context/cms-architecture" to breadcrumb-style
+      var parts = path.replace(/\.md$/, "").replace(/\/index$/, "").split("/");
+      return parts.map(function (p) {
+        return '<span>' + p + '</span>';
+      }).join('<span class="sr-card-path-sep">/</span>');
+    }
+
+    function _renderClientResults(matches) {
       resultsBox.innerHTML = matches.map(function (m, i) {
         var snippetHtml = m.snippet
-          ? '<span class="sr-snippet">' + m.snippet.substring(0, 120) + (m.snippet.length > 120 ? '...' : '') + '</span>'
+          ? '<div class="sr-card-snippet">' + m.snippet.substring(0, 140) + (m.snippet.length > 140 ? '...' : '') + '</div>'
           : '';
         var tagsHtml = '';
         if (m.tags && m.tags.length) {
-          tagsHtml = '<span class="sr-tags">' + m.tags.map(function (t) {
+          tagsHtml = '<div class="sr-card-tags">' + m.tags.map(function (t) {
             return '<span class="sr-tag" data-tag="' + t + '">' + t + '</span>';
-          }).join('') + '</span>';
+          }).join('') + '</div>';
         }
-        return '<a href="' + m.href + '" style="animation-delay:' + (i * 0.03) + 's">' +
-               m.title +
-               '<span class="sr-path">' + m.path + '</span>' +
+        // Header: category from first path segment + optional work ID
+        var pathParts = m.path.replace(/\.md$/, "").split("/");
+        var category = pathParts[0] ? pathParts[0].replace(/-/g, " ").replace(/_/g, " ") : "";
+        var headerHtml = '<div class="sr-card-header">';
+        if (category) headerHtml += '<span class="sr-card-category">' + category + '</span>';
+        if (m.work_id) headerHtml += '<span class="sr-card-work-id">' + m.work_id + '</span>';
+        headerHtml += '</div>';
+        // Footer: path + date
+        var dateStr = m.date ? m.date.substring(0, 10) : "";
+        var footerHtml = '<div class="sr-card-footer">';
+        footerHtml += '<span class="sr-card-path">' + m.path.replace(/\.md$/, "") + '</span>';
+        if (dateStr) footerHtml += '<span class="sr-card-date">' + dateStr + '</span>';
+        footerHtml += '</div>';
+        return '<a href="' + m.href + '" class="sr-card" style="animation-delay:' + (i * 0.04) + 's">' +
+               headerHtml +
+               '<div class="sr-card-title">' + m.title + '</div>' +
                snippetHtml +
+               footerHtml +
                tagsHtml +
                '</a>';
       }).join("");
-      resultsBox.classList.add("open");
       window.selectedIdx = -1;
     }
 
     // Tag click handler in search results
     resultsBox.addEventListener("click", function (e) {
+      // Section-anchor scroll for semantic results
+      var semanticLink = e.target.closest(".sr-card[data-section]");
+      if (semanticLink && semanticLink.getAttribute("data-section")) {
+        e.preventDefault();
+        var href = semanticLink.getAttribute("href");
+        var section = semanticLink.getAttribute("data-section");
+        closeSearch();
+        if (window.__hypervisorNavigate) {
+          window.__hypervisorNavigate(href, function () {
+            _scrollToSection(section);
+          });
+        } else {
+          window.location.href = href + "#" + _slugify(section);
+        }
+        return;
+      }
+
+      // Regular result click — close overlay and navigate
+      var resultCard = e.target.closest(".sr-card");
+      if (resultCard && !e.target.closest(".sr-tag")) {
+        e.preventDefault();
+        var cardHref = resultCard.getAttribute("href");
+        closeSearch();
+        if (window.__hypervisorNavigate) {
+          window.__hypervisorNavigate(cardHref);
+        } else {
+          window.location.href = cardHref;
+        }
+        return;
+      }
+
       var tagEl = e.target.closest(".sr-tag");
       if (tagEl) {
         e.preventDefault();
@@ -164,49 +418,74 @@
       }
     });
 
-    // Tag filter indicator
+    // Tag filter indicator (inside modal)
     function updateTagIndicator() {
-      var existing = document.querySelector(".tag-filter-indicator");
+      var existing = searchModal ? searchModal.querySelector(".search-tag-filter") : null;
       if (existing) existing.remove();
-      if (activeTagFilter) {
+      if (activeTagFilter && searchModal) {
         var indicator = document.createElement("div");
-        indicator.className = "tag-filter-indicator";
-        indicator.innerHTML = '<span class="tag-filter-label">tag:</span> ' +
-          '<span class="tag-filter-value">' + activeTagFilter + '</span>' +
-          '<button class="tag-filter-clear" aria-label="Clear tag filter">&times;</button>';
-        indicator.querySelector(".tag-filter-clear").addEventListener("click", function () {
+        indicator.className = "search-tag-filter";
+        indicator.innerHTML = '<span class="search-tag-filter-label">tag:</span> ' +
+          '<span class="search-tag-filter-value">' + activeTagFilter + '</span>' +
+          '<button class="search-tag-filter-clear" aria-label="Clear tag filter">&times;</button>';
+        indicator.querySelector(".search-tag-filter-clear").addEventListener("click", function () {
           activeTagFilter = null;
           updateTagIndicator();
           doSearch(searchInput.value.trim());
         });
-        var wrap = document.querySelector(".search-wrap");
-        if (wrap) wrap.appendChild(indicator);
+        // Insert after input row, before results
+        var inputRow = searchModal.querySelector(".search-input-row");
+        if (inputRow && inputRow.nextSibling) {
+          searchModal.insertBefore(indicator, inputRow.nextSibling);
+        } else {
+          searchModal.appendChild(indicator);
+        }
       }
+    }
+
+    function _slugify(text) {
+      return text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    }
+
+    function _scrollToSection(sectionTitle) {
+      setTimeout(function () {
+        var headings = document.querySelectorAll(".markdown-body h2, .markdown-body h3");
+        for (var i = 0; i < headings.length; i++) {
+          if (headings[i].textContent.trim() === sectionTitle) {
+            headings[i].scrollIntoView({ behavior: "smooth", block: "start" });
+            headings[i].style.transition = "background 0.3s";
+            headings[i].style.background = "var(--accent-glow)";
+            setTimeout(function () { headings[i].style.background = ""; }, 1500);
+            return;
+          }
+        }
+        var slug = _slugify(sectionTitle);
+        var target = document.getElementById(slug);
+        if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 200);
     }
 
     searchInput.addEventListener("input", function () {
       doSearch(this.value.trim());
     });
 
-    searchInput.addEventListener("focus", function () {
-      if (this.value.trim() || activeTagFilter) doSearch(this.value.trim());
-    });
-
     searchInput.addEventListener("keydown", function (e) {
-      var items = resultsBox.querySelectorAll("a");
-      if (!items.length) return;
-
-      if (e.key === "ArrowDown") {
+      var items = resultsBox.querySelectorAll(".sr-card");
+      if (e.key === "ArrowDown" && items.length) {
         e.preventDefault();
         window.selectedIdx = Math.min(selectedIdx + 1, items.length - 1);
         updateSelected(items);
-      } else if (e.key === "ArrowUp") {
+      } else if (e.key === "ArrowUp" && items.length) {
         e.preventDefault();
         window.selectedIdx = Math.max(selectedIdx - 1, 0);
         updateSelected(items);
-      } else if (e.key === "Enter" && selectedIdx >= 0) {
+      } else if (e.key === "Enter" && selectedIdx >= 0 && items.length) {
         e.preventDefault();
         items[selectedIdx].click();
+      } else if (e.key === "Enter" && items.length && selectedIdx < 0) {
+        // Auto-select first result on Enter with no selection
+        e.preventDefault();
+        items[0].click();
       }
     });
 
@@ -219,31 +498,34 @@
       }
     }
 
-    document.addEventListener("click", function (e) {
-      if (!e.target.closest(".search-wrap")) {
-        resultsBox.classList.remove("open");
-        window.selectedIdx = -1;
-      }
-    });
-
-    document.addEventListener("keydown", function (e) {
-      if (e.key === "/" && document.activeElement !== searchInput && !document.querySelector(".shortcuts-overlay.visible")) {
-        e.preventDefault();
-        searchInput.focus();
-      }
-      if (e.key === "Escape") {
-        // Close shortcuts overlay if open
-        var overlay = document.querySelector(".shortcuts-overlay");
-        if (overlay && overlay.classList.contains("visible")) {
-          overlay.classList.remove("visible");
-          return;
+    // Close on backdrop click (but not on modal click)
+    if (searchOverlay) {
+      searchOverlay.addEventListener("click", function (e) {
+        if (e.target === searchOverlay || e.target.classList.contains("hv-noise-field-canvas")) {
+          closeSearch();
         }
-        searchInput.value = "";
-        activeTagFilter = null;
-        updateTagIndicator();
-        resultsBox.classList.remove("open");
-        searchInput.blur();
-        window.selectedIdx = -1;
+      });
+    }
+
+    // Global keyboard handler
+    document.addEventListener("keydown", function (e) {
+      var isOverlayOpen = searchOverlay && searchOverlay.classList.contains("visible");
+
+      // '/' opens search (when not in an input and overlay is closed)
+      if (e.key === "/" && !isOverlayOpen &&
+          document.activeElement !== searchInput &&
+          !document.activeElement.closest("input, textarea, [contenteditable]") &&
+          !document.querySelector(".shortcuts-overlay.visible")) {
+        e.preventDefault();
+        openSearch();
+        return;
+      }
+
+      // Escape closes search overlay
+      if (e.key === "Escape" && isOverlayOpen) {
+        e.preventDefault();
+        closeSearch();
+        return;
       }
     });
   }

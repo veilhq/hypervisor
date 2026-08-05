@@ -43,6 +43,7 @@ Kiro ←→ MCP Protocol (stdio) ←→ mcp-server.py ←→ hv_mcp/ package ←
 │   ├── validation.py          # Single-file and batch validation
 │   ├── crud.py                # create_document, update_document, move_work_item
 │   ├── search.py              # search_hyperspace, recent_activity, get_work_items
+│   ├── rag.py                 # Semantic RAG: chunking, embedding, hybrid search (sqlite-vec + FTS5)
 │   ├── tags.py                # get_tags, add_tag
 │   ├── analytics.py           # stale_documents, health_report, tag_analytics
 │   ├── intelligence.py        # session_brief, suggest_next_action, context_for_work_item
@@ -53,7 +54,8 @@ Kiro ←→ MCP Protocol (stdio) ←→ mcp-server.py ←→ hv_mcp/ package ←
 │   └── projects.json          # Valid project names
 ├── state/                     # Content-specific state (gitignored)
 │   ├── work-item-counter.json # Sequential work item ID counter
-│   └── health-history.json    # Persisted health snapshots
+│   ├── health-history.json    # Persisted health snapshots
+│   └── rag.db                 # Semantic RAG vector + FTS5 index (sqlite-vec, ~15MB)
 ```
 
 ### Shared Infrastructure
@@ -65,19 +67,21 @@ All tools share these core systems:
 | In-memory index | `index.py` | Full document metadata in RAM, thread-safe, incrementally updated |
 | Backlink graph | `backlinks.py` | Eagerly-built reverse-link map (who links to whom) |
 | File watcher | `index.py` | Watchdog observer keeps index and backlinks current on disk changes |
+| Semantic RAG | `rag.py` | Embedding-based search: chunking, sqlite-vec vectors, FTS5 keywords, hybrid RRF+MMR |
 | Tag registry | `config.py` → `config/tags.json` | Canonical tag names, categories, descriptions |
 | Project registry | `config.py` → `projects.json` | Valid project names for validation |
 | Health history | `health.py` → `health-history.json` | Timestamped validation snapshots for trend tracking |
 
 ## Tool Reference
 
-The server exposes 19 tools organized into 6 functional groups.
+The server exposes 20 tools organized into 6 functional groups.
 
 ### Search & Retrieval
 
 | Tool | Parameters | Purpose |
 |------|-----------|---------|
 | `search_hyperspace` | `query`, `tags[]`, `type`, `limit` | Full-text + tag + type filtered search across all documents |
+| `semantic_search` | `query`, `top_k`, `tags[]`, `doc_type`, `project`, `source_type` | Hybrid vector + keyword search by meaning (cosine similarity via sqlite-vec + FTS5 BM25, fused with RRF, MMR-reranked) |
 | `recent_activity` | `days` (default 7) | Documents created or updated within N days, sorted newest first |
 | `get_work_items` | `status`, `tags[]`, `project` | Work items filtered by status/tags/project |
 
@@ -166,6 +170,7 @@ The server is configured in the workspace `.kiro/settings/mcp.json`:
       "disabled": false,
       "autoApprove": [
         "search_hyperspace",
+        "semantic_search",
         "recent_activity",
         "get_work_items",
         "get_tags",

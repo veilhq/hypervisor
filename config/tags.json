@@ -178,5 +178,9 @@
   "external": {
     "category": "domain",
     "description": "Documents imported from outside hyperspace (team notes, vendor docs, external analysis)"
+  },
+  "mvp": {
+    "category": "domain",
+    "description": "Minimum viable product — first functional milestone of a feature or app"
   }
 }

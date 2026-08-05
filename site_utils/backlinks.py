@@ -6,7 +6,7 @@ import re
 from pathlib import PurePosixPath
 
 from .config import HYPERSPACE_ROOT
-from .file_utils import get_title, nice_name, href_for
+from .file_utils import get_title, nice_name, href_for, read_md
 
 
 def build_backlink_index(files):
@@ -19,7 +19,7 @@ def build_backlink_index(files):
 
     for rel in files:
         md_path = HYPERSPACE_ROOT / rel
-        md_text = md_path.read_text(encoding="utf-8")
+        md_text = read_md(md_path)
         source_title = get_title(md_text, nice_name(rel.name))
         source_posix = str(rel).replace("\\", "/")
 

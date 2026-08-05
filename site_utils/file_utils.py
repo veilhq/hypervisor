@@ -2,10 +2,26 @@
 File collection, path helpers, and naming utilities.
 """
 
+import logging
 import re
 from pathlib import Path, PurePosixPath
 
 from .config import HYPERSPACE_ROOT, SKIP_DIRS, SKIP_FILES, CATEGORY_LABELS
+
+logger = logging.getLogger("hypervisor")
+
+
+def read_md(path: Path) -> str:
+    """Read a markdown file with encoding fault tolerance.
+
+    Uses UTF-8 with replacement characters for undecodable bytes.
+    Logs a warning when replacement occurs so bad files are discoverable
+    without crashing the build.
+    """
+    text = path.read_text(encoding="utf-8", errors="replace")
+    if "\ufffd" in text:
+        logger.warning("encoding issue (non-UTF-8 bytes replaced): %s", path)
+    return text
 
 
 def collect_files(root: Path) -> list[Path]:
@@ -155,7 +171,7 @@ def get_dir_snippet(root: Path, dir_prefix: str, max_len: int = 120) -> str:
     for candidate in candidates:
         path = root / dir_prefix / candidate
         if path.exists():
-            md_text = path.read_text(encoding="utf-8")
+            md_text = read_md(path)
             break
 
     if md_text is None:
@@ -164,7 +180,7 @@ def get_dir_snippet(root: Path, dir_prefix: str, max_len: int = 120) -> str:
         if dir_path.is_dir():
             for f in sorted(dir_path.iterdir()):
                 if f.suffix == ".md" and f.is_file():
-                    md_text = f.read_text(encoding="utf-8")
+                    md_text = read_md(f)
                     break
 
     if not md_text:
@@ -228,14 +244,14 @@ def get_dir_tags(root: Path, dir_prefix: str) -> list[str]:
     for candidate in candidates:
         path = root / dir_prefix / candidate
         if path.exists():
-            return _extract_tags_from_text(path.read_text(encoding="utf-8"))
+            return _extract_tags_from_text(read_md(path))
 
     # Fallback to first .md
     dir_path = root / dir_prefix
     if dir_path.is_dir():
         for f in sorted(dir_path.iterdir()):
             if f.suffix == ".md" and f.is_file():
-                return _extract_tags_from_text(f.read_text(encoding="utf-8"))
+                return _extract_tags_from_text(read_md(f))
     return []
 
 
@@ -268,13 +284,13 @@ def get_dir_status(root: Path, dir_prefix: str) -> str | None:
     for candidate in candidates:
         path = root / dir_prefix / candidate
         if path.exists():
-            return _extract_status_from_text(path.read_text(encoding="utf-8"))
+            return _extract_status_from_text(read_md(path))
 
     dir_path = root / dir_prefix
     if dir_path.is_dir():
         for f in sorted(dir_path.iterdir()):
             if f.suffix == ".md" and f.is_file():
-                return _extract_status_from_text(f.read_text(encoding="utf-8"))
+                return _extract_status_from_text(read_md(f))
     return None
 
 
@@ -287,13 +303,13 @@ def get_dir_type(root: Path, dir_prefix: str) -> str | None:
     for candidate in candidates:
         path = root / dir_prefix / candidate
         if path.exists():
-            return _extract_type_from_text(path.read_text(encoding="utf-8"))
+            return _extract_type_from_text(read_md(path))
 
     dir_path = root / dir_prefix
     if dir_path.is_dir():
         for f in sorted(dir_path.iterdir()):
             if f.suffix == ".md" and f.is_file():
-                return _extract_type_from_text(f.read_text(encoding="utf-8"))
+                return _extract_type_from_text(read_md(f))
     return None
 
 

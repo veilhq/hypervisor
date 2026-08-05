@@ -10,7 +10,7 @@ import threading
 from pathlib import Path
 
 from site_utils.config import HYPERSPACE_ROOT
-from site_utils.file_utils import collect_files
+from site_utils.file_utils import collect_files, read_md
 
 
 # ---------------------------------------------------------------------------
@@ -132,7 +132,7 @@ def _index_single_file(rel_path: str) -> set[str]:
     if not full_path.exists():
         return set()
     try:
-        md_text = full_path.read_text(encoding="utf-8")
+        md_text = read_md(full_path)
     except (OSError, UnicodeDecodeError):
         return set()
     return _extract_links(md_text, rel_path)

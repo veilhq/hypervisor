@@ -11,7 +11,7 @@ from difflib import get_close_matches
 from pathlib import Path
 
 from site_utils.config import HYPERSPACE_ROOT
-from site_utils.file_utils import collect_files
+from site_utils.file_utils import collect_files, read_md
 
 from .config import VALID_TRANSITIONS, load_tags, load_projects, HYPERVISOR_DIR
 
@@ -172,7 +172,7 @@ def rewrite_backlinks(old_rel: str, new_rel: str) -> list[str]:
     for rel in files:
         full_path = HYPERSPACE_ROOT / rel
         try:
-            content = full_path.read_text(encoding="utf-8")
+            content = read_md(full_path)
         except (OSError, UnicodeDecodeError):
             continue
 

@@ -5,7 +5,7 @@ Search index builder — generates JSON blob embedded in every page for client-s
 import re
 
 from .config import HYPERSPACE_ROOT
-from .file_utils import get_title, nice_name, href_for, extract_dates, sort_date
+from .file_utils import get_title, nice_name, href_for, extract_dates, sort_date, read_md
 
 
 def _extract_snippet(md_text, max_len=200):
@@ -71,7 +71,7 @@ def build_search_index(files):
     entries = []
     for rel in files:
         md_path = HYPERSPACE_ROOT / rel
-        md_text = md_path.read_text(encoding="utf-8")
+        md_text = read_md(md_path)
         title = get_title(md_text, nice_name(rel.name))
         snippet = _extract_snippet(md_text)
         tags = _extract_tags(md_text)

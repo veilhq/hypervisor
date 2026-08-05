@@ -9,7 +9,7 @@ from datetime import datetime
 from pathlib import Path
 
 from site_utils.config import HYPERSPACE_ROOT
-from site_utils.file_utils import _extract_status_from_text
+from site_utils.file_utils import _extract_status_from_text, read_md
 
 from .config import load_projects, next_work_id, normalize_work_id
 from .helpers import (
@@ -194,7 +194,7 @@ def update_document(
     if not full_path.exists():
         return {"error": f"File not found: {path}"}
 
-    md_text = full_path.read_text(encoding="utf-8")
+    md_text = read_md(full_path)
     lines = md_text.splitlines()
     updated_fields = []
     now = datetime.now().strftime("%Y-%m-%dT%H:%M")
@@ -319,7 +319,7 @@ def move_work_item(slug: str) -> dict:
         return {"error": f"Destination already exists: work/done/{slug}.md"}
 
     # Read and update metadata
-    md_text = source_path.read_text(encoding="utf-8")
+    md_text = read_md(source_path)
     now = datetime.now().strftime("%Y-%m-%dT%H:%M")
     lines = md_text.splitlines()
     new_lines = []

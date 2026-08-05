@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from site_utils.config import HYPERSPACE_ROOT
+from site_utils.file_utils import read_md
 
 from .backlinks import get_backlinks_for, get_outlinks_for
 from .config import normalize_work_id
@@ -46,7 +47,7 @@ def _read_file_content(rel_path: str) -> str | None:
     if not full.exists():
         return None
     try:
-        return full.read_text(encoding="utf-8")
+        return read_md(full)
     except (OSError, UnicodeDecodeError):
         return None
 
@@ -421,7 +422,7 @@ def context_for_work_item(slug: str) -> dict:
                     continue
                 for md_file in dir_path.glob("*.md"):
                     try:
-                        text = md_file.read_text(encoding="utf-8")
+                        text = read_md(md_file)
                     except (OSError, UnicodeDecodeError):
                         continue
                     for line in text.splitlines()[:30]:

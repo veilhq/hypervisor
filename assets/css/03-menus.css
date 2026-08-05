@@ -66,14 +66,8 @@
   top: 0;
   background: var(--bg-card);
   z-index: 1;
-  display: flex;
-  align-items: center;
   gap: var(--space-0-4);
   padding: var(--space-3) var(--space-4);
-  border-bottom: var(--border-hair) solid var(--border);
-  font-size: var(--fs-caption);
-  font-weight: 700;
-  text-transform: uppercase;
   letter-spacing: 0.1em;
   color: var(--accent);
 }
