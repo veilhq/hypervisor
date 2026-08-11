@@ -323,6 +323,21 @@ class HypervisorAPI:
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
+    def launch_dither_widget(self):
+        """Launch the Dither Widget as a detached subprocess."""
+        script = HYPERSPACE_ROOT / ".dither-widget" / "dither-widget.py"
+        if not script.exists():
+            return {"ok": False, "error": "dither-widget.py not found"}
+        try:
+            subprocess.Popen(
+                ["pythonw", str(script)],
+                cwd=str(script.parent),
+                creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NO_WINDOW,
+            )
+            return {"ok": True}
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+
     def launch_dev(self, preset=None):
         """Launch the local dev environment.
 
@@ -1171,6 +1186,105 @@ def _rag_index_file(rel_path):
         return None
 
 
+# ---------------------------------------------------------------------------
+# MCP Service Supervisor — launch the shared HTTP MCP server as a subprocess
+# ---------------------------------------------------------------------------
+
+_MCP_SERVER_SCRIPT = Path(__file__).parent / "mcp-server.py"
+_mcp_service_proc: subprocess.Popen | None = None
+
+
+def _start_mcp_service():
+    """Launch the shared MCP HTTP service if not already running.
+
+    Checks the lock file first — if another instance (e.g., Hyperagent started
+    first) is already serving, we skip. Otherwise we spawn mcp-server.py --http
+    as a detached subprocess. The process writes its own lock file on startup.
+    """
+    global _mcp_service_proc
+
+    # Import the lock-check helper from the MCP server module
+    sys.path.insert(0, str(_MCP_SERVER_SCRIPT.parent))
+    from importlib import import_module
+    # Can't import mcp-server.py directly (has a hyphen), use runpy-style check
+    lock_file = _MCP_SERVER_SCRIPT.parent / ".mcp_service_running"
+
+    # Quick check: is the service already running?
+    if lock_file.exists():
+        try:
+            lines = lock_file.read_text(encoding="utf-8").strip().split("\n")
+            pid = int(lines[0])
+            import ctypes
+            kernel32 = ctypes.windll.kernel32
+            PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+            handle = kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
+            if handle:
+                kernel32.CloseHandle(handle)
+                logger.info("MCP service already running (PID %d), skipping launch", pid)
+                return
+            # Stale lock
+            lock_file.unlink(missing_ok=True)
+        except (ValueError, OSError, IndexError):
+            lock_file.unlink(missing_ok=True)
+
+    # Launch as a subprocess — NOT detached, so it dies when Hypervisor exits
+    logger.info("launching MCP HTTP service")
+    _mcp_service_proc = subprocess.Popen(
+        [sys.executable, str(_MCP_SERVER_SCRIPT), "--http"],
+        cwd=str(_MCP_SERVER_SCRIPT.parent),
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        stdin=subprocess.DEVNULL,
+    )
+    logger.info("MCP service launched (PID %d)", _mcp_service_proc.pid)
+
+    # Wait for the service to become ready (port accepting connections)
+    import time as _time
+    import socket as _socket
+    for _ in range(20):  # up to 10 seconds
+        _time.sleep(0.5)
+        # Check if process died during startup
+        if _mcp_service_proc.poll() is not None:
+            logger.error(
+                "MCP service exited during startup (code %d). "
+                "Hypervisor tools will be unavailable to agent sessions.",
+                _mcp_service_proc.returncode,
+            )
+            _mcp_service_proc = None
+            return
+        # Try connecting to the port
+        try:
+            sock = _socket.socket(_socket.AF_INET, _socket.SOCK_STREAM)
+            sock.settimeout(0.3)
+            sock.connect(("127.0.0.1", 8321))
+            sock.close()
+            logger.info("MCP service ready (port 8321 accepting connections)")
+            return
+        except (OSError, ConnectionRefusedError):
+            pass
+
+    logger.warning(
+        "MCP service did not become ready within 10s. "
+        "It may still be loading — tools might be temporarily unavailable."
+    )
+
+
+def _stop_mcp_service():
+    """Terminate the MCP service subprocess if we own it."""
+    global _mcp_service_proc
+    if _mcp_service_proc is not None:
+        logger.info("stopping MCP service (PID %d)", _mcp_service_proc.pid)
+        try:
+            _mcp_service_proc.terminate()
+            _mcp_service_proc.wait(timeout=5)
+        except (subprocess.TimeoutExpired, OSError):
+            try:
+                _mcp_service_proc.kill()
+            except OSError:
+                pass
+        _mcp_service_proc = None
+
+
 def _init_rag_background():
     """Eagerly initialize the RAG engine on a background thread at app start.
 
@@ -1306,9 +1420,12 @@ def main():
         time.sleep(1)
         _apply_window_chrome("Hypervisor", str((ASSETS_DIR / "hv-box.ico").resolve()))
         start_watcher_thread(watcher)
-        # Eager RAG init: load the embedding model and sync the index so
-        # semantic search and watcher toasts work immediately, not on first query.
-        _init_rag_background()
+        # Launch the shared MCP HTTP service (if not already running)
+        _start_mcp_service()
+        # RAG init is no longer eager — the shared MCP service owns the
+        # embedding model. The desktop app's search bar lazy-loads on first
+        # use via get_rag().model @property, and the watcher's _rag_index_file
+        # skips until RAG is initialized.
 
     # Start PyWebView — pass our custom server class so the internal HTTP
     # server uses our 404 handler instead of Bottle's default white page.
@@ -1323,6 +1440,7 @@ def main():
     # Cleanup
     print("  Window closed — shutting down")
     watcher.stop()
+    _stop_mcp_service()
     try:
         app_lock.unlink()
     except OSError:

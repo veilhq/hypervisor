@@ -101,6 +101,10 @@ class BuildCache:
         """Hash all CSS + JS assets and Python build modules to detect changes."""
         hasher = hashlib.md5()
 
+        # Hash brand SVGs (read at import by config.py, baked into page templates)
+        for brand_svg in sorted(ASSETS_DIR.glob("hypervisor*.svg")):
+            hasher.update(brand_svg.read_bytes())
+
         # Hash Hyperkit CSS (tokens.css, primitives.css — prepended before local CSS)
         if HYPERKIT_CSS_DIR.exists():
             for css_file in sorted(HYPERKIT_CSS_DIR.glob("*.css")):

@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/HYPERVISOR-LOGO-i2.png" alt="Hypervisor" width="200">
+  <img src="assets/3x/HYPERVISOR-LOGO-i3.png" alt="Hypervisor" width="200">
 </p>
 
 <h1 align="center">Hypervisor</h1>

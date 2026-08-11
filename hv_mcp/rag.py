@@ -359,6 +359,13 @@ class HyperspaceRAG:
             db.enable_load_extension(True)
             sqlite_vec.load(db)
             db.enable_load_extension(False)
+            # WAL mode allows concurrent readers alongside a single writer,
+            # eliminating cross-process "database is locked" errors when the
+            # MCP server and the Hypervisor desktop app access rag.db
+            # simultaneously.  busy_timeout gives the loser of a write race
+            # up to 5 seconds to retry before raising OperationalError.
+            db.execute("PRAGMA journal_mode=WAL")
+            db.execute("PRAGMA busy_timeout=5000")
             self._db = db
             self._init_schema()
         return self._db

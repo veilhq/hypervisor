@@ -105,6 +105,14 @@
         api.launch_dev("full");
       });
     }
+    // --- Show and wire Dither Widget button ---
+    var ditherBtn = document.getElementById("dither-btn");
+    if (ditherBtn) {
+      ditherBtn.style.display = "";
+      ditherBtn.addEventListener("click", function () {
+        api.launch_dither_widget();
+      });
+    }
     if (saveThemeBtn) {
       saveThemeBtn.addEventListener("click", function () {
         // Theme state is already persisted to preferences.json on every change.

@@ -103,6 +103,8 @@
     var el = document.getElementById("footer-clock");
     if (!el) return;
     function tick() {
+      // Skip the DOM write while hidden — nothing is on screen to read it.
+      if (document.hidden) return;
       var now = new Date();
       var h = String(now.getHours()).padStart(2, "0");
       var m = String(now.getMinutes()).padStart(2, "0");
@@ -111,6 +113,10 @@
     }
     tick();
     setInterval(tick, 1000);
+    // Repaint immediately on return so the clock isn't visibly stale.
+    document.addEventListener("visibilitychange", function () {
+      if (!document.hidden) tick();
+    });
   })();
 
   // --- Cursor companion box ---

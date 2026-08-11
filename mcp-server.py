@@ -17,6 +17,15 @@ from pathlib import Path
 _THIS_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(_THIS_DIR))
 
+# ---------------------------------------------------------------------------
+# Structured logging (shared ecosystem logger)
+# ---------------------------------------------------------------------------
+_HYPERSPACE_ROOT = _THIS_DIR.parent
+sys.path.insert(0, str(_HYPERSPACE_ROOT / ".hyperkit" / "python"))
+from hyper_logging import setup_logger  # noqa: E402
+
+logger = setup_logger("mcp-server")
+
 from mcp.server.fastmcp import FastMCP
 
 # Import submodules
@@ -573,19 +582,165 @@ def launch_hypervisor_tool() -> dict:
 # Startup
 # ---------------------------------------------------------------------------
 
-rebuild_index()
-start_watcher()
+def _startup():
+    """Initialize the in-memory search index and file watcher.
 
-# Eagerly initialize the RAG engine so the first semantic_search call doesn't
-# pay the model-load + reindex cost. The hypervisor app's watcher keeps the DB
-# warm between sessions; this just ensures the MCP process is caught up at boot.
-_rag_instance = get_rag()
-_rag_instance.reindex_changed()
+    Called once regardless of transport mode. For HTTP mode this runs before
+    the uvicorn server starts accepting connections. RAG engine loading is
+    deferred to a background thread so the server starts accepting connections
+    immediately — the embedding model loads on first use or shortly after boot.
+    """
+    logger.info("initializing search index and file watcher")
+    rebuild_index()
+    start_watcher()
+    logger.info("index and watcher ready")
+
+
+def _warm_rag_background():
+    """Load the RAG engine on a background thread after the server is up.
+
+    This ensures the first semantic_search doesn't pay the full model-load
+    cost, but doesn't block server startup.
+    """
+    import threading
+
+    def _run():
+        try:
+            logger.info("background: loading RAG engine and reindexing")
+            _rag_instance = get_rag()
+            result = _rag_instance.reindex_changed()
+            indexed = result.get("documents_indexed", 0) if isinstance(result, dict) else 0
+            logger.info("background: RAG ready — %d docs reindexed", indexed)
+        except Exception as exc:
+            logger.error("background: RAG init failed: %s", exc)
+
+    t = threading.Thread(target=_run, daemon=True, name="rag-warmup")
+    t.start()
+
+
+# ---------------------------------------------------------------------------
+# Service Lock — allows Hypervisor/Hyperagent to discover a running instance
+# ---------------------------------------------------------------------------
+
+_SERVICE_LOCK = _THIS_DIR / ".mcp_service_running"
+
+
+def _write_service_lock(port: int):
+    """Write a lock file with PID and port so other apps can find us."""
+    import os
+    _SERVICE_LOCK.write_text(
+        f"{os.getpid()}\n{port}\n", encoding="utf-8"
+    )
+
+
+def _remove_service_lock():
+    """Clean up the lock file on shutdown."""
+    try:
+        _SERVICE_LOCK.unlink(missing_ok=True)
+    except OSError:
+        pass
+
+
+def _is_service_running() -> tuple[bool, int | None]:
+    """Check if a shared MCP service is already running.
+
+    Returns:
+        (is_running, port) — port is None if not running.
+    """
+    if not _SERVICE_LOCK.exists():
+        return False, None
+    try:
+        lines = _SERVICE_LOCK.read_text(encoding="utf-8").strip().split("\n")
+        pid = int(lines[0])
+        port = int(lines[1])
+        # Verify the process is alive (Windows)
+        import ctypes
+        kernel32 = ctypes.windll.kernel32
+        PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+        handle = kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
+        if handle:
+            kernel32.CloseHandle(handle)
+            return True, port
+        # Stale lock
+        _SERVICE_LOCK.unlink(missing_ok=True)
+        return False, None
+    except (ValueError, OSError, IndexError):
+        _SERVICE_LOCK.unlink(missing_ok=True)
+        return False, None
 
 
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
+_DEFAULT_PORT = 8321
+
+
 if __name__ == "__main__":
-    server.run(transport="stdio")
+    import argparse
+    import atexit
+
+    parser = argparse.ArgumentParser(description="Hypervisor MCP Server")
+    parser.add_argument(
+        "--http", action="store_true",
+        help="Run as a shared streamable-http service instead of stdio",
+    )
+    parser.add_argument(
+        "--port", type=int, default=_DEFAULT_PORT,
+        help=f"Port for HTTP mode (default: {_DEFAULT_PORT})",
+    )
+    args = parser.parse_args()
+
+    if args.http:
+        # Route uvicorn logs into our ecosystem log file
+        import logging
+        uvi_logger = logging.getLogger("uvicorn")
+        uvi_logger.handlers = logger.handlers
+        uvi_logger.setLevel(logging.INFO)
+        logging.getLogger("uvicorn.access").handlers = logger.handlers
+        logging.getLogger("uvicorn.access").setLevel(logging.INFO)
+        logging.getLogger("uvicorn.error").handlers = logger.handlers
+        logging.getLogger("uvicorn.error").setLevel(logging.INFO)
+
+        # Check if already running
+        running, existing_port = _is_service_running()
+        if running:
+            logger.error(
+                "MCP service already running on port %d — exiting", existing_port
+            )
+            print(
+                f"Hypervisor MCP service already running on port {existing_port}. "
+                "Stop the existing instance first.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+
+        # Reconfigure server for HTTP transport
+        server.settings.host = "127.0.0.1"
+        server.settings.port = args.port
+
+        # Write lock EARLY so other apps (Hyperagent) see us immediately
+        # and don't launch a competing instance during our init time.
+        _write_service_lock(args.port)
+        atexit.register(_remove_service_lock)
+
+        # Initialize before accepting connections
+        logger.info("starting in HTTP mode on port %d", args.port)
+        _startup()
+
+        # Warm the RAG engine in background — server accepts connections immediately
+        _warm_rag_background()
+
+        logger.info("accepting connections on http://127.0.0.1:%d/mcp", args.port)
+        print(f"Hypervisor MCP service starting on http://127.0.0.1:{args.port}/mcp")
+        server.run(transport="streamable-http")
+    else:
+        # Legacy stdio mode — backward compatible, RAG must be ready before
+        # tool calls arrive since there's no concurrent connection model
+        logger.info("starting in stdio mode")
+        _startup()
+        logger.info("loading RAG engine (stdio — synchronous)")
+        _rag_instance = get_rag()
+        _rag_instance.reindex_changed()
+        logger.info("RAG ready, serving")
+        server.run(transport="stdio")
