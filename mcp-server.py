@@ -277,6 +277,7 @@ def create_document_tool(
     fix: str | None = None,
     testing: str | None = None,
     recommendations: str | None = None,
+    assignee: str = "Josh Wooten",
 ) -> dict:
     """Create a new hyperspace document with full convention enforcement.
 
@@ -312,6 +313,7 @@ def create_document_tool(
         fix: Fix description (required for bugfix).
         testing: Testing steps (optional, bugfix).
         recommendations: Additional recommendations (optional, bugfix).
+        assignee: Full name of the person assigned (defaults to Josh Wooten). Work-items only.
 
     Returns:
         Created file path and confirmation, or error details.
@@ -326,7 +328,7 @@ def create_document_tool(
         rationale=rationale, consequences=consequences,
         severity=severity, affected=affected, problem=problem,
         root_cause=root_cause, fix=fix, testing=testing,
-        recommendations=recommendations,
+        recommendations=recommendations, assignee=assignee,
     )
 
 
@@ -337,6 +339,7 @@ def update_document_tool(
     tags: list[str] | None = None,
     project: str | None = None,
     doc_type: str | None = None,
+    assignee: str | None = None,
 ) -> dict:
     """Update metadata fields on an existing document.
 
@@ -349,11 +352,12 @@ def update_document_tool(
         tags: New tag list (replaces existing, validated against registry).
         project: New project name (validated against registry).
         doc_type: New Type value (Personal or Professional).
+        assignee: Full name of assignee. Pass empty string to clear.
 
     Returns:
         Confirmation with updated fields, or error.
     """
-    return update_document(path=path, status=status, tags=tags, project=project, doc_type=doc_type)
+    return update_document(path=path, status=status, tags=tags, project=project, doc_type=doc_type, assignee=assignee)
 
 
 @server.tool(name="move_work_item")

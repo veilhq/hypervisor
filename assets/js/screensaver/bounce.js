@@ -6,11 +6,13 @@
     // ========== MODE: Bounce ==========
     var bounceState = { x: 0, y: 0, vx: 2, vy: 1.5, hue: 0, colorIdx: 0, size: 64 };
 
-    // Brand icon paths (viewBox 0 0 108.28 108.28)
+    // Brand icon paths (viewBox 0 0 76.72 60.87)
     // Mirrors assets/hypervisor.svg — update both together when rebranding.
+    var BOUNCE_VB_W = 76.72;
+    var BOUNCE_VB_H = 60.87;
     var bouncePaths = [
-      "M90.15,36.1c9.91,0,17.98-8.06,17.98-17.98S100.06.15,90.15.15s-17.98,8.06-17.98,17.98,8.06,17.98,17.98,17.98ZM90.15,33.37c-5.05,0-9.53-2.48-12.3-6.28-.35-.48,0-1.16.59-1.16h1.46c.85,0,1.68.26,2.37.75s1.51.75,2.37.75h11.28c.85,0,1.68-.26,2.37-.75s1.51-.75,2.37-.75h1.21c.59,0,.94.68.59,1.16-2.77,3.8-7.25,6.28-12.3,6.28ZM104.51,16.79h-28.72c-.43,0-.78-.38-.72-.81.2-1.37.58-2.68,1.11-3.91.11-.26.38-.43.67-.43h3.05c.85,0,1.68.26,2.37.75s1.51.75,2.37.75h11.28c.85,0,1.68-.26,2.37-.75s1.51-.75,2.37-.75h2.8c.29,0,.55.17.67.43.54,1.23.92,2.54,1.11,3.91.06.43-.29.81-.72.81ZM74.94,18.79h4.72c.87,0,1.72.26,2.42.75s1.55.75,2.42.75h11.54c.87,0,1.72-.26,2.42-.75s1.55-.75,2.42-.75h3.69c.42,0,.76.36.72.78-.13,1.36-.43,2.67-.89,3.91-.11.28-.38.46-.68.46h-27.17c-.3,0-.58-.18-.68-.46-.55-1.47-.87-3.04-.94-4.69,0,0,0,0,0,0ZM90.15,2.89c4.73,0,8.97,2.17,11.77,5.57.39.47.04,1.18-.57,1.18h-22.41c-.61,0-.95-.71-.57-1.18,2.8-3.4,7.03-5.57,11.77-5.57Z",
-      "M107.94,71.76l-35.71-35.71-.04-.04h-34.8c-.63,0-1.14-.51-1.14-1.14V1.14c0-.63-.51-1.14-1.14-1.14H1.14C.51,0,0,.51,0,1.14v34.58c0,.3.12.59.33.8l33.56,33.56c.72.72.21,1.94-.8,1.94H1.14c-.63,0-1.14.51-1.14,1.14v33.98c0,.63.51,1.14,1.14,1.14h33.98c.63,0,1.14-.51,1.14-1.14v-33.73c0-.63.51-1.14,1.14-1.14h33.48c.63,0,1.14.51,1.14,1.14v33.73c0,.63.51,1.14,1.14,1.14h33.98c.63,0,1.14-.51,1.14-1.14v-34.58c0-.3-.12-.59-.33-.8Z"
+      "M71.35,35.62h-4.49c-1.3,0-2.49-.75-3.04-1.93l-3.53-7.54c-.3-.63-1.19-.64-1.5-.01l-.8,1.65c-2.32,4.79-7.18,7.84-12.51,7.84h-14.27c-5.33,0-10.19-3.04-12.51-7.84l-.8-1.65c-.3-.63-1.2-.62-1.5.01l-3.53,7.54c-.55,1.18-1.74,1.93-3.04,1.93h-4.49c-5.49,0-7.42,7.28-2.66,10l26.46,15.14c.66.38,1.44-.26,1.2-.98l-2.98-9.18c-1.12-3.44.45-7.19,3.69-8.81h0c4.71-3.41,11.21-3.12,15.63.85,2.53,2.28,3.3,5.94,2.25,9.18l-2.59,7.97c-.23.72.54,1.35,1.2.98l26.46-15.14c4.76-2.73,2.83-10-2.66-10Z",
+      "M35.66,27.34c9.72,1.84,18.08-6.52,16.24-16.24-1.03-5.43-5.41-9.81-10.84-10.84-9.72-1.84-18.08,6.52-16.24,16.24,1.03,5.43,5.41,9.81,10.84,10.84Z"
     ];
 
     // Pre-create Path2D objects for efficient drawing
@@ -28,9 +30,10 @@
     }
 
     function bounceResize() {
-      var s = bounceState.size;
-      if (bounceState.x > ssCanvas.width - s) bounceState.x = ssCanvas.width - s;
-      if (bounceState.y > ssCanvas.height - s) bounceState.y = ssCanvas.height - s;
+      var sw = bounceState.size;
+      var sh = sw * (BOUNCE_VB_H / BOUNCE_VB_W);
+      if (bounceState.x > ssCanvas.width - sw) bounceState.x = ssCanvas.width - sw;
+      if (bounceState.y > ssCanvas.height - sh) bounceState.y = ssCanvas.height - sh;
     }
 
     function bounceDraw() {
@@ -38,24 +41,25 @@
       ssCtx.fillStyle = "rgba(0, 0, 0, 0.08)";
       ssCtx.fillRect(0, 0, ssCanvas.width, ssCanvas.height);
 
-      var s = bounceState.size;
-      // Scale factor: icon viewBox is 108.28, we want to draw at `s` pixels
-      var scale = s / 108.28;
+      var sw = bounceState.size;
+      var sh = sw * (BOUNCE_VB_H / BOUNCE_VB_W);
+      // Scale factor: draw the viewBox at `sw` pixels wide, aspect preserved.
+      var scale = sw / BOUNCE_VB_W;
 
       bounceState.x += bounceState.vx;
       bounceState.y += bounceState.vy;
 
-      if (bounceState.x <= 0 || bounceState.x + s >= ssCanvas.width) {
+      if (bounceState.x <= 0 || bounceState.x + sw >= ssCanvas.width) {
         bounceState.vx *= -1;
         bounceState.hue = (bounceState.hue + 47) % 360;
         bounceState.colorIdx = (bounceState.colorIdx + 1) % 4;
-        bounceState.x = Math.max(0, Math.min(bounceState.x, ssCanvas.width - s));
+        bounceState.x = Math.max(0, Math.min(bounceState.x, ssCanvas.width - sw));
       }
-      if (bounceState.y <= 0 || bounceState.y + s >= ssCanvas.height) {
+      if (bounceState.y <= 0 || bounceState.y + sh >= ssCanvas.height) {
         bounceState.vy *= -1;
         bounceState.hue = (bounceState.hue + 47) % 360;
         bounceState.colorIdx = (bounceState.colorIdx + 1) % 4;
-        bounceState.y = Math.max(0, Math.min(bounceState.y, ssCanvas.height - s));
+        bounceState.y = Math.max(0, Math.min(bounceState.y, ssCanvas.height - sh));
       }
 
       if (colors) {
@@ -73,5 +77,5 @@
       ssCtx.restore();
     }
 
-    ssModes.bounce = { init: bounceInit, draw: bounceDraw, resize: bounceResize };
+    ssModes.bounce = { init: bounceInit, draw: bounceDraw, resize: bounceResize, meta: { name: "Bounce", icon: "move-diagonal", desc: "A word bouncing off the walls — retro" } };
 })();

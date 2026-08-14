@@ -275,6 +275,16 @@ def _extract_type_from_text(md_text):
     return None
 
 
+def _extract_assignee_from_text(md_text):
+    """Extract Assignee metadata from markdown text header."""
+    for line in md_text.splitlines()[:30]:
+        stripped = line.strip().lstrip("- ")
+        m = re.match(r'Assignee\s*:\s*(.+)', stripped, re.IGNORECASE)
+        if m:
+            return m.group(1).strip()
+    return None
+
+
 def get_dir_status(root: Path, dir_prefix: str) -> str | None:
     """Extract status for a subdirectory from its primary doc.
 

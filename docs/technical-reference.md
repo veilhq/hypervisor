@@ -88,6 +88,9 @@ There is no bundler, no framework, no build tool chain. The output is a director
         gl-dither.js          # Mode: GPU Bayer dither (WebGL2 via HyperGL)
         gl-noise.js           # Mode: GPU FBM noise (WebGL2 via HyperGL)
         gl-particles.js       # Mode: GPU fluid particles (WebGL2 via HyperGL)
+        gl-contour.js         # Mode: GPU topographic isolines (WebGL2 via HyperGL)
+        orbits.js             # Mode: great-circle arc sphere (2D canvas)
+        cubefold.js           # Mode: wireframe cube <-> hex star (2D canvas)
         zz-engine-tail.js     # Engine tail: public API, activate/dismiss, idle timer
   site_utils/                 # Python package — build pipeline modules
     __init__.py

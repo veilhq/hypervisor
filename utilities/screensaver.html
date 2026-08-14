@@ -50,19 +50,6 @@
 
 <script>
 (function () {
-  var MODES = [
-    { key: "particles", name: "Particles",   icon: "atom",          desc: "Reactive particles — push them with your mouse" },
-    { key: "starfield", name: "Starfield",    icon: "sparkles",      desc: "Stars flying toward you through space" },
-    { key: "worm",      name: "Worm",         icon: "route",         desc: "Crawling trails that wander the screen" },
-    { key: "dither",    name: "Dither",       icon: "blend",         desc: "Bayer-dithered gradients morphing in the dark" },
-    { key: "bounce",    name: "Bounce",       icon: "move-diagonal", desc: "A word bouncing off the walls — retro" },
-    { key: "life",      name: "Game of Life", icon: "grid-3x3",      desc: "Conway's cellular automaton — endlessly evolving" },
-    { key: "grid",      name: "Grid",         icon: "grid-2x2",     desc: "Infinite perspective grid scrolling into the void" },
-    { key: "gl-noise",  name: "GL Noise",     icon: "waves",         desc: "GPU-rendered fractal noise — domain warped and palette colored" },
-    { key: "gl-dither", name: "GL Dither",    icon: "scan-line",     desc: "Bayer dither on the GPU — silky smooth at any resolution" },
-    { key: "gl-particles", name: "GL Particles", icon: "zap",        desc: "100K GPU particles — flow fields and mouse repulsion" }
-  ];
-
   // app.js loads after this inline script — wait for the screensaver API
   function boot() {
     var api = window.__screensaver;
@@ -71,6 +58,18 @@
   }
 
   function init(api) {
+    // Build MODES dynamically from ssModes registry
+    var MODES = Object.keys(window.ssModes).map(function (key) {
+      var mode = window.ssModes[key];
+      var meta = mode.meta || {};
+      return {
+        key: key,
+        name: meta.name || key,
+        icon: meta.icon || "monitor",
+        desc: meta.desc || ""
+      };
+    });
+
     var currentMode = api.getMode();
     var cardsContainer = document.getElementById("ss-cards");
     var idleSelect = document.getElementById("ss-idle");

@@ -303,7 +303,7 @@
       }
     }
 
-    ssModes.particles = { init: particleInit, draw: particleDraw, resize: particleResize };
+    ssModes.particles = { init: particleInit, draw: particleDraw, resize: particleResize, meta: { name: "Particles", icon: "atom", desc: "Reactive particles — push them with your mouse" } };
 
     // Expose particleState for mouse tracking in engine
     var ssParticleState = particleState;

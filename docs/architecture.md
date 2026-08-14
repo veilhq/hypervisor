@@ -113,6 +113,9 @@ How the Hypervisor build pipeline works — from markdown source to browsable st
 │           ├── gl-dither.js    # Mode: GPU Bayer dither (WebGL2 via HyperGL)
 │           ├── gl-noise.js     # Mode: GPU FBM noise (WebGL2 via HyperGL)
 │           ├── gl-particles.js # Mode: GPU fluid particles (50k, transform feedback)
+│           ├── gl-contour.js   # Mode: GPU topographic isolines (WebGL2 via HyperGL)
+│           ├── orbits.js       # Mode: great-circle arc sphere (2D canvas)
+│           ├── cubefold.js     # Mode: wireframe cube <-> hex star (2D canvas)
 │           └── zz-engine-tail.js    # Engine tail: public API, activate/dismiss, idle timer
 ├── docs/                       # Hypervisor's own documentation (this file lives here)
 │   ├── README.md
@@ -356,6 +359,9 @@ JS lives in `assets/js/` organized into four subdirectories. During build, `buil
 | `gl-dither.js` | Mode: GPU Bayer 8×8 ordered dither with selectable patterns (WebGL2 via HyperGL) |
 | `gl-noise.js` | Mode: GPU animated FBM noise colored by accent palette (WebGL2 via HyperGL) |
 | `gl-particles.js` | Mode: GPU fluid particles — 50k particles via transform feedback (WebGL2 via HyperGL) |
+| `gl-contour.js` | Mode: GPU topographic isolines — FBM height field banded inside a disc, `fwidth()` antialiased (WebGL2 via HyperGL) |
+| `orbits.js` | Mode: great-circle arcs weaving a sphere — accumulate, hold, shatter, reform (2D canvas) |
+| `cubefold.js` | Mode: wireframe cube folding into a hex star — per-edge midpoint collapse with velocity-driven chromatic split (2D canvas) |
 | `zz-engine-tail.js` | Screensaver engine tail: public API, activate/dismiss, idle timer, events |
 
 ### Adding New Styles

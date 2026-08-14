@@ -465,6 +465,7 @@
         resize: resize,
         cleanup: cleanup,
         preview: preview,
-        gl: true
+        gl: true,
+        meta: { name: "GL Particles", icon: "zap", desc: "100K GPU particles — flow fields and mouse repulsion" }
       };
     })();

@@ -329,16 +329,56 @@
   var MAX_LINES = 5000; // Ring-buffer cap — drop oldest entries beyond this
   var pendingRender = false; // Set when a render is skipped to preserve a selection
 
+  var SOURCES = ["hypervisor", "hyperagent", "bridge", "rag"];
+
+  // --- Instance registry ---
+  // The router re-executes this script on every navigation, tab switch, and
+  // live reload (see doPostSwap in core/01-router.js). Each execution creates a
+  // fresh closure, but the previous one stays alive: its setInterval is only
+  // cleared by "beforeunload", which never fires on SPA navigation. Several
+  // instances then poll the bridge in parallel and race to write
+  // #log-panel-inner, and any instance whose captured nodes were replaced by an
+  // innerHTML swap writes into a detached element — a render that appears to do
+  // nothing. Only the newest instance is allowed to poll and paint.
+  var INSTANCE_ID = "lv-" + Date.now() + "-" + Math.random().toString(36).slice(2, 7);
+
+  if (window.__logViewer && typeof window.__logViewer.stop === "function") {
+    window.__logViewer.stop();
+  }
+
+  function isCurrent() {
+    return !!window.__logViewer && window.__logViewer.id === INSTANCE_ID;
+  }
+
   // --- DOM refs ---
-  var panel = document.getElementById("log-panel");
-  var panelInner = document.getElementById("log-panel-inner");
-  var emptyMsg = document.getElementById("log-empty");
-  var searchInput = document.getElementById("log-search");
-  var pauseBtn = document.getElementById("log-pause");
-  var pauseIcon = document.getElementById("log-pause-icon");
-  var clearBtn = document.getElementById("log-clear");
-  var statusLines = document.getElementById("log-status-lines");
-  var statusPoll = document.getElementById("log-status-poll");
+  // Re-resolved before every render rather than captured once, so a swapped
+  // node can never leave this instance writing into a detached element.
+  var panel = null, panelInner = null, statusLines = null, statusPoll = null;
+  var boundPanel = null;
+
+  function syncRefs() {
+    panel = document.getElementById("log-panel");
+    panelInner = document.getElementById("log-panel-inner");
+    statusLines = document.getElementById("log-status-lines");
+    statusPoll = document.getElementById("log-status-poll");
+    if (panel && panel !== boundPanel) {
+      panel.addEventListener("scroll", onPanelScroll);
+      boundPanel = panel;
+    }
+    return !!(panel && panelInner);
+  }
+
+  function onPanelScroll() {
+    if (!panel) return;
+    autoScroll = panel.scrollHeight - panel.scrollTop - panel.clientHeight < 30;
+  }
+
+  function selectionInsidePanel() {
+    var sel = window.getSelection && window.getSelection();
+    if (!sel || sel.isCollapsed || sel.rangeCount === 0) return false;
+    if (!panelInner) return false;
+    return panelInner.contains(sel.getRangeAt(0).commonAncestorContainer);
+  }
 
   // --- Line Parser ---
   // Format: 2026-07-14T12:15:03.421 [INFO ] [hypervisor.build] message
@@ -418,17 +458,22 @@
     return true;
   }
 
-  function renderAll() {
-    // Preserve active user selection — if the user is highlighting text inside
-    // the panel, skip this render pass and let the next poll try again.
-    // Otherwise innerHTML replacement wipes the selection mid-drag / before copy.
-    var sel = window.getSelection && window.getSelection();
-    if (sel && !sel.isCollapsed && sel.rangeCount > 0) {
-      var range = sel.getRangeAt(0);
-      if (panelInner.contains(range.commonAncestorContainer)) {
-        pendingRender = true;
-        return;
-      }
+  // renderAll(userInitiated)
+  //   userInitiated — true when a filter toggle, search keystroke, or clear
+  //   triggered the render. Those must always paint; only the live tail defers.
+  function renderAll(userInitiated) {
+    // An orphaned instance from a previous navigation must never paint.
+    if (!isCurrent()) return;
+    // Nodes are resolved fresh: the SPA may have replaced them since last render.
+    if (!syncRefs()) return;
+
+    // Preserve an in-progress drag-select from being wiped by the live tail.
+    // A filter change is an explicit user action, so it bypasses the guard —
+    // otherwise a lingering selection (a double-click-to-copy leaves one) makes
+    // every toggle look like it did nothing.
+    if (!userInitiated && selectionInsidePanel()) {
+      pendingRender = true;
+      return;
     }
     pendingRender = false;
 
@@ -466,31 +511,101 @@
     }
   }
 
-  // --- Auto-scroll detection ---
-  panel.addEventListener("scroll", function() {
-    var atBottom = panel.scrollHeight - panel.scrollTop - panel.clientHeight < 30;
-    autoScroll = atBottom;
-  });
+  // --- Event delegation ---
+  // Handlers live on `document` and are registered once for the page lifetime,
+  // then routed through the registry. Two consequences that matter here:
+  // replacing the toolbar nodes cannot orphan a listener, and an old instance
+  // stops receiving events the moment a newer one registers.
+  function onClick(ev) {
+    var t = ev.target;
+    if (!t || !t.closest) return;
 
-  // --- Flush deferred render when selection clears ---
-  // renderAll() skips itself while a selection is active inside the panel;
-  // once the user releases / clears the selection, catch up so live tail resumes.
-  document.addEventListener("selectionchange", function() {
+    var srcBtn = t.closest(".log-filter-btn");
+    if (srcBtn) { handleSourceToggle(srcBtn); return; }
+
+    var sevBtn = t.closest(".log-severity-btn");
+    if (sevBtn) { handleSeverityToggle(sevBtn); return; }
+
+    if (t.closest("#log-pause")) { handlePause(); return; }
+    if (t.closest("#log-clear")) { handleClear(); return; }
+  }
+
+  function onInput(ev) {
+    if (!ev.target || ev.target.id !== "log-search") return;
+    searchText = ev.target.value;
+    renderAll(true);
+  }
+
+  function onSelectionChange() {
     if (!pendingRender) return;
-    var sel = window.getSelection && window.getSelection();
-    if (!sel || sel.isCollapsed || sel.rangeCount === 0) {
-      renderAll();
+    syncRefs();
+    if (!selectionInsidePanel()) renderAll();
+  }
+
+  // --- Source filter buttons ---
+  function handleSourceToggle(btn) {
+    var src = btn.getAttribute("data-source");
+    if (src === "all") {
+      var allActive = SOURCES.every(function (s) { return activeSources[s]; });
+      SOURCES.forEach(function (s) { activeSources[s] = !allActive; });
+    } else if (Object.prototype.hasOwnProperty.call(activeSources, src)) {
+      activeSources[src] = !activeSources[src];
+    } else {
       return;
     }
-    var range = sel.getRangeAt(0);
-    if (!panelInner.contains(range.commonAncestorContainer)) {
-      renderAll();
+    updateSourceButtons();
+    renderAll(true);
+  }
+
+  function updateSourceButtons() {
+    var allActive = SOURCES.every(function (s) { return activeSources[s]; });
+    document.querySelectorAll(".log-filter-btn").forEach(function (btn) {
+      var src = btn.getAttribute("data-source");
+      btn.classList.toggle(
+        "log-filter-active",
+        src === "all" ? allActive : !!activeSources[src]
+      );
+    });
+  }
+
+  // --- Severity filter buttons ---
+  function handleSeverityToggle(btn) {
+    var sev = btn.getAttribute("data-severity");
+    if (!Object.prototype.hasOwnProperty.call(activeSeverities, sev)) return;
+    activeSeverities[sev] = !activeSeverities[sev];
+    btn.classList.toggle("log-severity-active", activeSeverities[sev]);
+    renderAll(true);
+  }
+
+  // --- Pause/resume ---
+  function handlePause() {
+    syncRefs();
+    isPaused = !isPaused;
+    if (isPaused) stopPolling(); else startPolling();
+
+    if (statusPoll) {
+      statusPoll.textContent = isPaused ? "\u25CF Paused" : "\u25CF Live";
+      statusPoll.className = isPaused ? "log-status-paused" : "log-status-live";
     }
-  });
+    // Lucide swaps the <i> for an <svg>, so the icon node is re-resolved by id
+    // rather than held in a closure.
+    var icon = document.getElementById("log-pause-icon");
+    if (icon) {
+      icon.setAttribute("data-lucide", isPaused ? "play" : "pause");
+      if (window.lucide) lucide.createIcons({ nodes: [icon] });
+    }
+  }
+
+  // --- Clear ---
+  function handleClear() {
+    logLines = [];
+    totalLinesByFile = {};
+    renderAll(true);
+  }
 
   // --- Double-click a log line to copy its raw text ---
-  panelInner.addEventListener("dblclick", function(e) {
-    var lineEl = e.target.closest && e.target.closest(".log-line");
+  function onDblClick(ev) {
+    var lineEl = ev.target && ev.target.closest ? ev.target.closest(".log-line") : null;
     if (!lineEl) return;
     var text = lineEl.textContent || "";
     if (!text) return;
@@ -506,7 +621,7 @@
     } else {
       fallbackCopy(text); done();
     }
-  });
+  }
 
   function fallbackCopy(text) {
     var ta = document.createElement("textarea");
@@ -519,79 +634,34 @@
     document.body.removeChild(ta);
   }
 
-  // --- Source filter buttons ---
-  var srcBtns = document.querySelectorAll(".log-filter-btn");
-  srcBtns.forEach(function(btn) {
-    btn.addEventListener("click", function() {
-      var src = btn.getAttribute("data-source");
-      if (src === "all") {
-        // Toggle all
-        var allActive = activeSources.hypervisor && activeSources.hyperagent && activeSources.bridge && activeSources.rag;
-        activeSources.hypervisor = !allActive;
-        activeSources.hyperagent = !allActive;
-        activeSources.bridge = !allActive;
-        activeSources.rag = !allActive;
-      } else {
-        activeSources[src] = !activeSources[src];
-      }
-      updateSourceButtons();
-      renderAll();
+  if (!window.__logViewerDelegated) {
+    window.__logViewerDelegated = true;
+    document.addEventListener("click", function (ev) {
+      var lv = window.__logViewer;
+      if (lv && lv.onClick) lv.onClick(ev);
     });
-  });
-
-  function updateSourceButtons() {
-    srcBtns.forEach(function(btn) {
-      var src = btn.getAttribute("data-source");
-      if (src === "all") {
-        var allActive = activeSources.hypervisor && activeSources.hyperagent && activeSources.bridge && activeSources.rag;
-        btn.classList.toggle("log-filter-active", allActive);
-      } else {
-        btn.classList.toggle("log-filter-active", activeSources[src]);
-      }
+    document.addEventListener("input", function (ev) {
+      var lv = window.__logViewer;
+      if (lv && lv.onInput) lv.onInput(ev);
+    });
+    document.addEventListener("dblclick", function (ev) {
+      var lv = window.__logViewer;
+      if (lv && lv.onDblClick) lv.onDblClick(ev);
+    });
+    document.addEventListener("selectionchange", function () {
+      var lv = window.__logViewer;
+      if (lv && lv.onSelectionChange) lv.onSelectionChange();
     });
   }
 
-  // --- Severity filter buttons ---
-  var sevBtns = document.querySelectorAll(".log-severity-btn");
-  sevBtns.forEach(function(btn) {
-    btn.addEventListener("click", function() {
-      var sev = btn.getAttribute("data-severity");
-      activeSeverities[sev] = !activeSeverities[sev];
-      btn.classList.toggle("log-severity-active", activeSeverities[sev]);
-      renderAll();
-    });
-  });
-
-  // --- Text search ---
-  searchInput.addEventListener("input", function() {
-    searchText = searchInput.value;
-    renderAll();
-  });
-
-  // --- Pause/resume ---
-  pauseBtn.addEventListener("click", function() {
-    isPaused = !isPaused;
-    if (isPaused) {
-      pauseIcon.setAttribute("data-lucide", "play");
-      statusPoll.textContent = "\u25CF Paused";
-      statusPoll.className = "log-status-paused";
-      stopPolling();
-    } else {
-      pauseIcon.setAttribute("data-lucide", "pause");
-      statusPoll.textContent = "\u25CF Live";
-      statusPoll.className = "log-status-live";
-      startPolling();
-    }
-    // Re-render Lucide icon
-    if (window.lucide) lucide.createIcons({ nodes: [pauseIcon] });
-  });
-
-  // --- Clear ---
-  clearBtn.addEventListener("click", function() {
-    logLines = [];
-    totalLinesByFile = {};
-    renderAll();
-  });
+  // Stop the active instance's polling before the router swaps content away.
+  // This is the cleanup "beforeunload" cannot provide in an SPA.
+  if (!window.__logViewerTeardownHooked && window.__router && window.__router.onNavigate) {
+    window.__logViewerTeardownHooked = true;
+    window.__router.onNavigate(function () {
+      if (window.__logViewer && window.__logViewer.stop) window.__logViewer.stop();
+    }, null);
+  }
 
   // --- Polling ---
   var LOG_FILES = ["hypervisor.log", "hyperagent.log", "bridge.log", "rag.log"];
@@ -602,40 +672,49 @@
     "rag.log": "rag",
   };
 
-  function pollLogs() {
-    if (!window.pywebview || !window.pywebview.api) return;
-
-    var promises = LOG_FILES.map(function(filename) {
-      var afterLine = totalLinesByFile[filename] || 0;
-      var source = SOURCE_MAP[filename];
-
-      return window.pywebview.api.read_log_tail(filename, 200, afterLine).then(function(result) {
-        if (!result.ok) return { source: source, lines: [] };
+  function readTail(filename, afterLine) {
+    var source = SOURCE_MAP[filename];
+    return window.pywebview.api.read_log_tail(filename, 200, afterLine).then(
+      function(result) {
+        if (!result || !result.ok) return { source: source, lines: [] };
         totalLinesByFile[filename] = result.total_lines;
         return { source: source, lines: result.lines || [] };
-      });
-    });
+      },
+      // A rejected bridge call must not abort the whole batch — without this,
+      // one failing file leaves Promise.all rejected and nothing renders.
+      function() { return { source: source, lines: [] }; }
+    );
+  }
 
-    Promise.all(promises).then(function(results) {
-      var added = 0;
-      results.forEach(function(r) {
-        for (var i = 0; i < r.lines.length; i++) {
-          var line = r.lines[i].trim();
-          if (line) {
-            pushLine(line, r.source);
-            added++;
-          }
+  function ingest(results) {
+    var added = 0;
+    results.forEach(function(r) {
+      for (var i = 0; i < r.lines.length; i++) {
+        var line = r.lines[i].trim();
+        if (line) {
+          pushLine(line, r.source);
+          added++;
         }
-      });
-      if (added > 0) {
-        // Sort newly-appended tail to keep chronological order across sources.
-        // Only re-sort the tail region to avoid re-shuffling stable history.
-        logLines.sort(function(a, b) {
-          return (a.timestamp || "").localeCompare(b.timestamp || "");
-        });
-        capBuffer();
-        renderAll();
       }
+    });
+    if (added > 0) {
+      // Sort the buffer to keep chronological order across sources.
+      logLines.sort(function(a, b) {
+        return (a.timestamp || "").localeCompare(b.timestamp || "");
+      });
+      capBuffer();
+    }
+    return added;
+  }
+
+  function pollLogs() {
+    if (!isCurrent()) { stopPolling(); return; }
+    if (!window.pywebview || !window.pywebview.api) return;
+
+    Promise.all(LOG_FILES.map(function(filename) {
+      return readTail(filename, totalLinesByFile[filename] || 0);
+    })).then(function(results) {
+      if (ingest(results) > 0) renderAll();
     });
   }
 
@@ -654,48 +733,38 @@
 
   // --- Initial load ---
   function initialLoad() {
+    if (!isCurrent()) return;
     if (!window.pywebview || !window.pywebview.api) {
       // Wait for bridge
       setTimeout(initialLoad, 300);
       return;
     }
 
-    var promises = LOG_FILES.map(function(filename) {
-      var source = SOURCE_MAP[filename];
-
-      return window.pywebview.api.read_log_tail(filename, 200, 0).then(function(result) {
-        if (!result.ok) return { source: source, lines: [] };
-        totalLinesByFile[filename] = result.total_lines;
-        return { source: source, lines: result.lines || [] };
-      });
-    });
-
-    Promise.all(promises).then(function(results) {
-      results.forEach(function(r) {
-        for (var i = 0; i < r.lines.length; i++) {
-          var line = r.lines[i].trim();
-          if (line) {
-            pushLine(line, r.source);
-          }
-        }
-      });
-
-      // Sort by timestamp after all files loaded
-      logLines.sort(function(a, b) {
-        return (a.timestamp || "").localeCompare(b.timestamp || "");
-      });
-      capBuffer();
+    Promise.all(LOG_FILES.map(function(filename) {
+      return readTail(filename, 0);
+    })).then(function(results) {
+      ingest(results);
       renderAll();
+      // Polling starts only once the first batch has landed. Starting it on a
+      // fixed timer instead lets a poll run while totalLinesByFile is still
+      // empty, which re-requests the same tail and duplicates every line.
+      if (!isPaused) startPolling();
     });
-
-    // Start live polling after initial load
-    setTimeout(startPolling, 1000);
   }
 
-  // Kick off
-  initialLoad();
+  // Claim ownership, then kick off. Registration must precede initialLoad()
+  // because isCurrent() gates every poll and render.
+  window.__logViewer = {
+    id: INSTANCE_ID,
+    stop: stopPolling,
+    onClick: onClick,
+    onInput: onInput,
+    onDblClick: onDblClick,
+    onSelectionChange: onSelectionChange,
+  };
 
-  // Cleanup on navigation away
-  window.addEventListener("beforeunload", stopPolling);
+  syncRefs();
+  updateSourceButtons();
+  initialLoad();
 })();
 </script>

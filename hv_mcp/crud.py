@@ -56,6 +56,7 @@ def create_document(
     fix: str | None = None,
     testing: str | None = None,
     recommendations: str | None = None,
+    assignee: str = "Josh Wooten",
 ) -> dict:
     """Create a new hyperspace document with full convention enforcement."""
     # Validate type
@@ -91,7 +92,7 @@ def create_document(
             title=title, description=description, tags=valid_tags,
             project=project, doc_type=doc_type, overview=overview,
             design=design, acceptance_criteria=acceptance_criteria, tasks=tasks,
-            work_id=work_id, open_questions=open_questions,
+            work_id=work_id, open_questions=open_questions, assignee=assignee,
         )
         target_dir = HYPERSPACE_ROOT / "work" / "to-do"
 
@@ -188,6 +189,7 @@ def update_document(
     tags: list[str] | None = None,
     project: str | None = None,
     doc_type: str | None = None,
+    assignee: str | None = None,
 ) -> dict:
     """Update metadata fields on an existing document."""
     full_path = HYPERSPACE_ROOT / path.replace("/", os.sep)
@@ -251,6 +253,13 @@ def update_document(
             updated_fields.append(f"doc_type: {doc_type}")
             continue
 
+        if assignee is not None and re.match(r'Assignee\s*:', stripped, re.IGNORECASE):
+            if assignee:
+                new_lines.append(f"- Assignee: {assignee}")
+            # If assignee is empty string, skip the line (removes the field)
+            updated_fields.append(f"assignee: {assignee or '(cleared)'}")
+            continue
+
         if re.match(r'(?:Last\s+)?Updated\s*:', stripped, re.IGNORECASE):
             new_lines.append(f"- Updated: {now}")
             updated_line = True
@@ -263,6 +272,14 @@ def update_document(
         for i, line in enumerate(new_lines):
             if re.match(r'^- Created:', line.strip(), re.IGNORECASE):
                 new_lines.insert(i + 1, f"- Updated: {now}")
+                break
+
+    # If assignee was requested but no existing Assignee line was found, insert after Project
+    if assignee and f"assignee: {assignee}" not in " ".join(updated_fields):
+        for i, line in enumerate(new_lines):
+            if re.match(r'^- Project:', line.strip(), re.IGNORECASE):
+                new_lines.insert(i + 1, f"- Assignee: {assignee}")
+                updated_fields.append(f"assignee: {assignee}")
                 break
 
     # Write back

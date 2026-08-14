@@ -324,17 +324,28 @@ class HypervisorAPI:
             return {"ok": False, "error": str(e)}
 
     def launch_dither_widget(self):
-        """Launch the Dither Widget as a detached subprocess."""
-        script = HYPERSPACE_ROOT / ".dither-widget" / "dither-widget.py"
-        if not script.exists():
-            return {"ok": False, "error": "dither-widget.py not found"}
+        """Launch HyperField as a detached subprocess via its shortcut.
+
+        Launching via the .lnk ensures Windows groups the window with the
+        pinned taskbar shortcut (same AppUserModelID) and shows the correct icon.
+        Falls back to direct pythonw invocation if the shortcut doesn't exist.
+        """
+        import os
+        shortcut = HYPERSPACE_ROOT / ".hyperfield" / "HyperField.lnk"
+        script = HYPERSPACE_ROOT / ".hyperfield" / "hyperfield.py"
         try:
-            subprocess.Popen(
-                ["pythonw", str(script)],
-                cwd=str(script.parent),
-                creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NO_WINDOW,
-            )
-            return {"ok": True}
+            if shortcut.exists():
+                os.startfile(str(shortcut))
+                return {"ok": True}
+            elif script.exists():
+                subprocess.Popen(
+                    ["pythonw", str(script)],
+                    cwd=str(script.parent),
+                    creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NO_WINDOW,
+                )
+                return {"ok": True}
+            else:
+                return {"ok": False, "error": "hyperfield.py not found"}
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
@@ -1418,7 +1429,7 @@ def main():
     def background():
         import time
         time.sleep(1)
-        _apply_window_chrome("Hypervisor", str((ASSETS_DIR / "hv-box.ico").resolve()))
+        _apply_window_chrome("Hypervisor", str((ASSETS_DIR / "hypervisor.ico").resolve()))
         start_watcher_thread(watcher)
         # Launch the shared MCP HTTP service (if not already running)
         _start_mcp_service()
@@ -1431,7 +1442,7 @@ def main():
     # server uses our 404 handler instead of Bottle's default white page.
     # private_mode=False + storage_path pins localStorage to a fixed location
     # on disk so it persists across app restarts (regardless of port changes).
-    icon_path = str((ASSETS_DIR / "hv-box.ico").resolve())
+    icon_path = str((ASSETS_DIR / "hypervisor.ico").resolve())
     storage_dir = str((OUTPUT_DIR.parent / ".webview_data").resolve())
     webview.start(background, debug=False, icon=icon_path,
                   private_mode=False, storage_path=storage_dir,

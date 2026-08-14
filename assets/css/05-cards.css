@@ -379,8 +379,8 @@ h1 + .home-dock {
 .home-anchor-canvas.fade-out { opacity: 0; }
 .home-anchor-icon {
   position: relative;
-  width: 84px;
-  height: 84px;
+  width: 100px;
+  height: 80px;
   color: var(--accent);
   z-index: 1;
   filter: drop-shadow(0 0 8px var(--bg));
@@ -573,15 +573,32 @@ h1 + .home-dock {
   white-space: nowrap;
   min-width: 0;
 }
+.pulse-assignee {
+  color: var(--comp);
+  font-size: var(--fs-caption);
+  letter-spacing: 0.05em;
+  display: inline-block;
+  width: 3ch;
+  text-align: right;
+}
+.pulse-days {
+  display: inline-block;
+  width: 4ch;
+  text-align: right;
+}
 .pulse-row:hover .pulse-title {
   color: var(--accent);
 }
 
 /* Right meta: age for active, HH:MM for recent */
 .pulse-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
   color: var(--text-dim);
   font-size: var(--fs-label);
-  width: 5ch;
+  min-width: 9ch;
   text-align: right;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;

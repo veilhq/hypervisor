@@ -82,5 +82,5 @@
       }
     }
 
-    ssModes.worm = { init: wormInit, draw: wormDraw, resize: wormResize };
+    ssModes.worm = { init: wormInit, draw: wormDraw, resize: wormResize, meta: { name: "Worm", icon: "route", desc: "Crawling trails that wander the screen" } };
 })();

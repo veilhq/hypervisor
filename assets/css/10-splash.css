@@ -37,7 +37,7 @@ html.hv-splash-active body {
 }
 
 .hv-splash-eye {
-  width: 24px;
+  width: 30px;
   height: 24px;
   color: var(--bg, #000000);
 }

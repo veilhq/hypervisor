@@ -104,11 +104,11 @@ def _load_logo_svg():
     import re
     svg_path = ASSETS_DIR / "hypervisor.svg"
     if not svg_path.exists():
-        return "0 0 108.28 108.28", ""
+        return "0 0 35.95 35.95", ""
     text = svg_path.read_text(encoding="utf-8")
     # Extract viewBox
     m_vb = re.search(r'viewBox="([^"]+)"', text)
-    viewbox = m_vb.group(1) if m_vb else "0 0 108.28 108.28"
+    viewbox = m_vb.group(1) if m_vb else "0 0 35.95 35.95"
     # Extract inner content between the first <svg ...> and closing </svg>
     m_inner = re.search(r'<svg[^>]*>(.*)</svg>', text, re.DOTALL)
     inner = m_inner.group(1).strip() if m_inner else ""

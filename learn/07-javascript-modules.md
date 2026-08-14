@@ -51,6 +51,9 @@ assets/js/
     ├── gl-dither.js         ← Mode: WebGL dither (GPU)
     ├── gl-noise.js          ← Mode: WebGL FBM noise
     ├── gl-particles.js      ← Mode: WebGL fluid particles
+    ├── gl-contour.js        ← Mode: WebGL topographic isolines
+    ├── orbits.js            ← Mode: great-circle arc sphere (2D)
+    ├── cubefold.js          ← Mode: wireframe cube <-> hex star (2D)
     ├── grid.js              ← Mode: perspective grid
     ├── life.js              ← Mode: Conway's Game of Life
     ├── particles.js         ← Mode: 2D SPH fluid

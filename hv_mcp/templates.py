@@ -44,6 +44,7 @@ def apply_work_item_template(
     doc_type: str, overview: str, design: str | None = None,
     acceptance_criteria: dict | None = None, tasks: list[str] | None = None,
     work_id: str | None = None, open_questions: list[str] | None = None,
+    assignee: str = "Josh Wooten",
 ) -> str:
     """Generate a work-item markdown document."""
     now = datetime.now().strftime("%Y-%m-%dT%H:%M")
@@ -62,6 +63,8 @@ def apply_work_item_template(
     lines.append(f"- Type: {doc_type}")
     lines.append("- Status: Planned")
     lines.append(f"- Project: {project}")
+    if assignee:
+        lines.append(f"- Assignee: {assignee}")
     lines.append("")
     lines.append("---")
     lines.append("")

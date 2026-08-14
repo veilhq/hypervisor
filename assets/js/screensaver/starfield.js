@@ -60,5 +60,5 @@
       }
     }
 
-    ssModes.starfield = { init: starInit, draw: starDraw, resize: starResize };
+    ssModes.starfield = { init: starInit, draw: starDraw, resize: starResize, meta: { name: "Starfield", icon: "sparkles", desc: "Stars flying toward you through space" } };
 })();

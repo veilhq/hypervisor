@@ -279,7 +279,7 @@ def extract_metadata_block(html: str) -> str:
         re.DOTALL
     )
 
-    KNOWN_KEYS = {"id", "status", "project", "tags", "created", "updated", "related", "type"}
+    KNOWN_KEYS = {"id", "status", "project", "tags", "created", "updated", "related", "type", "assignee"}
 
     def _parse_items(items):
         """Return a dict of key.lower() -> raw value string, plus a list of
@@ -309,10 +309,20 @@ def extract_metadata_block(html: str) -> str:
         m = re.match(r'^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})', val)
         return f"{m.group(1)} {m.group(2)}" if m else val
 
+    def _initials(name: str) -> str:
+        """Extract up to 2 initials from a full name, or pass through short values."""
+        name = name.strip()
+        if len(name) <= 3:
+            return name.upper()
+        parts = name.split()
+        if len(parts) >= 2:
+            return (parts[0][0] + parts[-1][0]).upper()
+        return parts[0][0].upper() if parts else "?"
+
     def _build_strip(parsed, extras):
         html_parts = ['<div class="doc-header-strip">']
 
-        # --- LEFT: WI + Status + Project chips (identity cluster) ---
+        # --- LEFT: WI + Status + Project + Assignee chips (identity cluster) ---
         chips = []
         wi = parsed.get("id")
         if wi:
@@ -342,6 +352,15 @@ def extract_metadata_block(html: str) -> str:
                     "outlined-accent",
                     project,
                     extra_class="doc-header-chip doc-header-chip-project",
+                )
+            )
+        assignee = parsed.get("assignee")
+        if assignee:
+            chips.append(
+                render_chip(
+                    "outlined-muted",
+                    _initials(assignee),
+                    extra_class="doc-header-chip doc-header-chip-assignee",
                 )
             )
         html_parts.append('<div class="doc-header-chips">' + "".join(chips) + '</div>')

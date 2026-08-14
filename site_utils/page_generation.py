@@ -328,9 +328,9 @@ LEGACY_PAGE_TEMPLATE = """\
         <i data-lucide="terminal" class="action-icon"></i>
         <span class="action-label">launch dev</span>
       </button>
-      <button class="action-item" id="dither-btn" aria-label="Launch Dither Widget" style="display:none">
+      <button class="action-item" id="dither-btn" aria-label="Launch HyperField" style="display:none">
         <i data-lucide="grid-3x3" class="action-icon"></i>
-        <span class="action-label">dither</span>
+        <span class="action-label">hyperfield</span>
       </button>
     </div>
   </div>
@@ -560,9 +560,9 @@ SHELL_TEMPLATE = """\
         <i data-lucide="terminal" class="action-icon"></i>
         <span class="action-label">launch dev</span>
       </button>
-      <button class="action-item" id="dither-btn" aria-label="Launch Dither Widget" style="display:none">
+      <button class="action-item" id="dither-btn" aria-label="Launch HyperField" style="display:none">
         <i data-lucide="grid-3x3" class="action-icon"></i>
-        <span class="action-label">dither</span>
+        <span class="action-label">hyperfield</span>
       </button>
     </div>
   </div>

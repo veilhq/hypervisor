@@ -157,7 +157,7 @@
       ssCtx.restore();
     }
 
-    ssModes.grid = { init: gridInit, draw: gridDraw, resize: gridResize };
+    ssModes.grid = { init: gridInit, draw: gridDraw, resize: gridResize, meta: { name: "Grid", icon: "grid-2x2", desc: "Infinite perspective grid scrolling into the void" } };
 
     // Expose grid mouse toggle for settings UI
     window.__gridMouse = {

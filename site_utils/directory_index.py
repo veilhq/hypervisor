@@ -14,7 +14,7 @@ from .file_utils import (
     dir_label, nice_name, get_title, extract_dates, sort_date, display_date,
     href_for, count_docs_under, get_dir_snippet,
     get_dir_status, get_dir_type, get_dir_tags, infer_app_group,
-    compute_badges, format_badge_html, read_md,
+    compute_badges, format_badge_html, read_md, _extract_assignee_from_text,
 )
 from chips import render_chip
 
@@ -24,6 +24,17 @@ from chips import render_chip
 # ---------------------------------------------------------------------------
 
 COMPACT_THRESHOLD = 10  # Switch to grouped shelves above this many subdirs
+
+
+def _initials(name: str) -> str:
+    """Extract up to 2 initials from a full name, or pass through short values."""
+    name = name.strip()
+    if len(name) <= 3:
+        return name.upper()
+    parts = name.split()
+    if len(parts) >= 2:
+        return (parts[0][0] + parts[-1][0]).upper()
+    return parts[0][0].upper() if parts else "?"
 
 
 def _doc_type_badge(rel_path):
@@ -200,6 +211,7 @@ def generate_home_content(files, build_stats=None, recent_paths=None):
             date_str, _ = sort_date(dates)
             done, total = _parse_task_progress(md_text)
             work_id = _extract_work_id_from_text(md_text)
+            assignee = _extract_assignee_from_text(md_text)
             # Days since Created (fallback: since Updated)
             days_active = 0
             created = dates.get("created") or dates.get("updated") or ""
@@ -219,6 +231,7 @@ def generate_home_content(files, build_stats=None, recent_paths=None):
                 "total": total,
                 "work_id": work_id,
                 "days": days_active,
+                "assignee": assignee,
             })
     active_items.sort(key=lambda x: x["date"], reverse=True)
 
@@ -288,11 +301,16 @@ def generate_home_content(files, build_stats=None, recent_paths=None):
                 if it["work_id"]
                 else render_chip("outlined-muted", "&mdash;", extra_class="pulse-chip pulse-chip-work pulse-chip-missing")
             )
+            assignee_label = (
+                f'<span class="pulse-assignee">{_initials(it["assignee"])}</span>'
+                if it.get("assignee")
+                else ""
+            )
             html.append(
                 f'<a class="pulse-row pulse-row-active" href="{href_for(it["rel"])}">'
                 f'{chip}'
                 f'<span class="pulse-title">{it["title"]}</span>'
-                f'<span class="pulse-right">{days_str}</span>'
+                f'<span class="pulse-right">{assignee_label}<span class="pulse-days">{days_str}</span></span>'
                 f'{progress_html}'
                 f'</a>'
             )

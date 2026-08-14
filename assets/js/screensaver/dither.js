@@ -100,5 +100,5 @@
       ditherState.time += 0.02;
     }
 
-    ssModes.dither = { init: ditherInit, draw: ditherDraw, resize: ditherResize };
+    ssModes.dither = { init: ditherInit, draw: ditherDraw, resize: ditherResize, meta: { name: "Dither", icon: "blend", desc: "Bayer-dithered gradients morphing in the dark" } };
 })();

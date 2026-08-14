@@ -171,5 +171,5 @@
       }
     }
 
-    ssModes.life = { init: lifeInit, draw: lifeDraw, resize: lifeResize };
+    ssModes.life = { init: lifeInit, draw: lifeDraw, resize: lifeResize, meta: { name: "Game of Life", icon: "grid-3x3", desc: "Conway's cellular automaton — endlessly evolving" } };
 })();

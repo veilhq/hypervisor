@@ -127,6 +127,9 @@ Hypervisor is a zero-framework tool: a Python entry point (`build.py`) backed by
 │           ├── gl-dither.js    # Mode: GPU Bayer dither (WebGL2)
 │           ├── gl-noise.js     # Mode: GPU FBM noise (WebGL2)
 │           ├── gl-particles.js # Mode: GPU fluid particles (WebGL2)
+│           ├── gl-contour.js   # Mode: GPU topographic isolines (WebGL2)
+│           ├── orbits.js       # Mode: great-circle arc sphere (2D canvas)
+│           ├── cubefold.js     # Mode: wireframe cube <-> hex star (2D canvas)
 │           └── zz-engine-tail.js    # Engine tail: API, idle timer
 ├── docs/                       # Hypervisor documentation
 │   ├── README.md               # This file

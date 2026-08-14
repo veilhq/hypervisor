@@ -282,6 +282,7 @@
         resize: glDitherResize,
         cleanup: glDitherCleanup,
         preview: glDitherPreview,
-        gl: true
+        gl: true,
+        meta: { name: "GL Dither", icon: "scan-line", desc: "Bayer dither on the GPU — silky smooth at any resolution" }
       };
     })();

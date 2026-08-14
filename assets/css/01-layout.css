@@ -226,9 +226,11 @@
   transition: transform var(--motion-base) var(--ease);
 }
 .brand:hover { transform: translateX(-1px); }
+/* Logo viewBox is 76.72 x 60.87 (~1.26:1) — sizes keep that ratio so the
+   mark fills its box instead of letterboxing inside a square. */
 .brand-icon {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 16px;
   color: var(--accent);
 }
 .brand-text {
@@ -309,7 +311,7 @@
 .footer-label { color: var(--text-dim); }
 
 /* ---- Lucide icons ---- */
-.brand-icon { width: 18px; height: 18px; color: var(--accent); }
+/* .brand-icon is sized above (inline brand SVG, not a lucide glyph). */
 .crumb-sep svg { width: 10px; height: 10px; vertical-align: middle; }
 .card-icon { width: 16px; height: 16px; vertical-align: -2px; margin-right: 0.3rem; }
 .doc-icon { width: 12px; height: 12px; min-width: 12px; flex-shrink: 0; vertical-align: -1px; margin-right: 0.25rem; color: var(--text-dim); }

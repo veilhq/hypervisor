@@ -80,7 +80,7 @@
       window.ssCtx = extCtx;
       window.ssCanvas = proxyCanvas;
       modes[modeKey].init();
-      var frames = modeKey === "worm" ? 150 : modeKey === "dither" ? 30 : modeKey === "life" ? 80 : modeKey === "ferrofluid" ? 100 : 60;
+      var frames = modeKey === "worm" ? 150 : modeKey === "dither" ? 30 : modeKey === "life" ? 80 : modeKey === "ferrofluid" ? 100 : modeKey === "rorschach" ? 1 : 60;
       for (var i = 0; i < frames; i++) {
         modes[modeKey].draw();
       }

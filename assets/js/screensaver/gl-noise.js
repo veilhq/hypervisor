@@ -132,6 +132,7 @@
         resize: glNoiseResize,
         cleanup: glNoiseCleanup,
         preview: glNoisePreview,
-        gl: true
+        gl: true,
+        meta: { name: "GL Noise", icon: "waves", desc: "GPU-rendered fractal noise — domain warped and palette colored" }
       };
     })();

@@ -302,6 +302,11 @@
 .doc-header-chip-status-active {}
 .doc-header-chip-status-idle {}
 .doc-header-chip-project {}
+/* Assignee: comp-color override for delegation visibility */
+.doc-header-chip-assignee {
+  color: var(--comp);
+  border-color: var(--comp);
+}
 
 /* Middle: topic tag chips (project moved to left identity cluster) */
 .doc-header-tags {
