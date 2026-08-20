@@ -172,6 +172,13 @@ TOP_BAR = """\
                   <i data-lucide="maximize" class="settings-toggle-icon" id="fullscreen-toggle-icon"></i>
                 </button>
               </div>
+              <div class="settings-control">
+                <span class="settings-control-label">Layout</span>
+                <button class="settings-toggle-btn" id="layout-toggle" aria-label="Toggle layout mode">
+                  <i data-lucide="terminal" class="settings-toggle-icon" id="layout-toggle-icon"></i>
+                  <span class="settings-toggle-state" id="layout-toggle-state">Cyberdeck</span>
+                </button>
+              </div>
               <div class="settings-control" id="rebuild-row" style="display:none">
                 <span class="settings-control-label">Rebuild site</span>
                 <button class="settings-toggle-btn" id="rebuild-btn" aria-label="Rebuild site">
@@ -301,6 +308,10 @@ LEGACY_PAGE_TEMPLATE = """\
   <meta name="build-id" content="{{BUILD_ID}}">
   <title>{{TITLE}} — Hypervisor</title>
   <link rel="icon" href="{{FAVICON}}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+  <script>try{if(localStorage.getItem('hypervisor-layout')==='refined')document.documentElement.classList.add('layout-refined')}catch(e){}</script>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
@@ -531,6 +542,10 @@ SHELL_TEMPLATE = """\
   <meta name="build-id" content="{{BUILD_ID}}">
   <title>Hypervisor</title>
   <link rel="icon" href="{{FAVICON}}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+  <script>try{if(localStorage.getItem('hypervisor-layout')==='refined')document.documentElement.classList.add('layout-refined')}catch(e){}</script>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>

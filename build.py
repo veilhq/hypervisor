@@ -61,22 +61,44 @@ def copy_assets():
     Hyperkit files fail the build loudly rather than silently falling back to
     a stale local copy — see the ValueError below.
     """
-    # --- Hyperkit CSS (tokens + primitives) — must exist, no silent fallback ---
+    # --- Hyperkit CSS (shared ecosystem modules) — must exist, no silent fallback ---
     hyperkit_css_parts = []
-    for name in ("tokens.css", "primitives.css"):
+    hyperkit_css_order = (
+        "tokens.css",
+        "primitives.css",
+        "globals.css",
+        "components.css",
+        "content.css",
+        "cards.css",
+        "features.css",
+        "accessibility.css",
+        "theme-refined.css",
+    )
+    for name in hyperkit_css_order:
         f = HYPERKIT_CSS_DIR / name
         if not f.exists():
             raise FileNotFoundError(
                 f"Hyperkit CSS file missing: {f}\n"
-                "Hypervisor's build.py requires .hyperspace/.hyperkit/css/tokens.css "
-                "and primitives.css. Run WI-142 setup or restore the .hyperkit/ directory."
+                "Hypervisor's build.py requires all shared CSS modules in "
+                ".hyperspace/.hyperkit/css/. Restore the .hyperkit/ directory."
             )
         hyperkit_css_parts.append(f.read_text(encoding="utf-8"))
 
     # Concatenate CSS modules into site/style.css
-    # Order: Hyperkit (tokens, primitives) → numbered app-local files (sorted) → zz-* last
+    # Order: Hyperkit shared → layout packs (both loaded for runtime switching) → app-local → zz-*
     if CSS_DIR.exists():
         css_parts = list(hyperkit_css_parts)
+
+        # --- Layout packs from .hyperkit/layouts/ ---
+        # Both cyberdeck and refined are loaded so the runtime toggle works
+        # without a rebuild. Cyberdeck is unscoped (default); refined is scoped
+        # under html.layout-refined so it only applies when that class is set.
+        layouts_dir = HYPERKIT_CSS_DIR.parent / "layouts"
+        for layout_name in ("cyberdeck", "refined"):
+            layout_file = layouts_dir / layout_name / "layout.css"
+            if layout_file.exists():
+                css_parts.append(layout_file.read_text(encoding="utf-8"))
+
         # Main CSS files (numbered, sorted)
         for css_file in sorted(CSS_DIR.glob("*.css")):
             if css_file.name.startswith("zz-"):
