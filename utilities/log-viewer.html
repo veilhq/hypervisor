@@ -58,10 +58,12 @@
 </div>
 
 <style>
-/* === Log Viewer Utility Styles === */
+/* ===== Log Viewer — Hyperkit Token Migration =====
+   Spacing: --space-*, fonts: --fs-*, borders: --border-hair,
+   transitions: --motion-*, radius: --radius on interactive elements. */
 
 .log-viewer-layout {
-  height: calc(100vh - 10rem - 48px); /* viewport - page padding - topbar - h1/margins */
+  height: calc(100vh - 10rem - 48px);
   max-height: calc(100vh - 10rem - 48px);
   display: flex;
   flex-direction: column;
@@ -73,13 +75,13 @@
   flex-direction: column;
   height: 100%;
   width: 100%;
-  gap: 0.5rem;
+  gap: var(--space-2);
   overflow: hidden;
   min-height: 0;
 }
 
 .log-viewer-container h1 {
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 var(--space-2) 0;
 }
 
 /* --- Toolbar --- */
@@ -87,10 +89,10 @@
 .log-toolbar {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.4rem 0;
+  gap: var(--space-3);
+  padding: var(--space-0-4) 0;
   width: 100%;
-  border-bottom: 1px solid var(--border);
+  border-bottom: var(--border-hair) solid var(--border);
   flex-wrap: wrap;
 }
 
@@ -99,7 +101,7 @@
 .log-toolbar-right {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: var(--space-0-3);
 }
 
 .log-toolbar-right {
@@ -108,16 +110,17 @@
 
 .log-filter-btn,
 .log-severity-btn {
-  font-size: 0.65rem;
+  font-size: var(--fs-caption);
   font-family: var(--font);
-  padding: 0.25rem 0.6rem;
-  border: 1px solid var(--border);
+  padding: var(--space-0-2) var(--space-0-6);
+  border: var(--border-hair) solid var(--border);
+  border-radius: var(--radius);
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  transition: all 0.15s ease;
+  transition: all var(--motion-fast) var(--ease);
 }
 
 .log-filter-btn:hover,
@@ -129,7 +132,7 @@
 .log-filter-btn.log-filter-active {
   border-color: var(--accent);
   color: var(--accent);
-  background: var(--accent-bg);
+  background: var(--accent-glow);
 }
 
 .log-severity-btn.log-severity-active {
@@ -141,26 +144,27 @@
   display: inline-block;
   width: 6px;
   height: 6px;
-  margin-right: 0.25rem;
+  margin-right: var(--space-0-2);
   vertical-align: middle;
 }
 
-.log-sev-dot-error { background: #ff4444; }
-.log-sev-dot-warn { background: #ffb000; }
+.log-sev-dot-error { background: var(--error); }
+.log-sev-dot-warn { background: var(--warm); }
 .log-sev-dot-info { background: var(--accent); }
 .log-sev-dot-debug { background: var(--text-dim); }
 .log-sev-dot-trace { background: var(--cool); }
 
 .log-search-input {
   font-family: var(--font);
-  font-size: 0.65rem;
-  padding: 0.25rem 0.6rem;
-  border: 1px solid var(--border);
+  font-size: var(--fs-caption);
+  padding: var(--space-0-2) var(--space-0-6);
+  border: var(--border-hair) solid var(--border);
+  border-radius: var(--radius);
   background: var(--bg);
   color: var(--text);
   width: 160px;
   outline: none;
-  transition: border-color 0.15s ease;
+  transition: border-color var(--motion-fast) var(--ease);
 }
 
 .log-search-input:focus {
@@ -173,11 +177,12 @@
   justify-content: center;
   width: 28px;
   height: 28px;
-  border: 1px solid var(--border);
+  border: var(--border-hair) solid var(--border);
+  border-radius: var(--radius);
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all var(--motion-fast) var(--ease);
 }
 
 .log-toolbar-action:hover {
@@ -198,11 +203,12 @@
   width: 100%;
   overflow-y: auto;
   overflow-x: hidden;
-  background: #0a0a0a;
-  border: 1px solid var(--border);
-  padding: 0.75rem;
+  background: var(--bg-surface);
+  border: var(--border-hair) solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-3);
   font-family: var(--font);
-  font-size: 0.7rem;
+  font-size: var(--fs-label);
   line-height: 1.6;
 }
 
@@ -214,21 +220,20 @@
   cursor: text;
 }
 
-/* Brief flash when a line is copied via double-click */
 .log-line-copied {
-  background: var(--accent-glow, rgba(0, 255, 65, 0.15)) !important;
-  transition: background 0.4s ease;
+  background: var(--accent-glow) !important;
+  transition: background var(--motion-slow) var(--ease);
 }
 
 .log-empty {
   color: var(--text-dim);
-  padding: 2rem;
+  padding: var(--space-6);
   text-align: center;
 }
 
 /* Log line styles */
 .log-line {
-  padding: 0 0.25rem;
+  padding: 0 var(--space-0-2);
   border-left: 2px solid transparent;
   display: block;
 }
@@ -238,13 +243,13 @@
 }
 
 .log-line-error {
-  color: #ff4444;
-  border-left-color: #ff4444;
+  color: var(--error);
+  border-left-color: var(--error);
 }
 
 .log-line-warn {
-  color: #ffb000;
-  border-left-color: #ffb000;
+  color: var(--warm);
+  border-left-color: var(--warm);
 }
 
 .log-line-info {
@@ -291,10 +296,10 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.6rem;
+  font-size: var(--fs-micro);
   color: var(--text-dim);
-  padding: 0.35rem 0;
-  border-top: 1px solid var(--border);
+  padding: var(--space-0-3) 0;
+  border-top: var(--border-hair) solid var(--border);
 }
 
 .log-status-live {
@@ -308,7 +313,7 @@
 }
 
 .log-status-paused {
-  color: #ffb000;
+  color: var(--warm);
 }
 </style>
 

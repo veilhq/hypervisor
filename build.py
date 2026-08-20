@@ -44,6 +44,17 @@ from site_utils.fragment import build_fragment, write_fragment
 # Build functions — importable by both build.py and hypervisor-app.py
 # ---------------------------------------------------------------------------
 
+def _get_active_layout():
+    """Read the active layout from preferences.json. Defaults to 'cyberdeck'."""
+    prefs_file = _HYPERVISOR_DIR / "preferences.json"
+    if prefs_file.exists():
+        try:
+            prefs_data = json.loads(prefs_file.read_text(encoding="utf-8"))
+            return prefs_data.get("hypervisor-layout", "cyberdeck")
+        except (json.JSONDecodeError, KeyError):
+            pass
+    return "cyberdeck"
+
 def prepare_output():
     """Clean and recreate the output directory."""
     if OUTPUT_DIR.exists():
@@ -72,7 +83,6 @@ def copy_assets():
         "cards.css",
         "features.css",
         "accessibility.css",
-        "theme-refined.css",
     )
     for name in hyperkit_css_order:
         f = HYPERKIT_CSS_DIR / name
@@ -89,15 +99,23 @@ def copy_assets():
     if CSS_DIR.exists():
         css_parts = list(hyperkit_css_parts)
 
-        # --- Layout packs from .hyperkit/layouts/ ---
-        # Both cyberdeck and refined are loaded so the runtime toggle works
-        # without a rebuild. Cyberdeck is unscoped (default); refined is scoped
-        # under html.layout-refined so it only applies when that class is set.
+        # --- Layout pack from .hyperkit/layouts/{active}/ ---
+        # Only the active layout is loaded — no dead CSS from inactive packs.
+        # Layout preference stored in preferences.json; defaults to "cyberdeck".
         layouts_dir = HYPERKIT_CSS_DIR.parent / "layouts"
-        for layout_name in ("cyberdeck", "refined"):
-            layout_file = layouts_dir / layout_name / "layout.css"
-            if layout_file.exists():
-                css_parts.append(layout_file.read_text(encoding="utf-8"))
+        active_layout = _get_active_layout()
+        layout_dir = layouts_dir / active_layout
+        if layout_dir.exists():
+            # Theme first (palette, fonts, density), then structure (nav, grid)
+            for part in ("theme.css", "layout.css"):
+                layout_file = layout_dir / part
+                if layout_file.exists():
+                    css_parts.append(layout_file.read_text(encoding="utf-8"))
+        else:
+            # Fallback to cyberdeck if the specified layout doesn't exist
+            fallback = layouts_dir / "cyberdeck" / "layout.css"
+            if fallback.exists():
+                css_parts.append(fallback.read_text(encoding="utf-8"))
 
         # Main CSS files (numbered, sorted)
         for css_file in sorted(CSS_DIR.glob("*.css")):
@@ -393,7 +411,7 @@ def full_build(quiet=False):
             cd_count = count_docs_under(files, cd_path)
             children.append((cd, cd_count))
         nav_categories.append((d, d_count, children))
-    set_nav_categories(nav_categories, recent_dirs)
+    set_nav_categories(nav_categories, recent_dirs, _get_active_layout())
 
     # Write nav-state.json for the router to refresh nav without full rebuild
     nav_state = {
@@ -507,7 +525,7 @@ def build_single_file(changed_path):
             cd_count = count_docs_under(files, cd_path)
             children.append((cd, cd_count))
         nav_categories.append((d, d_count, children))
-    set_nav_categories(nav_categories, recent_dirs)
+    set_nav_categories(nav_categories, recent_dirs, _get_active_layout())
 
     # Write updated nav-state.json
     nav_state = {

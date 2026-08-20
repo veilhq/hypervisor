@@ -49,6 +49,7 @@
 /* ---- Quiz card ---- */
 .quiz-card {
   border: var(--border-hair) solid var(--border);
+  border-radius: var(--radius);
   background: var(--bg-card);
   padding: var(--space-1-25);
 }
@@ -70,6 +71,7 @@
   letter-spacing: 0.06em;
   padding: var(--space-0-1) var(--space-0-4);
   border: var(--border-hair) solid var(--border);
+  border-radius: var(--radius);
 }
 .quiz-type-recall { color: var(--text-dim); }
 .quiz-type-scenario { color: var(--warm); border-color: var(--warm); }
@@ -80,6 +82,7 @@
   padding: var(--space-0-1) var(--space-0-4);
   color: var(--accent);
   border: var(--border-hair) solid var(--accent);
+  border-radius: var(--radius);
   font-weight: 700;
 }
 .quiz-question {

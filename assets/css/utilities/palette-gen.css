@@ -45,6 +45,7 @@
 
 .pg-card {
   border: var(--border-hair) solid var(--border);
+  border-radius: var(--radius);
   background: var(--bg-card);
   transition: border-color var(--motion-base) var(--ease), transform var(--motion-fast) var(--ease);
   cursor: pointer;
@@ -108,6 +109,7 @@
   letter-spacing: 0.06em;
   background: var(--bg);
   border: var(--border-hair) solid var(--border-strong);
+  border-radius: var(--radius);
   color: var(--text-dim);
   cursor: pointer;
   transition: color var(--motion-fast) var(--ease), border-color var(--motion-fast) var(--ease);
@@ -317,6 +319,7 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
   border: var(--border-hair) solid;
+  border-radius: var(--radius);
 }
 .pg-pv-code {
   padding: var(--space-2) var(--space-0-6);

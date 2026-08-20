@@ -47,7 +47,7 @@
       anchor.parentNode.insertBefore(_dropZone, anchor.nextSibling);
     }
 
-    if (window.lucide) lucide.createIcons({ nodes: [_dropZone], attrs: { "stroke-width": 1.5 } });
+    if (window.lucide) lucide.createIcons({ nodes: [_dropZone], attrs: { "stroke-width": 2 } });
 
     _dropZone.addEventListener("dragover", function (e) {
       e.preventDefault();
@@ -151,7 +151,7 @@
       });
     });
 
-    if (window.lucide) lucide.createIcons({ attrs: { "stroke-width": 1.5 } });
+    if (window.lucide) lucide.createIcons({ attrs: { "stroke-width": 2 } });
   }
 
   // Register with router lifecycle

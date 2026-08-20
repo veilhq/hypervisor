@@ -193,8 +193,9 @@ The homepage is special-cased. It gets:
 - A hero band (ASCII logo from `assets/hero.txt` + flag-style tagline)
 - A KPI strip (docs, pages, indexes, active work count, build timestamp)
 - A two-panel dashboard:
-  - **Workspace Pulse** (left, 60%) — in-progress work items with WI-ID pills, task-progress bars, and days-in-progress, followed by a day-grouped stream of the 10 most recently updated documents
-  - **Pinned** (right, 40%) — a client-side mount that `pins.js` populates from localStorage, sorted newest-pinned first
+  - **Active Work** (left, 50%) — in-progress work items as cards with WI-ID chip, assignee badge, title, description snippet, task-progress bars, and days-in-progress
+  - **Recent Activity** (right, 50%) — the 10 most recently updated documents grouped by day, with icon indicators (plus for new, pen for updated) and timestamps
+  - **Pinned** (full-width below) — a client-side mount that `pins.js` populates from localStorage as table-like rows (title, category, work ID)
 - Root-level documents (if any exist directly in `.hyperspace/`)
 
 Category navigation is not on the homepage — top-level directories are always reachable via the site nav rail in the topbar.
@@ -407,7 +408,7 @@ Builds the homepage HTML:
 1. Hero band — ASCII logo from `assets/hero.txt` + a flag-style tagline
 2. KPI strip — docs, pages, indexes, active work count (patched in via inline `<script>` after the strip renders), build timestamp
 3. Dashboard panels (60/40 grid):
-   - **Workspace Pulse** — collects `work/to-do/*.md` files with `Status: In Progress` (or "discussion"), extracts task-list progress via `_parse_task_progress()`, work IDs via `_extract_work_id_from_text()`, and days-in-progress from the `Created:` metadata. Below the active list, emits the 10 most recently updated documents grouped by day headers (`TODAY`, `YESTERDAY`, `N DAYS AGO`, ...) computed by `_pulse_day_header()`.
+   - **Active Work** — collects `work/to-do/*.md` files with `Status: In Progress` (or "discussion"), extracts task-list progress via `_parse_task_progress()`, work IDs via `_extract_work_id_from_text()`, descriptions, and days-in-progress from the `Created:` metadata. Rendered as cards in a grid. Recent Activity is emitted as a separate right-column section with the 10 most recently updated documents grouped by day headers (`TODAY`, `YESTERDAY`, `N DAYS AGO`, ...) computed by `_pulse_day_header()`.
    - **Pinned** — emits an empty container with `data-pins-home-mount` and `data-pins-home-list` hooks. `pins.js::renderHomepagePins()` fills this on page load from localStorage, newest-pinned first.
 4. Root documents section — any `.md` documents directly in `.hyperspace/`
 
@@ -471,7 +472,7 @@ All client-side behavior lives in `assets/js/` organized into four subdirectorie
 
 ```javascript
 if (window.lucide) {
-  lucide.createIcons({ attrs: { 'stroke-width': 1.5 } });
+  lucide.createIcons({ attrs: { 'stroke-width': 2 } });
 }
 ```
 

@@ -70,7 +70,7 @@
       });
     });
 
-    if (window.lucide) lucide.createIcons({ attrs: { "stroke-width": 1.5 } });
+    if (window.lucide) lucide.createIcons({ attrs: { "stroke-width": 2 } });
   }
 
   // Run on initial load

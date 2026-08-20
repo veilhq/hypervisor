@@ -541,7 +541,7 @@
       panel.classList.add("open");
       btn.classList.add("active");
       if (backdrop) backdrop.classList.add("visible");
-      if (window.lucide) lucide.createIcons({ attrs: { "stroke-width": 1.5 } });
+      if (window.lucide) lucide.createIcons({ attrs: { "stroke-width": 2 } });
     }
 
     function closeDrawer() {

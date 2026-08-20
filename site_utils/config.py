@@ -169,7 +169,7 @@ CATEGORY_LABELS = {
     "context": "Context", "diagrams": "Diagrams", "work": "Work",
     "ideas": "Ideas", "patterns": "Patterns", "reference": "Reference",
     "research": "Research", "templates": "Templates", "analysis": "Analysis",
-    "done": "Done", "to-do": "To-Do", ".hypervisor": "HV-META",
+    "done": "Done", "to-do": "To-Do", ".hypervisor": "Metadata",
     ".external": "External", "prototypes": "Prototypes",
 }
 

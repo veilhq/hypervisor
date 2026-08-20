@@ -26,6 +26,7 @@
 }
 .ss-card {
   border: var(--border-hair) solid var(--border);
+  border-radius: var(--radius);
   background: var(--bg-card);
   transition: border-color var(--motion-base) var(--ease), background var(--motion-fast) var(--ease), transform var(--motion-fast) var(--ease);
   overflow: hidden;

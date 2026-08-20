@@ -135,7 +135,7 @@
       var icon = editBtn.querySelector("[data-lucide]");
       if (icon) {
         icon.setAttribute("data-lucide", "pencil");
-        if (window.lucide) lucide.createIcons({ attrs: { "stroke-width": 1.5 } });
+        if (window.lucide) lucide.createIcons({ attrs: { "stroke-width": 2 } });
       }
 
       // If a save happened, reload the fragment to show updated content
@@ -177,7 +177,7 @@
           var icon = editBtn.querySelector("[data-lucide]");
           if (icon) {
             icon.setAttribute("data-lucide", "eye");
-            if (window.lucide) lucide.createIcons({ attrs: { "stroke-width": 1.5 } });
+            if (window.lucide) lucide.createIcons({ attrs: { "stroke-width": 2 } });
           }
 
           showIndicator("");
@@ -206,7 +206,7 @@
       var icon = editBtn.querySelector("[data-lucide]");
       if (icon) {
         icon.setAttribute("data-lucide", "pencil");
-        if (window.lucide) lucide.createIcons({ attrs: { "stroke-width": 1.5 } });
+        if (window.lucide) lucide.createIcons({ attrs: { "stroke-width": 2 } });
       }
 
       // Reload fragment to show rebuilt content
@@ -254,7 +254,7 @@
       var icon = editBtn.querySelector("[data-lucide]");
       if (icon) {
         icon.setAttribute("data-lucide", "pencil");
-        if (window.lucide) lucide.createIcons({ attrs: { "stroke-width": 1.5 } });
+        if (window.lucide) lucide.createIcons({ attrs: { "stroke-width": 2 } });
       }
     }
 

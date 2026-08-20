@@ -258,7 +258,7 @@
       drawer.appendChild(btn);
       _markDoneBtn = btn;
 
-      if (window.lucide) lucide.createIcons({ nodes: [btn], attrs: { "stroke-width": 1.5 } });
+      if (window.lucide) lucide.createIcons({ nodes: [btn], attrs: { "stroke-width": 2 } });
 
       // Show when bridge becomes available
       if (!isDesktopApp) {
@@ -329,7 +329,7 @@
       drawer.appendChild(btn);
       _deleteBtn = btn;
 
-      if (window.lucide) lucide.createIcons({ nodes: [btn], attrs: { "stroke-width": 1.5 } });
+      if (window.lucide) lucide.createIcons({ nodes: [btn], attrs: { "stroke-width": 2 } });
 
       if (!isDesktopApp) {
         window.addEventListener("pywebviewready", function onReady() {

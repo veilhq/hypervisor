@@ -130,7 +130,7 @@
           if (isPinned(relPath)) pinBtn.classList.add("pinned");
 
           drawer.insertBefore(pinBtn, drawer.firstChild);
-          if (window.lucide) lucide.createIcons({ nodes: [pinBtn], attrs: { "stroke-width": 1.5 } });
+          if (window.lucide) lucide.createIcons({ nodes: [pinBtn], attrs: { "stroke-width": 2 } });
 
           pinBtn.addEventListener("click", function () {
             if (isPinned(relPath)) {
@@ -200,30 +200,28 @@
             href: entry.href,
             title: entry.title,
             work_id: entry.work_id,
+            snippet: entry.snippet || "",
           };
         });
       }
 
-      var html = "";
+      var html = '';
       pins.forEach(function (pin) {
         var entry = hrefMap[pin.path];
         var href = entry ? entry.href : "#";
         var title = entry ? entry.title : pin.title;
         var workId = entry && entry.work_id ? entry.work_id : "";
+        var snippet = entry && entry.snippet ? entry.snippet : "";
         var pathParts = pin.path.split("/");
         var category = pathParts[0] || "";
         var categoryLabel = category.replace(/-/g, " ").replace(/_/g, " ");
 
         html += '<a class="pin-row" href="' + href + '">';
         html += '<span class="pin-row-title">' + escapeHtml(title) + '</span>';
-        html += '<span class="pin-row-meta">';
-        if (categoryLabel) {
-          html += '<span class="pin-row-meta-category">' + escapeHtml(categoryLabel) + '</span>';
-        }
+        html += '<span class="pin-row-category">' + escapeHtml(categoryLabel) + '</span>';
         if (workId) {
-          html += '<span class="pin-row-meta-workid">' + escapeHtml(workId) + '</span>';
+          html += '<span class="pin-row-workid">' + escapeHtml(workId) + '</span>';
         }
-        html += '</span>';
         html += '</a>';
       });
 
@@ -241,7 +239,7 @@
           '<p>no pinned documents yet</p>' +
           '<p class="pinboard-empty-hint">pin documents from any page using the <strong>pin</strong> button in the footer</p>' +
           '</div>';
-        if (window.lucide) lucide.createIcons({ attrs: { "stroke-width": 1.5 } });
+        if (window.lucide) lucide.createIcons({ attrs: { "stroke-width": 2 } });
         return;
       }
 
@@ -287,7 +285,7 @@
       html += '</div>';
 
       container.innerHTML = html;
-      if (window.lucide) lucide.createIcons({ attrs: { "stroke-width": 1.5 } });
+      if (window.lucide) lucide.createIcons({ attrs: { "stroke-width": 2 } });
 
       // Wire up remove buttons
       container.querySelectorAll(".pin-card-remove").forEach(function (btn) {

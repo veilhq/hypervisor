@@ -84,7 +84,7 @@
 
     // Re-render lucide icons in breadcrumbs
     if (window.lucide) {
-      lucide.createIcons({ nodes: breadcrumbsNav.querySelectorAll("[data-lucide]"), attrs: { "stroke-width": 1.5 } });
+      lucide.createIcons({ nodes: breadcrumbsNav.querySelectorAll("[data-lucide]"), attrs: { "stroke-width": 2 } });
     }
   }
 
@@ -264,7 +264,7 @@
   function doPostSwap(fragment) {
     // Render lucide icons in new content
     if (window.lucide) {
-      lucide.createIcons({ nodes: contentTarget.querySelectorAll("[data-lucide]"), attrs: { "stroke-width": 1.5 } });
+      lucide.createIcons({ nodes: contentTarget.querySelectorAll("[data-lucide]"), attrs: { "stroke-width": 2 } });
     }
 
     // Execute inline scripts in injected content (innerHTML doesn't run <script> tags)

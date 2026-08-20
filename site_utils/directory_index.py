@@ -169,6 +169,7 @@ def generate_home_content(files, build_stats=None, recent_paths=None):
     html = []
 
     # --- 0. Anchor mark (Hypervisor icon + noise field + rotating greeting) ---
+    html.append('<div class="dashboard-wrap">')
     logo = hypervisor_logo_svg("home-anchor-icon")
     if logo:
         html.append(
@@ -212,6 +213,19 @@ def generate_home_content(files, build_stats=None, recent_paths=None):
             done, total = _parse_task_progress(md_text)
             work_id = _extract_work_id_from_text(md_text)
             assignee = _extract_assignee_from_text(md_text)
+            # Extract short description (line after H1, before metadata)
+            desc = ""
+            lines = md_text.splitlines()
+            for ln in lines[1:]:
+                stripped = ln.strip()
+                if stripped == "" or stripped == "---":
+                    continue
+                if stripped.startswith("- ") or stripped.startswith("#"):
+                    break
+                if re.match(r'^-?\s*\*{0,2}[A-Za-z][A-Za-z_ ]*\*{0,2}\s*:', stripped):
+                    break
+                desc = stripped[:120] + ("…" if len(stripped) > 120 else "")
+                break
             # Days since Created (fallback: since Updated)
             days_active = 0
             created = dates.get("created") or dates.get("updated") or ""
@@ -224,6 +238,7 @@ def generate_home_content(files, build_stats=None, recent_paths=None):
             active_items.append({
                 "path": rel_posix,
                 "title": title,
+                "desc": desc,
                 "status": status,
                 "date": date_str,
                 "rel": rel,
@@ -268,70 +283,81 @@ def generate_home_content(files, build_stats=None, recent_paths=None):
         summary_parts.append(f'built {build_time}')
     pulse_summary = ' &middot; '.join(summary_parts)
     html.append(
-        f'<h2><i data-lucide="activity" class="section-icon"></i> Pulse'
+        f'<h2><i data-lucide="activity" class="section-icon"></i> Active Work'
         f' <span class="pulse-summary">{pulse_summary}</span></h2>'
     )
 
-    # In-progress group (no header — filled accent chips carry the signal)
+    # In-progress group — card layout
     html.append('<div class="pulse-group pulse-group-active">')
     if active_items:
+        html.append('<div class="work-card-grid">')
         for it in active_items:
             done, total = it["done"], it["total"]
             if total > 0:
                 pct = int(round(done * 100 / total))
                 progress_html = (
-                    '<span class="pulse-progress" title="'
-                    f'{done}/{total} tasks">'
+                    '<span class="work-card-progress">'
                     f'<span class="hv-progress-track pulse-bar">'
                     f'<span class="hv-progress-fill pulse-fill" style="width:{pct}%"></span>'
                     f'</span>'
-                    f'<span class="pulse-progress-label">{done}/{total}</span>'
+                    f'<span class="work-card-progress-label">{done}/{total}</span>'
                     f'</span>'
                 )
             else:
                 progress_html = (
-                    '<span class="pulse-progress pulse-progress-empty" title="No tasks defined">'
+                    '<span class="work-card-progress">'
                     '<span class="hv-progress-track hv-progress-track-empty pulse-bar pulse-bar-empty"></span>'
-                    '<span class="pulse-progress-label">&mdash;/&mdash;</span>'
+                    '<span class="work-card-progress-label">&mdash;/&mdash;</span>'
                     '</span>'
                 )
             days_str = f'{it["days"]}d'
             chip = (
-                render_chip("filled", it["work_id"], extra_class="pulse-chip pulse-chip-work")
+                render_chip("filled", it["work_id"], extra_class="work-card-chip")
                 if it["work_id"]
-                else render_chip("outlined-muted", "&mdash;", extra_class="pulse-chip pulse-chip-work pulse-chip-missing")
+                else render_chip("outlined-muted", "&mdash;", extra_class="work-card-chip")
             )
             assignee_label = (
-                f'<span class="pulse-assignee">{_initials(it["assignee"])}</span>'
+                f'<span class="work-card-assignee">{_initials(it["assignee"])}</span>'
                 if it.get("assignee")
                 else ""
             )
+            desc_html = (
+                f'<span class="work-card-desc">{it["desc"]}</span>'
+                if it.get("desc")
+                else ""
+            )
             html.append(
-                f'<a class="pulse-row pulse-row-active" href="{href_for(it["rel"])}">'
-                f'{chip}'
-                f'<span class="pulse-title">{it["title"]}</span>'
-                f'<span class="pulse-right">{assignee_label}<span class="pulse-days">{days_str}</span></span>'
+                f'<a class="work-card" href="{href_for(it["rel"])}">'
+                f'<span class="work-card-meta">{chip}{assignee_label}<span class="work-card-days">{days_str}</span></span>'
+                f'<span class="work-card-title">{it["title"]}</span>'
+                f'{desc_html}'
                 f'{progress_html}'
                 f'</a>'
             )
+        html.append('</div>')
     else:
         html.append('<div class="pulse-empty">no items in progress</div>')
     html.append('</div>')  # /.pulse-group-active
 
-    # Recent stream grouped by day
+    html.append('</div>')  # /.pulse-section
+
+    # Right panel: Recent Activity
+    html.append('<div class="hv-section recent-section">')
+    html.append(
+        '<h2><i data-lucide="clock" class="section-icon"></i> Recent</h2>'
+    )
     html.append('<div class="pulse-group pulse-group-recent">')
     if recent_by_day:
         for day_label, items in recent_by_day.items():
             html.append(f'<div class="pulse-day-header">{day_label}</div>')
             for rel, title, date_str, date_label in items:
                 is_new = date_label == "created"
-                chip_variant = "outlined-accent" if is_new else "outlined-muted"
-                specific_cls = "pulse-chip pulse-chip-new" if is_new else "pulse-chip pulse-chip-updated"
-                chip_label = "NEW" if is_new else "UPD"
+                icon_name = "plus" if is_new else "pen-line"
+                icon_cls = "activity-icon-new" if is_new else "activity-icon-upd"
                 time_str = _pulse_time_str(date_str) or "&mdash;&mdash;:&mdash;&mdash;"
                 html.append(
                     f'<a class="pulse-row pulse-row-recent" href="{href_for(rel)}">'
-                    f'{render_chip(chip_variant, chip_label, extra_class=specific_cls)}'
+                    f'<span class="activity-indicator {icon_cls}"><i data-lucide="{icon_name}" class="activity-indicator-icon"></i></span>'
                     f'<span class="pulse-title">{title}</span>'
                     f'<span class="pulse-right">{time_str}</span>'
                     f'</a>'
@@ -341,9 +367,11 @@ def generate_home_content(files, build_stats=None, recent_paths=None):
         html.append('<div class="pulse-empty">no recent activity</div>')
     html.append('</div>')  # /.pulse-group-recent
 
-    html.append('</div>')  # /.pulse-section
+    html.append('</div>')  # /.recent-section
 
-    # Right panel: Pinned (rendered client-side by pins.js)
+    html.append('</div>')  # /.dashboard-panels
+
+    # Full-width: Pinned (rendered client-side by pins.js)
     html.append('<div class="hv-section pins-section" data-pins-home-mount>')
     html.append(
         '<h2><i data-lucide="pin" class="section-icon"></i> Pinned'
@@ -355,8 +383,7 @@ def generate_home_content(files, build_stats=None, recent_paths=None):
         '</div>'
     )
     html.append('</div>')  # /.pins-section
-
-    html.append('</div>')  # /.dashboard-panels
+    html.append('</div>')  # /.dashboard-wrap
 
     # --- 5. Root-level documents (full width, bottom) ---
     if top_docs:
@@ -533,23 +560,56 @@ def _render_subdirs_single(html, files, dir_prefix, sd, recent_paths):
             doc_title = get_title(md_text, name)
             dates = extract_dates(md_text)
             date_str, date_label = sort_date(dates)
-            enriched_child.append((rel, doc_title, date_str, date_label))
-        dated_c = [(r, t, d, l) for r, t, d, l in enriched_child if d != "0000-00-00"]
-        undated_c = [(r, t, d, l) for r, t, d, l in enriched_child if d == "0000-00-00"]
+            # Extract tags
+            doc_tags = []
+            for ln in md_text.splitlines()[:30]:
+                m = re.match(r'^-?\s*Tags\s*:\s*(.+)', ln.strip(), re.IGNORECASE)
+                if m:
+                    doc_tags = [t.strip().strip('`') for t in m.group(1).split(",") if t.strip()]
+                    break
+            # Extract snippet (first body line after metadata)
+            doc_snippet = ""
+            past_meta = False
+            for ln in md_text.splitlines()[1:]:
+                stripped = ln.strip()
+                if not past_meta:
+                    if re.match(r'^-?\s*\*{0,2}[A-Za-z][A-Za-z_ ]*\*{0,2}\s*:', stripped):
+                        continue
+                    if stripped == "" or stripped == "---":
+                        continue
+                    past_meta = True
+                if stripped.startswith("#") or stripped.startswith("```") or stripped.startswith("<") or stripped == "---":
+                    continue
+                if stripped == "":
+                    continue
+                doc_snippet = stripped[:100] + ("…" if len(stripped) > 100 else "")
+                break
+            enriched_child.append((rel, doc_title, date_str, date_label, doc_tags, doc_snippet))
+        dated_c = [(r, t, d, l, tags, sn) for r, t, d, l, tags, sn in enriched_child if d != "0000-00-00"]
+        undated_c = [(r, t, d, l, tags, sn) for r, t, d, l, tags, sn in enriched_child if d == "0000-00-00"]
         dated_c.sort(key=lambda x: x[2], reverse=True)
         undated_c.sort(key=lambda x: x[1].lower())
         enriched_child = dated_c + undated_c
-        for rel, doc_title, date_str, date_label in enriched_child:
+        for rel, doc_title, date_str, date_label, doc_tags, doc_snippet in enriched_child:
             rel_posix = str(rel).replace("\\", "/")
             fname_stem = PurePosixPath(rel_posix).stem
             date_content = display_date(date_str) if date_label else ""
             li_cls = ' class="doc-recent"' if rel_posix in recent_paths else ''
-            type_badge = _doc_type_badge(rel)
-            badge_cell = f'<span class="doc-badges">{type_badge}</span>' if type_badge else ''
-            html.append(f'<li{li_cls}><a href="{sd}/{fname_stem}/index.html"><i data-lucide="file-text" class="doc-icon"></i> {doc_title}</a>'
-                        f'<span class="doc-path">{rel_posix}</span>'
-                        f'{badge_cell}'
-                        f'<span class="doc-date">{date_content}</span></li>')
+            # Tags as small chips
+            tags_html = ""
+            if doc_tags:
+                tags_html = '<span class="doc-row-tags">' + ''.join(
+                    f'<span class="doc-row-tag">{t}</span>' for t in doc_tags[:4]
+                ) + '</span>'
+            # Snippet
+            snippet_html = f'<span class="doc-row-snippet">{doc_snippet}</span>' if doc_snippet else ''
+            html.append(
+                f'<li{li_cls}>'
+                f'<a href="{sd}/{fname_stem}/index.html"><i data-lucide="file-text" class="doc-icon"></i> {doc_title}</a>'
+                f'<span class="doc-date">{date_content}</span>'
+                f'{snippet_html}{tags_html}'
+                f'</li>'
+            )
         html.append('</ul>')
 
     if not child_subdirs and not child_docs:
@@ -728,7 +788,7 @@ def _render_work_items_list(html, files, dir_prefix, doc_entries, recent_paths, 
                 if desc:
                     break
                 continue
-            desc = stripped[:120]
+            desc = stripped[:120] + ("…" if len(stripped) > 120 else "")
             break
 
         if status:
@@ -824,23 +884,59 @@ def _render_doc_list_standard(html, files, dir_prefix, doc_entries, recent_paths
         doc_title = get_title(md_text, name)
         dates = extract_dates(md_text)
         date_str, date_label = sort_date(dates)
-        enriched.append((rel, doc_title, date_str, date_label))
+        # Extract tags
+        doc_tags = []
+        for ln in md_text.splitlines()[:30]:
+            m = re.match(r'^-?\s*Tags\s*:\s*(.+)', ln.strip(), re.IGNORECASE)
+            if m:
+                doc_tags = [t.strip().strip('`') for t in m.group(1).split(",") if t.strip()]
+                break
+        # Extract snippet (first body line after metadata)
+        doc_snippet = ""
+        past_meta = False
+        for ln in md_text.splitlines()[1:]:
+            stripped = ln.strip()
+            if not past_meta:
+                if re.match(r'^-?\s*\*{0,2}[A-Za-z][A-Za-z_ ]*\*{0,2}\s*:', stripped):
+                    continue
+                if stripped == "" or stripped == "---":
+                    continue
+                past_meta = True
+            if stripped.startswith("#") or stripped.startswith("```") or stripped.startswith("<") or stripped == "---":
+                continue
+            if stripped == "":
+                continue
+            doc_snippet = stripped[:100] + ("…" if len(stripped) > 100 else "")
+            break
+        enriched.append((rel, doc_title, date_str, date_label, doc_tags, doc_snippet))
 
     # Sort: dated docs first (newest to oldest), undated docs last (by title)
-    dated = [(r, t, d, l) for r, t, d, l in enriched if d != "0000-00-00"]
-    undated = [(r, t, d, l) for r, t, d, l in enriched if d == "0000-00-00"]
+    dated = [(r, t, d, l, tags, sn) for r, t, d, l, tags, sn in enriched if d != "0000-00-00"]
+    undated = [(r, t, d, l, tags, sn) for r, t, d, l, tags, sn in enriched if d == "0000-00-00"]
     dated.sort(key=lambda x: x[2], reverse=True)
     undated.sort(key=lambda x: x[1].lower())
     enriched = dated + undated
 
-    for rel, doc_title, date_str, date_label in enriched:
+    for rel, doc_title, date_str, date_label, doc_tags, doc_snippet in enriched:
         rel_posix = str(rel).replace("\\", "/")
         fname_stem = PurePosixPath(rel_posix).stem
         date_content = display_date(date_str) if date_label else ""
         li_cls = ' class="doc-recent"' if rel_posix in recent_paths else ''
-        html.append(f'<li{li_cls}><a href="{fname_stem}/index.html"><i data-lucide="file-text" class="doc-icon"></i> {doc_title}</a>'
-                    f'<span class="doc-path">{rel_posix}</span>'
-                    f'<span class="doc-date">{date_content}</span></li>')
+        # Tags as small chips
+        tags_html = ""
+        if doc_tags:
+            tags_html = '<span class="doc-row-tags">' + ''.join(
+                f'<span class="doc-row-tag">{t}</span>' for t in doc_tags[:4]
+            ) + '</span>'
+        # Snippet
+        snippet_html = f'<span class="doc-row-snippet">{doc_snippet}</span>' if doc_snippet else ''
+        html.append(
+            f'<li{li_cls}>'
+            f'<a href="{fname_stem}/index.html"><i data-lucide="file-text" class="doc-icon"></i> {doc_title}</a>'
+            f'<span class="doc-date">{date_content}</span>'
+            f'{snippet_html}{tags_html}'
+            f'</li>'
+        )
     html.append('</ul>')
     html.append('</div>')
 

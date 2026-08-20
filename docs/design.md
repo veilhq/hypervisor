@@ -7,12 +7,13 @@ Visual style, color system, and interaction patterns for the Hypervisor site.
 
 ## Visual Style
 
-Brutalist terminal aesthetic:
+Refined terminal aesthetic:
 - **Font**: Departure Mono (CDN), falling back to JetBrains Mono → Cascadia Code → Fira Code → Courier New → monospace
-- **Background**: Pure black (`#000000`)
-- **No border-radius** anywhere
+- **Background**: Blue-tinted darks (`#030305`, `#060608`, `#0a0a0e`) — defined in hyperkit `tokens.css`
+- **Border-radius**: `var(--radius)` = 4px — all bordered elements use the token, never hardcoded
+- **Font smoothing**: Antialiased ecosystem-wide (set in hyperkit `globals.css`)
 - **Monospace everything**
-- **Icons**: Lucide icons loaded from CDN (`lucide@0.468.0`)
+- **Icons**: Lucide icons loaded from CDN (`lucide@0.468.0`), stroke-width 2
 
 ## Color System
 

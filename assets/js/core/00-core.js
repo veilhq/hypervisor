@@ -55,7 +55,7 @@
       var icon = document.getElementById("fullscreen-toggle-icon");
       if (icon) {
         icon.setAttribute("data-lucide", fsIsFullscreen ? "minimize" : "maximize");
-        if (window.lucide) lucide.createIcons({ attrs: { "stroke-width": 1.5 } });
+        if (window.lucide) lucide.createIcons({ attrs: { "stroke-width": 2 } });
       }
     }
     if (fsBtn) {
@@ -317,7 +317,7 @@
   // --- Initialize Lucide icons ---
   if (window.lucide) {
     lucide.createIcons({
-      attrs: { 'stroke-width': 1.5 }
+      attrs: { 'stroke-width': 2 }
     });
   }
 

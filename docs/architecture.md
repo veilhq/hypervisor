@@ -265,7 +265,7 @@ If Kiro's MCP server is not active, the desktop app handles everything via its o
 
 3. **Directory indexes** — Auto-generated fragment for every directory that contains documents. Shows sub-category cards and a date-sorted document listing. These don't correspond to any `.md` source document. (logic in `directory_index`)
 
-4. **Homepage** — `site/content/home.json` is a fragment with a hero band, KPI strip, the Workspace Pulse panel (in-progress work items with task-progress bars and a day-grouped recent-activity stream), the Pinned panel (rendered client-side from localStorage), and root-level documents. (logic in `directory_index.generate_home_content`)
+4. **Homepage** — `site/content/home.json` is a fragment with a hero band, a two-column dashboard (Active Work cards on the left, Recent Activity rows on the right), a full-width Pinned section below (rendered client-side from localStorage), and root-level documents. (logic in `directory_index.generate_home_content`)
 
 ## Asset Pipeline
 
@@ -433,7 +433,7 @@ Hub-and-spoke, no sidebar:
 ```
 Site nav rail (topbar) ─────────► Category index (subcategory cards + date-sorted doc list)
                                     └── Doc page (rendered markdown)
-Homepage (Workspace Pulse + Pinned + root docs) — status, not navigation
+Homepage (Active Work + Recent Activity + Pinned + root docs) — status, not navigation
 ```
 
 Every page has:

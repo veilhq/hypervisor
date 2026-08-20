@@ -73,18 +73,21 @@ THEME_DEFAULTS_SCRIPT = ""
 _NAV_CATEGORIES = []  # list of (dir_name, doc_count, children)
 # children = list of (child_dir_name, child_count)
 _NAV_RECENT_DIRS = set()  # set of dir names with recent activity
+_ACTIVE_LAYOUT = "cyberdeck"  # active layout pack name
 
 
-def set_nav_categories(categories, recent_dirs=None):
+def set_nav_categories(categories, recent_dirs=None, layout="cyberdeck"):
     """Set the global category data used to render the site nav on every page.
 
     Call this once at the start of a build before generating any pages.
     categories: list of (dir_name, doc_count, children) where children is
                 a list of (child_name, child_count) tuples.
+    layout: active layout name (read from preferences.json by build.py).
     """
-    global _NAV_CATEGORIES, _NAV_RECENT_DIRS
+    global _NAV_CATEGORIES, _NAV_RECENT_DIRS, _ACTIVE_LAYOUT
     _NAV_CATEGORIES = categories
     _NAV_RECENT_DIRS = recent_dirs or set()
+    _ACTIVE_LAYOUT = layout
 
 
 # ---------------------------------------------------------------------------
@@ -170,13 +173,6 @@ TOP_BAR = """\
                 <span class="settings-control-label">Fullscreen</span>
                 <button class="settings-toggle-btn fullscreen-toggle" id="fullscreen-toggle" aria-label="Toggle fullscreen">
                   <i data-lucide="maximize" class="settings-toggle-icon" id="fullscreen-toggle-icon"></i>
-                </button>
-              </div>
-              <div class="settings-control">
-                <span class="settings-control-label">Layout</span>
-                <button class="settings-toggle-btn" id="layout-toggle" aria-label="Toggle layout mode">
-                  <i data-lucide="terminal" class="settings-toggle-icon" id="layout-toggle-icon"></i>
-                  <span class="settings-toggle-state" id="layout-toggle-state">Cyberdeck</span>
                 </button>
               </div>
               <div class="settings-control" id="rebuild-row" style="display:none">
@@ -311,7 +307,6 @@ LEGACY_PAGE_TEMPLATE = """\
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
-  <script>try{if(localStorage.getItem('hypervisor-layout')==='refined')document.documentElement.classList.add('layout-refined')}catch(e){}</script>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
@@ -412,16 +407,22 @@ LEGACY_PAGE_TEMPLATE = """\
 </html>"""
 
 
-def build_site_nav(categories, recent_dirs=None):
+def build_site_nav(categories, recent_dirs=None, layout="cyberdeck"):
     """Build the vertical site navigation rail HTML.
 
     Args:
         categories: list of (dir_name, doc_count, children) tuples
         recent_dirs: dict of {directory_name: recent_count}
+        layout: active layout name (reserved for future use)
     """
     if recent_dirs is None:
         recent_dirs = {}
 
+    return _build_cyberdeck_nav(categories, recent_dirs)
+
+
+def _build_cyberdeck_nav(categories, recent_dirs):
+    """Standard cyberdeck nav rail — compact items with border-bottom."""
     html = ['<nav class="site-nav" id="site-nav" aria-label="Categories">']
     for item in categories:
         dir_name, count = item[0], item[1]
@@ -438,7 +439,6 @@ def build_site_nav(categories, recent_dirs=None):
             f'<span class="site-nav-count">{count}</span>'
             f'</a>'
         )
-        # Render children (shown when parent is active)
         if children:
             html.append(f'<div class="site-nav-children" data-parent="{dir_name}">')
             for child_name, child_count in children:
@@ -494,7 +494,7 @@ def build_page(content_html, title, rel_path_str, toc_html="", backlinks_html=""
     # Auto-generate site nav if not explicitly provided
     if site_nav_html is None:
         if _NAV_CATEGORIES:
-            site_nav_html = build_site_nav(_NAV_CATEGORIES, _NAV_RECENT_DIRS)
+            site_nav_html = build_site_nav(_NAV_CATEGORIES, _NAV_RECENT_DIRS, _ACTIVE_LAYOUT)
         else:
             site_nav_html = ""
 
@@ -545,7 +545,6 @@ SHELL_TEMPLATE = """\
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
-  <script>try{if(localStorage.getItem('hypervisor-layout')==='refined')document.documentElement.classList.add('layout-refined')}catch(e){}</script>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
@@ -663,7 +662,7 @@ def build_shell(build_id, site_nav_html=None):
 
     if site_nav_html is None:
         if _NAV_CATEGORIES:
-            site_nav_html = build_site_nav(_NAV_CATEGORIES, _NAV_RECENT_DIRS)
+            site_nav_html = build_site_nav(_NAV_CATEGORIES, _NAV_RECENT_DIRS, _ACTIVE_LAYOUT)
         else:
             site_nav_html = ""
 

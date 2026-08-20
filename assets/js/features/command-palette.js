@@ -226,7 +226,7 @@
 
       // Activate Lucide icons in results
       if (window.lucide) {
-        lucide.createIcons({ nodes: resultsEl.querySelectorAll("[data-lucide]"), attrs: { "stroke-width": 1.5 } });
+        lucide.createIcons({ nodes: resultsEl.querySelectorAll("[data-lucide]"), attrs: { "stroke-width": 2 } });
       }
     }
 
@@ -265,7 +265,7 @@
 
       // Render Lucide icon in the search input area
       if (window.lucide) {
-        lucide.createIcons({ nodes: overlay.querySelectorAll(".cmd-palette-input-wrap [data-lucide]"), attrs: { "stroke-width": 1.5 } });
+        lucide.createIcons({ nodes: overlay.querySelectorAll(".cmd-palette-input-wrap [data-lucide]"), attrs: { "stroke-width": 2 } });
       }
     }
 

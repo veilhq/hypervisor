@@ -401,7 +401,7 @@
       var iconEl = document.getElementById("width-toggle-icon");
       if (iconEl) {
         iconEl.setAttribute("data-lucide", on ? "align-center" : "columns-2");
-        if (window.lucide) lucide.createIcons({ attrs: { "stroke-width": 1.5 } });
+        if (window.lucide) lucide.createIcons({ attrs: { "stroke-width": 2 } });
       }
       var stateEl = document.getElementById("width-toggle-state");
       if (stateEl) stateEl.textContent = on ? "Narrow" : "Full";
