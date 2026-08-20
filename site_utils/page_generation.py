@@ -107,12 +107,14 @@ TOP_BAR = """\
         </button>
         <div class="nav-backdrop" id="nav-backdrop"></div>
         <aside class="nav-panel" id="nav-panel" role="region" aria-label="Navigation">
-          <div class="hv-panel-header nav-panel-header">
-            <i data-lucide="menu" style="width:11px;height:11px"></i>
-            <span>Menu</span>
-            <button class="nav-panel-close" id="nav-panel-close" aria-label="Close menu">&times;</button>
+
+          <div class="nav-tab-bar" role="tablist">
+            <button class="nav-tab" role="tab" aria-selected="false" aria-controls="nav-tab-navigate" id="nav-tab-btn-navigate">Navigate</button>
+            <button class="nav-tab active" role="tab" aria-selected="true" aria-controls="nav-tab-settings" id="nav-tab-btn-settings">Settings</button>
+            <button class="nav-tab" role="tab" aria-selected="false" aria-controls="nav-tab-a11y" id="nav-tab-btn-a11y">Access</button>
           </div>
           <div class="nav-panel-body">
+            <div class="nav-tab-content" id="nav-tab-navigate" role="tabpanel" aria-labelledby="nav-tab-btn-navigate">
             <div class="nav-group">
               <div class="nav-group-label">Navigate</div>
               <a href="/_pins/index.html" class="nav-link" id="nav-pinboard-link">
@@ -141,6 +143,8 @@ TOP_BAR = """\
               <div class="nav-group-label">Utilities</div>
               <div id="nav-util-list"></div>
             </div>
+            </div>
+            <div class="nav-tab-content active" id="nav-tab-settings" role="tabpanel" aria-labelledby="nav-tab-btn-settings">
             <div class="nav-group">
               <div class="nav-group-label">Settings</div>
               <div class="settings-control">
@@ -174,6 +178,20 @@ TOP_BAR = """\
                   <i data-lucide="refresh-cw" class="settings-toggle-icon" id="rebuild-btn-icon"></i>
                 </button>
               </div>
+              <div class="settings-control mcp-control" id="mcp-row" style="display:none">
+                <span class="settings-control-label">
+                  MCP service
+                  <span class="hv-chip hv-chip-outlined-muted mcp-state" id="mcp-state">&hellip;</span>
+                </span>
+                <div class="mcp-actions">
+                  <button class="settings-toggle-btn" id="mcp-restart-btn" aria-label="Restart MCP service" title="Restart — picks up code changes">
+                    <i data-lucide="rotate-cw" class="settings-toggle-icon" id="mcp-restart-icon"></i>
+                  </button>
+                  <button class="settings-toggle-btn mcp-stop-btn" id="mcp-stop-btn" aria-label="Stop MCP service" title="Stop the service">
+                    <i data-lucide="power" class="settings-toggle-icon" id="mcp-stop-icon"></i>
+                  </button>
+                </div>
+              </div>
             </div>
             <div class="nav-group">
               <div class="nav-group-label">Theme</div>
@@ -204,6 +222,8 @@ TOP_BAR = """\
                 </button>
               </div>
             </div>
+            </div>
+            <div class="nav-tab-content" id="nav-tab-a11y" role="tabpanel" aria-labelledby="nav-tab-btn-a11y">
             <div class="nav-group">
               <div class="nav-group-label">Accessibility</div>
               <div class="a11y-panel-body">
@@ -260,6 +280,7 @@ TOP_BAR = """\
                   <button class="a11y-reset" id="a11y-reset">Reset all</button>
                 </div>
               </div>
+            </div>
             </div>
           </div>
         </aside>

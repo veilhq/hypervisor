@@ -19,6 +19,7 @@ import re
 import subprocess
 import sys
 import threading
+import time
 import webbrowser
 from pathlib import Path
 
@@ -307,6 +308,38 @@ class HypervisorAPI:
         except Exception as e:
             logger.error("semantic_search bridge failed: %s", e)
             return []
+
+    def mcp_status(self):
+        """Current MCP service state for the topbar control."""
+        try:
+            return {"ok": True, **_mcp_service_status()}
+        except Exception as e:
+            logger.error("mcp_status failed: %s", e)
+            return {"ok": False, "error": str(e)}
+
+    def mcp_stop(self):
+        """Stop the shared MCP service on explicit user request."""
+        try:
+            return _stop_mcp_service()
+        except Exception as e:
+            logger.error("mcp_stop failed: %s", e)
+            return {"ok": False, "error": str(e)}
+
+    def mcp_restart(self):
+        """Bounce the shared MCP service, picking up any code changes."""
+        try:
+            return _start_mcp_service(replace=True)
+        except Exception as e:
+            logger.error("mcp_restart failed: %s", e)
+            return {"ok": False, "error": str(e)}
+
+    def mcp_start(self):
+        """Start the MCP service if it isn't running; attach if it is."""
+        try:
+            return _start_mcp_service(replace=False)
+        except Exception as e:
+            logger.error("mcp_start failed: %s", e)
+            return {"ok": False, "error": str(e)}
 
     def launch_hyperagent(self):
         """Launch Hyperagent as a detached subprocess."""
@@ -1202,43 +1235,130 @@ def _rag_index_file(rel_path):
 # ---------------------------------------------------------------------------
 
 _MCP_SERVER_SCRIPT = Path(__file__).parent / "mcp-server.py"
+_MCP_LOCK = _MCP_SERVER_SCRIPT.parent / ".mcp_service_running"
+_MCP_PORT = 8321
 _mcp_service_proc: subprocess.Popen | None = None
 
 
-def _start_mcp_service():
-    """Launch the shared MCP HTTP service if not already running.
+def _pid_alive(pid: int) -> bool:
+    """True if a process with this PID exists."""
+    import ctypes
+    PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+    kernel32 = ctypes.windll.kernel32
+    handle = kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
+    if handle:
+        kernel32.CloseHandle(handle)
+        return True
+    return False
 
-    Checks the lock file first — if another instance (e.g., Hyperagent started
-    first) is already serving, we skip. Otherwise we spawn mcp-server.py --http
-    as a detached subprocess. The process writes its own lock file on startup.
+
+def _terminate_pid(pid: int) -> bool:
+    """Terminate a process by PID, even one we hold no Popen handle for.
+
+    Needed because the MCP service now outlives the desktop app, so a freshly
+    started Hypervisor must be able to stop a service a *previous* instance
+    launched.
+    """
+    import ctypes
+    PROCESS_TERMINATE = 0x0001
+    kernel32 = ctypes.windll.kernel32
+    handle = kernel32.OpenProcess(PROCESS_TERMINATE, False, pid)
+    if not handle:
+        # Either already gone, or we lack rights. Treat "gone" as success.
+        return not _pid_alive(pid)
+    ok = bool(kernel32.TerminateProcess(handle, 1))
+    kernel32.CloseHandle(handle)
+    return ok
+
+
+def _mcp_port_open(timeout: float = 0.3) -> bool:
+    """True if something is accepting connections on the MCP port."""
+    import socket
+    try:
+        with socket.create_connection(("127.0.0.1", _MCP_PORT), timeout=timeout):
+            return True
+    except OSError:
+        return False
+
+
+def _read_mcp_lock() -> int | None:
+    """Return the PID from the lock file if it names a live process.
+
+    Removes the lock file when it is stale or unparseable.
+    """
+    if not _MCP_LOCK.exists():
+        return None
+    try:
+        pid = int(_MCP_LOCK.read_text(encoding="utf-8").strip().split("\n")[0])
+    except (ValueError, OSError, IndexError):
+        _MCP_LOCK.unlink(missing_ok=True)
+        return None
+    if _pid_alive(pid):
+        return pid
+    _MCP_LOCK.unlink(missing_ok=True)
+    return None
+
+
+def _mcp_service_status() -> dict:
+    """Current MCP service state, for the bridge and the UI control."""
+    pid = _read_mcp_lock()
+    owned = _mcp_service_proc is not None and pid == _mcp_service_proc.pid
+    return {
+        "running": pid is not None,
+        "pid": pid,
+        "port": _MCP_PORT,
+        "port_open": _mcp_port_open(),
+        "owned": owned,
+    }
+
+
+def _start_mcp_service(replace: bool = True) -> dict:
+    """Launch the shared MCP HTTP service, replacing any running instance.
+
+    The service deliberately outlives the desktop app (see _stop_mcp_service),
+    so on startup we replace whatever is already running. That guarantees the
+    live service reflects current code — without it, editing mcp-server.py and
+    restarting Hypervisor would silently keep serving the old code, because the
+    lock-file check would find the previous instance and skip launching.
+
+    Pass replace=False to attach to an existing service instead of bouncing it.
     """
     global _mcp_service_proc
 
-    # Import the lock-check helper from the MCP server module
-    sys.path.insert(0, str(_MCP_SERVER_SCRIPT.parent))
-    from importlib import import_module
-    # Can't import mcp-server.py directly (has a hyphen), use runpy-style check
-    lock_file = _MCP_SERVER_SCRIPT.parent / ".mcp_service_running"
+    existing = _read_mcp_lock()
+    if existing is not None:
+        if not replace:
+            logger.info("MCP service already running (PID %d), attaching", existing)
+            return {"ok": True, "pid": existing, "action": "attached"}
+        logger.info(
+            "replacing running MCP service (PID %d) so the service picks up current code",
+            existing,
+        )
+        _terminate_pid(existing)
+        # Wait for the port to actually free. The new process exits(1) if it
+        # finds the port taken, so launching early guarantees a dead service.
+        for _ in range(20):
+            if not _mcp_port_open():
+                break
+            time.sleep(0.25)
+        else:
+            logger.error(
+                "port %d still held 5s after terminating PID %d — not launching",
+                _MCP_PORT, existing,
+            )
+            return {"ok": False, "error": f"port {_MCP_PORT} still in use after terminate"}
+        _MCP_LOCK.unlink(missing_ok=True)
 
-    # Quick check: is the service already running?
-    if lock_file.exists():
-        try:
-            lines = lock_file.read_text(encoding="utf-8").strip().split("\n")
-            pid = int(lines[0])
-            import ctypes
-            kernel32 = ctypes.windll.kernel32
-            PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
-            handle = kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
-            if handle:
-                kernel32.CloseHandle(handle)
-                logger.info("MCP service already running (PID %d), skipping launch", pid)
-                return
-            # Stale lock
-            lock_file.unlink(missing_ok=True)
-        except (ValueError, OSError, IndexError):
-            lock_file.unlink(missing_ok=True)
+    # Orphan guard: port busy with no valid lock file. Can happen if the lock
+    # was removed while the process lived, or a stray instance is up. Launching
+    # anyway would just produce an immediate exit(1).
+    if _mcp_port_open():
+        logger.error(
+            "port %d is in use but no valid lock file exists — a stray MCP "
+            "instance may be running. Not launching.", _MCP_PORT,
+        )
+        return {"ok": False, "error": f"port {_MCP_PORT} in use by an unknown process"}
 
-    # Launch as a subprocess — NOT detached, so it dies when Hypervisor exits
     logger.info("launching MCP HTTP service")
     _mcp_service_proc = subprocess.Popen(
         [sys.executable, str(_MCP_SERVER_SCRIPT), "--http"],
@@ -1247,44 +1367,47 @@ def _start_mcp_service():
         stderr=subprocess.DEVNULL,
         stdin=subprocess.DEVNULL,
     )
-    logger.info("MCP service launched (PID %d)", _mcp_service_proc.pid)
+    pid = _mcp_service_proc.pid
+    logger.info("MCP service launched (PID %d)", pid)
 
-    # Wait for the service to become ready (port accepting connections)
-    import time as _time
-    import socket as _socket
+    # Wait for readiness (port accepting connections)
     for _ in range(20):  # up to 10 seconds
-        _time.sleep(0.5)
-        # Check if process died during startup
+        time.sleep(0.5)
         if _mcp_service_proc.poll() is not None:
+            code = _mcp_service_proc.returncode
             logger.error(
                 "MCP service exited during startup (code %d). "
-                "Hypervisor tools will be unavailable to agent sessions.",
-                _mcp_service_proc.returncode,
+                "Hypervisor tools will be unavailable to agent sessions.", code,
             )
             _mcp_service_proc = None
-            return
-        # Try connecting to the port
-        try:
-            sock = _socket.socket(_socket.AF_INET, _socket.SOCK_STREAM)
-            sock.settimeout(0.3)
-            sock.connect(("127.0.0.1", 8321))
-            sock.close()
-            logger.info("MCP service ready (port 8321 accepting connections)")
-            return
-        except (OSError, ConnectionRefusedError):
-            pass
+            return {"ok": False, "error": f"service exited during startup (code {code})"}
+        if _mcp_port_open():
+            logger.info("MCP service ready (port %d accepting connections)", _MCP_PORT)
+            return {"ok": True, "pid": pid, "action": "launched"}
 
     logger.warning(
         "MCP service did not become ready within 10s. "
         "It may still be loading — tools might be temporarily unavailable."
     )
+    return {"ok": True, "pid": pid, "action": "launched", "warning": "not ready within 10s"}
 
 
-def _stop_mcp_service():
-    """Terminate the MCP service subprocess if we own it."""
+def _stop_mcp_service() -> dict:
+    """Stop the MCP service.
+
+    Deliberately NOT called when Hypervisor's window closes. The MCP service is
+    shared — agent sessions depend on it — so tying its lifetime to a GUI window
+    silently removes every hyperspace tool from every running session. It is
+    stopped only on explicit request, or replaced on the next app start.
+
+    Handles both the case where we own the Popen handle and the case where the
+    service was launched by a previous Hypervisor instance.
+    """
     global _mcp_service_proc
+
     if _mcp_service_proc is not None:
-        logger.info("stopping MCP service (PID %d)", _mcp_service_proc.pid)
+        pid = _mcp_service_proc.pid
+        logger.info("stopping MCP service (PID %d, owned)", pid)
         try:
             _mcp_service_proc.terminate()
             _mcp_service_proc.wait(timeout=5)
@@ -1294,6 +1417,20 @@ def _stop_mcp_service():
             except OSError:
                 pass
         _mcp_service_proc = None
+        _MCP_LOCK.unlink(missing_ok=True)
+        return {"ok": True, "pid": pid, "action": "stopped"}
+
+    pid = _read_mcp_lock()
+    if pid is None:
+        logger.info("stop requested but no MCP service is running")
+        return {"ok": True, "action": "not running"}
+
+    logger.info("stopping MCP service (PID %d, from lock file)", pid)
+    ok = _terminate_pid(pid)
+    _MCP_LOCK.unlink(missing_ok=True)
+    if not ok:
+        return {"ok": False, "error": f"could not terminate PID {pid}"}
+    return {"ok": True, "pid": pid, "action": "stopped"}
 
 
 def _init_rag_background():
@@ -1451,7 +1588,19 @@ def main():
     # Cleanup
     print("  Window closed — shutting down")
     watcher.stop()
-    _stop_mcp_service()
+    # The MCP service is deliberately left running. It is a shared service that
+    # agent sessions depend on, so stopping it here would silently remove every
+    # hyperspace tool from every open session. The next Hypervisor start
+    # replaces it (see _start_mcp_service), and it can be stopped on demand from
+    # the MCP control in the topbar.
+    _mcp = _mcp_service_status()
+    if _mcp["running"]:
+        logger.info(
+            "window closed — leaving MCP service running (PID %s, port %d) for agent sessions",
+            _mcp["pid"], _mcp["port"],
+        )
+    else:
+        logger.info("window closed — no MCP service running")
     try:
         app_lock.unlink()
     except OSError:

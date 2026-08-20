@@ -35,7 +35,7 @@ from hv_mcp.search import search_hyperspace, recent_activity, get_work_items
 from hv_mcp.rag import get_rag
 from hv_mcp.tags import get_tags, add_tag
 from hv_mcp.validation import validate_single, validate_all
-from hv_mcp.claims import validate_work_item_claims
+from hv_mcp.audit import audit_work_item
 from hv_mcp.crud import create_document, update_document, move_work_item
 from hv_mcp.analytics import stale_documents, health_report, tag_analytics
 from hv_mcp.intelligence import session_brief, suggest_next_action, context_for_work_item
@@ -211,6 +211,39 @@ def validate_document_tool(path: str = "") -> dict:
     return validate_single(path)
 
 
+@server.tool(name="audit_work_item")
+def audit_work_item_tool(slug: str) -> dict:
+    """Comprehensive reality check for a work item against the codebase and conventions.
+
+    Runs four layers of verification:
+    1. Claim verification — checks file/line references in Design, Implementation
+       Notes, Tasks, and Acceptance Criteria against the actual codebase. Detects
+       missing files, stale line references, and line drift from edits.
+    2. Pattern conformance — checks whether proposed new infrastructure (models,
+       tables, signals, services) aligns with existing codebase patterns. Flags
+       when the target app already has established patterns the design should use.
+    3. Steering compliance — checks whether design decisions reference existing
+       infrastructure and justify divergence when proposing something new.
+    4. Open questions resolution — extracts unresolved questions from the
+       ## Open Questions section and searches the codebase for evidence that
+       may help answer them. Reports which questions have codebase evidence
+       and what was found.
+
+    All findings are advisory — heuristic pattern matching, not proof. This tool
+    never modifies documents or marks tasks complete.
+
+    Args:
+        slug: The filename (without .md) of the work item in work/to-do/ or
+              work/done/, OR a work item ID (e.g., 'WI-23').
+
+    Returns:
+        Structured audit results with findings grouped by category (claims,
+        pattern_conformance, steering_compliance, open_questions), counts, and
+        a clean/not-clean verdict.
+    """
+    return audit_work_item(slug=slug)
+
+
 @server.tool(name="validate_work_item_claims")
 def validate_work_item_claims_tool(slug: str, apply_updates: bool = False) -> dict:
     """Sweep a work item's claims against the actual codebase and surface gaps.
@@ -239,7 +272,61 @@ def validate_work_item_claims_tool(slug: str, apply_updates: bool = False) -> di
         line_moved, possibly_done_tasks), a summary count, and either a
         diff_preview (dry-run) or confirmation of the applied write.
     """
+    from hv_mcp.claims import validate_work_item_claims
     return validate_work_item_claims(slug=slug, apply_updates=apply_updates)
+
+
+@server.tool(name="check_task_progress")
+def check_task_progress_tool(slug: str, fetch: bool = True,
+                             max_age_days: int = 30) -> dict:
+    """Report which of a work item's tasks are supported by local git evidence.
+
+    Finds branches whose commit author matches the work item's Assignee, then
+    matches their changed files against the file references in each task. Answers
+    "has this landed yet?" for work assigned to other people, before any PR
+    exists — a PR is a completion artifact, so waiting for one means the signal
+    arrives after it stops being useful.
+
+    Two evidence sources, because branch diffs alone are insufficient. Unmerged
+    branches are diffed against the integration branch. Merged and removed work
+    is read from tree state instead, since a fully merged branch produces an
+    empty diff that is indistinguishable from "no work started" — and tree state
+    additionally survives squash-merges.
+
+    Matching keys on basename and backticked symbol rather than the task's stated
+    path, because files frequently land somewhere other than where the task said
+    they would. The actual path is reported so the deviation is visible.
+
+    Coverage is part of the result and should be read alongside the counts. Only
+    about 29% of tasks corpus-wide carry a resolvable file reference, so
+    "5 satisfied" without "17 assessed of 21" invites the wrong conclusion about
+    the remainder.
+
+    Only pushed work is visible to git. A teammate working locally for days
+    produces no evidence and then appears to jump.
+
+    This tool never edits a document. It reports line numbers so a caller can
+    decide what to change.
+
+    Args:
+        slug: The filename (without .md) of a work item in work/to-do/ or
+              work/done/, OR a work item ID (e.g., 'WI-180').
+        fetch: Fetch the referenced repos first, in parallel (~1-2s). Set False
+               to read whatever refs are already local.
+        max_age_days: Age window for candidate branches. Defaults to 30.
+
+    Returns:
+        assignee and resolved initials, repos_scoped with the basis for that
+        scoping, branch_candidates per repo, per-repo ref freshness, coverage
+        counts (assessed / unassessable / satisfied / likely / not_found /
+        actionable), actionable_lines, and per-task findings each carrying a
+        verdict, confidence, cited evidence, and the reasoning behind it.
+    """
+    from hv_mcp.task_progress import check_task_progress
+    return check_task_progress(
+        slug=slug, fetch=fetch,
+        max_age_days=max_age_days if max_age_days and max_age_days > 0 else None,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -295,7 +382,8 @@ def create_document_tool(
         tasks: List of task descriptions (optional, work-items).
         open_questions: List of unresolved implementation questions — scoping ambiguities,
             decisions that need to be made before coding starts (optional, work-items).
-            Rendered under Implementation Notes so they're visible before work begins.
+            Rendered as a dedicated '## Open Questions' section between Tasks and
+            Implementation Notes so they're visible before work begins.
         concept: Freeform concept text (required for ideas).
         key_questions: List of open questions to explore (optional, ideas).
         solution_plan: High-level approach or implementation sketch (optional, ideas).

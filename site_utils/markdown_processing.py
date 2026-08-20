@@ -361,6 +361,7 @@ def extract_metadata_block(html: str) -> str:
                     "outlined-muted",
                     _initials(assignee),
                     extra_class="doc-header-chip doc-header-chip-assignee",
+                    data_attrs={"writeback-key": "assignee", "full-value": assignee},
                 )
             )
         html_parts.append('<div class="doc-header-chips">' + "".join(chips) + '</div>')

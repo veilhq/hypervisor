@@ -108,6 +108,91 @@
     });
   })();
 
+  // --- Assignee metadata write-back (desktop app only) ---
+  // Click the assignee chip → inline input → Enter/blur saves.
+  (function initAssigneeWriteBack() {
+    function toInitials(name) {
+      return name.trim().split(/\s+/).map(function (w) { return w.charAt(0).toUpperCase(); }).join("");
+    }
+
+    document.addEventListener("click", function (e) {
+      var chip = e.target.closest('[data-writeback-key="assignee"]');
+      if (!chip) return;
+      if (chip.querySelector(".assignee-edit-input")) return; // already editing
+
+      if (!(window.pywebview && window.pywebview.api)) return;
+
+      e.preventDefault();
+
+      var sourcePathEl = document.getElementById("source-path");
+      if (!sourcePathEl) return;
+      var filePath = sourcePathEl.textContent.trim();
+      if (!filePath || !filePath.endsWith(".md")) return;
+
+      var originalInitials = chip.textContent.trim();
+      var fullName = chip.getAttribute("data-full-value") || "";
+
+      // Replace chip text with an inline input
+      var input = document.createElement("input");
+      input.type = "text";
+      input.className = "assignee-edit-input hv-input-inline";
+      input.value = fullName;
+      input.setAttribute("aria-label", "Edit assignee name");
+
+      chip.textContent = "";
+      chip.appendChild(input);
+      chip.classList.add("assignee-editing");
+      input.focus();
+      input.select();
+
+      function commit() {
+        var val = input.value.trim();
+        chip.classList.remove("assignee-editing");
+
+        if (!val) {
+          // Clear assignee
+          chip.textContent = originalInitials;
+          window.pywebview.api.update_metadata(filePath, "Assignee", "").then(function (result) {
+            if (result && result.ok) {
+              chip.parentNode.removeChild(chip);
+            }
+          });
+          return;
+        }
+
+        var newInitials = toInitials(val);
+        chip.textContent = newInitials;
+        chip.setAttribute("data-full-value", val);
+
+        window.pywebview.api.update_metadata(filePath, "Assignee", val).then(function (result) {
+          if (!result || !result.ok) {
+            chip.textContent = originalInitials;
+            chip.setAttribute("data-full-value", fullName);
+          }
+        }).catch(function () {
+          chip.textContent = originalInitials;
+          chip.setAttribute("data-full-value", fullName);
+        });
+      }
+
+      function cancel() {
+        chip.classList.remove("assignee-editing");
+        chip.textContent = originalInitials;
+      }
+
+      var committed = false;
+      input.addEventListener("keydown", function (ev) {
+        if (ev.key === "Enter") { ev.preventDefault(); committed = true; input.blur(); }
+        if (ev.key === "Escape") { ev.preventDefault(); committed = false; input.blur(); }
+      });
+      input.addEventListener("blur", function () {
+        if (committed !== false) { commit(); } else { cancel(); }
+      });
+      // Reset the committed flag guard — treat blur-without-keydown as commit
+      committed = true;
+    });
+  })();
+
   // --- Open in File Explorer (shell-level button, content-aware) ---
   (function initOpenInExplorer() {
     var btn = document.getElementById("explorer-btn");

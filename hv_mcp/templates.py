@@ -102,6 +102,15 @@ def apply_work_item_template(
             lines.append(f"- [ ] {task}")
         lines.append("")
 
+    if open_questions:
+        lines.append("---")
+        lines.append("")
+        lines.append("## Open Questions")
+        lines.append("")
+        for question in open_questions:
+            lines.append(f"- {question}")
+        lines.append("")
+
     lines.append("---")
     lines.append("")
     lines.append("## Implementation Notes")
@@ -109,13 +118,6 @@ def apply_work_item_template(
     lines.append("> [!NOTE]")
     lines.append("> Populate this section during implementation. Capture decisions that differ from the original design.")
     lines.append("")
-
-    if open_questions:
-        lines.append("**Open Questions:**")
-        lines.append("")
-        for question in open_questions:
-            lines.append(f"- {question}")
-        lines.append("")
 
     return "\n".join(lines)
 

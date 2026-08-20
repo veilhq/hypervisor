@@ -306,6 +306,15 @@
 .doc-header-chip-assignee {
   color: var(--comp);
   border-color: var(--comp);
+  cursor: pointer;
+}
+/* Inline edit state — chip expands to fit the text input */
+.doc-header-chip-assignee.assignee-editing {
+  min-width: 10ch;
+}
+.assignee-edit-input {
+  width: 14ch;
+  color: var(--comp);
 }
 
 /* Middle: topic tag chips (project moved to left identity cluster) */

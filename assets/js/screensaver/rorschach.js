@@ -217,10 +217,37 @@
 
     // Offset grid so the center column aligns exactly with canvas center
     var centerCol = (cols - 1) / 2;
-    // Each glyph drawn at: col * SPACING + xOffset
-    // We want: centerCol * SPACING + xOffset = w / 2
     var xOffset = (w / 2) - (centerCol * SPACING);
     var yOffset = SPACING * 0.5;
+
+    // Pre-compute color strings for quantized alpha levels to avoid per-cell allocation.
+    // 16 alpha buckets covers visible range with no perceptible banding.
+    var ALPHA_STEPS = 16;
+    var colorLUT;
+    if (palette) {
+      // Palette mode: build LUT per palette color × alpha step
+      var palRgb = [];
+      for (var pi = 0; pi < palette.length; pi++) {
+        palRgb.push(ssHexToRgb(palette[pi]));
+      }
+      colorLUT = [];
+      for (var ci = 0; ci < palRgb.length; ci++) {
+        var arr = [];
+        for (var ai = 0; ai <= ALPHA_STEPS; ai++) {
+          var a = ai / ALPHA_STEPS;
+          arr.push('rgba(' + palRgb[ci].r + ',' + palRgb[ci].g + ',' + palRgb[ci].b + ',' + a.toFixed(3) + ')');
+        }
+        colorLUT.push(arr);
+      }
+    } else {
+      // Single accent mode: one array indexed by alpha step
+      var rgb = ssHexToRgb(accent);
+      colorLUT = [];
+      for (var ai2 = 0; ai2 <= ALPHA_STEPS; ai2++) {
+        var a2 = ai2 / ALPHA_STEPS;
+        colorLUT.push('rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',' + a2.toFixed(3) + ')');
+      }
+    }
 
     for (var row = 0; row < rows; row++) {
       for (var col = 0; col < cols; col++) {
@@ -256,13 +283,17 @@
           alpha = 0.06 + density * 0.15; // very dim, slightly visible near edges
         }
 
-        // Color
+        // Quantize alpha to LUT index
+        var alphaIdx = Math.round(alpha * ALPHA_STEPS);
+        if (alphaIdx > ALPHA_STEPS) alphaIdx = ALPHA_STEPS;
+        if (alphaIdx < 0) alphaIdx = 0;
+
+        // Color — lookup from pre-built strings
         if (palette) {
-          var cIdx = isInk ? Math.floor(inkStrength * 2.99) : 0;
-          var c = ssHexToRgb(palette[cIdx]);
-          ssCtx.fillStyle = 'rgba(' + c.r + ',' + c.g + ',' + c.b + ',' + alpha + ')';
+          var cIdx = isInk ? Math.min(2, Math.floor(inkStrength * 2.99)) : 0;
+          ssCtx.fillStyle = colorLUT[cIdx][alphaIdx];
         } else {
-          ssCtx.fillStyle = ssHexToRgba(accent, alpha);
+          ssCtx.fillStyle = colorLUT[alphaIdx];
         }
 
         var cx = col * SPACING + xOffset;

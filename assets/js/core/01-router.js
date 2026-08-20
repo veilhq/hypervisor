@@ -108,24 +108,25 @@
     var navItems = document.querySelectorAll(".site-nav-item, .site-nav-child");
     navItems.forEach(function (item) { item.classList.remove("active"); });
 
-    if (!breadcrumbs || !breadcrumbs.length) return;
+    // Determine active category (empty string for homepage)
+    var category = (breadcrumbs && breadcrumbs.length) ? breadcrumbs[0] : "";
+    var subCategory = (breadcrumbs && breadcrumbs.length > 1) ? breadcrumbs[0] + "/" + breadcrumbs[1] : null;
 
-    // Match the deepest category
-    var category = breadcrumbs[0];
-    var subCategory = breadcrumbs.length > 1 ? breadcrumbs[0] + "/" + breadcrumbs[1] : null;
+    // Collapse/expand children panels — must run even when navigating home
+    var childPanels = document.querySelectorAll(".site-nav-children");
+    childPanels.forEach(function (panel) {
+      var parent = panel.getAttribute("data-parent");
+      panel.classList.toggle("open", parent === category);
+    });
 
+    if (!category) return;
+
+    // Highlight active nav items
     navItems.forEach(function (item) {
       var cat = item.getAttribute("data-category");
       if (cat === category || cat === subCategory) {
         item.classList.add("active");
       }
-    });
-
-    // Show children panel for active parent
-    var childPanels = document.querySelectorAll(".site-nav-children");
-    childPanels.forEach(function (panel) {
-      var parent = panel.getAttribute("data-parent");
-      panel.classList.toggle("open", parent === category);
     });
   }
 

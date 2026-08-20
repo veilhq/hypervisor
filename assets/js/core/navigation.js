@@ -251,7 +251,7 @@
         _renderClientResults(matches);
       }
 
-      // Semantic mode: trigger bridge call for question-shaped queries (>=3 words)
+      // Semantic mode: trigger bridge call for question-shaped queries (>=2 words)
       if (query && _isSemanticCandidate(query) && window.isDesktopApp) {
         _scheduleSemanticSearch(query);
       } else {
@@ -261,7 +261,7 @@
 
     function _isSemanticCandidate(query) {
       var words = query.trim().split(/\s+/);
-      return words.length >= 3;
+      return words.length >= 2;
     }
 
     function _cancelSemantic() {
@@ -535,7 +535,6 @@
     var btn = document.getElementById("nav-menu-btn");
     var panel = document.getElementById("nav-panel");
     var backdrop = document.getElementById("nav-backdrop");
-    var closeBtn = document.getElementById("nav-panel-close");
     if (!btn || !panel) return;
 
     function openDrawer() {
@@ -560,7 +559,6 @@
       }
     });
 
-    if (closeBtn) closeBtn.addEventListener("click", closeDrawer);
     if (backdrop) backdrop.addEventListener("click", closeDrawer);
 
     document.addEventListener("keydown", function (e) {
@@ -576,6 +574,39 @@
         }
       }
     });
+
+    // --- Nav panel tabs ---
+    (function initNavTabs() {
+      var tabs = panel.querySelectorAll(".nav-tab-bar .nav-tab");
+      var panels = panel.querySelectorAll(".nav-tab-content");
+      if (!tabs.length || !panels.length) return;
+
+      var STORAGE_KEY = "hypervisor-nav-tab";
+      var stored = localStorage.getItem(STORAGE_KEY);
+
+      function activate(id) {
+        tabs.forEach(function (t) {
+          var active = t.getAttribute("aria-controls") === id;
+          t.classList.toggle("active", active);
+          t.setAttribute("aria-selected", active ? "true" : "false");
+        });
+        panels.forEach(function (p) {
+          p.classList.toggle("active", p.id === id);
+        });
+        localStorage.setItem(STORAGE_KEY, id);
+      }
+
+      // Restore persisted tab
+      if (stored && panel.querySelector("#" + stored)) {
+        activate(stored);
+      }
+
+      tabs.forEach(function (tab) {
+        tab.addEventListener("click", function () {
+          activate(tab.getAttribute("aria-controls"));
+        });
+      });
+    })();
 
     // --- Populate reference list ---
     var refBtn = document.getElementById("nav-ref-btn");
