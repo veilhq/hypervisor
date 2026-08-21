@@ -217,10 +217,15 @@
         var categoryLabel = category.replace(/-/g, " ").replace(/_/g, " ");
 
         html += '<a class="pin-row" href="' + href + '">';
-        html += '<span class="pin-row-title">' + escapeHtml(title) + '</span>';
-        html += '<span class="pin-row-category">' + escapeHtml(categoryLabel) + '</span>';
+        html += '<span class="pin-row-header">';
         if (workId) {
-          html += '<span class="pin-row-workid">' + escapeHtml(workId) + '</span>';
+          html += '<span class="pin-row-workid">' + HvUtils.escapeHtml(workId) + '</span>';
+        }
+        html += '<span class="pin-row-category">' + HvUtils.escapeHtml(categoryLabel) + '</span>';
+        html += '</span>';
+        html += '<span class="pin-row-title">' + HvUtils.escapeHtml(title) + '</span>';
+        if (snippet) {
+          html += '<span class="pin-row-snippet">' + HvUtils.escapeHtml(snippet) + '</span>';
         }
         html += '</a>';
       });
@@ -266,18 +271,18 @@
         html += '<div class="pin-card" data-pin-idx="' + idx + '" data-href="' + href + '" style="animation-delay:' + (idx * 0.06) + 's">';
         html += '<div class="pin-card-header">';
         html += '<span class="pin-card-indicator"><i data-lucide="pin" class="pin-card-pin-icon"></i></span>';
-        if (categoryLabel) html += '<span class="pin-card-category">' + escapeHtml(categoryLabel) + '</span>';
-        if (workId) html += '<span class="pin-card-work-id">' + escapeHtml(workId) + '</span>';
-        html += '<button class="pin-card-remove" data-path="' + escapeHtml(pin.path) + '" aria-label="Unpin" data-tooltip="unpin">';
+        if (categoryLabel) html += '<span class="pin-card-category">' + HvUtils.escapeHtml(categoryLabel) + '</span>';
+        if (workId) html += '<span class="pin-card-work-id">' + HvUtils.escapeHtml(workId) + '</span>';
+        html += '<button class="pin-card-remove" data-path="' + HvUtils.escapeHtml(pin.path) + '" aria-label="Unpin" data-tooltip="unpin">';
         html += '<i data-lucide="x"></i></button></div>';
-        html += '<a href="' + href + '" class="pin-card-title">' + escapeHtml(title) + '</a>';
-        if (snippet) html += '<p class="pin-card-snippet">' + escapeHtml(snippet) + '</p>';
+        html += '<a href="' + href + '" class="pin-card-title">' + HvUtils.escapeHtml(title) + '</a>';
+        if (snippet) html += '<p class="pin-card-snippet">' + HvUtils.escapeHtml(snippet) + '</p>';
         html += '<div class="pin-card-footer">';
-        html += '<span class="pin-card-path">' + escapeHtml(pin.path) + '</span>';
+        html += '<span class="pin-card-path">' + HvUtils.escapeHtml(pin.path) + '</span>';
         html += '<span class="pin-card-date">pinned ' + pinnedDate + '</span></div>';
         if (tags.length) {
           html += '<div class="pin-card-tags">';
-          tags.slice(0, 5).forEach(function (tag) { html += '<span class="pin-card-tag">' + escapeHtml(tag) + '</span>'; });
+          tags.slice(0, 5).forEach(function (tag) { html += '<span class="pin-card-tag">' + HvUtils.escapeHtml(tag) + '</span>'; });
           html += '</div>';
         }
         html += '</div>';
@@ -309,10 +314,6 @@
           }
         });
       });
-    }
-
-    function escapeHtml(str) {
-      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
     }
 
     // --- Expose pin count ---

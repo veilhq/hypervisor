@@ -31,7 +31,7 @@ from site_utils.file_utils import (
 from .config import STATE_DIR
 
 # Dedicated RAG logger → writes to .hyperspace/.logs/rag.log
-sys.path.insert(0, str(HYPERSPACE_ROOT))
+sys.path.insert(0, str(HYPERSPACE_ROOT / ".hyperkit" / "python"))
 from hyper_logging import setup_logger  # noqa: E402
 
 logger = setup_logger("rag")
@@ -104,7 +104,6 @@ EXCLUDE_DIR_PARTS = {
     ".scratch",
     ".hypervisor",
     ".hyperagent",
-    ".hyperagent-lite",
     ".hyperkit",
     ".hypereye",
     ".events",

@@ -219,7 +219,7 @@
       resultsEl.innerHTML = items.map(function (item, i) {
         return '<div class="cmd-palette-item" data-index="' + i + '" data-category="' + item.category + '">' +
           '<i data-lucide="' + item.icon + '" class="cmd-palette-item-icon"></i>' +
-          '<span class="cmd-palette-item-text">' + escapeHtml(item.name) + '</span>' +
+          '<span class="cmd-palette-item-text">' + HvUtils.escapeHtml(item.name) + '</span>' +
           '<span class="cmd-palette-item-hint">' + item.hint + '</span>' +
           '</div>';
       }).join("");
@@ -228,10 +228,6 @@
       if (window.lucide) {
         lucide.createIcons({ nodes: resultsEl.querySelectorAll("[data-lucide]"), attrs: { "stroke-width": 2 } });
       }
-    }
-
-    function escapeHtml(str) {
-      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     }
 
     // --- Selection management ---

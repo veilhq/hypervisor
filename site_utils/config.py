@@ -33,7 +33,7 @@ sys.path.insert(0, str(HYPERKIT_PYTHON_DIR))
 # module that references window.HvNoiseField / HvGreeting / HvCursorTrail /
 # HvToast (i.e. before core/00-core.js and features/*), so they are
 # prepended ahead of everything list_js_modules() would otherwise return.
-HYPERKIT_JS_MODULES = ["noise-field.js", "greeting.js", "cursor-trail.js", "toast.js", "cursor-box.js"]
+HYPERKIT_JS_MODULES = ["utils.js", "noise-field.js", "greeting.js", "cursor-trail.js", "toast.js", "cursor-box.js"]
 
 
 def list_js_modules():
@@ -151,7 +151,7 @@ def hypervisor_favicon_data_uri(color: str = "#00ff41") -> str:
 # --- Filters ---
 SKIP_DIRS = {
     "__pycache__", "site", "learn", ".scratch", ".kb",
-    ".hyperagent", ".hyperagent-lite", ".hyperkit", ".hypereye", ".events",
+    ".hyperagent", ".hyperkit", ".hypereye", ".events",
 }
 SKIP_FILES = {".gitkeep"}
 

@@ -492,7 +492,7 @@
       var out = '<!DOCTYPE html>\n<html lang="en">\n<head>\n';
       out += '  <meta charset="UTF-8">\n';
       out += '  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n';
-      out += '  <title>' + escapeHtml(title) + '</title>\n';
+      out += '  <title>' + HvUtils.escapeHtml(title) + '</title>\n';
       out += "  <link rel=\"stylesheet\" href=\"https://db.onlinewebfonts.com/c/4571adf8e6d8270ea61a4f43a3ef31d2?family=Departure+Mono\">\n";
       out += '  <style>\n' + css + '\n  </style>\n';
       out += '</head>\n<body class="hv-export">\n';
@@ -501,7 +501,7 @@
       out += '      <nav class="breadcrumbs" aria-label="Breadcrumb">' + breadcrumbsHtml + '</nav>\n';
       out += '    </div>\n    <div class="topbar-right"></div>\n  </div>\n</header>\n';
       out += '<main class="page">\n  <article class="markdown-body">\n' + articleHtml + '\n  </article>\n</main>\n';
-      out += '<footer class="page-footer">\n  <span class="source-path">' + escapeHtml(srcPathText) + '</span>\n';
+      out += '<footer class="page-footer">\n  <span class="source-path">' + HvUtils.escapeHtml(srcPathText) + '</span>\n';
       out += '  <span class="footer-sep">|</span>\n  <span class="footer-label">hypervisor export</span>\n</footer>\n';
       out += '</body>\n</html>';
       return out;
@@ -537,10 +537,6 @@
       overrides += "body.hv-export .page { animation: none; max-width: 1280px; }\n";
       overrides += "body.hv-export .toc-sidebar { display: none; }\n";
       return overrides + "\n" + css;
-    }
-
-    function escapeHtml(str) {
-      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
     }
 
     function downloadFile(content, filename, mimeType) {

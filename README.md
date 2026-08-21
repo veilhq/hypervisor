@@ -27,7 +27,7 @@ Point Hypervisor at a directory of `.md` files and it produces a self-contained 
 ## Design Philosophy
 
 - **Zero frameworks** — Python + vanilla CSS + vanilla JS. No React, no Node, no bundler.
-- **Brutalist terminal aesthetic** — pure black background, monospace everywhere, hard edges, no border-radius.
+- **Brutalist terminal aesthetic** — near-black background (`#030305`), monospace everywhere, subtle `4px` border-radius via `var(--radius)` token.
 - **Content-agnostic** — Hypervisor doesn't care what your markdown is about. It renders whatever it finds.
 - **Local-only** — no server, no cloud, no accounts. Your files stay on your machine.
 

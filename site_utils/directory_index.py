@@ -250,7 +250,56 @@ def generate_home_content(files, build_stats=None, recent_paths=None):
             })
     active_items.sort(key=lambda x: x["date"], reverse=True)
 
-    # --- 3. Recent Activity (up to 10 items, day-grouped) ---
+    # --- 2b. Ideas (recent from ideas/) ---
+    idea_items = []
+    for rel in files:
+        rel_posix = str(rel).replace("\\", "/")
+        if not rel_posix.startswith("ideas/"):
+            continue
+        if rel_posix.startswith("ideas/done/"):
+            continue
+        parts = PurePosixPath(rel_posix).parts
+        if parts[-1].startswith("_"):
+            continue
+        md_text = read_md(HYPERSPACE_ROOT / rel)
+        title = get_title(md_text, nice_name(rel.name))
+        dates = extract_dates(md_text)
+        date_str, _ = sort_date(dates)
+        # Extract snippet
+        desc = ""
+        past_meta = False
+        for ln in md_text.splitlines()[1:]:
+            stripped = ln.strip()
+            if not past_meta:
+                if re.match(r'^-?\s*\*{0,2}[A-Za-z][A-Za-z_ ]*\*{0,2}\s*:', stripped):
+                    continue
+                if stripped == "" or stripped == "---":
+                    continue
+                past_meta = True
+            if stripped.startswith("#") or stripped.startswith("```") or stripped.startswith("<"):
+                continue
+            if stripped == "":
+                continue
+            desc = stripped[:100] + ("…" if len(stripped) > 100 else "")
+            break
+        # Extract tags
+        doc_tags = []
+        for ln in md_text.splitlines()[:30]:
+            m = re.match(r'^-?\s*Tags\s*:\s*(.+)', ln.strip(), re.IGNORECASE)
+            if m:
+                doc_tags = [t.strip().strip('`') for t in m.group(1).split(",") if t.strip()]
+                break
+        idea_items.append({
+            "rel": rel,
+            "title": title,
+            "desc": desc,
+            "date": date_str,
+            "tags": doc_tags[:3],
+        })
+    idea_items.sort(key=lambda x: x["date"], reverse=True)
+    idea_items = idea_items[:6]
+
+    # --- 3. Recent Activity (up to 10 items) ---
     recent = []
     for rel in files:
         rel_posix = str(rel).replace("\\", "/")
@@ -270,25 +319,19 @@ def generate_home_content(files, build_stats=None, recent_paths=None):
         day = _pulse_day_header(date_str)
         recent_by_day.setdefault(day, []).append((rel, title, date_str, date_label))
 
-    # --- 4. Two-panel dashboard: Workspace Pulse + Pinned ---
-    html.append('<div class="dashboard-panels">')
+    # --- 4. Single-column dashboard flow ---
 
-    # Left panel: Workspace Pulse (in-progress + recent stream)
-    html.append('<div class="hv-section pulse-section">')
-    summary_parts = [
-        f'{len(active_items)} active',
-        f'{len(recent)} recent',
-    ]
+    # Active Work section — card grid
+    html.append('<div class="home-section home-section-work">')
+    summary_parts = [f'{len(active_items)} in progress']
     if build_time:
         summary_parts.append(f'built {build_time}')
     pulse_summary = ' &middot; '.join(summary_parts)
     html.append(
-        f'<h2><i data-lucide="activity" class="section-icon"></i> Active Work'
+        f'<h2 class="home-section-header"><i data-lucide="rocket" class="section-icon"></i> Active'
         f' <span class="pulse-summary">{pulse_summary}</span></h2>'
     )
 
-    # In-progress group — card layout
-    html.append('<div class="pulse-group pulse-group-active">')
     if active_items:
         html.append('<div class="work-card-grid">')
         for it in active_items:
@@ -337,44 +380,76 @@ def generate_home_content(files, build_stats=None, recent_paths=None):
         html.append('</div>')
     else:
         html.append('<div class="pulse-empty">no items in progress</div>')
-    html.append('</div>')  # /.pulse-group-active
+    html.append('</div>')  # /.home-section-work
 
-    html.append('</div>')  # /.pulse-section
-
-    # Right panel: Recent Activity
-    html.append('<div class="hv-section recent-section">')
+    # Recent Activity section — action descriptions with relative time
+    html.append('<div class="home-section home-section-recent">')
     html.append(
-        '<h2><i data-lucide="clock" class="section-icon"></i> Recent</h2>'
+        '<h2 class="home-section-header"><i data-lucide="arrow-down-circle" class="section-icon"></i> Activity</h2>'
     )
-    html.append('<div class="pulse-group pulse-group-recent">')
-    if recent_by_day:
-        for day_label, items in recent_by_day.items():
-            html.append(f'<div class="pulse-day-header">{day_label}</div>')
-            for rel, title, date_str, date_label in items:
-                is_new = date_label == "created"
-                icon_name = "plus" if is_new else "pen-line"
-                icon_cls = "activity-icon-new" if is_new else "activity-icon-upd"
-                time_str = _pulse_time_str(date_str) or "&mdash;&mdash;:&mdash;&mdash;"
-                html.append(
-                    f'<a class="pulse-row pulse-row-recent" href="{href_for(rel)}">'
-                    f'<span class="activity-indicator {icon_cls}"><i data-lucide="{icon_name}" class="activity-indicator-icon"></i></span>'
-                    f'<span class="pulse-title">{title}</span>'
-                    f'<span class="pulse-right">{time_str}</span>'
-                    f'</a>'
-                )
+    if recent:
+        for rel, title, date_str, date_label in recent:
+            is_new = date_label == "created"
+            icon_name = "plus" if is_new else "pen-line"
+            icon_cls = "activity-icon-new" if is_new else "activity-icon-upd"
+            action = "Created" if is_new else "Updated"
+            # Relative time
+            rel_time = ""
+            if date_str and not date_str.startswith("0000"):
+                try:
+                    dt = datetime.strptime(date_str[:16], "%Y-%m-%dT%H:%M")
+                    delta = datetime.now() - dt
+                    hours = int(delta.total_seconds() // 3600)
+                    if hours < 1:
+                        rel_time = "just now"
+                    elif hours < 24:
+                        rel_time = f"{hours}h ago"
+                    elif hours < 48:
+                        rel_time = "yesterday"
+                    else:
+                        rel_time = f"{hours // 24}d ago"
+                except ValueError:
+                    rel_time = ""
+            html.append(
+                f'<a class="pulse-row pulse-row-recent" href="{href_for(rel)}">'
+                f'<span class="activity-indicator {icon_cls}"><i data-lucide="{icon_name}" class="activity-indicator-icon"></i></span>'
+                f'<span class="pulse-title">{action} <strong>{title}</strong></span>'
+                f'<span class="pulse-right">{rel_time}</span>'
+                f'</a>'
+            )
     else:
-        html.append('<div class="pulse-day-header">RECENT</div>')
         html.append('<div class="pulse-empty">no recent activity</div>')
-    html.append('</div>')  # /.pulse-group-recent
+    html.append('</div>')  # /.home-section-recent
 
-    html.append('</div>')  # /.recent-section
+    # Ideas section — card grid
+    if idea_items:
+        html.append('<div class="home-section home-section-ideas">')
+        html.append(
+            '<h2 class="home-section-header"><i data-lucide="lightbulb" class="section-icon"></i> Ideas</h2>'
+        )
+        html.append('<div class="idea-card-grid">')
+        for idea in idea_items:
+            tags_html = ""
+            if idea["tags"]:
+                tags_html = '<span class="idea-card-tags">' + ''.join(
+                    f'<span class="idea-card-tag">{t}</span>' for t in idea["tags"]
+                ) + '</span>'
+            desc_html = f'<span class="idea-card-desc">{idea["desc"]}</span>' if idea["desc"] else ''
+            date_display = display_date(idea["date"]) if idea["date"] != "0000-00-00" else ""
+            html.append(
+                f'<a class="idea-card" href="{href_for(idea["rel"])}">'
+                f'<span class="idea-card-title">{idea["title"]}</span>'
+                f'{desc_html}'
+                f'<span class="idea-card-footer">{tags_html}<span class="idea-card-date">{date_display}</span></span>'
+                f'</a>'
+            )
+        html.append('</div>')
+        html.append('</div>')  # /.home-section-ideas
 
-    html.append('</div>')  # /.dashboard-panels
-
-    # Full-width: Pinned (rendered client-side by pins.js)
-    html.append('<div class="hv-section pins-section" data-pins-home-mount>')
+    # Pinned section (rendered client-side by pins.js)
+    html.append('<div class="home-section home-section-pins" data-pins-home-mount>')
     html.append(
-        '<h2><i data-lucide="pin" class="section-icon"></i> Pinned'
+        '<h2 class="home-section-header"><i data-lucide="pin" class="section-icon"></i> Pinned'
         ' <span class="pins-home-count" data-pins-home-count></span></h2>'
     )
     html.append(
@@ -382,7 +457,7 @@ def generate_home_content(files, build_stats=None, recent_paths=None):
         '<div class="pins-home-loading">loading pins&hellip;</div>'
         '</div>'
     )
-    html.append('</div>')  # /.pins-section
+    html.append('</div>')  # /.home-section-pins
     html.append('</div>')  # /.dashboard-wrap
 
     # --- 5. Root-level documents (full width, bottom) ---

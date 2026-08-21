@@ -6,6 +6,7 @@ site/
 
 # Runtime/ephemeral
 .app_running
+.mcp_service_running
 .build_cache.json
 
 # State (content-specific, not portable between knowledge bases)
