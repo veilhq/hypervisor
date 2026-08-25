@@ -33,18 +33,18 @@
   }
 
   function initDropZone() {
-    _dropZone = document.createElement("div");
+    _dropZone = document.createElement("li");
     _dropZone.className = "drop-zone";
     _dropZone.innerHTML =
       '<i data-lucide="file-down"></i>' +
       "<span>drop .md files here to import</span>";
 
-    var sections = document.querySelectorAll(".hv-section");
-    var anchor = sections.length
-      ? sections[sections.length - 1]
-      : document.getElementById("content-target");
-    if (anchor) {
-      anchor.parentNode.insertBefore(_dropZone, anchor.nextSibling);
+    var docList = document.querySelector(".doc-list");
+    if (docList) {
+      docList.insertBefore(_dropZone, docList.firstChild);
+    } else {
+      var contentTarget = document.getElementById("content-target");
+      if (contentTarget) contentTarget.appendChild(_dropZone);
     }
 
     if (window.lucide) lucide.createIcons({ nodes: [_dropZone], attrs: { "stroke-width": 2 } });
@@ -80,6 +80,23 @@
       }
       if (mdFiles.length === 0) return;
 
+      // Show importing state: insert skeleton rows after the drop zone
+      _dropZone.classList.add("importing");
+      var docList = document.querySelector(".doc-list");
+      var skeletonItems = [];
+      var insertRef = _dropZone.nextSibling;
+      for (var i = 0; i < mdFiles.length; i++) {
+        var skeletonLi = document.createElement("li");
+        skeletonLi.className = "hv-skeleton-row doc-skeleton";
+        skeletonLi.innerHTML =
+          '<span class="hv-skeleton hv-skeleton-line doc-skeleton-title"></span>' +
+          '<span class="hv-skeleton hv-skeleton-line hv-skeleton-sm doc-skeleton-date"></span>';
+        skeletonItems.push(skeletonLi);
+        if (docList) {
+          docList.insertBefore(skeletonLi, insertRef);
+        }
+      }
+
       var imported = 0;
       var failed = 0;
       var total = mdFiles.length;
@@ -95,13 +112,20 @@
             })
             .catch(function () { failed++; })
             .finally(function () {
-              if (imported + failed === total && window.__hypervisorToast) {
-                var msg = "imported " + imported + " file" + (imported !== 1 ? "s" : "");
-                if (failed > 0) msg += " (" + failed + " failed)";
-                window.__hypervisorToast({
-                  variant: failed > 0 ? "warn" : "success",
-                  message: msg
-                });
+              if (imported + failed === total) {
+                if (window.__hypervisorToast) {
+                  var msg = "imported " + imported + " file" + (imported !== 1 ? "s" : "");
+                  if (failed > 0) msg += " (" + failed + " failed)";
+                  window.__hypervisorToast({
+                    variant: failed > 0 ? "warn" : "success",
+                    message: msg
+                  });
+                }
+                // If all failed, remove skeletons and revert drop zone
+                if (failed === total) {
+                  skeletonItems.forEach(function (el) { if (el.parentNode) el.parentNode.removeChild(el); });
+                  if (_dropZone) _dropZone.classList.remove("importing");
+                }
               }
             });
         };

@@ -211,8 +211,8 @@ TOP_BAR = """\
               </div>
               <label class="a11y-toggle" style="margin-top: 0.6rem;">
                 <input type="checkbox" id="a11y-bw-theme" data-a11y="bw-theme">
-                <span class="a11y-toggle-label">Black & White</span>
-                <span class="a11y-toggle-desc">Pure black/white greyscale, keeps accent color</span>
+                <span class="a11y-toggle-label">Light mode</span>
+                <span class="a11y-toggle-desc">Light background with blue accent</span>
               </label>
               <div class="settings-control" id="save-theme-row" style="display:none;margin-top:0.5rem">
                 <span class="settings-control-label">Save config as site default</span>
@@ -502,7 +502,7 @@ def build_page(content_html, title, rel_path_str, toc_html="", backlinks_html=""
         if li_count >= 3:
             toc_sidebar = (
                 '<nav class="toc-sidebar" id="toc-sidebar" aria-label="Table of contents">'
-                '<div class="hv-panel-header"><i data-lucide="list" class="toc-icon"></i> Contents</div>'
+                '<div class="hv-panel-header"><i data-lucide="list" class="toc-icon"></i> Table of Contents</div>'
                 '<div class="toc-body">' + toc_html + '</div>'
                 '</nav>'
             )
@@ -552,7 +552,7 @@ SHELL_TEMPLATE = """\
   {{TOPBAR}}
   {{SITE_NAV}}
   <nav class="toc-sidebar" id="toc-sidebar" aria-label="Table of contents">
-    <div class="hv-panel-header"><i data-lucide="list" class="toc-icon"></i> Contents</div>
+    <div class="hv-panel-header"><i data-lucide="list" class="toc-icon"></i> Table of Contents</div>
     <div class="toc-body" id="toc-body"></div>
   </nav>
   <main class="page" id="page-main">

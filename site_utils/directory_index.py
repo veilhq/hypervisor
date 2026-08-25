@@ -300,6 +300,7 @@ def generate_home_content(files, build_stats=None, recent_paths=None):
     idea_items = idea_items[:6]
 
     # --- 3. Recent Activity (up to 10 items) ---
+    from .file_utils import _extract_status_from_text as _status
     recent = []
     for rel in files:
         rel_posix = str(rel).replace("\\", "/")
@@ -308,16 +309,29 @@ def generate_home_content(files, build_stats=None, recent_paths=None):
             title = get_title(md_text, nice_name(rel.name))
             dates = extract_dates(md_text)
             date_str, date_label = sort_date(dates)
-            recent.append((rel, title, date_str, date_label))
+            status = _status(md_text)
+            # Classify event type from metadata
+            if (status and status.lower() == "complete"
+                    and rel_posix.startswith("work/done/")):
+                event = "completed"
+            elif (status and "progress" in status.lower()
+                  and date_label == "updated"
+                  and rel_posix.startswith("work/to-do/")):
+                event = "started"
+            elif date_label == "created":
+                event = "created"
+            else:
+                event = "updated"
+            recent.append((rel, title, date_str, event))
     recent.sort(key=lambda x: x[2], reverse=True)
     recent = recent[:10]
 
     # Group recent items by day label
     from collections import OrderedDict
     recent_by_day = OrderedDict()
-    for rel, title, date_str, date_label in recent:
+    for rel, title, date_str, event in recent:
         day = _pulse_day_header(date_str)
-        recent_by_day.setdefault(day, []).append((rel, title, date_str, date_label))
+        recent_by_day.setdefault(day, []).append((rel, title, date_str, event))
 
     # --- 4. Single-column dashboard flow ---
 
@@ -388,11 +402,14 @@ def generate_home_content(files, build_stats=None, recent_paths=None):
         '<h2 class="home-section-header"><i data-lucide="arrow-down-circle" class="section-icon"></i> Activity</h2>'
     )
     if recent:
-        for rel, title, date_str, date_label in recent:
-            is_new = date_label == "created"
-            icon_name = "plus" if is_new else "pen-line"
-            icon_cls = "activity-icon-new" if is_new else "activity-icon-upd"
-            action = "Created" if is_new else "Updated"
+        _EVENT_STYLE = {
+            "created":   ("plus",       "activity-icon-new",  "Created"),
+            "started":   ("play",       "activity-icon-start", "Started"),
+            "updated":   ("pen-line",   "activity-icon-upd",  "Updated"),
+            "completed": ("check",      "activity-icon-done", "Completed"),
+        }
+        for rel, title, date_str, event in recent:
+            icon_name, icon_cls, action = _EVENT_STYLE.get(event, _EVENT_STYLE["updated"])
             # Relative time
             rel_time = ""
             if date_str and not date_str.startswith("0000"):

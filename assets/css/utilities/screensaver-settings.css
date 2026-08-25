@@ -13,6 +13,7 @@
   color: var(--text-bright);
   background: var(--bg-elevated);
   border: var(--border-hair) solid var(--border-strong);
+  border-radius: var(--radius);
   padding: var(--space-0-1) 0.35rem;
   vertical-align: 1px;
 }
@@ -97,6 +98,7 @@
 /* ---- Settings ---- */
 .ss-settings {
   border: var(--border-hair) solid var(--border);
+  border-radius: var(--radius);
   background: var(--bg-card);
   padding: var(--space-3);
   margin-bottom: var(--space-4);
@@ -120,6 +122,7 @@
   padding: 0.35rem var(--space-2);
   background: var(--bg);
   border: var(--border-hair) solid var(--border-strong);
+  border-radius: var(--radius);
   color: var(--text);
   font-family: var(--font);
   font-size: var(--fs-label);
@@ -141,6 +144,7 @@
   padding: var(--space-2) var(--space-1-2);
   background: var(--bg);
   border: var(--border-hair) solid var(--accent);
+  border-radius: var(--radius);
   color: var(--accent);
   font-family: var(--font);
   font-size: var(--fs-label);

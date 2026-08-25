@@ -7,11 +7,7 @@
 .health-dashboard {
   max-width: 1000px;
   margin: 0 auto;
-  animation: hd-fadeIn var(--motion-slow) var(--ease) both;
-}
-@keyframes hd-fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+  animation: fadeSlideIn var(--motion-slow) var(--ease) both;
 }
 .health-dashboard h1 {
   margin-bottom: var(--space-5);
@@ -131,10 +127,9 @@
   border: 1.5px solid var(--cool);
   border-top-color: transparent;
   border-radius: 50%;
-  animation: hv-spin 0.6s linear infinite;
+  animation: spin 0.6s linear infinite;
   vertical-align: -1px;
 }
-@keyframes hv-spin { to { transform: rotate(360deg); } }
 
 /* ===== Sections ===== */
 .health-section {
@@ -293,18 +288,10 @@
 
 /* ===== Loading ===== */
 .health-loading {
-  text-align: center;
-  padding: 4rem var(--space-4);
+  padding: var(--space-2) 0;
 }
 .health-loading-text {
-  font-size: var(--fs-label);
-  color: var(--text-muted);
-  letter-spacing: 0.04em;
-  animation: hd-pulse 1.5s var(--ease) infinite;
-}
-@keyframes hd-pulse {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 1; }
+  display: none;
 }
 
 /* ===== Fix Panel ===== */
@@ -314,7 +301,7 @@
   border-radius: var(--radius);
   padding: var(--space-4) var(--space-5);
   margin-bottom: var(--space-4);
-  animation: hd-fadeIn var(--motion-base) var(--ease) both;
+  animation: fadeSlideIn var(--motion-base) var(--ease) both;
 }
 .health-fix-header {
   display: flex;

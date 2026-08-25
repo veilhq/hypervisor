@@ -81,15 +81,33 @@
           document.documentElement.classList.remove(cls);
           try { localStorage.setItem(STORAGE_PREFIX + key, "0"); } catch (e) {}
         }
+        // Persist light mode to preferences.json for ecosystem-wide sync
+        if (key === "bw-theme" && typeof savePreference === "function") {
+          savePreference("hypervisor-light-mode", this.checked ? "1" : "0");
+        }
         // Sync custom cursor body class
         if (key === "system-cursors") {
           document.body.classList.toggle("a11y-cursors-active", !this.checked);
         }
         // Re-apply accent when B&W theme toggles (forces blue override)
         if (key === "bw-theme") {
-          var colorPicker = document.getElementById("accent-color");
-          var hex = colorPicker ? colorPicker.value : "#00ff41";
-          if (typeof applyAccent === "function") applyAccent(hex);
+          if (this.checked) {
+            // Toggling ON — applyAccent will force blue palette
+            var colorPicker = document.getElementById("accent-color");
+            var hex = colorPicker ? colorPicker.value : "#00ff41";
+            if (typeof applyAccent === "function") applyAccent(hex);
+          } else {
+            // Toggling OFF — restore correct theme state
+            var mode = typeof getThemeMode === "function" ? getThemeMode() : "custom";
+            var gradientMap = typeof getActiveGradientMap === "function" ? getActiveGradientMap() : null;
+            if (mode === "preset" && gradientMap && typeof applyGradientMap === "function") {
+              applyGradientMap(gradientMap);
+            } else {
+              var colorPicker = document.getElementById("accent-color");
+              var hex = colorPicker ? colorPicker.value : "#00ff41";
+              if (typeof applyAccent === "function") applyAccent(hex);
+            }
+          }
         }
         updateBtnState();
       });
@@ -106,6 +124,10 @@
         });
         // Restore custom cursors
         document.body.classList.add("a11y-cursors-active");
+        // Sync light mode off to ecosystem
+        if (typeof savePreference === "function") {
+          savePreference("hypervisor-light-mode", "0");
+        }
         updateBtnState();
       });
     }

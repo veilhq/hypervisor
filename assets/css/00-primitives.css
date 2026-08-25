@@ -11,6 +11,7 @@
 */
 .hv-tab {
   border: var(--border-hair) solid var(--border);
+  border-radius: var(--radius);
 }
 .hv-tab:hover {
   border-color: var(--accent-border);

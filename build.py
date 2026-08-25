@@ -76,6 +76,7 @@ def copy_assets():
     hyperkit_css_parts = []
     hyperkit_css_order = (
         "tokens.css",
+        "keyframes.css",
         "primitives.css",
         "globals.css",
         "components.css",

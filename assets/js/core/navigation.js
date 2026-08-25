@@ -273,11 +273,31 @@
         while (existing.nextSibling) existing.nextSibling.remove();
         existing.remove();
       }
+      // Also remove any skeleton placeholders
+      var skel = resultsBox.querySelector(".sr-semantic-skeleton");
+      if (skel) skel.remove();
+    }
+
+    function _showSemanticSkeleton() {
+      // Remove any existing skeleton
+      var existing = resultsBox.querySelector(".sr-semantic-skeleton");
+      if (existing) existing.remove();
+      // Add skeleton placeholder rows below client results
+      var wrap = document.createElement("div");
+      wrap.className = "sr-semantic-skeleton";
+      wrap.innerHTML =
+        '<div class="sr-semantic-divider" style="opacity:0.5">related</div>' +
+        '<li class="hv-skeleton hv-skeleton-row"></li>' +
+        '<li class="hv-skeleton hv-skeleton-row"></li>' +
+        '<li class="hv-skeleton hv-skeleton-row"></li>';
+      resultsBox.appendChild(wrap);
     }
 
     function _scheduleSemanticSearch(query) {
       if (query === _lastSemanticQuery) return;
       if (_semanticTimer) clearTimeout(_semanticTimer);
+      // Show skeleton placeholders immediately while waiting for debounce + bridge call
+      _showSemanticSkeleton();
       _semanticTimer = setTimeout(function () {
         _lastSemanticQuery = query;
         _doSemanticSearch(query);
@@ -287,6 +307,9 @@
     function _doSemanticSearch(query) {
       if (!window.pywebview || !window.pywebview.api || !window.pywebview.api.semantic_search) return;
       window.pywebview.api.semantic_search(query, 5, null, null, null, null).then(function (results) {
+        // Remove skeleton placeholders
+        var skel = resultsBox.querySelector(".sr-semantic-skeleton");
+        if (skel) skel.remove();
         if (!results || !results.length) return;
         if (searchInput.value.trim() !== query) return; // stale response
         // Remove existing semantic results
@@ -323,7 +346,10 @@
             '</div>';
           resultsBox.appendChild(card);
         });
-      }).catch(function () {});
+      }).catch(function () {
+        var skel = resultsBox.querySelector(".sr-semantic-skeleton");
+        if (skel) skel.remove();
+      });
     }
 
     function _formatPath(path) {

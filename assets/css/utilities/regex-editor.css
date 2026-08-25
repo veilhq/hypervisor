@@ -22,6 +22,7 @@
   gap: 0;
   margin: var(--space-4) 0 0;
   border: var(--border-hair) solid var(--border-strong);
+  border-radius: var(--radius);
   background: var(--bg);
 }
 .rx-delim {
@@ -85,6 +86,7 @@
   font-size: 0.68rem;
   color: var(--comp);
   border-left: var(--border-rail) solid var(--comp);
+  border-radius: var(--radius);
   background: rgba(255, 51, 51, 0.04);
   line-height: 1.5;
 }
@@ -138,6 +140,7 @@
   padding: var(--space-0-6) var(--space-3);
   background: transparent;
   border: var(--border-hair) solid var(--border-strong);
+  border-radius: var(--radius);
   color: transparent;
   caret-color: var(--accent);
   font-family: var(--font);
@@ -189,6 +192,7 @@
   padding: 0.45rem var(--space-0-6);
   background: var(--bg);
   border: var(--border-hair) solid var(--border-strong);
+  border-radius: var(--radius);
   color: var(--warm);
   font-family: var(--font);
   font-size: var(--fs-h5-6);
@@ -232,6 +236,7 @@
   padding: var(--space-0-6) var(--space-3);
   background: var(--bg);
   border: var(--border-hair) solid var(--border);
+  border-radius: var(--radius);
   color: var(--text);
   font-family: var(--font);
   font-size: var(--fs-h5-6);
@@ -253,6 +258,7 @@
 /* ---- Matches panel ---- */
 .rx-matches-panel {
   border: var(--border-hair) solid var(--border);
+  border-radius: var(--radius);
   background: var(--bg-card);
   max-height: 360px;
   display: flex;
@@ -288,6 +294,7 @@
 .rx-match-item {
   padding: var(--space-2) var(--space-3);
   border-bottom: var(--border-hair) solid var(--border);
+  border-radius: var(--radius);
   transition: background var(--motion-tick) var(--ease);
 }
 .rx-match-item:hover {
@@ -312,6 +319,7 @@
   font-weight: 700;
   color: var(--text-dim);
   border: var(--border-hair) solid var(--border);
+  border-radius: var(--radius);
 }
 .rx-match-value {
   flex: 1;
@@ -352,6 +360,7 @@
 /* ---- Quick reference panel ---- */
 .rx-ref-panel {
   border: var(--border-hair) solid var(--border);
+  border-radius: var(--radius);
   background: var(--bg-card);
 }
 .rx-ref-toggle {

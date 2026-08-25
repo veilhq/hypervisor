@@ -106,6 +106,7 @@
   padding: var(--space-2) var(--space-3);
   background: var(--bg);
   border: var(--border-hair) solid var(--border);
+  border-radius: var(--radius);
   color: var(--text);
   font-family: var(--font);
   font-size: 0.75rem;
@@ -145,6 +146,7 @@
   font-weight: 700;
   color: var(--text-dim);
   border: var(--border-hair) solid var(--border);
+  border-radius: var(--radius);
   margin-top: var(--space-0-1);
 }
 .quiz-option.selected .quiz-option-letter {
@@ -174,12 +176,14 @@
   color: var(--accent-dim);
   padding: var(--space-0-6) var(--space-3);
   border-left: var(--border-rail) solid var(--accent);
+  border-radius: var(--radius);
   background: var(--accent-glow);
 }
 .quiz-feedback-incorrect {
   color: var(--text);
   padding: var(--space-0-6) var(--space-3);
   border-left: var(--border-rail) solid var(--comp);
+  border-radius: var(--radius);
   background: rgba(255, 51, 51, 0.04);
 }
 
@@ -196,6 +200,7 @@
   text-transform: uppercase;
   letter-spacing: 0.08em;
   border: var(--border-hair) solid;
+  border-radius: var(--radius);
   background: var(--bg);
   transition: background var(--motion-fast) var(--ease), color var(--motion-fast) var(--ease);
 }
@@ -222,6 +227,7 @@
 /* ---- Sidebar ---- */
 .quiz-sidebar {
   border: var(--border-hair) solid var(--border);
+  border-radius: var(--radius);
   background: var(--bg-card);
 }
 .quiz-sidebar-header {
@@ -254,6 +260,7 @@
   padding: 0.35rem var(--space-2);
   background: var(--bg);
   border: var(--border-hair) solid var(--border-strong);
+  border-radius: var(--radius);
   color: var(--text);
   font-family: var(--font);
   font-size: var(--fs-label);
@@ -299,6 +306,7 @@
 /* ---- Summary ---- */
 .quiz-summary {
   border: var(--border-hair) solid var(--border);
+  border-radius: var(--radius);
   background: var(--bg-card);
   padding: var(--space-5);
 }

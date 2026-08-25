@@ -12,7 +12,7 @@
       { name: "Toggle Screensaver",     icon: "monitor",       fn: function () { if (window.__screensaver) window.__screensaver.toggle(); } },
       { name: "Cycle Palette Mode",     icon: "palette",       fn: function () { var b = document.getElementById("palette-mode"); if (b) b.click(); } },
       { name: "Toggle Condensed Width", icon: "columns",       fn: function () { var b = document.getElementById("width-toggle"); if (b) b.click(); } },
-      { name: "Toggle B&W Theme",       icon: "contrast",      fn: function () { var b = document.getElementById("a11y-bw-theme"); if (b) b.click(); } },
+      { name: "Toggle Light Mode",       icon: "contrast",      fn: function () { var b = document.getElementById("a11y-bw-theme"); if (b) b.click(); } },
       { name: "Toggle Reduce Motion",   icon: "pause",         fn: function () { var b = document.getElementById("a11y-reduce-motion"); if (b) b.click(); } },
       { name: "Toggle Glitch Effect",   icon: "sparkles",      fn: function () { var b = document.getElementById("a11y-no-glitch"); if (b) b.click(); } },
       { name: "Toggle System Cursors",  icon: "mouse-pointer", fn: function () { var b = document.getElementById("a11y-system-cursors"); if (b) b.click(); } },

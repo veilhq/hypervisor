@@ -566,6 +566,19 @@
 }
 
 /* Skeleton loading state */
+.dash-skeleton {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+  padding: var(--space-2) 0;
+}
+.dash-skeleton .dash-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  opacity: 1;
+}
 .dash-loading-overlay {
   grid-column: 1 / -1;
   display: flex;
@@ -577,30 +590,15 @@
   text-transform: uppercase;
   letter-spacing: 0.1em;
 }
-.dash-loading-overlay::after {
-  content: '';
-  display: inline-block;
-  width: 4px;
-  height: 4px;
-  background: var(--accent);
-  margin-left: var(--space-2);
-  animation: dash-blink 1s step-end infinite;
-}
-@keyframes dash-blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
-}
 .dash-tab-loading {
-  font-size: var(--fs-label);
-  color: var(--text-dim);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  padding: var(--space-6) 0;
-  text-align: center;
+  display: none;
 }
 .dash-loading .dash-card,
 .dash-loading .dash-meta-strip {
   opacity: 0;
+}
+.dash-loading .dash-skeleton .dash-card {
+  opacity: 1;
 }
 .dash-loaded .dash-card,
 .dash-loaded .dash-meta-strip {
@@ -658,7 +656,48 @@
   <!-- Sprint Tab -->
   <div class="dash-tab-panel is-active" id="tab-sprint">
 
-  <div class="dash-loading-overlay" id="sprint-loading">Fetching sprint data</div>
+  <!-- Skeleton: sprint tab loading state -->
+  <div class="dash-skeleton" id="sprint-loading">
+    <div class="dash-card dash-full">
+      <div class="hv-skeleton hv-skeleton-line hv-skeleton-sm" style="width:40%"></div>
+      <div class="hv-skeleton hv-skeleton-block" style="height:120px"></div>
+    </div>
+    <div class="dash-card dash-full">
+      <div class="hv-skeleton hv-skeleton-line hv-skeleton-sm" style="width:30%"></div>
+      <div class="hv-skeleton hv-skeleton-block" style="height:28px"></div>
+    </div>
+    <div class="dash-card dash-full">
+      <div class="hv-skeleton hv-skeleton-line hv-skeleton-sm" style="width:25%"></div>
+      <div class="hv-skeleton hv-skeleton-block" style="height:180px"></div>
+    </div>
+    <div class="dash-card">
+      <div class="hv-skeleton hv-skeleton-line hv-skeleton-sm" style="width:35%"></div>
+      <div class="hv-skeleton hv-skeleton-block" style="height:6rem"></div>
+    </div>
+    <div class="dash-card">
+      <div class="hv-skeleton hv-skeleton-line hv-skeleton-sm" style="width:40%"></div>
+      <li class="hv-skeleton hv-skeleton-row"></li>
+      <li class="hv-skeleton hv-skeleton-row"></li>
+      <li class="hv-skeleton hv-skeleton-row"></li>
+      <li class="hv-skeleton hv-skeleton-row"></li>
+    </div>
+    <div class="dash-card dash-full">
+      <div class="hv-skeleton hv-skeleton-line hv-skeleton-sm" style="width:35%"></div>
+      <li class="hv-skeleton hv-skeleton-row"></li>
+      <li class="hv-skeleton hv-skeleton-row"></li>
+      <li class="hv-skeleton hv-skeleton-row"></li>
+    </div>
+    <div class="dash-card dash-full">
+      <div class="hv-skeleton hv-skeleton-line hv-skeleton-sm" style="width:40%"></div>
+      <li class="hv-skeleton hv-skeleton-row"></li>
+      <li class="hv-skeleton hv-skeleton-row"></li>
+    </div>
+    <div class="dash-card dash-full">
+      <div class="hv-skeleton hv-skeleton-line hv-skeleton-sm" style="width:30%"></div>
+      <li class="hv-skeleton hv-skeleton-row"></li>
+      <li class="hv-skeleton hv-skeleton-row"></li>
+    </div>
+  </div>
 
   <!-- Velocity Sparkline -->
   <div class="dash-card dash-full">
@@ -730,7 +769,31 @@
 
   <!-- Source Tab -->
   <div class="dash-tab-panel" id="tab-source">
-    <div class="dash-tab-loading" id="source-loading">Loading source data</div>
+    <!-- Skeleton: source tab loading state -->
+    <div class="dash-skeleton" id="source-loading">
+      <div class="dash-card dash-full">
+        <div class="hv-skeleton hv-skeleton-line hv-skeleton-sm" style="width:30%"></div>
+        <li class="hv-skeleton hv-skeleton-row"></li>
+        <li class="hv-skeleton hv-skeleton-row"></li>
+        <li class="hv-skeleton hv-skeleton-row"></li>
+        <li class="hv-skeleton hv-skeleton-row"></li>
+        <li class="hv-skeleton hv-skeleton-row"></li>
+      </div>
+      <div class="dash-card dash-full">
+        <div class="hv-skeleton hv-skeleton-line hv-skeleton-sm" style="width:25%"></div>
+        <li class="hv-skeleton hv-skeleton-row"></li>
+        <li class="hv-skeleton hv-skeleton-row"></li>
+        <li class="hv-skeleton hv-skeleton-row"></li>
+      </div>
+      <div class="dash-card dash-full">
+        <div class="hv-skeleton hv-skeleton-line hv-skeleton-sm" style="width:30%"></div>
+        <li class="hv-skeleton hv-skeleton-row"></li>
+        <li class="hv-skeleton hv-skeleton-row"></li>
+        <li class="hv-skeleton hv-skeleton-row"></li>
+        <li class="hv-skeleton hv-skeleton-row"></li>
+        <li class="hv-skeleton hv-skeleton-row"></li>
+      </div>
+    </div>
     <!-- Active Branches -->
     <div class="dash-card dash-full">
       <div class="dash-card-title"><i data-lucide="git-branch"></i> Active Branches</div>
@@ -752,7 +815,22 @@
 
   <!-- Pipelines Tab -->
   <div class="dash-tab-panel" id="tab-pipelines">
-    <div class="dash-tab-loading" id="pipelines-loading">Loading pipeline data</div>
+    <!-- Skeleton: pipelines tab loading state -->
+    <div class="dash-skeleton" id="pipelines-loading">
+      <div class="dash-card dash-full">
+        <div class="hv-skeleton hv-skeleton-line hv-skeleton-sm" style="width:35%"></div>
+        <li class="hv-skeleton hv-skeleton-row"></li>
+        <li class="hv-skeleton hv-skeleton-row"></li>
+        <li class="hv-skeleton hv-skeleton-row"></li>
+      </div>
+      <div class="dash-card dash-full">
+        <div class="hv-skeleton hv-skeleton-line hv-skeleton-sm" style="width:35%"></div>
+        <li class="hv-skeleton hv-skeleton-row"></li>
+        <li class="hv-skeleton hv-skeleton-row"></li>
+        <li class="hv-skeleton hv-skeleton-row"></li>
+        <li class="hv-skeleton hv-skeleton-row"></li>
+      </div>
+    </div>
     <!-- Active/Queued Pipelines -->
     <div class="dash-card dash-full">
       <div class="dash-card-title"><i data-lucide="play-circle"></i> Active / Queued Pipelines</div>
@@ -1788,6 +1866,9 @@
       renderBranches(result.branches || [], result.repo_count || 0);
       renderConflicts(result.conflicts || [], (result.branches || []).length);
       if (window.lucide) window.lucide.createIcons();
+    }).catch(function() {
+      var el = document.getElementById('source-loading');
+      if (el) el.style.display = 'none';
     });
   }
 
@@ -1800,6 +1881,9 @@
       renderActivePipelines(result.active_pipelines || []);
       renderPipelineRuns(result.pipeline_runs || []);
       if (window.lucide) window.lucide.createIcons();
+    }).catch(function() {
+      var el = document.getElementById('pipelines-loading');
+      if (el) el.style.display = 'none';
     });
   }
 

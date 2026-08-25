@@ -406,7 +406,7 @@
     var root = document.documentElement;
     var isBW = root.classList.contains("a11y-bw-theme");
 
-    // In B&W mode, force pure blue for all accent colors
+    // In light mode, force blue palette + primary-color semantics
     if (isBW) {
       root.style.setProperty("--accent", "#0000ff");
       root.style.setProperty("--accent-dim", "#0000cc");
@@ -415,6 +415,10 @@
       root.style.setProperty("--warm", "#0000ff");
       root.style.setProperty("--cool", "#0000ff");
       root.style.setProperty("--comp", "#0000ff");
+      root.style.setProperty("--success", "#007a00");
+      root.style.setProperty("--warning", "#b35900");
+      root.style.setProperty("--error", "#cc0000");
+      root.style.setProperty("--info", "#0000ff");
 
       var encodedColor = encodeURIComponent("#0000ff");
       var cursorDefault = "url(\"data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='" + encodedColor + "' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M4.037 4.688a.495.495 0 0 1 .651-.651l16 6.5a.5.5 0 0 1-.063.947l-6.124 1.58a2 2 0 0 0-1.438 1.435l-1.579 6.126a.5.5 0 0 1-.947.063z'/></svg>\") 2 2, auto";
@@ -833,4 +837,6 @@
   window.updatePresetSelector = updatePresetSelector;
   window.hexToRgb = hexToRgb;
   window.colorPicker = colorPicker;
+  window.getThemeMode = function () { return themeMode; };
+  window.getActiveGradientMap = function () { return activeGradientMap; };
 })();

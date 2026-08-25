@@ -12,6 +12,16 @@
 
 html { font-size: 14px; scroll-behavior: smooth; overflow-x: hidden; overscroll-behavior: none; }
 
+/* ---- Viewport scrollbar suppressed ----
+   The fixed 2px .scroll-progress indicator at the top of the window already
+   communicates position within the page, so the document scrollbar is redundant
+   chrome. Scrolling itself stays fully intact — only the visual track is hidden.
+   Nested scroll containers (TOC, dropdowns, panels, code blocks) keep their thin
+   scrollbars, since they have no equivalent progress affordance. */
+html { scrollbar-width: none; -ms-overflow-style: none; }
+html::-webkit-scrollbar,
+body::-webkit-scrollbar { width: 0; height: 0; display: none; }
+
 body {
   font-family: var(--font);
   background: var(--bg);

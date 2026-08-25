@@ -121,9 +121,14 @@ def extract_dates(md_text: str) -> dict[str, str | None]:
 def sort_date(dates_dict: dict[str, str | None]) -> tuple[str, str | None]:
     """Return the best datetime string for sorting (prefer updated over created).
     Returns a tuple (datetime_str, label) where label is 'updated' or 'created'.
+    When created == updated the document has never been meaningfully updated,
+    so the label is 'created' to distinguish new docs from edited ones.
     Undated docs get ('0000-00-00T00:00', None) so they sort last in descending order.
     """
     if dates_dict["updated"]:
+        # If created and updated are identical, the doc was just born — label as created
+        if dates_dict["created"] and dates_dict["updated"] == dates_dict["created"]:
+            return (dates_dict["updated"], "created")
         return (dates_dict["updated"], "updated")
     if dates_dict["created"]:
         return (dates_dict["created"], "created")
