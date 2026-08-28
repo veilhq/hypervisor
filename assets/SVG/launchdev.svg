@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <g>
+    <!-- Terminal frame with screen knocked out via path -->
+    <path d="M10,12 h80 a6,6 0 0 1 6,6 v64 a6,6 0 0 1 -6,6 h-80 a6,6 0 0 1 -6,-6 v-64 a6,6 0 0 1 6,-6 Z M12,30 h76 v50 a4,4 0 0 1 -4,4 h-68 a4,4 0 0 1 -4,-4 Z" fill-rule="evenodd"/>
+    <!-- Title bar dots -->
+    <circle cx="16" cy="21" r="3"/>
+    <circle cx="26" cy="21" r="3"/>
+    <circle cx="36" cy="21" r="3"/>
+    <!-- Prompt chevron -->
+    <polygon points="20,48 30,55 20,62"/>
+    <!-- Cursor block -->
+    <rect x="34" y="49" width="8" height="12" rx="1" ry="1"/>
+  </g>
+</svg>

@@ -33,7 +33,7 @@ sys.path.insert(0, str(HYPERKIT_PYTHON_DIR))
 # module that references window.HvNoiseField / HvGreeting / HvCursorTrail /
 # HvToast (i.e. before core/00-core.js and features/*), so they are
 # prepended ahead of everything list_js_modules() would otherwise return.
-HYPERKIT_JS_MODULES = ["utils.js", "noise-field.js", "greeting.js", "cursor-trail.js", "toast.js", "cursor-box.js"]
+HYPERKIT_JS_MODULES = ["utils.js", "noise-field.js", "greeting.js", "cursor-trail.js", "toast.js", "cursor-box.js", "context-menu.js"]
 
 
 def list_js_modules():
@@ -147,6 +147,52 @@ def hypervisor_favicon_data_uri(color: str = "#00ff41") -> str:
         f"<svg xmlns='http://www.w3.org/2000/svg' viewBox='{_LOGO_VIEWBOX}'>"
         f"<g fill='{fill}'>{inner}</g></svg>"
     )
+
+# --- Eco-app SVG icons (orchestrator launcher row) ---
+# Each app has a custom brand SVG. Loaded once at import, exposed via
+# eco_app_icon_svg(app_name, css_class) for inline rendering.
+
+def _load_eco_svg(path):
+    """Read an SVG file and return (viewbox, inner_markup). Same logic as _load_logo_svg."""
+    import re
+    if not path.exists():
+        return "", ""
+    text = path.read_text(encoding="utf-8")
+    m_vb = re.search(r'viewBox="([^"]+)"', text)
+    viewbox = m_vb.group(1) if m_vb else ""
+    m_inner = re.search(r'<svg[^>]*>(.*)</svg>', text, re.DOTALL)
+    inner = m_inner.group(1).strip() if m_inner else ""
+    inner = re.sub(r">\s+<", "><", inner)
+    return viewbox, inner
+
+
+_ECO_APP_SVGS = {}
+_ECO_APP_PATHS = {
+    "hypervisor": ASSETS_DIR / "hypervisor.svg",
+    "hyperagent": HYPERSPACE_ROOT / ".hyperagent" / "assets" / "hyperagent.svg",
+    "hypereye": HYPERSPACE_ROOT / ".hypereye" / "assets" / "hypereye.svg",
+    "hyperfield": HYPERSPACE_ROOT / ".hyperfield" / "assets" / "hyperfield.svg",
+    "hyperline": ASSETS_DIR / "SVG" / "hyperline.svg",
+    "launchdev": ASSETS_DIR / "SVG" / "launchdev.svg",
+}
+
+for _app_name, _svg_path in _ECO_APP_PATHS.items():
+    _vb, _inner = _load_eco_svg(_svg_path)
+    if _vb:
+        _ECO_APP_SVGS[_app_name] = (
+            f'<svg class="{{css_class}}" xmlns="http://www.w3.org/2000/svg" '
+            f'viewBox="{_vb}" fill="currentColor" aria-hidden="true">{_inner}</svg>'
+        )
+
+
+def eco_app_icon_svg(app_name: str, css_class: str = "launcher-icon") -> str:
+    """Return an inline <svg> for the given eco-app's brand mark.
+
+    Returns empty string if the app SVG was not found at build time.
+    """
+    template = _ECO_APP_SVGS.get(app_name, "")
+    return template.replace("{css_class}", css_class) if template else ""
+
 
 # --- Filters ---
 SKIP_DIRS = {

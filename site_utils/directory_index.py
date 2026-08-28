@@ -8,13 +8,14 @@ from pathlib import PurePosixPath
 
 from .config import (
     HYPERSPACE_ROOT, CATEGORY_DESCRIPTIONS, CATEGORY_ICONS, ASSETS_DIR,
-    hypervisor_logo_svg,
+    hypervisor_logo_svg, eco_app_icon_svg,
 )
 from .file_utils import (
     dir_label, nice_name, get_title, extract_dates, sort_date, display_date,
     href_for, count_docs_under, get_dir_snippet,
     get_dir_status, get_dir_type, get_dir_tags, infer_app_group,
     compute_badges, format_badge_html, read_md, _extract_assignee_from_text,
+    _extract_horizon_from_text,
 )
 from chips import render_chip
 
@@ -168,16 +169,38 @@ def generate_home_content(files, build_stats=None, recent_paths=None):
 
     html = []
 
-    # --- 0. Anchor mark (Hypervisor icon + noise field + rotating greeting) ---
+    # --- 0. Orchestrator launcher (greeting + app icon row) ---
     html.append('<div class="dashboard-wrap">')
-    logo = hypervisor_logo_svg("home-anchor-icon")
-    if logo:
-        html.append(
-            '<div class="home-anchor">'
-            f'{logo}'
-            '<span class="home-anchor-greeting" data-home-greeting></span>'
-            '</div>'
-        )
+    html.append('<div class="home-anchor">')
+    html.append('<span class="home-anchor-greeting" data-home-greeting></span>')
+    # App icon row — each icon in a bordered box
+    html.append('<div class="launcher-row">')
+    launcher_apps = [
+        ("hypervisor", "Hypervisor", None),
+        ("hyperagent", "Hyperagent", "launch_hyperagent"),
+        ("hypereye", "HyperEye", "launch_hypereye"),
+        ("hyperfield", "HyperField", "launch_dither_widget"),
+        ("hyperline", "Hyperline", "launch_hyperline"),
+        ("launchdev", "LaunchDev", "launch_dev"),
+    ]
+    for app_id, label, action in launcher_apps:
+        icon = eco_app_icon_svg(app_id, "launcher-icon")
+        if not icon:
+            continue
+        is_active = app_id == "hypervisor"
+        cls = "launcher-box active" if is_active else "launcher-box"
+        if is_active:
+            html.append(
+                f'<div class="{cls}" data-tooltip="{label}" aria-label="{label} (active)">'
+                f'{icon}</div>'
+            )
+        else:
+            html.append(
+                f'<button class="{cls}" data-launch="{action}" data-tooltip="{label}" aria-label="Launch {label}">'
+                f'{icon}</button>'
+            )
+    html.append('</div>')  # .launcher-row
+    html.append('</div>')  # .home-anchor
 
     # --- 1. Build metadata (folded into Pulse header below; no standalone strip) ---
     build_time = ""
@@ -250,13 +273,11 @@ def generate_home_content(files, build_stats=None, recent_paths=None):
             })
     active_items.sort(key=lambda x: x["date"], reverse=True)
 
-    # --- 2b. Ideas (recent from ideas/) ---
-    idea_items = []
+    # --- 2b. Research (recent from research/) ---
+    research_items = []
     for rel in files:
         rel_posix = str(rel).replace("\\", "/")
-        if not rel_posix.startswith("ideas/"):
-            continue
-        if rel_posix.startswith("ideas/done/"):
+        if not rel_posix.startswith("research/"):
             continue
         parts = PurePosixPath(rel_posix).parts
         if parts[-1].startswith("_"):
@@ -289,15 +310,15 @@ def generate_home_content(files, build_stats=None, recent_paths=None):
             if m:
                 doc_tags = [t.strip().strip('`') for t in m.group(1).split(",") if t.strip()]
                 break
-        idea_items.append({
+        research_items.append({
             "rel": rel,
             "title": title,
             "desc": desc,
             "date": date_str,
             "tags": doc_tags[:3],
         })
-    idea_items.sort(key=lambda x: x["date"], reverse=True)
-    idea_items = idea_items[:6]
+    research_items.sort(key=lambda x: x["date"], reverse=True)
+    research_items = research_items[:10]
 
     # --- 3. Recent Activity (up to 10 items) ---
     from .file_utils import _extract_status_from_text as _status
@@ -318,6 +339,8 @@ def generate_home_content(files, build_stats=None, recent_paths=None):
                   and date_label == "updated"
                   and rel_posix.startswith("work/to-do/")):
                 event = "started"
+            elif rel_posix.startswith(".external/"):
+                event = "uploaded"
             elif date_label == "created":
                 event = "created"
             else:
@@ -404,6 +427,7 @@ def generate_home_content(files, build_stats=None, recent_paths=None):
     if recent:
         _EVENT_STYLE = {
             "created":   ("plus",       "activity-icon-new",  "Created"),
+            "uploaded":  ("upload",     "activity-icon-new",  "Uploaded"),
             "started":   ("play",       "activity-icon-start", "Started"),
             "updated":   ("pen-line",   "activity-icon-upd",  "Updated"),
             "completed": ("check",      "activity-icon-done", "Completed"),
@@ -438,30 +462,30 @@ def generate_home_content(files, build_stats=None, recent_paths=None):
         html.append('<div class="pulse-empty">no recent activity</div>')
     html.append('</div>')  # /.home-section-recent
 
-    # Ideas section — card grid
-    if idea_items:
-        html.append('<div class="home-section home-section-ideas">')
+    # Research section — card grid
+    if research_items:
+        html.append('<div class="home-section home-section-research">')
         html.append(
-            '<h2 class="home-section-header"><i data-lucide="lightbulb" class="section-icon"></i> Ideas</h2>'
+            '<h2 class="home-section-header"><i data-lucide="flask-conical" class="section-icon"></i> Recent Research</h2>'
         )
         html.append('<div class="idea-card-grid">')
-        for idea in idea_items:
+        for item in research_items:
             tags_html = ""
-            if idea["tags"]:
+            if item["tags"]:
                 tags_html = '<span class="idea-card-tags">' + ''.join(
-                    f'<span class="idea-card-tag">{t}</span>' for t in idea["tags"]
+                    f'<span class="idea-card-tag">{t}</span>' for t in item["tags"]
                 ) + '</span>'
-            desc_html = f'<span class="idea-card-desc">{idea["desc"]}</span>' if idea["desc"] else ''
-            date_display = display_date(idea["date"]) if idea["date"] != "0000-00-00" else ""
+            desc_html = f'<span class="idea-card-desc">{item["desc"]}</span>' if item["desc"] else ''
+            date_display = display_date(item["date"]) if item["date"] != "0000-00-00" else ""
             html.append(
-                f'<a class="idea-card" href="{href_for(idea["rel"])}">'
-                f'<span class="idea-card-title">{idea["title"]}</span>'
+                f'<a class="idea-card" href="{href_for(item["rel"])}">'
+                f'<span class="idea-card-title">{item["title"]}</span>'
                 f'{desc_html}'
                 f'<span class="idea-card-footer">{tags_html}<span class="idea-card-date">{date_display}</span></span>'
                 f'</a>'
             )
         html.append('</div>')
-        html.append('</div>')  # /.home-section-ideas
+        html.append('</div>')  # /.home-section-research
 
     # Pinned section (rendered client-side by pins.js)
     html.append('<div class="home-section home-section-pins" data-pins-home-mount>')
@@ -479,8 +503,8 @@ def generate_home_content(files, build_stats=None, recent_paths=None):
 
     # --- 5. Root-level documents (full width, bottom) ---
     if top_docs:
-        html.append('<div class="hv-section root-docs-section">')
-        html.append('<h2><i data-lucide="files" class="section-icon"></i> Root Documents</h2>')
+        html.append('<div class="home-section root-docs-section">')
+        html.append('<h2 class="home-section-header"><i data-lucide="files" class="section-icon"></i> Root Documents</h2>')
         html.append('<ul class="doc-list">')
 
         enriched = []
@@ -843,7 +867,11 @@ def _render_work_items_list(html, files, dir_prefix, doc_entries, recent_paths, 
     enriched = []
     statuses_set = set()
     app_groups_seen = {}
+    horizons_seen = {}
     _APP_GROUP_ORDER = ["portal", "portal-cms", "hyperspace", "infrastructure", "other"]
+    _HORIZON_ORDER = ["Sprint", "Sprint+1", "Sprint+2", "Sprint+3", "Backlog"]
+
+    is_todo = dir_prefix.startswith("work/to-do")
 
     for rel, name in doc_entries:
         md_text = read_md(HYPERSPACE_ROOT / rel)
@@ -854,6 +882,7 @@ def _render_work_items_list(html, files, dir_prefix, doc_entries, recent_paths, 
         item_type = _extract_type_from_text(md_text) or "professional"
         tags = _extract_tags_from_text(md_text)
         app_label, app_key = infer_app_group(tags)
+        horizon = _extract_horizon_from_text(md_text) or "Backlog"
         desc = ""
         # Extract work item ID
         work_id = ""
@@ -887,15 +916,10 @@ def _render_work_items_list(html, files, dir_prefix, doc_entries, recent_paths, 
             statuses_set.add(status)
         if app_key not in app_groups_seen:
             app_groups_seen[app_key] = app_label
+        if horizon not in horizons_seen:
+            horizons_seen[horizon] = horizon
         badges_html = format_badge_html(compute_badges(md_text, dates.get("updated")))
-        enriched.append((rel, doc_title, date_str, date_label, status, item_type, app_key, app_label, desc, work_id, badges_html))
-
-    # Sort: dated docs first (newest to oldest), undated last
-    dated = [e for e in enriched if e[2] != "0000-00-00T00:00"]
-    undated = [e for e in enriched if e[2] == "0000-00-00T00:00"]
-    dated.sort(key=lambda x: x[2], reverse=True)
-    undated.sort(key=lambda x: x[1].lower())
-    enriched = dated + undated
+        enriched.append((rel, doc_title, date_str, date_label, status, item_type, app_key, app_label, desc, work_id, badges_html, horizon))
 
     statuses = sorted(statuses_set)
     ordered_groups = [k for k in _APP_GROUP_ORDER if k in app_groups_seen]
@@ -924,7 +948,7 @@ def _render_work_items_list(html, files, dir_prefix, doc_entries, recent_paths, 
         html.append('  </select>')
     html.append('</div>')
 
-    # Flat list sorted by work item ID (descending — newest first)
+    # Sort within each group by work item ID (descending — newest first)
     def _wi_sort_key(e):
         wid = e[9]  # work_id field
         if wid and wid.startswith("WI-"):
@@ -936,30 +960,52 @@ def _render_work_items_list(html, files, dir_prefix, doc_entries, recent_paths, 
 
     enriched.sort(key=_wi_sort_key)
 
-    html.append('<ul class="doc-list todo-list">')
+    # Group by Horizon for work/to-do, flat for everything else
+    if is_todo and not is_ideas:
+        for hz in _HORIZON_ORDER:
+            group_items = [e for e in enriched if e[11] == hz]
+            if not group_items:
+                continue
+            hz_slug = hz.lower().replace("+", "plus")
+            html.append(f'<div class="app-shelf horizon-shelf" data-horizon-group="{hz_slug}">')
+            html.append(f'<div class="app-shelf-header">')
+            html.append(f'<span class="app-shelf-label">{hz}</span>')
+            html.append(f'<span class="app-shelf-count">{len(group_items)}</span>')
+            html.append(f'</div>')
+            html.append('<ul class="doc-list todo-list">')
+            for rel, doc_title, date_str, date_label, status, item_type, app_key, _al, desc, work_id, badges_html, _hz in group_items:
+                _render_work_item_row(html, rel, doc_title, status, item_type, app_key, desc, work_id, badges_html, recent_paths, is_ideas)
+            html.append('</ul>')
+            html.append('</div>')
+    else:
+        html.append('<ul class="doc-list todo-list">')
+        for rel, doc_title, date_str, date_label, status, item_type, app_key, _al, desc, work_id, badges_html, _hz in enriched:
+            _render_work_item_row(html, rel, doc_title, status, item_type, app_key, desc, work_id, badges_html, recent_paths, is_ideas)
+        html.append('</ul>')
 
-    for rel, doc_title, date_str, date_label, status, item_type, app_key, _al, desc, work_id, badges_html in enriched:
-        rel_posix = str(rel).replace("\\", "/")
-        fname_stem = PurePosixPath(rel_posix).stem
-        type_cls = "type-badge-personal" if item_type.lower() == "personal" else "type-badge-professional"
-        type_label = item_type.lower()[:4]
-        status_cls = "status-" + (status or "planned").lower().replace(" ", "-")
-        status_label = status or "—"
-        li_cls = " doc-recent" if rel_posix in recent_paths else ""
-        status_badge = f'<span class="hv-badge {status_cls}">{status_label}</span>' if not is_ideas else ''
-        id_prefix = f'<span class="work-id-inline">{work_id} —</span> ' if work_id else ''
-        html.append(
-            f'<li class="{li_cls.strip()}" data-name="{doc_title.lower()}" data-type="{item_type.lower()}" data-status="{(status or "").lower()}" data-app="{app_key}">'
-            f'<div class="todo-title"><a href="{fname_stem}/index.html"><i data-lucide="{"lightbulb" if is_ideas else "circle-dot"}" class="doc-icon"></i>{id_prefix}{doc_title}</a>'
-            f'<span class="todo-desc">{desc}</span></div>'
-            f'<div class="todo-badges">{badges_html}'
-            f'<span class="hv-badge {type_cls}">{type_label}</span>'
-            f'{status_badge}</div>'
-            f'</li>'
-        )
-
-    html.append('</ul>')
     html.append('</div>')
+
+
+def _render_work_item_row(html, rel, doc_title, status, item_type, app_key, desc, work_id, badges_html, recent_paths, is_ideas):
+    """Render a single work item row (shared between grouped and flat views)."""
+    rel_posix = str(rel).replace("\\", "/")
+    fname_stem = PurePosixPath(rel_posix).stem
+    type_cls = "type-badge-personal" if item_type.lower() == "personal" else "type-badge-professional"
+    type_label = item_type.lower()[:4]
+    status_cls = "status-" + (status or "planned").lower().replace(" ", "-")
+    status_label = status or "—"
+    li_cls = " doc-recent" if rel_posix in recent_paths else ""
+    status_badge = f'<span class="hv-badge {status_cls}">{status_label}</span>' if not is_ideas else ''
+    id_prefix = f'<span class="work-id-inline">{work_id} —</span> ' if work_id else ''
+    html.append(
+        f'<li class="{li_cls.strip()}" data-name="{doc_title.lower()}" data-type="{item_type.lower()}" data-status="{(status or "").lower()}" data-app="{app_key}">'
+        f'<div class="todo-title"><a href="{fname_stem}/index.html"><i data-lucide="{"lightbulb" if is_ideas else "circle-dot"}" class="doc-icon"></i>{id_prefix}{doc_title}</a>'
+        f'<span class="todo-desc">{desc}</span></div>'
+        f'<div class="todo-badges">{badges_html}'
+        f'<span class="hv-badge {type_cls}">{type_label}</span>'
+        f'{status_badge}</div>'
+        f'</li>'
+    )
 
 
 
@@ -1009,6 +1055,8 @@ def _render_doc_list_standard(html, files, dir_prefix, doc_entries, recent_paths
     undated.sort(key=lambda x: x[1].lower())
     enriched = dated + undated
 
+    is_external = dir_prefix == ".external"
+
     for rel, doc_title, date_str, date_label, doc_tags, doc_snippet in enriched:
         rel_posix = str(rel).replace("\\", "/")
         fname_stem = PurePosixPath(rel_posix).stem
@@ -1022,11 +1070,13 @@ def _render_doc_list_standard(html, files, dir_prefix, doc_entries, recent_paths
             ) + '</span>'
         # Snippet
         snippet_html = f'<span class="doc-row-snippet">{doc_snippet}</span>' if doc_snippet else ''
+        # Hidden doc-path for external delete buttons (consumed by drop-import.js)
+        doc_path_html = f'<span class="doc-path">{PurePosixPath(rel_posix).name}</span>' if is_external else ''
         html.append(
             f'<li{li_cls}>'
             f'<a href="{fname_stem}/index.html"><i data-lucide="file-text" class="doc-icon"></i> {doc_title}</a>'
             f'<span class="doc-date">{date_content}</span>'
-            f'{snippet_html}{tags_html}'
+            f'{snippet_html}{tags_html}{doc_path_html}'
             f'</li>'
         )
     html.append('</ul>')

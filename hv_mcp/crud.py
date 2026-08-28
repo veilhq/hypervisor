@@ -11,7 +11,7 @@ from pathlib import Path
 from site_utils.config import HYPERSPACE_ROOT
 from site_utils.file_utils import _extract_status_from_text, read_md
 
-from .config import load_projects, next_work_id, normalize_work_id
+from .config import load_projects, next_work_id, normalize_work_id, VALID_HORIZONS
 from .helpers import (
     generate_slug, resolve_slug_collision,
     validate_tags, validate_project, validate_status_transition,
@@ -57,6 +57,7 @@ def create_document(
     testing: str | None = None,
     recommendations: str | None = None,
     assignee: str = "Josh Wooten",
+    horizon: str = "Backlog",
 ) -> dict:
     """Create a new hyperspace document with full convention enforcement."""
     # Validate type
@@ -81,6 +82,10 @@ def create_document(
         if proj_error:
             return {"error": proj_error}
 
+    # Validate horizon (work-items only)
+    if type == "work-item" and horizon not in VALID_HORIZONS:
+        return {"error": f"Invalid horizon '{horizon}'. Must be one of: {', '.join(VALID_HORIZONS)}"}
+
     # Generate content based on type
     if type == "work-item":
         if not overview:
@@ -93,6 +98,7 @@ def create_document(
             project=project, doc_type=doc_type, overview=overview,
             design=design, acceptance_criteria=acceptance_criteria, tasks=tasks,
             work_id=work_id, open_questions=open_questions, assignee=assignee,
+            horizon=horizon,
         )
         target_dir = HYPERSPACE_ROOT / "work" / "to-do"
 
@@ -190,6 +196,7 @@ def update_document(
     project: str | None = None,
     doc_type: str | None = None,
     assignee: str | None = None,
+    horizon: str | None = None,
 ) -> dict:
     """Update metadata fields on an existing document."""
     full_path = HYPERSPACE_ROOT / path.replace("/", os.sep)
@@ -227,6 +234,10 @@ def update_document(
         if proj_error:
             return {"error": proj_error}
 
+    # Validate horizon
+    if horizon is not None and horizon not in VALID_HORIZONS:
+        return {"error": f"Invalid horizon '{horizon}'. Must be one of: {', '.join(VALID_HORIZONS)}"}
+
     # Apply updates line by line
     updated_line = False
     new_lines = []
@@ -260,6 +271,11 @@ def update_document(
             updated_fields.append(f"assignee: {assignee or '(cleared)'}")
             continue
 
+        if horizon is not None and re.match(r'Horizon\s*:', stripped, re.IGNORECASE):
+            new_lines.append(f"- Horizon: {horizon}")
+            updated_fields.append(f"horizon: {horizon}")
+            continue
+
         if re.match(r'(?:Last\s+)?Updated\s*:', stripped, re.IGNORECASE):
             new_lines.append(f"- Updated: {now}")
             updated_line = True
@@ -281,6 +297,22 @@ def update_document(
                 new_lines.insert(i + 1, f"- Assignee: {assignee}")
                 updated_fields.append(f"assignee: {assignee}")
                 break
+
+    # If horizon was requested but no existing Horizon line was found, insert after Assignee (or Project)
+    if horizon is not None and f"horizon: {horizon}" not in " ".join(updated_fields):
+        inserted = False
+        for i, line in enumerate(new_lines):
+            if re.match(r'^- Assignee:', line.strip(), re.IGNORECASE):
+                new_lines.insert(i + 1, f"- Horizon: {horizon}")
+                updated_fields.append(f"horizon: {horizon}")
+                inserted = True
+                break
+        if not inserted:
+            for i, line in enumerate(new_lines):
+                if re.match(r'^- Project:', line.strip(), re.IGNORECASE):
+                    new_lines.insert(i + 1, f"- Horizon: {horizon}")
+                    updated_fields.append(f"horizon: {horizon}")
+                    break
 
     # Write back
     final_content = "\n".join(new_lines)

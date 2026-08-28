@@ -10,9 +10,9 @@
       var statusSelect = document.getElementById("todo-filter-status");
       if (!nameInput) return;
 
-      var list = document.querySelector(".todo-list");
-      if (!list) return;
-      var items = list.querySelectorAll("li");
+      var lists = document.querySelectorAll(".todo-list");
+      if (!lists.length) return;
+      var items = document.querySelectorAll(".todo-list li");
       if (!items.length) return;
 
       function applyFilters() {
@@ -35,12 +35,32 @@
 
           li.classList.toggle("todo-hidden", !show);
         });
+
+        // Hide shelves that have all items hidden
+        var shelves = document.querySelectorAll(".app-shelf");
+        shelves.forEach(function(shelf) {
+          var shelfItems = shelf.querySelectorAll(".todo-list li");
+          var anyVisible = false;
+          shelfItems.forEach(function(li) {
+            if (!li.classList.contains("todo-hidden")) anyVisible = true;
+          });
+          shelf.classList.toggle("shelf-hidden", !anyVisible);
+        });
       }
 
       nameInput.addEventListener("input", applyFilters);
       if (appSelect) appSelect.addEventListener("change", applyFilters);
       if (typeSelect) typeSelect.addEventListener("change", applyFilters);
       if (statusSelect) statusSelect.addEventListener("change", applyFilters);
+
+      // --- Shelf collapse toggle ---
+      var shelfHeaders = document.querySelectorAll(".app-shelf-header");
+      shelfHeaders.forEach(function(header) {
+        header.addEventListener("click", function() {
+          var shelf = header.closest(".app-shelf");
+          if (shelf) shelf.classList.toggle("shelf-collapsed");
+        });
+      });
     }
 
     function initSectionCopy() {

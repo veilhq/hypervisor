@@ -89,30 +89,27 @@
     var saveThemeBtn = document.getElementById("save-theme-btn");
     if (saveThemeRow) saveThemeRow.style.display = "";
 
-    // --- Show and wire Hyperagent launch button ---
-    var haBtn = document.getElementById("hyperagent-btn");
-    if (haBtn) {
-      haBtn.style.display = "";
-      haBtn.addEventListener("click", function () {
-        api.launch_hyperagent();
-      });
+    // --- Wire launcher icon row (homepage orchestrator) ---
+    // Runs on navigate because launcher icons are in the home content fragment,
+    // not the static shell — they don't exist at initial script execution time.
+    function wireLaunchers() {
+      var launcherBoxes = document.querySelectorAll('.launcher-box[data-launch]');
+      for (var i = 0; i < launcherBoxes.length; i++) {
+        (function (box) {
+          if (box.__launcherWired) return;
+          box.__launcherWired = true;
+          box.addEventListener('click', function () {
+            var action = box.getAttribute('data-launch');
+            if (action && api[action]) api[action]();
+          });
+        })(launcherBoxes[i]);
+      }
     }
-    // --- Show and wire Launch Dev button ---
-    var ldBtn = document.getElementById("launch-dev-btn");
-    if (ldBtn) {
-      ldBtn.style.display = "";
-      ldBtn.addEventListener("click", function () {
-        api.launch_dev("full");
-      });
+    wireLaunchers();
+    if (window.__router) {
+      window.__router.onNavigate(null, wireLaunchers);
     }
-    // --- Show and wire Dither Widget button ---
-    var ditherBtn = document.getElementById("dither-btn");
-    if (ditherBtn) {
-      ditherBtn.style.display = "";
-      ditherBtn.addEventListener("click", function () {
-        api.launch_dither_widget();
-      });
-    }
+
     if (saveThemeBtn) {
       saveThemeBtn.addEventListener("click", function () {
         // Theme state is already persisted to preferences.json on every change.

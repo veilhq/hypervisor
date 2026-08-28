@@ -250,6 +250,18 @@ class HypervisorAPI:
                     break
 
             if not found:
+                # Try to insert the field in the metadata block (after Assignee or Project)
+                insert_after = None
+                for i, line in enumerate(lines):
+                    if re.match(r'^\s*-\s*(Assignee|Project|Status)\s*:', line, re.IGNORECASE):
+                        insert_after = i
+                    if line.strip() == '---' and insert_after is not None:
+                        break
+                if insert_after is not None:
+                    lines.insert(insert_after + 1, f"- {field}: {value}")
+                    found = True
+
+            if not found:
                 return {"ok": False, "error": f"Field '{field}' not found in {file_path}"}
 
             full_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
@@ -296,7 +308,6 @@ class HypervisorAPI:
         try:
             from hv_mcp.rag import get_rag
             rag = get_rag()
-            rag.reindex_changed()
             return rag.search(
                 query=query,
                 top_k=top_k,
@@ -342,17 +353,28 @@ class HypervisorAPI:
             return {"ok": False, "error": str(e)}
 
     def launch_hyperagent(self):
-        """Launch Hyperagent as a detached subprocess."""
+        """Launch Hyperagent as a detached subprocess via its shortcut.
+
+        Launching via the .lnk ensures Windows groups the window with the
+        pinned taskbar shortcut (same AppUserModelID) and shows the correct icon.
+        Falls back to direct pythonw invocation if the shortcut doesn't exist.
+        """
+        import os
+        shortcut = HYPERSPACE_ROOT / ".hyperagent" / "Hyperagent.lnk"
         script = HYPERSPACE_ROOT / ".hyperagent" / "hyperagent.py"
-        if not script.exists():
-            return {"ok": False, "error": "hyperagent.py not found"}
         try:
-            subprocess.Popen(
-                ["pythonw", str(script)],
-                cwd=str(script.parent),
-                creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NO_WINDOW,
-            )
-            return {"ok": True}
+            if shortcut.exists():
+                os.startfile(str(shortcut))
+                return {"ok": True}
+            elif script.exists():
+                subprocess.Popen(
+                    ["pythonw", str(script)],
+                    cwd=str(script.parent),
+                    creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NO_WINDOW,
+                )
+                return {"ok": True}
+            else:
+                return {"ok": False, "error": "hyperagent.py not found"}
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
@@ -379,6 +401,58 @@ class HypervisorAPI:
                 return {"ok": True}
             else:
                 return {"ok": False, "error": "hyperfield.py not found"}
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+
+    def launch_hyperline(self):
+        """Launch Hyperline terminal as a detached subprocess via its shortcut.
+
+        Launching via the .lnk ensures Windows groups the window with the
+        pinned taskbar shortcut (same AppUserModelID) and shows the correct icon.
+        Falls back to direct pythonw invocation if the shortcut doesn't exist.
+        """
+        import os
+        shortcut = HYPERSPACE_ROOT / ".hyperline" / "Hyperline.lnk"
+        script = HYPERSPACE_ROOT / ".hyperline" / "hyperline.py"
+        try:
+            if shortcut.exists():
+                os.startfile(str(shortcut))
+                return {"ok": True}
+            elif script.exists():
+                subprocess.Popen(
+                    ["pythonw", str(script)],
+                    cwd=str(script.parent),
+                    creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NO_WINDOW,
+                )
+                return {"ok": True}
+            else:
+                return {"ok": False, "error": "hyperline.py not found"}
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+
+    def launch_hypereye(self):
+        """Launch HyperEye as a detached subprocess via its shortcut.
+
+        Launching via the .lnk ensures Windows groups the window with the
+        pinned taskbar shortcut (same AppUserModelID) and shows the correct icon.
+        Falls back to direct pythonw invocation if the shortcut doesn't exist.
+        """
+        import os
+        shortcut = HYPERSPACE_ROOT / ".hypereye" / "Hypereye.lnk"
+        script = HYPERSPACE_ROOT / ".hypereye" / "hypereye.py"
+        try:
+            if shortcut.exists():
+                os.startfile(str(shortcut))
+                return {"ok": True}
+            elif script.exists():
+                subprocess.Popen(
+                    ["pythonw", str(script)],
+                    cwd=str(script.parent),
+                    creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NO_WINDOW,
+                )
+                return {"ok": True}
+            else:
+                return {"ok": False, "error": "hypereye.py not found"}
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
@@ -1072,6 +1146,30 @@ class HypervisorAPI:
 
 
     # -----------------------------------------------------------------------
+    # Sprint Management
+    # -----------------------------------------------------------------------
+
+    def end_sprint(self):
+        """End the current sprint — cascade Horizon values forward.
+
+        Called by the End Sprint button in the actions drawer.
+        Returns a summary dict with transition counts.
+        """
+        try:
+            import sys
+            hypervisor_dir = Path(__file__).resolve().parent
+            if str(hypervisor_dir) not in sys.path:
+                sys.path.insert(0, str(hypervisor_dir))
+            from hv_mcp.sprint import end_sprint as _end_sprint
+            result = _end_sprint()
+            if result.get("success"):
+                logger.info("end_sprint completed: %d files updated", result.get("files_updated", 0))
+            return result
+        except Exception as e:
+            logger.error("end_sprint failed: %s", e)
+            return {"error": str(e)}
+
+    # -----------------------------------------------------------------------
     # Log Viewer
     # -----------------------------------------------------------------------
 
@@ -1520,6 +1618,11 @@ def _apply_window_chrome(title: str, icon_path: str):
 
 def main():
     global _window, _api
+
+    # Set a unique AppUserModelID so Windows treats this as a distinct taskbar
+    # entry, separate from Hyperagent and other pythonw-hosted ecosystem apps.
+    import ctypes
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("Hyper.Hypervisor")
 
     print("Hypervisor Desktop: starting ...")
 

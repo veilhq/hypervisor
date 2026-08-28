@@ -60,6 +60,175 @@ server = FastMCP(
 
 
 # ---------------------------------------------------------------------------
+# WebSocket Trace Broadcast — /trace/listen
+# Passive listeners (Hyperfield) connect and receive trace events whenever
+# any ecosystem app triggers a semantic_search with tracing enabled.
+# ---------------------------------------------------------------------------
+
+from starlette.routing import WebSocketRoute
+from starlette.websockets import WebSocket
+
+_trace_listeners: list[WebSocket] = []
+_trace_listeners_lock = __import__("threading").Lock()
+
+
+async def _trace_listen_endpoint(websocket: WebSocket):
+    """Accept a passive listener WebSocket. Stays open until client disconnects.
+
+    Hyperfield connects here on RAG mode toggle. It receives broadcast trace
+    events whenever any search runs — it never sends anything.
+    """
+    await websocket.accept()
+    with _trace_listeners_lock:
+        _trace_listeners.append(websocket)
+    logger.info("trace listener connected (%d total)", len(_trace_listeners))
+
+    try:
+        # Keep connection alive — wait for client disconnect
+        while True:
+            # WebSocket keepalive: receive pings/close frames
+            await websocket.receive_text()
+    except Exception:
+        pass
+    finally:
+        with _trace_listeners_lock:
+            if websocket in _trace_listeners:
+                _trace_listeners.remove(websocket)
+        logger.info("trace listener disconnected (%d remaining)", len(_trace_listeners))
+
+
+def _broadcast_trace_event(event: dict):
+    """Send a trace event to all connected listeners. Non-blocking, fire-and-forget."""
+    import asyncio
+    import json as _json
+    import threading
+
+    with _trace_listeners_lock:
+        if not _trace_listeners:
+            return
+        listeners = list(_trace_listeners)
+
+    payload = _json.dumps(event)
+
+    async def _send():
+        dead = []
+        for ws in listeners:
+            try:
+                await ws.send_text(payload)
+            except Exception:
+                dead.append(ws)
+        if dead:
+            with _trace_listeners_lock:
+                for ws in dead:
+                    if ws in _trace_listeners:
+                        _trace_listeners.remove(ws)
+
+    def _run_in_thread():
+        try:
+            loop = asyncio.new_event_loop()
+            loop.run_until_complete(_send())
+            loop.close()
+        except Exception:
+            pass
+
+    threading.Thread(target=_run_in_thread, daemon=True).start()
+
+
+# Register the listener WebSocket route
+server._custom_starlette_routes.append(
+    WebSocketRoute("/trace/listen", endpoint=_trace_listen_endpoint, name="trace_listen")
+)
+
+
+async def _trace_broadcast_endpoint(websocket: WebSocket):
+    """Accept trace events from external processes (Hypervisor) and relay to listeners.
+
+    Protocol: sender connects, pushes JSON messages, server relays each to all
+    /trace/listen clients, sender closes when done.
+    """
+    await websocket.accept()
+    try:
+        while True:
+            raw = await websocket.receive_text()
+            # Relay directly to all listeners
+            _broadcast_trace_event(__import__("json").loads(raw))
+    except Exception:
+        pass
+    finally:
+        try:
+            await websocket.close()
+        except Exception:
+            pass
+
+
+server._custom_starlette_routes.append(
+    WebSocketRoute("/trace/broadcast", endpoint=_trace_broadcast_endpoint, name="trace_broadcast")
+)
+
+
+# Patch RAG module with broadcast hooks so all callers (MCP tool, bridge, etc.)
+# trigger trace broadcasts when Hyperfield is listening.
+
+@server.custom_route("/trace/broadcast", methods=["POST"])
+async def _trace_broadcast_http(request):
+    """HTTP endpoint for external processes to push trace events to listeners.
+
+    Hypervisor POSTs a JSON array of trace events here; the server relays
+    each one to all connected /trace/listen WebSocket clients.
+    """
+    from starlette.responses import JSONResponse
+    import json as _json
+
+    try:
+        body = await request.body()
+        events = _json.loads(body)
+        for event in events:
+            _broadcast_trace_event(event)
+        return JSONResponse({"ok": True, "relayed": len(events)})
+    except Exception as exc:
+        return JSONResponse({"ok": False, "error": str(exc)}, status_code=400)
+
+
+def _patch_rag_broadcast():
+    from dataclasses import asdict
+    import hv_mcp.rag as rag_module
+
+    def _check():
+        return bool(_trace_listeners)
+
+    def _broadcast(trace, result_count):
+        if not _trace_listeners:
+            return
+        if trace.query:
+            _broadcast_trace_event({"stage": "query", **asdict(trace.query)})
+        # Send chunk positions FIRST so the visualizer knows where to place things
+        if trace.chunk_meta:
+            _broadcast_trace_event({
+                "stage": "chunk_meta",
+                "chunks": [asdict(cm) for cm in trace.chunk_meta],
+            })
+        if trace.dense:
+            _broadcast_trace_event(asdict(trace.dense))
+        if trace.keyword:
+            _broadcast_trace_event(asdict(trace.keyword))
+        if trace.fusion:
+            _broadcast_trace_event(asdict(trace.fusion))
+        if trace.mmr:
+            _broadcast_trace_event(asdict(trace.mmr))
+        _broadcast_trace_event({
+            "stage": "complete",
+            "result_count": result_count,
+            "total_elapsed_ms": trace.total_elapsed_ms,
+        })
+
+    rag_module._trace_listener_check = _check
+    rag_module._trace_broadcast_fn = _broadcast
+
+
+_patch_rag_broadcast()
+
+
+# ---------------------------------------------------------------------------
 # Tool Registration — Search & Retrieval
 # ---------------------------------------------------------------------------
 
@@ -365,6 +534,7 @@ def create_document_tool(
     testing: str | None = None,
     recommendations: str | None = None,
     assignee: str = "Josh Wooten",
+    horizon: str = "Backlog",
 ) -> dict:
     """Create a new hyperspace document with full convention enforcement.
 
@@ -402,6 +572,8 @@ def create_document_tool(
         testing: Testing steps (optional, bugfix).
         recommendations: Additional recommendations (optional, bugfix).
         assignee: Full name of the person assigned (defaults to Josh Wooten). Work-items only.
+        horizon: Sprint planning horizon — Sprint, Sprint+1, Sprint+2, Sprint+3, or Backlog
+            (default Backlog). Work-items only.
 
     Returns:
         Created file path and confirmation, or error details.
@@ -416,7 +588,7 @@ def create_document_tool(
         rationale=rationale, consequences=consequences,
         severity=severity, affected=affected, problem=problem,
         root_cause=root_cause, fix=fix, testing=testing,
-        recommendations=recommendations, assignee=assignee,
+        recommendations=recommendations, assignee=assignee, horizon=horizon,
     )
 
 
@@ -428,6 +600,7 @@ def update_document_tool(
     project: str | None = None,
     doc_type: str | None = None,
     assignee: str | None = None,
+    horizon: str | None = None,
 ) -> dict:
     """Update metadata fields on an existing document.
 
@@ -441,11 +614,12 @@ def update_document_tool(
         project: New project name (validated against registry).
         doc_type: New Type value (Personal or Professional).
         assignee: Full name of assignee. Pass empty string to clear.
+        horizon: Sprint planning horizon — Sprint, Sprint+1, Sprint+2, Sprint+3, or Backlog.
 
     Returns:
         Confirmation with updated fields, or error.
     """
-    return update_document(path=path, status=status, tags=tags, project=project, doc_type=doc_type, assignee=assignee)
+    return update_document(path=path, status=status, tags=tags, project=project, doc_type=doc_type, assignee=assignee, horizon=horizon)
 
 
 @server.tool(name="move_work_item")
@@ -463,6 +637,27 @@ def move_work_item_tool(slug: str) -> dict:
         Confirmation with new path and any updated backlinks.
     """
     return move_work_item(slug=slug)
+
+
+@server.tool(name="end_sprint")
+def end_sprint_tool() -> dict:
+    """End the current sprint — cascade all work item Horizon values forward.
+
+    Reads all open work items in work/to-do/, applies the sprint cascade:
+    - Sprint items that are still open remain Sprint (rolled over)
+    - Sprint+1 becomes Sprint
+    - Sprint+2 becomes Sprint+1
+    - Sprint+3 becomes Sprint+2
+    - Backlog remains Backlog
+    - Completed items (in done/) are unaffected
+
+    This is a stateless operation — no sprint counter is tracked.
+
+    Returns:
+        Summary of how many items were moved per horizon slot.
+    """
+    from hv_mcp.sprint import end_sprint
+    return end_sprint()
 
 
 # ---------------------------------------------------------------------------
@@ -710,6 +905,52 @@ def _warm_rag_background():
     t.start()
 
 
+def _run_traced_search(
+    query: str,
+    top_k: int = 5,
+    tags: list[str] | None = None,
+    doc_type: str | None = None,
+    project: str | None = None,
+    source_type: str | None = None,
+    write_file: bool = True,
+) -> dict:
+    """Run a search with full trace instrumentation.
+
+    Returns the trace as a dict. Optionally writes to
+    .hyperspace/.logs/traces/{timestamp}.json for replay.
+    """
+    from hv_mcp.trace import SearchTrace
+
+    rag = get_rag()
+    trace = SearchTrace()
+
+    results = rag.search(
+        query=query,
+        top_k=top_k,
+        tags=tags,
+        doc_type=doc_type,
+        project=project,
+        source_type=source_type,
+        trace=trace,
+    )
+
+    trace_dict = trace.to_dict()
+    trace_dict["result_count"] = len(results)
+
+    if write_file:
+        from datetime import datetime
+        traces_dir = Path(_THIS_DIR).parent / ".logs" / "traces"
+        traces_dir.mkdir(parents=True, exist_ok=True)
+        timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+        safe_query = "".join(c if c.isalnum() or c in "-_ " else "" for c in query[:40]).strip().replace(" ", "-")
+        filename = f"{timestamp}_{safe_query}.json"
+        trace.write(traces_dir / filename)
+        trace_dict["trace_file"] = str(traces_dir / filename)
+        logger.info("trace written: %s", filename)
+
+    return trace_dict
+
+
 # ---------------------------------------------------------------------------
 # Service Lock — allows Hypervisor/Hyperagent to discover a running instance
 # ---------------------------------------------------------------------------
@@ -726,11 +967,26 @@ def _write_service_lock(port: int):
 
 
 def _remove_service_lock():
-    """Clean up the lock file on shutdown."""
+    """Clean up the lock file on shutdown — only if we own it.
+
+    A race between two instances can leave the winner's lock in place while
+    the loser exits. Unconditional deletion here would remove the live
+    server's registration, causing the UI to report 'stopped' and blocking
+    future launches with 'port in use by unknown process'.
+    """
+    import os
     try:
+        if _SERVICE_LOCK.exists():
+            lines = _SERVICE_LOCK.read_text(encoding="utf-8").strip().split("\n")
+            if int(lines[0]) != os.getpid():
+                return  # lock belongs to another instance — leave it alone
         _SERVICE_LOCK.unlink(missing_ok=True)
-    except OSError:
-        pass
+    except (OSError, ValueError, IndexError):
+        # Malformed or inaccessible — safe to remove
+        try:
+            _SERVICE_LOCK.unlink(missing_ok=True)
+        except OSError:
+            pass
 
 
 def _is_service_running() -> tuple[bool, int | None]:

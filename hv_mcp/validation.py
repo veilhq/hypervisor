@@ -189,6 +189,19 @@ def validate_single(rel_path: str) -> dict:
                     "line": i,
                 })
 
+        # Horizon validation (work items only — missing is OK, invalid value is not)
+        m = re.match(r'Horizon\s*:\s*(.+)', stripped, re.IGNORECASE)
+        if m:
+            from .config import VALID_HORIZONS
+            horizon_val = m.group(1).strip()
+            # Case-insensitive match against valid values
+            if not any(horizon_val.lower() == h.lower() for h in VALID_HORIZONS):
+                violations.append({
+                    "rule": "horizon-invalid",
+                    "message": f"Horizon '{horizon_val}' is not valid. Must be one of: {', '.join(VALID_HORIZONS)}",
+                    "line": i,
+                })
+
         # Bold metadata check
         if re.match(r'\*\*[A-Za-z]+\*\*\s*:', stripped):
             violations.append({

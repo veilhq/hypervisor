@@ -302,68 +302,60 @@
   })();
 
   // --- Delete Document button (desktop app only, SPA-aware) ---
-  (function initDeleteDocument() {
-    var _deleteBtn = null;
+  // --- End Sprint button (desktop app only, global action) ---
+  (function initEndSprint() {
+    var isDesktop = !!(window.pywebview && window.pywebview.api);
+    var btn = document.getElementById("end-sprint-btn");
 
-    function teardown() {
-      if (_deleteBtn && _deleteBtn.parentNode) {
-        _deleteBtn.parentNode.removeChild(_deleteBtn);
-      }
-      _deleteBtn = null;
+    function setup() {
+      btn = document.getElementById("end-sprint-btn");
+      if (!btn) return;
+      var hasBridge = !!(window.pywebview && window.pywebview.api);
+      if (hasBridge) btn.style.display = "";
+
+      btn.addEventListener("click", handleClick);
     }
 
-    function init(fragment) {
-      if (!fragment) return;
-      var filePath = fragment.sourcePath || "";
-      if (!filePath || !filePath.endsWith(".md")) return;
+    function handleClick() {
+      if (!(window.pywebview && window.pywebview.api)) return;
+      if (!window.__hypervisorConfirm) return;
 
-      var btn = document.createElement("button");
-      btn.className = "action-item delete-doc-btn";
-      btn.setAttribute("aria-label", "Delete this document");
-      btn.innerHTML = '<i data-lucide="trash-2" class="action-icon"></i><span class="action-label">delete</span>';
+      window.__hypervisorConfirm("End sprint? This will cascade all horizon values forward.", {
+        confirmLabel: "end sprint", cancelLabel: "cancel"
+      }).then(function (confirmed) {
+        if (!confirmed) return;
+        btn.disabled = true;
 
-      if (!isDesktopApp) btn.style.display = "none";
-
-      var drawer = document.querySelector(".actions-drawer-inner");
-      if (!drawer) return;
-      drawer.appendChild(btn);
-      _deleteBtn = btn;
-
-      if (window.lucide) lucide.createIcons({ nodes: [btn], attrs: { "stroke-width": 2 } });
-
-      if (!isDesktopApp) {
-        window.addEventListener("pywebviewready", function onReady() {
-          btn.style.display = "";
-          window.removeEventListener("pywebviewready", onReady);
-        });
-      }
-
-      btn.addEventListener("click", function () {
-        if (!(window.pywebview && window.pywebview.api)) return;
-        if (!window.__hypervisorConfirm) return;
-
-        var shortName = filePath.replace(/\\/g, "/").split("/").pop();
-        window.__hypervisorConfirm("Delete " + shortName + "? This cannot be undone.", {
-          confirmLabel: "delete", cancelLabel: "cancel"
-        }).then(function (confirmed) {
-          if (!confirmed) return;
-          btn.disabled = true;
-
-          window.pywebview.api.delete_document(filePath).then(function (result) {
-            if (!result || !result.ok) {
-              btn.disabled = false;
-              if (window.__hypervisorToast) window.__hypervisorToast({ variant: "error", title: "delete failed", message: (result && result.error) || "unknown error" });
-            }
-            // On success, the bridge navigates away — no UI cleanup needed.
-          }).catch(function () {
-            btn.disabled = false;
-            if (window.__hypervisorToast) window.__hypervisorToast({ variant: "error", message: "delete failed" });
-          });
+        window.pywebview.api.end_sprint().then(function (result) {
+          btn.disabled = false;
+          if (result && result.success) {
+            var count = result.files_updated || 0;
+            if (window.__hypervisorToast) window.__hypervisorToast({ variant: "success", message: count + " item(s) cascaded" });
+            if (window.__closeActionsDrawer) window.__closeActionsDrawer();
+          } else {
+            if (window.__hypervisorToast) window.__hypervisorToast({ variant: "error", title: "end sprint failed", message: (result && result.error) || "unknown error" });
+          }
+        }).catch(function () {
+          btn.disabled = false;
+          if (window.__hypervisorToast) window.__hypervisorToast({ variant: "error", message: "end sprint failed" });
         });
       });
     }
 
+    // Show button when bridge is ready
+    if (isDesktop) {
+      setup();
+    } else {
+      window.addEventListener("pywebviewready", function onReady() {
+        window.removeEventListener("pywebviewready", onReady);
+        setup();
+      });
+    }
+
+    // Re-attach after navigation (button re-renders from page template)
     if (window.__router) {
-      window.__router.onNavigate(teardown, init);
+      window.__router.onNavigate(null, function () {
+        setup();
+      });
     }
   })();

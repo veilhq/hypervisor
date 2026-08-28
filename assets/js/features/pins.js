@@ -319,6 +319,13 @@
     // --- Expose pin count ---
     window.__hypervisorPinCount = function () { return getPins().length; };
 
+    // --- Expose pin API for context menu and other modules ---
+    window.HvPins = {
+      isPinned: isPinned,
+      add: addPin,
+      remove: removePin
+    };
+
     // Register with router lifecycle
     if (window.__router) {
       window.__router.onNavigate(teardown, init);

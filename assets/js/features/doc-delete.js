@@ -11,6 +11,8 @@
     items.forEach(function (li) {
       // Skip items that already have a delete/dismiss button
       if (li.querySelector(".doc-delete-btn") || li.querySelector(".idea-dismiss-btn") || li.querySelector(".external-delete-btn")) return;
+      // Skip items with .doc-path — those use a specialized delete handler (e.g. drop-import.js)
+      if (li.querySelector(".doc-path")) return;
       // Skip group headers and non-doc items
       if (li.classList.contains("group-header")) return;
 
@@ -18,12 +20,19 @@
       if (!link) return;
 
       var href = link.getAttribute("href") || "";
-      // Derive source path from href: "/work/to-do/my-item/index.html" → "work/to-do/my-item.md"
-      var sourcePath = href.replace(/^\//, "").replace(/\/index\.html$/, "").replace(/\/$/, "");
-      if (!sourcePath) return;
-      var filePath = sourcePath + ".md";
+      // Strip /index.html suffix and trailing slash to get the doc slug
+      var slug = href.replace(/^\//, "").replace(/\/index\.html$/, "").replace(/\/$/, "");
+      if (!slug) return;
 
-      var name = sourcePath.split("/").pop().replace(/-/g, " ");
+      // Resolve relative hrefs against the current page's source path
+      var dirPrefix = "";
+      if (slug.indexOf("/") === -1 && window.__router) {
+        var frag = window.__router.getCurrentFragment();
+        if (frag && frag.sourcePath) dirPrefix = frag.sourcePath + "/";
+      }
+      var filePath = dirPrefix + slug + ".md";
+
+      var name = slug.split("/").pop().replace(/-/g, " ");
 
       var btn = document.createElement("button");
       btn.className = "doc-delete-btn";

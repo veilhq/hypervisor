@@ -339,21 +339,13 @@ LEGACY_PAGE_TEMPLATE = """\
         <i data-lucide="package" class="action-icon"></i>
         <span class="action-label export-btn-label">export</span>
       </button>
+      <button class="action-item" id="end-sprint-btn" aria-label="End sprint — cascade horizon values" style="display:none">
+        <i data-lucide="skip-forward" class="action-icon"></i>
+        <span class="action-label">end sprint</span>
+      </button>
       <button class="action-item" id="new-window-btn" aria-label="Open in new window" style="display:none">
         <i data-lucide="app-window" class="action-icon"></i>
         <span class="action-label">new window</span>
-      </button>
-      <button class="action-item" id="hyperagent-btn" aria-label="Launch Hyperagent" style="display:none">
-        <i data-lucide="bot" class="action-icon"></i>
-        <span class="action-label">hyperagent</span>
-      </button>
-      <button class="action-item" id="launch-dev-btn" aria-label="Launch dev environment" style="display:none">
-        <i data-lucide="terminal" class="action-icon"></i>
-        <span class="action-label">launch dev</span>
-      </button>
-      <button class="action-item" id="dither-btn" aria-label="Launch HyperField" style="display:none">
-        <i data-lucide="grid-3x3" class="action-icon"></i>
-        <span class="action-label">hyperfield</span>
       </button>
     </div>
   </div>
@@ -579,21 +571,13 @@ SHELL_TEMPLATE = """\
         <i data-lucide="package" class="action-icon"></i>
         <span class="action-label export-btn-label">export</span>
       </button>
+      <button class="action-item" id="end-sprint-btn" aria-label="End sprint — cascade horizon values" style="display:none">
+        <i data-lucide="skip-forward" class="action-icon"></i>
+        <span class="action-label">end sprint</span>
+      </button>
       <button class="action-item" id="new-window-btn" aria-label="Open in new window" style="display:none">
         <i data-lucide="app-window" class="action-icon"></i>
         <span class="action-label">new window</span>
-      </button>
-      <button class="action-item" id="hyperagent-btn" aria-label="Launch Hyperagent" style="display:none">
-        <i data-lucide="bot" class="action-icon"></i>
-        <span class="action-label">hyperagent</span>
-      </button>
-      <button class="action-item" id="launch-dev-btn" aria-label="Launch dev environment" style="display:none">
-        <i data-lucide="terminal" class="action-icon"></i>
-        <span class="action-label">launch dev</span>
-      </button>
-      <button class="action-item" id="dither-btn" aria-label="Launch HyperField" style="display:none">
-        <i data-lucide="grid-3x3" class="action-icon"></i>
-        <span class="action-label">hyperfield</span>
       </button>
     </div>
   </div>

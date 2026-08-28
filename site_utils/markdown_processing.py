@@ -364,6 +364,16 @@ def extract_metadata_block(html: str) -> str:
                     data_attrs={"writeback-key": "assignee", "full-value": assignee},
                 )
             )
+        horizon = parsed.get("horizon")
+        if horizon and horizon.lower() != "backlog":
+            horizon_variant = "filled" if horizon.lower() == "sprint" else "outlined-accent"
+            chips.append(
+                render_chip(
+                    horizon_variant,
+                    horizon,
+                    extra_class="doc-header-chip doc-header-chip-horizon",
+                )
+            )
         html_parts.append('<div class="doc-header-chips">' + "".join(chips) + '</div>')
 
         # --- MIDDLE: topic tag chips only (Project moved to left cluster) ---

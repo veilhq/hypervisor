@@ -18,6 +18,7 @@ import sqlite3
 import struct
 import sys
 import threading
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -920,12 +921,38 @@ class HyperspaceRAG:
         project: str | None = None,
         source_type: str | None = None,
         recency_boost: bool = True,
+        trace: "SearchTrace | None" = None,
     ) -> list[dict]:
         """Hybrid search: vector + keyword, RRF-fused, MMR-reranked."""
+        from .trace import (
+            SearchTrace, TraceQuery, TraceDenseStage, TraceDenseResult,
+            TraceKeywordStage, TraceKeywordResult, TraceFusionStage, TraceFusedItem,
+            TraceMMRStage, TraceMMRStep, TraceChunkMeta,
+        )
+
         if not query or not query.strip():
             return []
         if self.is_empty():
             return []
+
+        t_start = time.time()
+
+        # Auto-trace when broadcast listeners are connected, even if caller
+        # didn't explicitly request tracing. Zero overhead when no listeners.
+        if trace is None and _has_trace_listeners():
+            trace = SearchTrace()
+
+        # Initialize trace if requested
+        if trace is not None:
+            trace.query = TraceQuery(
+                query=query,
+                top_k=top_k,
+                filters={
+                    k: v for k, v in
+                    {"tags": tags, "doc_type": doc_type, "project": project, "source_type": source_type}.items()
+                    if v is not None
+                },
+            )
 
         # Over-fetch so fusion and reranking have room to work.
         fetch_k = max(top_k * 4, 20)
@@ -933,13 +960,80 @@ class HyperspaceRAG:
         if candidates is not None and not candidates:
             return []
 
+        if trace is not None:
+            trace.candidates_filtered = len(candidates) if candidates is not None else None
+
+        # --- Dense retrieval ---
+        t_dense = time.time()
         vector_hits = self._vector_search(query, fetch_k, candidates)
+        t_dense_end = time.time()
+
+        if trace is not None:
+            dense_meta = self._fetch_chunk_meta([rid for rid, _ in vector_hits])
+            trace.dense = TraceDenseStage(
+                results=[
+                    TraceDenseResult(
+                        chunk_id=rid,
+                        path=dense_meta.get(rid, {}).get("path", ""),
+                        title=dense_meta.get(rid, {}).get("title"),
+                        section=dense_meta.get(rid, {}).get("section"),
+                        cosine_similarity=round(score, 6),
+                    )
+                    for rid, score in vector_hits
+                ],
+                fetch_k=fetch_k,
+                elapsed_ms=round((t_dense_end - t_dense) * 1000, 2),
+            )
+
+        # --- Keyword retrieval ---
+        t_kw = time.time()
         keyword_hits = self._keyword_search(query, fetch_k, candidates)
+        t_kw_end = time.time()
+
+        if trace is not None:
+            kw_meta = self._fetch_chunk_meta([rid for rid, _ in keyword_hits])
+            trace.keyword = TraceKeywordStage(
+                fts_query=_to_fts_query(query),
+                results=[
+                    TraceKeywordResult(
+                        chunk_id=rid,
+                        path=kw_meta.get(rid, {}).get("path", ""),
+                        title=kw_meta.get(rid, {}).get("title"),
+                        section=kw_meta.get(rid, {}).get("section"),
+                        bm25_score=round(score, 6),
+                    )
+                    for rid, score in keyword_hits
+                ],
+                fetch_k=fetch_k,
+                elapsed_ms=round((t_kw_end - t_kw) * 1000, 2),
+            )
+
         if not vector_hits and not keyword_hits:
             return []
 
+        # --- RRF Fusion ---
         fused = _reciprocal_rank_fusion([vector_hits, keyword_hits])
         similarity = dict(vector_hits)
+
+        if trace is not None:
+            dense_rank_map = {rid: i for i, (rid, _) in enumerate(vector_hits)}
+            kw_rank_map = {rid: i for i, (rid, _) in enumerate(keyword_hits)}
+            trace.fusion = TraceFusionStage(
+                results=[
+                    TraceFusedItem(
+                        chunk_id=rid,
+                        rrf_score=round(score, 6),
+                        dense_rank=dense_rank_map.get(rid),
+                        keyword_rank=kw_rank_map.get(rid),
+                        sources=[s for s in ['dense', 'keyword']
+                                 if (s == 'dense' and rid in dense_rank_map) or
+                                    (s == 'keyword' and rid in kw_rank_map)],
+                    )
+                    for rid, score in fused
+                ],
+                rrf_k=RRF_K,
+                recency_applied=recency_boost,
+            )
 
         if recency_boost:
             updated_by_id = self._fetch_updated({rid for rid, _ in fused})
@@ -949,11 +1043,55 @@ class HyperspaceRAG:
             ]
             fused.sort(key=lambda pair: pair[1], reverse=True)
 
+        # --- MMR reranking ---
+        t_mmr = time.time()
         ordered_ids = self._mmr_rerank(
-            [rid for rid, _ in fused], similarity, top_k
+            [rid for rid, _ in fused], similarity, top_k, trace=trace,
         )
+        t_mmr_end = time.time()
 
-        return self._hydrate(ordered_ids, fused_scores=dict(fused), similarity=similarity)
+        if trace is not None and trace.mmr is not None:
+            trace.mmr.elapsed_ms = round((t_mmr_end - t_mmr) * 1000, 2)
+
+        # --- Hydrate ---
+        results = self._hydrate(ordered_ids, fused_scores=dict(fused), similarity=similarity)
+
+        # --- Finalize trace ---
+        if trace is not None:
+            trace.total_elapsed_ms = round((time.time() - t_start) * 1000, 2)
+            # Collect chunk metadata for all chunks involved
+            all_ids = set()
+            if trace.dense:
+                all_ids.update(r.chunk_id for r in trace.dense.results)
+            if trace.keyword:
+                all_ids.update(r.chunk_id for r in trace.keyword.results)
+            chunk_meta_map = self._fetch_chunk_meta(list(all_ids))
+
+            # Project embeddings to 2D grid positions (PCA)
+            # Use a standard grid size — hyperfield will remap to its actual dimensions
+            TRACE_GRID_COLS = 80
+            TRACE_GRID_ROWS = 80
+            all_embeddings = self._fetch_embeddings(list(all_ids))
+            positions = _project_embeddings_2d(all_embeddings, TRACE_GRID_COLS, TRACE_GRID_ROWS)
+
+            trace.chunk_meta = [
+                TraceChunkMeta(
+                    chunk_id=rid,
+                    path=meta.get("path", ""),
+                    title=meta.get("title"),
+                    section=meta.get("section"),
+                    doc_type=meta.get("doc_type"),
+                    tags=meta.get("tags", []),
+                    grid_col=positions.get(rid, (TRACE_GRID_COLS // 2, TRACE_GRID_ROWS // 2))[0],
+                    grid_row=positions.get(rid, (TRACE_GRID_COLS // 2, TRACE_GRID_ROWS // 2))[1],
+                )
+                for rid, meta in chunk_meta_map.items()
+            ]
+
+            # Broadcast to any connected listeners (Hyperfield)
+            _broadcast_trace(trace, len(results))
+
+        return results
 
     def _fetch_updated(self, rowids: set[int]) -> dict[int, str | None]:
         if not rowids:
@@ -979,8 +1117,30 @@ class HyperspaceRAG:
             out[rowid] = list(struct.unpack(f"{count}f", blob))
         return out
 
+    def _fetch_chunk_meta(self, rowids: list[int]) -> dict[int, dict]:
+        """Fetch lightweight metadata for a set of chunk IDs (for tracing)."""
+        if not rowids:
+            return {}
+        placeholders = ",".join("?" * len(rowids))
+        rows = self.db.execute(
+            f"SELECT id, path, title, section, doc_type, tags FROM chunks "
+            f"WHERE id IN ({placeholders})",
+            tuple(rowids),
+        ).fetchall()
+        return {
+            r[0]: {
+                "path": r[1],
+                "title": r[2],
+                "section": r[3],
+                "doc_type": r[4],
+                "tags": json.loads(r[5]) if r[5] else [],
+            }
+            for r in rows
+        }
+
     def _mmr_rerank(
-        self, rowids: list[int], similarity: dict[int, float], top_k: int
+        self, rowids: list[int], similarity: dict[int, float], top_k: int,
+        trace: "SearchTrace | None" = None,
     ) -> list[int]:
         """Greedy MMR selection to keep the result set diverse.
 
@@ -1001,9 +1161,15 @@ class HyperspaceRAG:
         selected: list[int] = []
         remaining = [r for r in rowids if r in embeddings]
 
+        # Import trace types only when tracing
+        if trace is not None:
+            from .trace import TraceMMRStage, TraceMMRStep
+            trace.mmr = TraceMMRStage(mmr_lambda=MMR_LAMBDA)
+
         while remaining and len(selected) < top_k:
             best_id = None
             best_score = -math.inf
+            round_candidates = []
             for rid in remaining:
                 relevance = similarity.get(rid, fallback[rid])
                 if selected:
@@ -1013,9 +1179,22 @@ class HyperspaceRAG:
                 else:
                     redundancy = 0.0
                 score = MMR_LAMBDA * relevance - (1.0 - MMR_LAMBDA) * redundancy
+                round_candidates.append((rid, relevance, redundancy, score))
                 if score > best_score:
                     best_score = score
                     best_id = rid
+
+            # Emit trace steps for this round
+            if trace is not None:
+                for rid, relevance, redundancy, score in round_candidates:
+                    trace.mmr.steps.append(TraceMMRStep(
+                        chunk_id=rid,
+                        relevance=round(relevance, 6),
+                        max_redundancy=round(redundancy, 6),
+                        mmr_score=round(score, 6),
+                        selected=(rid == best_id),
+                    ))
+
             selected.append(best_id)
             remaining.remove(best_id)
 
@@ -1025,6 +1204,9 @@ class HyperspaceRAG:
                 break
             if rid not in selected:
                 selected.append(rid)
+
+        if trace is not None and trace.mmr is not None:
+            trace.mmr.final_ids = selected[:top_k]
 
         return selected[:top_k]
 
@@ -1154,6 +1336,79 @@ def _to_fts_query(query: str) -> str:
     if not chosen:
         return ""
     return " OR ".join(f'"{t}"' for t in chosen)
+
+
+# ---------------------------------------------------------------------------
+# Trace broadcast hooks — called by HyperspaceRAG.search() when listeners exist
+# The actual listener list lives in mcp-server.py; these are stubs that get
+# monkey-patched at server startup. When running standalone (tests, CLI),
+# they're no-ops.
+# ---------------------------------------------------------------------------
+
+def _project_embeddings_2d(
+    embeddings: dict[int, list[float]], grid_cols: int, grid_rows: int, padding: int = 3
+) -> dict[int, tuple[int, int]]:
+    """Project high-dimensional embeddings to 2D grid positions via PCA.
+
+    Returns {chunk_id: (col, row)} mapping. Chunks that are semantically
+    similar will land near each other on the grid.
+    """
+    if not embeddings or len(embeddings) < 2:
+        # Single point — put it at center
+        for rid in embeddings:
+            return {rid: (grid_cols // 2, grid_rows // 2)}
+        return {}
+
+    import numpy as np
+
+    ids = list(embeddings.keys())
+    matrix = np.array([embeddings[rid] for rid in ids], dtype=np.float32)
+
+    # PCA: center, compute top-2 eigenvectors via SVD
+    mean = matrix.mean(axis=0)
+    centered = matrix - mean
+    # Economy SVD — we only need 2 components
+    U, S, Vt = np.linalg.svd(centered, full_matrices=False)
+    # Project onto first 2 principal components
+    proj = centered @ Vt[:2].T  # shape: (n_chunks, 2)
+
+    # Normalize to grid coordinates with padding
+    min_vals = proj.min(axis=0)
+    max_vals = proj.max(axis=0)
+    ranges = max_vals - min_vals
+    # Avoid division by zero if all points collapse
+    ranges[ranges < 1e-6] = 1.0
+
+    usable_cols = grid_cols - padding * 2
+    usable_rows = grid_rows - padding * 2
+
+    normalized = (proj - min_vals) / ranges  # 0-1
+    cols = (normalized[:, 0] * usable_cols + padding).astype(int)
+    rows = (normalized[:, 1] * usable_rows + padding).astype(int)
+
+    # Clamp
+    cols = np.clip(cols, padding, grid_cols - padding - 1)
+    rows = np.clip(rows, padding, grid_rows - padding - 1)
+
+    return {ids[i]: (int(cols[i]), int(rows[i])) for i in range(len(ids))}
+# ---------------------------------------------------------------------------
+
+_trace_listener_check = None   # set to a callable by mcp-server.py
+_trace_broadcast_fn = None     # set to a callable by mcp-server.py
+
+
+def _has_trace_listeners() -> bool:
+    """Check if any Hyperfield instances are listening for traces."""
+    if _trace_listener_check is None:
+        return False
+    return _trace_listener_check()
+
+
+def _broadcast_trace(trace, result_count: int):
+    """Broadcast a completed trace to all connected listeners."""
+    if _trace_broadcast_fn is None:
+        return
+    _trace_broadcast_fn(trace, result_count)
 
 
 # ---------------------------------------------------------------------------
