@@ -180,7 +180,7 @@ TOP_BAR = """\
               <div class="settings-control mcp-control" id="mcp-row" style="display:none">
                 <span class="settings-control-label">
                   MCP service
-                  <span class="hv-chip hv-chip-outlined-muted mcp-state" id="mcp-state">&hellip;</span>
+                  <span class="status-chip status-chip-outlined-muted mcp-state" id="mcp-state">&hellip;</span>
                 </span>
                 <div class="mcp-actions">
                   <button class="settings-toggle-btn" id="mcp-restart-btn" aria-label="Restart MCP service" title="Restart — picks up code changes">
@@ -293,7 +293,7 @@ TOP_BAR = """\
 # rendering. Content is baked directly into the page via {{CONTENT}}.
 LEGACY_PAGE_TEMPLATE = """\
 <!DOCTYPE html>
-<html lang="en" class="hv-splash-active">
+<html lang="en" class="splash-screen-active">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -306,8 +306,8 @@ LEGACY_PAGE_TEMPLATE = """\
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-  <div class="hv-splash" id="hv-splash">
-    <div class="hv-splash-flag">
+  <div class="splash-screen" id="splash-screen">
+    <div class="splash-screen-flag">
       {{SPLASH_EYE}}
     </div>
   </div>
@@ -353,8 +353,8 @@ LEGACY_PAGE_TEMPLATE = """\
       </button>
     </div>
   </div>
-  <div class="hv-overlay search-overlay" id="search-overlay">
-    <div class="hv-panel-modal search-modal" id="search-modal">
+  <div class="modal-overlay search-overlay" id="search-overlay">
+    <div class="modal-panel search-modal" id="search-modal">
       <div class="search-input-row">
         <i data-lucide="search" class="search-input-icon"></i>
         <input type="text" id="search" placeholder="search hyperspace..." autocomplete="off" spellcheck="false">
@@ -498,7 +498,7 @@ def build_page(content_html, title, rel_path_str, toc_html="", backlinks_html=""
         if li_count >= 3:
             toc_sidebar = (
                 '<nav class="toc-sidebar" id="toc-sidebar" aria-label="Table of contents">'
-                '<div class="hv-panel-header"><i data-lucide="list" class="toc-icon"></i> Table of Contents</div>'
+                '<div class="panel-header"><i data-lucide="list" class="toc-icon"></i> Table of Contents</div>'
                 '<div class="toc-body">' + toc_html + '</div>'
                 '</nav>'
             )
@@ -527,7 +527,7 @@ def build_page(content_html, title, rel_path_str, toc_html="", backlinks_html=""
 
 SHELL_TEMPLATE = """\
 <!DOCTYPE html>
-<html lang="en" class="hv-splash-active">
+<html lang="en" class="splash-screen-active">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -540,15 +540,15 @@ SHELL_TEMPLATE = """\
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-  <div class="hv-splash" id="hv-splash">
-    <div class="hv-splash-flag">
+  <div class="splash-screen" id="splash-screen">
+    <div class="splash-screen-flag">
       {{SPLASH_EYE}}
     </div>
   </div>
   {{TOPBAR}}
   {{SITE_NAV}}
   <nav class="toc-sidebar" id="toc-sidebar" aria-label="Table of contents">
-    <div class="hv-panel-header"><i data-lucide="list" class="toc-icon"></i> Table of Contents</div>
+    <div class="panel-header"><i data-lucide="list" class="toc-icon"></i> Table of Contents</div>
     <div class="toc-body" id="toc-body"></div>
   </nav>
   <main class="page" id="page-main">
@@ -589,8 +589,8 @@ SHELL_TEMPLATE = """\
       </button>
     </div>
   </div>
-  <div class="hv-overlay search-overlay" id="search-overlay">
-    <div class="hv-panel-modal search-modal" id="search-modal">
+  <div class="modal-overlay search-overlay" id="search-overlay">
+    <div class="modal-panel search-modal" id="search-modal">
       <div class="search-input-row">
         <i data-lucide="search" class="search-input-icon"></i>
         <input type="text" id="search" placeholder="search hyperspace..." autocomplete="off" spellcheck="false">
@@ -618,7 +618,7 @@ def _inject_brand(template: str) -> str:
     return (
         template
         .replace("{{BRAND_ICON}}", hypervisor_logo_svg("brand-icon"))
-        .replace("{{SPLASH_EYE}}", hypervisor_logo_svg("hv-splash-eye"))
+        .replace("{{SPLASH_EYE}}", hypervisor_logo_svg("splash-screen-eye"))
         .replace("{{FAVICON}}", hypervisor_favicon_data_uri())
     )
 

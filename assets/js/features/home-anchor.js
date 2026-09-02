@@ -8,7 +8,7 @@
       if (!window.HvNoiseField) return;
       // Mount on body so the render loop uses viewport dimensions
       window.HvNoiseField.start(document.body, { cellDivisor: 600 });
-      var canvas = document.body.querySelector('canvas.hv-noise-field-canvas');
+      var canvas = document.body.querySelector('canvas.noise-field-canvas');
       if (canvas) {
         canvas.style.position = 'fixed';
         canvas.style.inset = '0';

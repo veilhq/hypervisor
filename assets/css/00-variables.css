@@ -1,7 +1,7 @@
 /* ===== Hypervisor: App-Local Resets & Cursor Overrides =====
    Shared globals (keyframes, scrollbar, focus ring, tooltips, selection)
-   and shared components (hv-badge, hv-icon-btn, hv-text-btn, hv-panel-header,
-   hv-dropdown, hv-section, hv-confirm) relocated to .hyperkit/css/globals.css
+   and shared components (label-badge, icon-button, text-button, panel-header,
+   menu-dropdown, content-section, hv-confirm) relocated to .hyperkit/css/globals.css
    and .hyperkit/css/components.css — loaded before this file.
 
    This file retains only Hypervisor-specific rules:

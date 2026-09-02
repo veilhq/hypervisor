@@ -21,18 +21,18 @@
       if (!article) return;
 
       editorWrap = document.createElement("div");
-      editorWrap.className = "hv-editor-wrap";
+      editorWrap.className = "inline-editor-wrap";
       editorWrap.style.display = "none";
 
       // Save indicator
       saveIndicator = document.createElement("span");
-      saveIndicator.className = "hv-editor-indicator";
+      saveIndicator.className = "inline-editor-indicator";
       saveIndicator.textContent = "";
       editorWrap.appendChild(saveIndicator);
 
       // Textarea
       textarea = document.createElement("textarea");
-      textarea.className = "hv-editor-textarea";
+      textarea.className = "inline-editor-textarea";
       textarea.setAttribute("spellcheck", "false");
       textarea.setAttribute("autocomplete", "off");
       textarea.setAttribute("autocorrect", "off");
@@ -42,16 +42,16 @@
 
       // Action bar (save / cancel)
       var actionBar = document.createElement("div");
-      actionBar.className = "hv-editor-actions";
+      actionBar.className = "inline-editor-actions";
 
       var saveBtn = document.createElement("button");
-      saveBtn.className = "hv-editor-save";
+      saveBtn.className = "inline-editor-save";
       saveBtn.textContent = "save";
       saveBtn.setAttribute("aria-label", "Save changes");
       saveBtn.addEventListener("click", function () { save(); });
 
       var cancelBtn = document.createElement("button");
-      cancelBtn.className = "hv-editor-cancel";
+      cancelBtn.className = "inline-editor-cancel";
       cancelBtn.textContent = "cancel";
       cancelBtn.setAttribute("aria-label", "Discard changes");
       cancelBtn.addEventListener("click", function () { cancelEdit(); });
@@ -92,7 +92,7 @@
       // --- Blur auto-save ---
       textarea.addEventListener("blur", function (e) {
         var related = e.relatedTarget;
-        if (related && related.closest && related.closest(".hv-editor-actions")) return;
+        if (related && related.closest && related.closest(".inline-editor-actions")) return;
         if (dirty) save();
       });
     }

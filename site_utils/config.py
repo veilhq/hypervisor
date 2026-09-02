@@ -198,7 +198,8 @@ def eco_app_icon_svg(app_name: str, css_class: str = "launcher-icon") -> str:
 # --- Filters ---
 SKIP_DIRS = {
     "__pycache__", "site", "learn", ".scratch", ".kb",
-    ".hyperagent", ".hyperkit", ".hypereye", ".events",
+    ".hyperagent", ".hyperkit", ".hypereye", ".hypercycle",
+    ".hyperfield", ".hyperline", ".events",
 }
 SKIP_FILES = {".gitkeep"}
 

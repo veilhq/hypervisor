@@ -426,12 +426,12 @@ def format_badge_html(badges: dict) -> str:
             cls = "badge-tasks-partial"
         else:
             cls = "badge-tasks-none"
-        parts.append(f'<span class="hv-badge {cls}">{done}/{total} tasks</span>')
+        parts.append(f'<span class="label-badge {cls}">{done}/{total} tasks</span>')
 
     if badges["stale_days"]:
         days = badges["stale_days"]
         cls = "badge-stale-warn" if days < 60 else "badge-stale-crit"
-        parts.append(f'<span class="hv-badge {cls}">stale: {days}d</span>')
+        parts.append(f'<span class="label-badge {cls}">stale: {days}d</span>')
 
     if badges["words"]:
         w = badges["words"]
@@ -439,6 +439,6 @@ def format_badge_html(badges: dict) -> str:
             label = f"~{w / 1000:.1f}k words"
         else:
             label = f"~{w} words"
-        parts.append(f'<span class="hv-badge badge-words">{label}</span>')
+        parts.append(f'<span class="label-badge badge-words">{label}</span>')
 
     return "".join(parts)

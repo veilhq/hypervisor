@@ -87,10 +87,10 @@
       var insertRef = _dropZone.nextSibling;
       for (var i = 0; i < mdFiles.length; i++) {
         var skeletonLi = document.createElement("li");
-        skeletonLi.className = "hv-skeleton-row doc-skeleton";
+        skeletonLi.className = "loading-skeleton-row doc-skeleton";
         skeletonLi.innerHTML =
-          '<span class="hv-skeleton hv-skeleton-line doc-skeleton-title"></span>' +
-          '<span class="hv-skeleton hv-skeleton-line hv-skeleton-sm doc-skeleton-date"></span>';
+          '<span class="loading-skeleton loading-skeleton-line doc-skeleton-title"></span>' +
+          '<span class="loading-skeleton loading-skeleton-line loading-skeleton-sm doc-skeleton-date"></span>';
         skeletonItems.push(skeletonLi);
         if (docList) {
           docList.insertBefore(skeletonLi, insertRef);

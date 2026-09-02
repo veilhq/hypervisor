@@ -135,7 +135,7 @@
       // Replace chip text with an inline input
       var input = document.createElement("input");
       input.type = "text";
-      input.className = "assignee-edit-input hv-input-inline";
+      input.className = "assignee-edit-input form-input-inline";
       input.value = fullName;
       input.setAttribute("aria-label", "Edit assignee name");
 

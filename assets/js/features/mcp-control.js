@@ -34,24 +34,24 @@
     var restartBtn = el("mcp-restart-btn");
     if (!chip) return;
 
-    chip.classList.remove("hv-chip-filled", "hv-chip-outlined-muted", "hv-chip-outlined-accent");
+    chip.classList.remove("status-chip-filled", "status-chip-outlined-muted", "status-chip-outlined-accent");
 
     if (!s || s.ok === false) {
-      chip.classList.add("hv-chip-outlined-muted");
+      chip.classList.add("status-chip-outlined-muted");
       chip.textContent = "unknown";
       chip.title = (s && s.error) ? s.error : "Could not read service state";
       return;
     }
 
     if (s.running) {
-      chip.classList.add("hv-chip-filled");
+      chip.classList.add("status-chip-filled");
       chip.textContent = "PID " + s.pid;
       chip.title = "Running on port " + s.port +
                    (s.owned ? " (started by this window)" : " (started by a previous window)");
       if (stopBtn) stopBtn.disabled = false;
       if (restartBtn) restartBtn.setAttribute("title", "Restart — picks up code changes");
     } else {
-      chip.classList.add("hv-chip-outlined-muted");
+      chip.classList.add("status-chip-outlined-muted");
       chip.textContent = "stopped";
       // Port open with no lock file means a stray instance is squatting 8321.
       chip.title = s.port_open

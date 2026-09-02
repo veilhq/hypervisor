@@ -1,7 +1,7 @@
 /* === Splash Screen — 5s minimum, dismiss after prefs applied === */
 
 (function initSplash() {
-  var splash = document.getElementById("hv-splash");
+  var splash = document.getElementById("splash-screen");
   if (!splash) return;
 
   // Only show on first visit this session
@@ -10,12 +10,12 @@
 
   if (seen) {
     splash.parentNode.removeChild(splash);
-    document.documentElement.classList.remove("hv-splash-active");
+    document.documentElement.classList.remove("splash-screen-active");
     return;
   }
 
   // Lock scrollbars while splash is visible
-  document.documentElement.classList.add("hv-splash-active");
+  document.documentElement.classList.add("splash-screen-active");
   try { sessionStorage.setItem("__hv_splash_seen", "1"); } catch (e) {}
 
   // Two conditions must be met before dismiss:
@@ -28,10 +28,10 @@
   function tryDismiss() {
     if (dismissed || !minElapsed || !prefsReady) return;
     dismissed = true;
-    splash.classList.add("hv-splash-hidden");
+    splash.classList.add("splash-screen-hidden");
     setTimeout(function () {
       if (splash.parentNode) splash.parentNode.removeChild(splash);
-      document.documentElement.classList.remove("hv-splash-active");
+      document.documentElement.classList.remove("splash-screen-active");
     }, 700);
   }
 
@@ -51,10 +51,10 @@
   setTimeout(function () {
     if (!dismissed) {
       dismissed = true;
-      splash.classList.add("hv-splash-hidden");
+      splash.classList.add("splash-screen-hidden");
       setTimeout(function () {
         if (splash.parentNode) splash.parentNode.removeChild(splash);
-        document.documentElement.classList.remove("hv-splash-active");
+        document.documentElement.classList.remove("splash-screen-active");
       }, 700);
     }
   }, 4000);

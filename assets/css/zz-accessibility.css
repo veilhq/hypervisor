@@ -4,7 +4,7 @@
    components that need explicit background overrides in light mode. */
 
 html.a11y-bw-theme .nav-panel,
-html.a11y-bw-theme .hv-dropdown {
+html.a11y-bw-theme .menu-dropdown {
   background: var(--bg-card);
 }
 html.a11y-bw-theme .topbar::before { background: rgba(228, 228, 228, 0.85); }
@@ -14,7 +14,7 @@ html.a11y-bw-theme .cmd-palette-overlay { background: rgba(200, 200, 200, 0.75);
 html.a11y-bw-theme .cmd-palette { background: var(--bg-card); box-shadow: 0 0 24px rgba(0, 0, 255, 0.08), 0 8px 32px rgba(0, 0, 0, 0.15); }
 html.a11y-bw-theme .cmd-palette-input-wrap { background: var(--bg-card-hover); }
 html.a11y-bw-theme .shortcuts-overlay { background: rgba(200, 200, 200, 0.7); }
-html.a11y-bw-theme .hv-overlay { background: rgba(200, 200, 200, 0.75); }
-html.a11y-bw-theme .hv-confirm-overlay { background: rgba(200, 200, 200, 0.75); }
+html.a11y-bw-theme .modal-overlay { background: rgba(200, 200, 200, 0.75); }
+html.a11y-bw-theme .confirm-dialog-overlay { background: rgba(200, 200, 200, 0.75); }
 html.a11y-bw-theme .nav-backdrop { background: rgba(200, 200, 200, 0.5); }
 html.a11y-bw-theme .scratch-panel { box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1); }

@@ -1,22 +1,22 @@
 /* ===== Hypervisor: Local Primitive Overrides =====
-   Shared primitives (hv-chip, hv-row, hv-button, hv-overlay, etc.) relocated
+   Shared primitives (status-chip, list-row, action-button, modal-overlay, etc.) relocated
    to .hyperkit/css/primitives.css (WI-142 Phase 1) — loaded before this file.
    This file holds only the shape-level divergence Hypervisor keeps: the
-   bordered tab card. See hyperkit/css/primitives.css for the shared .hv-tab
+   bordered tab card. See hyperkit/css/primitives.css for the shared .nav-tab
    base (position, background, hover transition) that this extends. */
 
 /* ---- Tab card primitive — bordered card for open tabs -----------------------
    Visually identical to a regular card. Distinguished from session cards by
    the dither grid and state rail, not by shape.
 */
-.hv-tab {
+.nav-tab {
   border: var(--border-hair) solid var(--border);
   border-radius: var(--radius);
 }
-.hv-tab:hover {
+.nav-tab:hover {
   border-color: var(--accent-border);
 }
-.hv-tab.active,
-.hv-tab.hv-tab-active {
+.nav-tab.active,
+.nav-tab.nav-tab-active {
   border-color: var(--accent-border);
 }

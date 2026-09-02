@@ -566,7 +566,7 @@
       header.className = 'scratch-header';
 
       dateFlag = document.createElement('span');
-      dateFlag.className = 'scratch-date-flag hv-chip hv-chip-outlined-accent';
+      dateFlag.className = 'scratch-date-flag status-chip status-chip-outlined-accent';
       header.appendChild(dateFlag);
 
       var actions = document.createElement('div');

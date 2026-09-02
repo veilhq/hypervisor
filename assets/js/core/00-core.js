@@ -45,7 +45,7 @@
 
   function initDesktopFeatures() {
     window.isDesktopApp = true;
-    document.body.classList.add("hv-desktop");
+    document.body.classList.add("app-mode-desktop");
     var api = window.pywebview.api;
 
     // --- Single load: get all prefs (flat keys + userGradientMaps) ---
@@ -273,24 +273,24 @@
       opts = opts || {};
       return new Promise(function (resolve) {
         var overlay = document.createElement("div");
-        overlay.className = "hv-confirm-overlay";
+        overlay.className = "confirm-dialog-overlay";
 
         var box = document.createElement("div");
-        box.className = "hv-confirm-box";
+        box.className = "confirm-dialog-box";
 
         var msg = document.createElement("div");
-        msg.className = "hv-confirm-message";
+        msg.className = "confirm-dialog-message";
         msg.textContent = message;
 
         var actions = document.createElement("div");
-        actions.className = "hv-confirm-actions";
+        actions.className = "confirm-dialog-actions";
 
         var cancelBtn = document.createElement("button");
-        cancelBtn.className = "hv-confirm-btn";
+        cancelBtn.className = "confirm-dialog-btn";
         cancelBtn.textContent = opts.cancelLabel || "cancel";
 
         var confirmBtn = document.createElement("button");
-        confirmBtn.className = "hv-confirm-btn" + (opts.danger ? " hv-confirm-btn-danger" : "");
+        confirmBtn.className = "confirm-dialog-btn" + (opts.danger ? " confirm-dialog-btn-danger" : "");
         confirmBtn.textContent = opts.confirmLabel || "confirm";
 
         actions.appendChild(cancelBtn);
@@ -340,18 +340,18 @@
       opts = opts || {};
       return new Promise(function (resolve) {
         var overlay = document.createElement("div");
-        overlay.className = "hv-confirm-overlay hv-prompt-overlay";
+        overlay.className = "confirm-dialog-overlay prompt-dialog-overlay";
 
         var box = document.createElement("div");
-        box.className = "hv-confirm-box hv-prompt-box";
+        box.className = "confirm-dialog-box prompt-dialog";
 
         var msg = document.createElement("div");
-        msg.className = "hv-confirm-message";
+        msg.className = "confirm-dialog-message";
         msg.textContent = message;
 
         var input = document.createElement("input");
         input.type = "text";
-        input.className = "hv-prompt-input";
+        input.className = "prompt-dialog-input";
         input.value = opts.value || "";
         if (opts.placeholder) input.placeholder = opts.placeholder;
         input.autocomplete = "off";
@@ -361,7 +361,7 @@
 
         if (opts.hint) {
           var hint = document.createElement("div");
-          hint.className = "hv-prompt-hint";
+          hint.className = "prompt-dialog-hint";
           hint.textContent = opts.hint;
           box.appendChild(hint);
         }
@@ -369,14 +369,14 @@
         box.appendChild(input);
 
         var actions = document.createElement("div");
-        actions.className = "hv-confirm-actions";
+        actions.className = "confirm-dialog-actions";
 
         var cancelBtn = document.createElement("button");
-        cancelBtn.className = "hv-confirm-btn";
+        cancelBtn.className = "confirm-dialog-btn";
         cancelBtn.textContent = opts.cancelLabel || "cancel";
 
         var confirmBtn = document.createElement("button");
-        confirmBtn.className = "hv-confirm-btn";
+        confirmBtn.className = "confirm-dialog-btn";
         confirmBtn.textContent = opts.confirmLabel || "save";
 
         actions.appendChild(cancelBtn);

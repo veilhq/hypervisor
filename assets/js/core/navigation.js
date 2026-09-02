@@ -69,7 +69,7 @@
   // Lightweight standalone noise field — mirrors HvNoiseField's shader but runs independently
   function _createSearchNoise(host) {
     var canvas = document.createElement("canvas");
-    canvas.className = "hv-noise-field-canvas";
+    canvas.className = "noise-field-canvas";
     host.insertBefore(canvas, host.firstChild);
     canvas.width = host.clientWidth || 1;
     canvas.height = host.clientHeight || 1;
@@ -287,9 +287,9 @@
       wrap.className = "sr-semantic-skeleton";
       wrap.innerHTML =
         '<div class="sr-semantic-divider" style="opacity:0.5">related</div>' +
-        '<li class="hv-skeleton hv-skeleton-row"></li>' +
-        '<li class="hv-skeleton hv-skeleton-row"></li>' +
-        '<li class="hv-skeleton hv-skeleton-row"></li>';
+        '<li class="loading-skeleton loading-skeleton-row"></li>' +
+        '<li class="loading-skeleton loading-skeleton-row"></li>' +
+        '<li class="loading-skeleton loading-skeleton-row"></li>';
       resultsBox.appendChild(wrap);
     }
 
@@ -335,7 +335,7 @@
           card.style.animationDelay = (i * 0.04) + "s";
           card.setAttribute("data-section", r.section || "");
           card.innerHTML =
-            '<span class="hv-chip hv-chip-outlined-muted sr-partial-badge">\u2248 partial</span>' +
+            '<span class="status-chip status-chip-outlined-muted sr-partial-badge">\u2248 partial</span>' +
             '<div class="sr-card-header">' +
               (category ? '<span class="sr-card-category">' + category + '</span>' : '') +
             '</div>' +
@@ -527,7 +527,7 @@
     // Close on backdrop click (but not on modal click)
     if (searchOverlay) {
       searchOverlay.addEventListener("click", function (e) {
-        if (e.target === searchOverlay || e.target.classList.contains("hv-noise-field-canvas")) {
+        if (e.target === searchOverlay || e.target.classList.contains("noise-field-canvas")) {
           closeSearch();
         }
       });

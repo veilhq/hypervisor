@@ -1,5 +1,5 @@
 /* ===== Kiro Skills Map (page chrome) =====
-   Rows use the shared .hv-skill-row primitive (hyperkit/css/cards.css).
+   Rows use the shared .skill-row primitive (hyperkit/css/cards.css).
    This file styles only the page-level wrapper: intro, toolbar, search,
    stats, and empty state. Tokens from hyperkit/css/tokens.css. */
 

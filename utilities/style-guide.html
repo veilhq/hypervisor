@@ -159,20 +159,20 @@
 <h3>Chip Variants</h3>
 
 <div style="display:flex; flex-wrap:wrap; gap:var(--space-3); align-items:center; margin:var(--space-4) 0;">
-  <span class="hv-chip hv-chip-filled">Filled</span>
-  <span class="hv-chip hv-chip-outlined-accent">Outlined Accent</span>
-  <span class="hv-chip hv-chip-outlined-muted">Outlined Muted</span>
+  <span class="status-chip status-chip-filled">Filled</span>
+  <span class="status-chip status-chip-outlined-accent">Outlined Accent</span>
+  <span class="status-chip status-chip-outlined-muted">Outlined Muted</span>
 </div>
 
 <h3>Chip Usage Patterns</h3>
 
 <div style="display:flex; flex-wrap:wrap; gap:var(--space-2); align-items:center; margin:var(--space-4) 0;">
-  <span class="hv-chip hv-chip-filled">WI-142</span>
-  <span class="hv-chip hv-chip-outlined-accent">In Progress</span>
-  <span class="hv-chip hv-chip-outlined-muted">Planned</span>
-  <span class="hv-chip hv-chip-outlined-muted" style="color:var(--comp); border-color:var(--comp);">JW</span>
-  <span class="hv-chip hv-chip-outlined-muted" style="color:var(--cool); border-color:var(--cool);">Sprint</span>
-  <span class="hv-chip hv-chip-outlined-muted" style="color:var(--warm); border-color:var(--warm);">hypervisor</span>
+  <span class="status-chip status-chip-filled">WI-142</span>
+  <span class="status-chip status-chip-outlined-accent">In Progress</span>
+  <span class="status-chip status-chip-outlined-muted">Planned</span>
+  <span class="status-chip status-chip-outlined-muted" style="color:var(--comp); border-color:var(--comp);">JW</span>
+  <span class="status-chip status-chip-outlined-muted" style="color:var(--cool); border-color:var(--cool);">Sprint</span>
+  <span class="status-chip status-chip-outlined-muted" style="color:var(--warm); border-color:var(--warm);">hypervisor</span>
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════════════════
@@ -182,12 +182,12 @@
 <h2>Badges</h2>
 
 <div style="display:flex; flex-wrap:wrap; gap:var(--space-3); align-items:center; margin:var(--space-4) 0;">
-  <span class="hv-badge">Default</span>
-  <span class="hv-badge hv-badge-accent">Accent</span>
-  <span class="hv-badge hv-badge-warm">Warm</span>
-  <span class="hv-badge hv-badge-cool">Cool</span>
-  <span class="hv-badge hv-badge-comp">Comp</span>
-  <span class="hv-badge hv-badge-muted">Muted</span>
+  <span class="label-badge">Default</span>
+  <span class="label-badge label-badge-accent">Accent</span>
+  <span class="label-badge label-badge-warm">Warm</span>
+  <span class="label-badge label-badge-cool">Cool</span>
+  <span class="label-badge label-badge-comp">Comp</span>
+  <span class="label-badge label-badge-muted">Muted</span>
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════════════════
@@ -199,27 +199,27 @@
 <h3>Button Variants</h3>
 
 <div style="display:flex; flex-wrap:wrap; gap:var(--space-3); align-items:center; margin:var(--space-4) 0;">
-  <button class="hv-button">Ghost (Default)</button>
-  <button class="hv-button hv-button-primary">Primary</button>
-  <button class="hv-button hv-button-danger">Danger</button>
-  <button class="hv-button" disabled>Disabled</button>
+  <button class="action-button">Ghost (Default)</button>
+  <button class="action-button action-button-primary">Primary</button>
+  <button class="action-button action-button-danger">Danger</button>
+  <button class="action-button" disabled>Disabled</button>
 </div>
 
 <h3>Icon Buttons</h3>
 
 <div style="display:flex; flex-wrap:wrap; gap:var(--space-3); align-items:center; margin:var(--space-4) 0;">
-  <button class="hv-icon-btn"><i data-lucide="settings" class="hv-icon-btn-icon"></i></button>
-  <button class="hv-icon-btn"><i data-lucide="search" class="hv-icon-btn-icon"></i></button>
-  <button class="hv-icon-btn"><i data-lucide="pin" class="hv-icon-btn-icon"></i></button>
-  <button class="hv-icon-btn active"><i data-lucide="check" class="hv-icon-btn-icon"></i></button>
+  <button class="icon-button"><i data-lucide="settings" class="icon-button-glyph"></i></button>
+  <button class="icon-button"><i data-lucide="search" class="icon-button-glyph"></i></button>
+  <button class="icon-button"><i data-lucide="pin" class="icon-button-glyph"></i></button>
+  <button class="icon-button active"><i data-lucide="check" class="icon-button-glyph"></i></button>
 </div>
 
 <h3>Text Buttons</h3>
 
 <div style="display:flex; flex-wrap:wrap; gap:var(--space-3); align-items:center; margin:var(--space-4) 0;">
-  <button class="hv-text-btn"><i data-lucide="plus" class="hv-text-btn-icon"></i> Create</button>
-  <button class="hv-text-btn"><i data-lucide="refresh-cw" class="hv-text-btn-icon"></i> Rebuild</button>
-  <button class="hv-text-btn active"><i data-lucide="eye" class="hv-text-btn-icon"></i> Active</button>
+  <button class="text-button"><i data-lucide="plus" class="text-button-glyph"></i> Create</button>
+  <button class="text-button"><i data-lucide="refresh-cw" class="text-button-glyph"></i> Rebuild</button>
+  <button class="text-button active"><i data-lucide="eye" class="text-button-glyph"></i> Active</button>
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════════════════
@@ -229,10 +229,10 @@
 <h2>Form Inputs</h2>
 
 <div style="display:flex; flex-direction:column; gap:var(--space-3); max-width:400px; margin:var(--space-4) 0;">
-  <input class="hv-input" type="text" placeholder="Standard input..." />
+  <input class="form-input" type="text" placeholder="Standard input..." />
   <div style="display:flex; align-items:center; gap:var(--space-2); padding:var(--space-2) var(--space-3); border:var(--border-hair) solid var(--border); border-radius:var(--radius);">
     <i data-lucide="search" style="width:14px; height:14px; color:var(--text-dim);"></i>
-    <input class="hv-input-inline" type="text" placeholder="Inline input (inside container)..." />
+    <input class="form-input-inline" type="text" placeholder="Inline input (inside container)..." />
   </div>
 </div>
 
@@ -245,19 +245,19 @@
 <p>Three-column grid: chip slot / body / right meta. Standard interactive row for lists.</p>
 
 <div style="margin:var(--space-4) 0; border:var(--border-hair) solid var(--border); border-radius:var(--radius); overflow:hidden;">
-  <a href="#" class="hv-row" onclick="return false">
-    <span class="hv-chip hv-chip-filled">WI-23</span>
-    <span class="hv-row-title" style="color:var(--text-bright);">Implement RBAC Permission Inheritance</span>
+  <a href="#" class="list-row" onclick="return false">
+    <span class="status-chip status-chip-filled">WI-23</span>
+    <span class="list-row-title" style="color:var(--text-bright);">Implement RBAC Permission Inheritance</span>
     <span style="color:var(--text-dim); font-size:var(--fs-caption);">3d ago</span>
   </a>
-  <a href="#" class="hv-row" onclick="return false">
-    <span class="hv-chip hv-chip-outlined-accent">WI-45</span>
-    <span class="hv-row-title" style="color:var(--text-bright);">Add Semantic Search to Hypervisor</span>
+  <a href="#" class="list-row" onclick="return false">
+    <span class="status-chip status-chip-outlined-accent">WI-45</span>
+    <span class="list-row-title" style="color:var(--text-bright);">Add Semantic Search to Hypervisor</span>
     <span style="color:var(--text-dim); font-size:var(--fs-caption);">1w ago</span>
   </a>
-  <a href="#" class="hv-row" onclick="return false">
-    <span class="hv-chip hv-chip-outlined-muted">WI-67</span>
-    <span class="hv-row-title" style="color:var(--text-bright);">Style Guide Utility Page</span>
+  <a href="#" class="list-row" onclick="return false">
+    <span class="status-chip status-chip-outlined-muted">WI-67</span>
+    <span class="list-row-title" style="color:var(--text-bright);">Style Guide Utility Page</span>
     <span style="color:var(--text-dim); font-size:var(--fs-caption);">today</span>
   </a>
 </div>
@@ -268,16 +268,16 @@
 
 <h2>Section Panels</h2>
 
-<h3>Bordered Section (.hv-section)</h3>
+<h3>Bordered Section (.content-section)</h3>
 
-<div class="hv-section" style="animation:none;">
+<div class="content-section" style="animation:none;">
   <h2 style="color:var(--accent);">Section Title</h2>
   <p>This is a bordered section panel with rounded corners, surface background, and the standard section padding. Used for grouping related content in directory indexes and dashboards.</p>
 </div>
 
-<h3>Quiet Section (.hv-section-quiet)</h3>
+<h3>Quiet Section (.content-section-quiet)</h3>
 
-<div class="hv-section-quiet" style="animation:none;">
+<div class="content-section-quiet" style="animation:none;">
   <h2>Quiet Section Title</h2>
   <p>A frameless section variant. Groups content with generous spacing and heading weight — no colored rail or border. Use for content sections that should read as document structure, not navigation targets.</p>
 </div>
@@ -291,27 +291,27 @@
 <div style="display:flex; flex-direction:column; gap:var(--space-3); margin:var(--space-4) 0; max-width:400px;">
   <div>
     <span style="font-size:var(--fs-caption); color:var(--text-dim); letter-spacing:0.06em;">0%</span>
-    <span class="hv-progress-track"><span class="hv-progress-fill" style="width:0%"></span></span>
+    <span class="progress-track"><span class="progress-fill" style="width:0%"></span></span>
   </div>
   <div>
     <span style="font-size:var(--fs-caption); color:var(--text-dim); letter-spacing:0.06em;">25%</span>
-    <span class="hv-progress-track"><span class="hv-progress-fill" style="width:25%"></span></span>
+    <span class="progress-track"><span class="progress-fill" style="width:25%"></span></span>
   </div>
   <div>
     <span style="font-size:var(--fs-caption); color:var(--text-dim); letter-spacing:0.06em;">50%</span>
-    <span class="hv-progress-track"><span class="hv-progress-fill" style="width:50%"></span></span>
+    <span class="progress-track"><span class="progress-fill" style="width:50%"></span></span>
   </div>
   <div>
     <span style="font-size:var(--fs-caption); color:var(--text-dim); letter-spacing:0.06em;">75%</span>
-    <span class="hv-progress-track"><span class="hv-progress-fill" style="width:75%"></span></span>
+    <span class="progress-track"><span class="progress-fill" style="width:75%"></span></span>
   </div>
   <div>
     <span style="font-size:var(--fs-caption); color:var(--text-dim); letter-spacing:0.06em;">100%</span>
-    <span class="hv-progress-track"><span class="hv-progress-fill" style="width:100%"></span></span>
+    <span class="progress-track"><span class="progress-fill" style="width:100%"></span></span>
   </div>
   <div>
     <span style="font-size:var(--fs-caption); color:var(--text-dim); letter-spacing:0.06em;">Empty state (no data)</span>
-    <span class="hv-progress-track hv-progress-track-empty"></span>
+    <span class="progress-track progress-track-empty"></span>
   </div>
 </div>
 
@@ -341,14 +341,14 @@
 <div class="work-card-grid" style="margin:var(--space-4) 0;">
   <a href="#" class="work-card" onclick="return false">
     <div class="work-card-meta">
-      <span class="hv-chip hv-chip-filled work-card-chip">WI-142</span>
+      <span class="status-chip status-chip-filled work-card-chip">WI-142</span>
       <span class="work-card-assignee">JW</span>
       <span class="work-card-days">3d</span>
     </div>
     <div class="work-card-title">Hyperkit Primitive Extraction</div>
     <div class="work-card-desc">Extract shared primitives from Hypervisor CSS into the Hyperkit layer for ecosystem consumption.</div>
     <div class="work-card-progress">
-      <span class="hv-progress-track pulse-bar"><span class="hv-progress-fill" style="width:60%"></span></span>
+      <span class="progress-track pulse-bar"><span class="progress-fill" style="width:60%"></span></span>
       <span class="work-card-progress-label">6/10</span>
     </div>
   </a>
@@ -422,50 +422,50 @@
   </div>
 </div>
 
-<h3>Skill Row (.hv-skill-row)</h3>
+<h3>Skill Row (.skill-row)</h3>
 
 <p style="color:var(--text-muted); font-size:var(--fs-caption); max-width:68ch;">
   A bordered list of skills as collapsible rows. Each row is a native
-  <code>&lt;details&gt;</code>: the <code>.hv-skill-rowhead</code> summary shows the icon,
-  name, trigger phrase, and a chevron; the <code>.hv-skill-rowbody</code> reveals the
+  <code>&lt;details&gt;</code>: the <code>.skill-rowhead</code> summary shows the icon,
+  name, trigger phrase, and a chevron; the <code>.skill-rowbody</code> reveals the
   description, a meta line, and the section outline on click. No JS needed.
 </p>
 
-<div class="hv-skill-list" style="margin:var(--space-4) 0;">
-  <details class="hv-skill-row" open>
-    <summary class="hv-skill-rowhead">
-      <i data-lucide="code" class="hv-skill-row-icon"></i>
-      <span class="hv-skill-row-name">code-changes</span>
-      <span class="hv-skill-row-trigger">Write or modify source code in any repo</span>
-      <i data-lucide="chevron-down" class="hv-skill-row-chevron"></i>
+<div class="skill-list" style="margin:var(--space-4) 0;">
+  <details class="skill-row" open>
+    <summary class="skill-rowhead">
+      <i data-lucide="code" class="skill-row-icon"></i>
+      <span class="skill-row-name">code-changes</span>
+      <span class="skill-row-trigger">Write or modify source code in any repo</span>
+      <i data-lucide="chevron-down" class="skill-row-chevron"></i>
     </summary>
-    <div class="hv-skill-rowbody">
-      <p class="hv-skill-row-desc">Defines comment conventions, the boundary that keeps hyperspace references out of committed code, and change hygiene.</p>
-      <div class="hv-skill-row-meta">
-        <span class="hv-skill-row-meta-item"><i data-lucide="hash"></i>10 sections</span>
-        <span class="hv-skill-row-meta-item"><i data-lucide="type"></i>879 words</span>
+    <div class="skill-rowbody">
+      <p class="skill-row-desc">Defines comment conventions, the boundary that keeps hyperspace references out of committed code, and change hygiene.</p>
+      <div class="skill-row-meta">
+        <span class="skill-row-meta-item"><i data-lucide="hash"></i>10 sections</span>
+        <span class="skill-row-meta-item"><i data-lucide="type"></i>879 words</span>
       </div>
-      <ul class="hv-skill-row-sections">
-        <li class="hv-skill-row-section hv-skill-row-lvl2">Source Code Comment Boundaries</li>
-        <li class="hv-skill-row-section hv-skill-row-lvl3">Boundaries by file type</li>
+      <ul class="skill-row-sections">
+        <li class="skill-row-section skill-row-lvl2">Source Code Comment Boundaries</li>
+        <li class="skill-row-section skill-row-lvl3">Boundaries by file type</li>
       </ul>
     </div>
   </details>
-  <details class="hv-skill-row">
-    <summary class="hv-skill-rowhead">
-      <i data-lucide="bug" class="hv-skill-row-icon"></i>
-      <span class="hv-skill-row-name">debugging</span>
-      <span class="hv-skill-row-trigger">Diagnose an error, stack trace, or failing build</span>
-      <i data-lucide="chevron-down" class="hv-skill-row-chevron"></i>
+  <details class="skill-row">
+    <summary class="skill-rowhead">
+      <i data-lucide="bug" class="skill-row-icon"></i>
+      <span class="skill-row-name">debugging</span>
+      <span class="skill-row-trigger">Diagnose an error, stack trace, or failing build</span>
+      <i data-lucide="chevron-down" class="skill-row-chevron"></i>
     </summary>
-    <div class="hv-skill-rowbody">
-      <p class="hv-skill-row-desc">Defines the systematic tracing order and cross-repo consistency checks.</p>
-      <div class="hv-skill-row-meta">
-        <span class="hv-skill-row-meta-item"><i data-lucide="hash"></i>4 sections</span>
-        <span class="hv-skill-row-meta-item"><i data-lucide="type"></i>287 words</span>
+    <div class="skill-rowbody">
+      <p class="skill-row-desc">Defines the systematic tracing order and cross-repo consistency checks.</p>
+      <div class="skill-row-meta">
+        <span class="skill-row-meta-item"><i data-lucide="hash"></i>4 sections</span>
+        <span class="skill-row-meta-item"><i data-lucide="type"></i>287 words</span>
       </div>
-      <ul class="hv-skill-row-sections">
-        <li class="hv-skill-row-section hv-skill-row-lvl2">Systematic Tracing Order</li>
+      <ul class="skill-row-sections">
+        <li class="skill-row-section skill-row-lvl2">Systematic Tracing Order</li>
       </ul>
     </div>
   </details>
@@ -478,12 +478,12 @@
 <h2>Hover Effects</h2>
 
 <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:var(--space-3); margin:var(--space-4) 0;">
-  <div class="hv-hover-lift" style="padding:var(--space-4); border:var(--border-hair) solid var(--border); border-radius:var(--radius); text-align:center; background:var(--bg-card);">
-    <div style="font-size:var(--fs-caption); color:var(--text-dim); letter-spacing:0.06em; text-transform:uppercase;">hv-hover-lift</div>
+  <div class="element-hover-lift" style="padding:var(--space-4); border:var(--border-hair) solid var(--border); border-radius:var(--radius); text-align:center; background:var(--bg-card);">
+    <div style="font-size:var(--fs-caption); color:var(--text-dim); letter-spacing:0.06em; text-transform:uppercase;">element-hover-lift</div>
     <div style="font-size:var(--fs-sm); color:var(--text-muted); margin-top:var(--space-2);">Hover me — translateY(-2px) + accent border</div>
   </div>
-  <div class="hv-hover-brightness" style="padding:var(--space-4); border:var(--border-hair) solid var(--border); border-radius:var(--radius); text-align:center; background:var(--accent); color:var(--bg);">
-    <div style="font-size:var(--fs-caption); letter-spacing:0.06em; text-transform:uppercase;">hv-hover-brightness</div>
+  <div class="element-hover-brightness" style="padding:var(--space-4); border:var(--border-hair) solid var(--border); border-radius:var(--radius); text-align:center; background:var(--accent); color:var(--bg);">
+    <div style="font-size:var(--fs-caption); letter-spacing:0.06em; text-transform:uppercase;">element-hover-brightness</div>
     <div style="font-size:var(--fs-sm); margin-top:var(--space-2);">Hover me — brightness(1.15)</div>
   </div>
 </div>
@@ -495,19 +495,19 @@
 <h2>Skeleton Loading</h2>
 
 <div style="display:flex; flex-direction:column; gap:var(--space-3); margin:var(--space-4) 0; max-width:500px;">
-  <div class="hv-skeleton hv-skeleton-line hv-skeleton-xl" style="width:60%"></div>
-  <div class="hv-skeleton hv-skeleton-line" style="width:100%"></div>
-  <div class="hv-skeleton hv-skeleton-line hv-skeleton-sm" style="width:80%"></div>
-  <div class="hv-skeleton hv-skeleton-line hv-skeleton-xs" style="width:40%"></div>
+  <div class="loading-skeleton loading-skeleton-line loading-skeleton-xl" style="width:60%"></div>
+  <div class="loading-skeleton loading-skeleton-line" style="width:100%"></div>
+  <div class="loading-skeleton loading-skeleton-line loading-skeleton-sm" style="width:80%"></div>
+  <div class="loading-skeleton loading-skeleton-line loading-skeleton-xs" style="width:40%"></div>
   <div style="display:flex; gap:var(--space-3); align-items:center; margin-top:var(--space-2);">
-    <div class="hv-skeleton hv-skeleton-circle"></div>
+    <div class="loading-skeleton loading-skeleton-circle"></div>
     <div style="flex:1; display:flex; flex-direction:column; gap:var(--space-2);">
-      <div class="hv-skeleton hv-skeleton-line" style="width:50%"></div>
-      <div class="hv-skeleton hv-skeleton-line hv-skeleton-sm" style="width:80%"></div>
+      <div class="loading-skeleton loading-skeleton-line" style="width:50%"></div>
+      <div class="loading-skeleton loading-skeleton-line loading-skeleton-sm" style="width:80%"></div>
     </div>
   </div>
-  <div class="hv-skeleton hv-skeleton-block"></div>
-  <div class="hv-skeleton hv-skeleton-card"></div>
+  <div class="loading-skeleton loading-skeleton-block"></div>
+  <div class="loading-skeleton loading-skeleton-card"></div>
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════════════════
@@ -519,37 +519,37 @@
 <p>Static examples (normally animated via JS). Variants: success, info, warn, error.</p>
 
 <div style="display:flex; flex-direction:column; gap:var(--space-2); margin:var(--space-4) 0; max-width:400px;">
-  <div class="hv-toast hv-toast-success hv-toast-visible" style="position:static; opacity:1; transform:none;">
-    <span class="hv-toast-icon"><i data-lucide="check-circle" style="width:16px; height:16px;"></i></span>
-    <div class="hv-toast-body">
-      <div class="hv-toast-title">Success</div>
-      <div class="hv-toast-message">Document saved successfully.</div>
+  <div class="notification-toast notification-toast-success notification-toast-visible" style="position:static; opacity:1; transform:none;">
+    <span class="notification-toast-icon"><i data-lucide="check-circle" style="width:16px; height:16px;"></i></span>
+    <div class="notification-toast-body">
+      <div class="notification-toast-title">Success</div>
+      <div class="notification-toast-message">Document saved successfully.</div>
     </div>
-    <button class="hv-toast-close">&times;</button>
+    <button class="notification-toast-close">&times;</button>
   </div>
-  <div class="hv-toast hv-toast-info hv-toast-visible" style="position:static; opacity:1; transform:none;">
-    <span class="hv-toast-icon"><i data-lucide="info" style="width:16px; height:16px;"></i></span>
-    <div class="hv-toast-body">
-      <div class="hv-toast-title">Info</div>
-      <div class="hv-toast-message">Build completed in 2.3s.</div>
+  <div class="notification-toast notification-toast-info notification-toast-visible" style="position:static; opacity:1; transform:none;">
+    <span class="notification-toast-icon"><i data-lucide="info" style="width:16px; height:16px;"></i></span>
+    <div class="notification-toast-body">
+      <div class="notification-toast-title">Info</div>
+      <div class="notification-toast-message">Build completed in 2.3s.</div>
     </div>
-    <button class="hv-toast-close">&times;</button>
+    <button class="notification-toast-close">&times;</button>
   </div>
-  <div class="hv-toast hv-toast-warn hv-toast-visible" style="position:static; opacity:1; transform:none;">
-    <span class="hv-toast-icon"><i data-lucide="alert-triangle" style="width:16px; height:16px;"></i></span>
-    <div class="hv-toast-body">
-      <div class="hv-toast-title">Warning</div>
-      <div class="hv-toast-message">3 documents have validation errors.</div>
+  <div class="notification-toast notification-toast-warn notification-toast-visible" style="position:static; opacity:1; transform:none;">
+    <span class="notification-toast-icon"><i data-lucide="alert-triangle" style="width:16px; height:16px;"></i></span>
+    <div class="notification-toast-body">
+      <div class="notification-toast-title">Warning</div>
+      <div class="notification-toast-message">3 documents have validation errors.</div>
     </div>
-    <button class="hv-toast-close">&times;</button>
+    <button class="notification-toast-close">&times;</button>
   </div>
-  <div class="hv-toast hv-toast-error hv-toast-visible" style="position:static; opacity:1; transform:none;">
-    <span class="hv-toast-icon"><i data-lucide="x-circle" style="width:16px; height:16px;"></i></span>
-    <div class="hv-toast-body">
-      <div class="hv-toast-title">Error</div>
-      <div class="hv-toast-message">Failed to write file — permission denied.</div>
+  <div class="notification-toast notification-toast-error notification-toast-visible" style="position:static; opacity:1; transform:none;">
+    <span class="notification-toast-icon"><i data-lucide="x-circle" style="width:16px; height:16px;"></i></span>
+    <div class="notification-toast-body">
+      <div class="notification-toast-title">Error</div>
+      <div class="notification-toast-message">Failed to write file — permission denied.</div>
     </div>
-    <button class="hv-toast-close">&times;</button>
+    <button class="notification-toast-close">&times;</button>
   </div>
 </div>
 
@@ -665,12 +665,12 @@
 <h3>Modal Panel</h3>
 
 <div style="position:relative; background:rgba(0,0,0,0.5); border-radius:var(--radius); padding:var(--space-6); margin:var(--space-4) 0;">
-  <div class="hv-panel-modal" style="position:static; animation:none; max-width:100%;">
+  <div class="modal-panel" style="position:static; animation:none; max-width:100%;">
     <div style="font-size:var(--fs-heading); font-weight:700; color:var(--text-bright); margin-bottom:var(--space-3);">Modal Title</div>
     <p style="font-size:var(--fs-body); color:var(--text); margin-bottom:var(--space-4);">This is modal panel content. Used for confirm dialogs, command palette, and other overlay UI that demands attention.</p>
     <div style="display:flex; justify-content:flex-end; gap:var(--space-3);">
-      <button class="hv-button">Cancel</button>
-      <button class="hv-button hv-button-primary">Confirm</button>
+      <button class="action-button">Cancel</button>
+      <button class="action-button action-button-primary">Confirm</button>
     </div>
   </div>
 </div>
@@ -685,9 +685,9 @@
 
 <div class="doc-header-strip" style="animation:none;">
   <div class="doc-header-chips">
-    <span class="hv-chip hv-chip-filled doc-header-chip doc-header-chip-wi">WI-142</span>
-    <span class="hv-chip hv-chip-outlined-accent doc-header-chip doc-header-chip-status-active">In Progress</span>
-    <span class="hv-chip hv-chip-outlined-muted doc-header-chip doc-header-chip-assignee" style="color:var(--comp); border-color:var(--comp);">JW</span>
+    <span class="status-chip status-chip-filled doc-header-chip doc-header-chip-wi">WI-142</span>
+    <span class="status-chip status-chip-outlined-accent doc-header-chip doc-header-chip-status-active">In Progress</span>
+    <span class="status-chip status-chip-outlined-muted doc-header-chip doc-header-chip-assignee" style="color:var(--comp); border-color:var(--comp);">JW</span>
   </div>
   <div class="doc-header-tags">
     <span class="doc-header-tag">hypervisor</span>

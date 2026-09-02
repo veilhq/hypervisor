@@ -320,7 +320,7 @@ def _build_learn_index(entries, build_id):
     for i, (slug, title, desc) in enumerate(entries):
         card_num = f"{i + 1:02d}"
         cards_html += (
-            f'<a href="/learn/{slug}/index.html" class="hv-hover-lift card">'
+            f'<a href="/learn/{slug}/index.html" class="element-hover-lift card">'
             f'<span class="card-num">{card_num}</span>'
             f'<span class="card-title">{title}</span>'
             f'<span class="card-desc">{desc}</span>'

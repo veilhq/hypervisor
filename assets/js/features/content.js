@@ -515,7 +515,7 @@
       out += '  <title>' + HvUtils.escapeHtml(title) + '</title>\n';
       out += "  <link rel=\"stylesheet\" href=\"https://db.onlinewebfonts.com/c/4571adf8e6d8270ea61a4f43a3ef31d2?family=Departure+Mono\">\n";
       out += '  <style>\n' + css + '\n  </style>\n';
-      out += '</head>\n<body class="hv-export">\n';
+      out += '</head>\n<body class="export-mode">\n';
       out += '<header class="topbar">\n  <div class="topbar-inner">\n    <div class="topbar-left">\n';
       out += '      <span class="brand"><span class="brand-text">HYPERVISOR</span></span>\n';
       out += '      <nav class="breadcrumbs" aria-label="Breadcrumb">' + breadcrumbsHtml + '</nav>\n';
@@ -543,19 +543,19 @@
       vars.forEach(function (v) { var val = root.getPropertyValue(v).trim(); if (val) overrides += "  " + v + ": " + val + ";\n"; });
       overrides += "}\n";
       overrides += "\n/* Export overrides */\n";
-      overrides += "body.hv-export, body.hv-export * { cursor: auto !important; }\n";
-      overrides += "body.hv-export .topbar::before { backdrop-filter: none; -webkit-backdrop-filter: none; background: #050505; }\n";
-      overrides += "body.hv-export .page-footer { position: relative; backdrop-filter: none; -webkit-backdrop-filter: none; background: #050505; }\n";
-      overrides += "body.hv-export .scroll-top, body.hv-export .export-btn, body.hv-export .explorer-btn { display: none !important; }\n";
-      overrides += "body.hv-export .actions-drawer, body.hv-export .actions-trigger { display: none !important; }\n";
-      overrides += "body.hv-export .search-wrap { display: none; }\n";
-      overrides += "body.hv-export .topbar-inner { grid-template-columns: 1fr; }\n";
-      overrides += "body.hv-export .code-copy { display: none; }\n";
-      overrides += "body.hv-export .section-copy { display: none; }\n";
-      overrides += "body.hv-export { animation: none; }\n";
-      overrides += "body.hv-export, body.hv-export * { user-select: auto !important; -webkit-user-select: auto !important; }\n";
-      overrides += "body.hv-export .page { animation: none; max-width: 1280px; }\n";
-      overrides += "body.hv-export .toc-sidebar { display: none; }\n";
+      overrides += "body.export-mode, body.export-mode * { cursor: auto !important; }\n";
+      overrides += "body.export-mode .topbar::before { backdrop-filter: none; -webkit-backdrop-filter: none; background: #050505; }\n";
+      overrides += "body.export-mode .page-footer { position: relative; backdrop-filter: none; -webkit-backdrop-filter: none; background: #050505; }\n";
+      overrides += "body.export-mode .scroll-top, body.export-mode .export-btn, body.export-mode .explorer-btn { display: none !important; }\n";
+      overrides += "body.export-mode .actions-drawer, body.export-mode .actions-trigger { display: none !important; }\n";
+      overrides += "body.export-mode .search-wrap { display: none; }\n";
+      overrides += "body.export-mode .topbar-inner { grid-template-columns: 1fr; }\n";
+      overrides += "body.export-mode .code-copy { display: none; }\n";
+      overrides += "body.export-mode .section-copy { display: none; }\n";
+      overrides += "body.export-mode { animation: none; }\n";
+      overrides += "body.export-mode, body.export-mode * { user-select: auto !important; -webkit-user-select: auto !important; }\n";
+      overrides += "body.export-mode .page { animation: none; max-width: 1280px; }\n";
+      overrides += "body.export-mode .toc-sidebar { display: none; }\n";
       return overrides + "\n" + css;
     }
 

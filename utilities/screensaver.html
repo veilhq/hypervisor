@@ -101,7 +101,7 @@
         header.className = "ss-card-header";
         header.innerHTML = '<i data-lucide="' + mode.icon + '" class="ss-card-icon"></i>' +
                            '<span class="ss-card-name">' + mode.name + '</span>' +
-                           (mode.key === currentMode ? '<span class="hv-badge hv-badge-accent ss-card-active">active</span>' : '');
+                           (mode.key === currentMode ? '<span class="label-badge label-badge-accent ss-card-active">active</span>' : '');
         body.appendChild(header);
 
         var desc = document.createElement("div");

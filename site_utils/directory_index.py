@@ -384,8 +384,8 @@ def generate_home_content(files, build_stats=None, recent_paths=None):
                 pct = int(round(done * 100 / total))
                 progress_html = (
                     '<span class="work-card-progress">'
-                    f'<span class="hv-progress-track pulse-bar">'
-                    f'<span class="hv-progress-fill pulse-fill" style="width:{pct}%"></span>'
+                    f'<span class="progress-track pulse-bar">'
+                    f'<span class="progress-fill pulse-fill" style="width:{pct}%"></span>'
                     f'</span>'
                     f'<span class="work-card-progress-label">{done}/{total}</span>'
                     f'</span>'
@@ -393,7 +393,7 @@ def generate_home_content(files, build_stats=None, recent_paths=None):
             else:
                 progress_html = (
                     '<span class="work-card-progress">'
-                    '<span class="hv-progress-track hv-progress-track-empty pulse-bar pulse-bar-empty"></span>'
+                    '<span class="progress-track progress-track-empty pulse-bar pulse-bar-empty"></span>'
                     '<span class="work-card-progress-label">&mdash;/&mdash;</span>'
                     '</span>'
                 )
@@ -526,7 +526,7 @@ def generate_home_content(files, build_stats=None, recent_paths=None):
         for rel, title, date_str, date_label in enriched:
             rel_posix = str(rel).replace("\\", "/")
             date_content = display_date(date_str) if date_label else ""
-            badge = '<span class="hv-badge hv-badge-muted">root</span>'
+            badge = '<span class="label-badge label-badge-muted">root</span>'
             type_badge = _doc_type_badge(rel)
             html.append(f'<li><a href="{href_for(rel)}"><i data-lucide="file-text" class="doc-icon"></i> {title}</a>'
                         f'<span class="doc-badges">{type_badge}{badge}</span>'
@@ -653,7 +653,7 @@ def _render_subdirs_single(html, files, dir_prefix, sd, recent_paths):
     child_subdirs, child_docs = collect_dir_contents(files, sd_path)
 
     # Show a linked section header for the single child
-    html.append('<div class="hv-section documents-section">')
+    html.append('<div class="content-section documents-section">')
     sd_icon = CATEGORY_ICONS.get(sd, "folder")
     html.append(f'<h2><a href="{sd}/index.html" style="color:inherit;text-decoration:none;border:none"><i data-lucide="{sd_icon}" class="section-icon"></i> {sd_label}</a></h2>')
 
@@ -774,7 +774,7 @@ def _render_subdirs_grouped(html, files, dir_prefix, subdirs, dir_has_recent_fn)
     # Collect unique statuses across all items
     statuses = sorted(set((d[4] or "").strip() for d in subdir_data if d[4]))
 
-    html.append('<div class="hv-section documents-section">')
+    html.append('<div class="content-section documents-section">')
     html.append(f'<h2><i data-lucide="folder" class="section-icon"></i> Items ({len(subdir_data)})</h2>')
     html.append('<div class="todo-filters" id="todo-filters">')
     html.append('  <input type="text" class="todo-filter-input" id="todo-filter-name" placeholder="filter by name" spellcheck="false">')
@@ -825,8 +825,8 @@ def _render_subdirs_grouped(html, files, dir_prefix, subdirs, dir_has_recent_fn)
                 f'<li class="{li_cls.strip()}" data-name="{sd_label.lower()}" data-type="{item_type.lower()}" data-status="{(status or "").lower()}" data-app="{gk}">'
                 f'<div class="todo-title"><a href="{sd}/index.html"><i data-lucide="{sd_icon}" class="doc-icon"></i>{sd_label}</a>'
                 f'<span class="todo-desc">{desc_text}</span></div>'
-                f'<span class="hv-badge {type_cls}">{type_label}</span>'
-                f'<span class="hv-badge {status_cls}">{status_label}</span>'
+                f'<span class="label-badge {type_cls}">{type_label}</span>'
+                f'<span class="label-badge {status_cls}">{status_label}</span>'
                 f'</li>'
             )
 
@@ -962,7 +962,7 @@ def _render_work_items_list(html, files, dir_prefix, doc_entries, recent_paths, 
     """Render work items or ideas with filter controls and flat sorted list."""
     from .file_utils import _extract_status_from_text, _extract_type_from_text, _extract_tags_from_text, infer_app_group
 
-    html.append('<div class="hv-section documents-section">')
+    html.append('<div class="content-section documents-section">')
 
     enriched = []
     statuses_set = set()
@@ -1095,14 +1095,14 @@ def _render_work_item_row(html, rel, doc_title, status, item_type, app_key, desc
     status_cls = "status-" + (status or "planned").lower().replace(" ", "-")
     status_label = status or "—"
     li_cls = " doc-recent" if rel_posix in recent_paths else ""
-    status_badge = f'<span class="hv-badge {status_cls}">{status_label}</span>' if not is_ideas else ''
+    status_badge = f'<span class="label-badge {status_cls}">{status_label}</span>' if not is_ideas else ''
     id_prefix = f'<span class="work-id-inline">{work_id} —</span> ' if work_id else ''
     html.append(
         f'<li class="{li_cls.strip()}" data-name="{doc_title.lower()}" data-type="{item_type.lower()}" data-status="{(status or "").lower()}" data-app="{app_key}">'
         f'<div class="todo-title"><a href="{fname_stem}/index.html"><i data-lucide="{"lightbulb" if is_ideas else "circle-dot"}" class="doc-icon"></i>{id_prefix}{doc_title}</a>'
         f'<span class="todo-desc">{desc}</span></div>'
         f'<div class="todo-badges">{badges_html}'
-        f'<span class="hv-badge {type_cls}">{type_label}</span>'
+        f'<span class="label-badge {type_cls}">{type_label}</span>'
         f'{status_badge}</div>'
         f'</li>'
     )
@@ -1111,7 +1111,7 @@ def _render_work_item_row(html, rel, doc_title, status, item_type, app_key, desc
 
 def _render_doc_list_standard(html, files, dir_prefix, doc_entries, recent_paths):
     """Render a standard document list (non-work, non-ideas directories)."""
-    html.append('<div class="hv-section documents-section">')
+    html.append('<div class="content-section documents-section">')
     html.append('<h2><i data-lucide="file-text" class="section-icon"></i> Documents</h2>')
     html.append('<ul class="doc-list">')
 
@@ -1189,7 +1189,7 @@ def _render_prototypes(html, dir_prefix):
     if dir_path.is_dir():
         html_files = sorted(dir_path.glob("*.html"))
         if html_files:
-            html.append('<div class="hv-section documents-section">')
+            html.append('<div class="content-section documents-section">')
             html.append('<h2><i data-lucide="code" class="section-icon"></i> Prototypes</h2>')
             html.append('<ul class="doc-list">')
             for hf in html_files:
