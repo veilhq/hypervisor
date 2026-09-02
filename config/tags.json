@@ -41,7 +41,7 @@
   },
   "javascript": {
     "category": "technology",
-    "description": "JavaScript/TypeScript language"
+    "description": "JavaScript language (use 'typescript' for TypeScript code)"
   },
   "mysql": {
     "category": "technology",
@@ -182,5 +182,9 @@
   "mvp": {
     "category": "domain",
     "description": "Minimum viable product — first functional milestone of a feature or app"
+  },
+  "typescript": {
+    "category": "technology",
+    "description": "TypeScript language — the Playwright test tier (test/) is the platform's first and only TypeScript"
   }
 }

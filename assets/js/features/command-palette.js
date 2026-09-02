@@ -34,6 +34,7 @@
       { name: "Palette Generator",  icon: "palette",      href: "/_utils/palette-generator/index.html" },
       { name: "Password Generator", icon: "lock-keyhole", href: "/_utils/password-generator/index.html" },
       { name: "Regex Editor",       icon: "regex",        href: "/_utils/regex-editor/index.html" },
+      { name: "Skills",             icon: "boxes",        href: "/_utils/skills-map/index.html" },
       { name: "Style Guide",        icon: "swatch-book",  href: "/_utils/style-guide/index.html" },
       { name: "Screensaver",        icon: "monitor",      href: "/_utils/screensaver/index.html" },
       { name: "Assessment",         icon: "file-check",   href: "/_utils/assessment/index.html" }

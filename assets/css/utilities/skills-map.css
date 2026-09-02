@@ -1,0 +1,88 @@
+/* ===== Kiro Skills Map (page chrome) =====
+   Rows use the shared .hv-skill-row primitive (hyperkit/css/cards.css).
+   This file styles only the page-level wrapper: intro, toolbar, search,
+   stats, and empty state. Tokens from hyperkit/css/tokens.css. */
+
+.skills-map {
+  width: 100%;
+  animation: fadeSlideIn var(--motion-slow) var(--ease) both;
+}
+.skills-map h1 {
+  margin-bottom: var(--space-3);
+}
+.skills-intro {
+  color: var(--text-muted);
+  font-size: var(--fs-body);
+  line-height: 1.6;
+  max-width: 68ch;
+  margin: 0 0 var(--space-5);
+}
+
+/* ---- Toolbar ---- */
+.skills-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+  flex-wrap: wrap;
+}
+.skills-search-wrap {
+  position: relative;
+  flex: 1 1 320px;
+  min-width: 220px;
+}
+.skills-search-icon {
+  position: absolute;
+  left: var(--space-3);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 13px;
+  height: 13px;
+  color: var(--text-dim);
+  pointer-events: none;
+}
+.skills-search {
+  width: 100%;
+  background: var(--bg-card);
+  border: var(--border-hair) solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-bright);
+  font-family: inherit;
+  font-size: var(--fs-body);
+  padding: var(--space-2) var(--space-3) var(--space-2) calc(var(--space-3) * 2 + 13px);
+  transition: border-color var(--motion-fast) var(--ease);
+}
+.skills-search:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.skills-search::placeholder {
+  color: var(--text-dim);
+}
+.skills-stats {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  font-size: var(--fs-detail);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+.sk-count {
+  color: var(--text-muted);
+}
+
+/* ---- Empty state ---- */
+.skills-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-6) var(--space-4);
+  color: var(--text-dim);
+  font-size: var(--fs-caption);
+  border: var(--border-hair) dashed var(--border);
+  border-radius: var(--radius);
+}

@@ -370,6 +370,107 @@
   </a>
 </div>
 
+<h3>Sticky Note (.scratch-card)</h3>
+
+<p style="color:var(--text-muted); font-size:var(--fs-caption); max-width:68ch;">
+  Fully-filled note cards for the ephemeral scratch pinboard. The surface is the full-strength
+  cycle color, so all inner content switches to <code>--note-ink</code> (the app background) for
+  contrast. The peeled top-right corner reads as paper lifting off the board and grows on hover.
+  Color cycle is <code>c1</code> / <code>c2</code> / <code>c3</code> (accent, warm, cool) —
+  <code>--comp</code> is deliberately excluded, reserved for alerts and indicators.
+</p>
+
+<div class="scratch-entries" style="max-height:none; padding:var(--space-4) 0;">
+  <div class="scratch-col">
+    <div class="scratch-card scratch-card-c1">
+      <div class="scratch-card-head">
+        <span class="scratch-card-handle" aria-hidden="true">&#8759;</span>
+        <span class="scratch-card-time">2m ago</span>
+        <div class="scratch-card-actions">
+          <button class="scratch-card-btn scratch-card-edit" onclick="return false">edit</button>
+          <button class="scratch-card-btn scratch-card-delete" onclick="return false">&#10005;</button>
+        </div>
+      </div>
+      <div class="scratch-card-body">Accent note (c1). Short entries square up to a minimum height; long ones grow taller.</div>
+    </div>
+    <div class="scratch-card scratch-card-c3">
+      <div class="scratch-card-head">
+        <span class="scratch-card-handle" aria-hidden="true">&#8759;</span>
+        <span class="scratch-card-time">1h ago</span>
+        <span class="scratch-card-moved" title="Moved out of chronological order">(*)</span>
+        <div class="scratch-card-actions">
+          <button class="scratch-card-btn scratch-card-edit" onclick="return false">edit</button>
+          <button class="scratch-card-btn scratch-card-delete" onclick="return false">&#10005;</button>
+        </div>
+      </div>
+      <div class="scratch-card-body">Cool note (c3), with the out-of-order marker shown.</div>
+    </div>
+  </div>
+  <div class="scratch-col">
+    <div class="scratch-card scratch-card-c2">
+      <div class="scratch-card-head">
+        <span class="scratch-card-handle" aria-hidden="true">&#8759;</span>
+        <span class="scratch-card-time">yesterday</span>
+        <div class="scratch-card-actions">
+          <button class="scratch-card-btn scratch-card-edit" onclick="return false">edit</button>
+          <button class="scratch-card-btn scratch-card-delete" onclick="return false">&#10005;</button>
+        </div>
+      </div>
+      <div class="scratch-card-body">Warm note (c2). Hover a card to reveal its actions and grow the corner peel.</div>
+    </div>
+    <div class="scratch-card-placeholder"></div>
+  </div>
+</div>
+
+<h3>Skill Row (.hv-skill-row)</h3>
+
+<p style="color:var(--text-muted); font-size:var(--fs-caption); max-width:68ch;">
+  A bordered list of skills as collapsible rows. Each row is a native
+  <code>&lt;details&gt;</code>: the <code>.hv-skill-rowhead</code> summary shows the icon,
+  name, trigger phrase, and a chevron; the <code>.hv-skill-rowbody</code> reveals the
+  description, a meta line, and the section outline on click. No JS needed.
+</p>
+
+<div class="hv-skill-list" style="margin:var(--space-4) 0;">
+  <details class="hv-skill-row" open>
+    <summary class="hv-skill-rowhead">
+      <i data-lucide="code" class="hv-skill-row-icon"></i>
+      <span class="hv-skill-row-name">code-changes</span>
+      <span class="hv-skill-row-trigger">Write or modify source code in any repo</span>
+      <i data-lucide="chevron-down" class="hv-skill-row-chevron"></i>
+    </summary>
+    <div class="hv-skill-rowbody">
+      <p class="hv-skill-row-desc">Defines comment conventions, the boundary that keeps hyperspace references out of committed code, and change hygiene.</p>
+      <div class="hv-skill-row-meta">
+        <span class="hv-skill-row-meta-item"><i data-lucide="hash"></i>10 sections</span>
+        <span class="hv-skill-row-meta-item"><i data-lucide="type"></i>879 words</span>
+      </div>
+      <ul class="hv-skill-row-sections">
+        <li class="hv-skill-row-section hv-skill-row-lvl2">Source Code Comment Boundaries</li>
+        <li class="hv-skill-row-section hv-skill-row-lvl3">Boundaries by file type</li>
+      </ul>
+    </div>
+  </details>
+  <details class="hv-skill-row">
+    <summary class="hv-skill-rowhead">
+      <i data-lucide="bug" class="hv-skill-row-icon"></i>
+      <span class="hv-skill-row-name">debugging</span>
+      <span class="hv-skill-row-trigger">Diagnose an error, stack trace, or failing build</span>
+      <i data-lucide="chevron-down" class="hv-skill-row-chevron"></i>
+    </summary>
+    <div class="hv-skill-rowbody">
+      <p class="hv-skill-row-desc">Defines the systematic tracing order and cross-repo consistency checks.</p>
+      <div class="hv-skill-row-meta">
+        <span class="hv-skill-row-meta-item"><i data-lucide="hash"></i>4 sections</span>
+        <span class="hv-skill-row-meta-item"><i data-lucide="type"></i>287 words</span>
+      </div>
+      <ul class="hv-skill-row-sections">
+        <li class="hv-skill-row-section hv-skill-row-lvl2">Systematic Tracing Order</li>
+      </ul>
+    </div>
+  </details>
+</div>
+
 <!-- ═══════════════════════════════════════════════════════════════════════
      HOVER PRIMITIVES
      ═══════════════════════════════════════════════════════════════════════ -->

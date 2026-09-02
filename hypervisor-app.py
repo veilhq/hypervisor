@@ -34,6 +34,12 @@ from hyper_logging import setup_logger  # noqa: E402
 
 logger = setup_logger("hypervisor")
 
+# Dedicated LAN-sharing access log → .hyperspace/.logs/lan.log. Every request
+# from a non-local (LAN) client is recorded here with its address, path, and
+# outcome, so the operator can see who connected, what they reached, and any
+# denied/blocked attempts. Surfaces automatically in the log viewer.
+lan_logger = setup_logger("lan")
+
 import webview.http
 
 from site_utils.config import HYPERSPACE_ROOT, OUTPUT_DIR, ASSETS_DIR
@@ -43,6 +49,179 @@ from site_utils.external_files import import_external_file as _import_external, 
 from site_utils.ideas import delete_idea as _delete_idea
 from build import full_build, build_single_file
 from watcher import FileWatcher
+
+
+# ---------------------------------------------------------------------------
+# LAN sharing allowlist
+# ---------------------------------------------------------------------------
+# When the site is reached from another machine on the LAN (not the operator's
+# own webview on localhost), only document content under these top-level
+# directories is served. Everything else — work items, ideas, research, etc. —
+# is 404'd at the request layer so a guessed URL cannot expose it. Shared
+# infrastructure (the SPA shell, JS, CSS, fonts, search index) always serves,
+# since without it the allowlisted pages cannot render.
+SHARE_DIRS = {"context"}
+
+
+def _lan_access_key() -> str:
+    """Read the operator-chosen LAN access key from preferences.json.
+
+    Read fresh on each request so changing the key in the UI takes effect
+    without an app restart. Empty string means no key is set.
+    """
+    prefs_path = OUTPUT_DIR.parent / "preferences.json"
+    if not prefs_path.exists():
+        return ""
+    try:
+        prefs = json.loads(prefs_path.read_text(encoding="utf-8"))
+        return str(prefs.get("lanAccessKey", "") or "").strip()
+    except (json.JSONDecodeError, OSError):
+        return ""
+
+
+def _lan_blocks_path(url_path: str) -> bool:
+    """Return True if a LAN request for this path must be blocked.
+
+    Only document-content fragments are gated. Content lives at
+    `content/<doc-path>.json`; a fragment is blocked when its doc-path's first
+    segment is not in SHARE_DIRS. All non-content paths (shell, assets, search
+    index) are allowed so shared pages render.
+    """
+    p = url_path.lstrip("/").replace("\\", "/")
+    prefix = "content/"
+    if not p.startswith(prefix):
+        return False  # not a content fragment — shared infrastructure, allow
+    rest = p[len(prefix):]
+    if not rest.endswith(".json"):
+        return False  # not a doc fragment
+    top = rest.split("/", 1)[0]
+    # `content/context.json` (the category index) and `content/context/...`
+    # both have top segment "context" once the .json is considered part of it.
+    top = top[:-5] if top.endswith(".json") else top  # strip .json on a bare top file
+    return top not in SHARE_DIRS
+
+
+def _own_ip_addresses() -> set:
+    """Return this machine's own IP addresses (loopback + LAN interfaces).
+
+    Cached after first computation. Used to recognize the operator's own
+    requests as local even when the webview loads via the LAN IP rather than
+    127.0.0.1 — a request whose source IP is one of THIS machine's addresses
+    came from this machine. Coworkers connect with their own (different) source
+    IPs and remain gated.
+    """
+    global _OWN_IPS_CACHE
+    try:
+        return _OWN_IPS_CACHE
+    except NameError:
+        pass
+    ips = {"127.0.0.1", "::1", "localhost"}
+    try:
+        import socket
+        hostname = socket.gethostname()
+        for info in socket.getaddrinfo(hostname, None):
+            ips.add(info[4][0])
+        # Also the resolved hostname IP directly.
+        try:
+            ips.add(socket.gethostbyname(hostname))
+        except Exception:
+            pass
+    except Exception:
+        pass
+    globals()["_OWN_IPS_CACHE"] = ips
+    return ips
+
+
+# Fixed port the app's server binds to (also used to build the shareable URL).
+LAN_PORT = 8420
+
+
+def _lan_ip() -> str:
+    """Best-guess routable LAN IP for building the shareable URL.
+
+    Prefers a private-range IPv4 address (10.*, 172.16-31.*, 192.168.*) over
+    loopback/link-local. Falls back to 127.0.0.1 if none is found.
+    """
+    import ipaddress
+    candidates = []
+    for ip in _own_ip_addresses():
+        if ip in ("localhost", "::1", "127.0.0.1"):
+            continue
+        try:
+            addr = ipaddress.ip_address(ip)
+        except ValueError:
+            continue
+        if addr.version == 4 and addr.is_private and not addr.is_link_local:
+            candidates.append(ip)
+    return candidates[0] if candidates else "127.0.0.1"
+
+
+def _lan_access_url(key: str) -> str:
+    """Build the URL a coworker opens to reach the shared site.
+
+    Includes the ?key= param when a key is set; returns the bare URL otherwise.
+    """
+    base = "http://%s:%d/" % (_lan_ip(), LAN_PORT)
+    return base + ("?key=" + key if key else "")
+
+
+def _denial_page(message: str) -> str:
+    """Return a standalone black page with dimmed centered text.
+
+    Served to LAN visitors in place of the app when access is denied, so they
+    see a clear message instead of a raw browser error or a half-loaded app.
+    """
+    return (
+        "<!doctype html><html><head><meta charset='utf-8'>"
+        "<meta name='viewport' content='width=device-width,initial-scale=1'>"
+        "<title>hypervisor</title>"
+        "<style>"
+        "html,body{margin:0;height:100%;background:#030305;}"
+        "body{display:flex;align-items:center;justify-content:center;"
+        "font-family:'Departure Mono','JetBrains Mono','Cascadia Code',"
+        "'Courier New',monospace;}"
+        ".m{color:#666;font-size:0.9rem;letter-spacing:0.15em;"
+        "text-transform:lowercase;}"
+        "</style></head><body>"
+        "<div class='m'>" + message + "</div>"
+        "</body></html>"
+    )
+
+
+def _request_is_local(remote_addr: str) -> bool:
+    """True if the request originates from the operator's own machine.
+
+    The operator's own webview gets the full site. It may connect via
+    127.0.0.1 or via one of this machine's own LAN IPs (depending on how the
+    window URL resolved), so both count as local. Coworkers connect with a
+    different source IP and are treated as LAN (subject to the allowlist).
+    """
+    if not remote_addr:
+        return False
+    return remote_addr in _own_ip_addresses()
+
+
+def _filtered_search_index_json(root_path: str) -> str:
+    """Return the search index JSON containing only allowlisted entries.
+
+    The on-disk search-index.json indexes the ENTIRE hyperspace (titles +
+    body snippets). Serving it unfiltered to the LAN would leak every doc's
+    content via search, bypassing the path allowlist. This returns a copy
+    keeping only entries whose `path` is under SHARE_DIRS.
+    """
+    idx_path = os.path.join(root_path, "search-index.json")
+    try:
+        with open(idx_path, "r", encoding="utf-8") as f:
+            entries = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return "[]"
+    kept = []
+    for e in entries:
+        p = str(e.get("path", "")).replace("\\", "/")
+        top = p.split("/", 1)[0]
+        if top in SHARE_DIRS:
+            kept.append(e)
+    return json.dumps(kept)
 
 
 # ---------------------------------------------------------------------------
@@ -76,6 +255,15 @@ class _HypervisorBottleServer(webview.http.BottleServer):
 
         @app.post(f'/js_api/{server.uid}')
         def js_api():
+            # The PyWebView bridge is for the operator's own local webview only.
+            # It is never a legitimate call path for a LAN visitor, so reject
+            # any non-local origin outright — this keeps the bridge surface off
+            # the network entirely rather than relying on the callback registry
+            # being unreachable in practice.
+            if not _request_is_local(bottle.request.remote_addr):
+                lan_logger.warning("BLOCK %s  js_api  (bridge blocked for LAN)",
+                                   bottle.request.remote_addr or "?")
+                return bottle.HTTPError(403, "Forbidden")
             bottle.response.headers['Access-Control-Allow-Origin'] = '*'
             bottle.response.headers['Access-Control-Allow-Methods'] = (
                 'PUT, GET, POST, DELETE, OPTIONS'
@@ -87,11 +275,126 @@ class _HypervisorBottleServer(webview.http.BottleServer):
             if body['uid'] in server.js_callback:
                 return json.dumps(server.js_callback[body['uid']](body))
 
+        @app.route('/lan-mode')
+        def lan_mode():
+            """Report whether the requester is a LAN (non-local) client.
+
+            The client uses this to strip the full-workspace nav rail for LAN
+            visitors — they navigate the shared surface via the Project Context
+            dashboard, not the whole-hyperspace nav. Localhost gets lan=false
+            and keeps the full nav.
+            """
+            bottle.response.content_type = 'application/json'
+            bottle.response.set_header('Cache-Control', 'no-cache, no-store, must-revalidate')
+            is_lan = not _request_is_local(bottle.request.remote_addr)
+            return json.dumps({"lan": is_lan})
+
         @app.route('/')
         @app.route('/<file:path>')
         def asset(file='index.html'):
             if not server.root_path:
                 return ''
+
+            # LAN access control. The operator's own webview (localhost) is
+            # unaffected and sees the full site. LAN requests must (1) present
+            # the operator-chosen access key, then (2) stay within the shared
+            # allowlist. No key configured => no LAN access at all.
+            #
+            # The key may arrive as ?key= (initial link a coworker opens) or as
+            # a cookie. Because the SPA fetches fragments/assets via JS that
+            # won't carry the query string, an authorized ?key= request plants a
+            # cookie so all subsequent same-origin requests stay authorized.
+            _plant_cookie = None
+            if not _request_is_local(bottle.request.remote_addr):
+                addr = bottle.request.remote_addr or "?"
+                _norm = file.lstrip('/').replace('\\', '/')
+
+                # Plant the auth cookie on ANY request that carries a valid
+                # ?key= — including the initial shell load (`/?key=...`), which
+                # is an asset request, not content. Recorded as a flag and
+                # applied to the actual response object below, because
+                # static_file() returns a fresh HTTPResponse that would drop a
+                # cookie set on the global bottle.response.
+                _cfg = _lan_access_key()
+                if _cfg and bottle.request.query.get('key', '') == _cfg:
+                    _plant_cookie = _cfg
+                    lan_logger.info("AUTH  %s  (key accepted, cookie set)", addr)
+
+                # For the initial HTML navigation (not an asset, not a content
+                # fragment), show a standalone black page when access is denied
+                # so the visitor sees a clear message instead of a half-loaded
+                # app. "visor is offline" when sharing is disabled; "invalid
+                # code" when a key is required but the supplied one is wrong.
+                _is_content = _norm.startswith('content/') and _norm.endswith('.json')
+                _is_search = _norm == 'search-index.json'
+                # The 404 fragment is generic chrome (no workspace data). Allow
+                # it so a LAN visitor clicking a backlink to non-shared content
+                # lands on the clean "not found" page instead of a broken state.
+                _is_404 = _norm == 'content/404.json'
+                # nav-state.json is the full category tree (every top-level dir
+                # + counts + subdirs) — a workspace-structure leak. LAN visitors
+                # have no nav rail (removed by lan-mode.js), so they never need
+                # it. Block it outright.
+                if _norm == 'nav-state.json':
+                    lan_logger.warning("BLOCK %s  nav-state.json  (structure)", addr)
+                    return bottle.HTTPError(404, "Not found")
+                _ext = os.path.splitext(_norm)[1].lower()
+                _static_exts = {'.js', '.css', '.json', '.ico', '.png', '.jpg',
+                                '.svg', '.woff', '.woff2', '.ttf', '.map'}
+                _is_html_nav = not _is_content and not _is_search and _ext not in _static_exts
+
+                if _is_html_nav:
+                    _supplied = (bottle.request.query.get('key', '')
+                                 or bottle.request.get_cookie('lan_access_key', ''))
+                    if not _cfg:
+                        lan_logger.info("OFFLINE  %s  (sharing disabled)", addr)
+                        bottle.response.content_type = 'text/html; charset=utf-8'
+                        return _denial_page("visor is offline")
+                    if _supplied != _cfg:
+                        lan_logger.warning("INVALID  %s  (bad/no code on nav)", addr)
+                        bottle.response.content_type = 'text/html; charset=utf-8'
+                        return _denial_page("invalid code")
+
+                if (_is_content or _is_search) and not _is_404:
+                    configured = _lan_access_key()
+                    q_key = bottle.request.query.get('key', '')
+                    supplied = q_key or bottle.request.get_cookie('lan_access_key', '')
+                    if not configured:
+                        lan_logger.info("DENY  %s  %s  (sharing disabled — no key set)", addr, file)
+                        return bottle.HTTPError(403, "Forbidden")
+                    if supplied != configured:
+                        if supplied:
+                            # A wrong non-empty key is a probe/guess — security signal.
+                            lan_logger.warning("DENY  %s  %s  (invalid key)", addr, file)
+                        else:
+                            # No key on a content request is expected/benign.
+                            lan_logger.info("DENY  %s  %s  (no key)", addr, file)
+                        return bottle.HTTPError(403, "Forbidden")
+                    # Refresh the auth cookie on any authorized content request
+                    # that carried the key in the query (the initial link).
+                    if q_key == configured:
+                        bottle.response.set_cookie('lan_access_key', configured, path='/', httponly=True)
+
+                    # LAN visitors land on Project Context, not the operator's
+                    # workspace home. Rewrite home/boot fragments to context.
+                    if _norm in ('content/home.json', 'content/_index.json', 'content/_pins.json'):
+                        file = 'content/context.json'
+                        _norm = file
+
+                    if _is_search:
+                        lan_logger.debug("OK    %s  search-index.json (filtered)", addr)
+                        bottle.response.content_type = 'application/json'
+                        bottle.response.set_header('Cache-Control', 'no-cache, no-store, must-revalidate')
+                        return _filtered_search_index_json(server.root_path)
+
+                    if _lan_blocks_path(file):
+                        # A request outside the allowlist is a probe — security signal.
+                        lan_logger.warning("BLOCK %s  %s  (outside allowlist)", addr, file)
+                        return bottle.HTTPError(404, "Not found")
+                    # Routine served content — high volume, low signal.
+                    lan_logger.debug("OK    %s  %s", addr, file)
+                # Non-content (shell / JS / CSS / fonts) falls through and
+                # serves normally — no key required to render the page chrome.
 
             # Check if the file exists on disk
             full_path = os.path.join(server.root_path, file)
@@ -100,6 +403,8 @@ class _HypervisorBottleServer(webview.http.BottleServer):
                 resp.set_header('Cache-Control', 'no-cache, no-store, must-revalidate')
                 resp.set_header('Pragma', 'no-cache')
                 resp.set_header('Expires', '0')
+                if _plant_cookie:
+                    resp.set_cookie('lan_access_key', _plant_cookie, path='/', httponly=True)
                 return resp
 
             # SPA fallback: for HTML page requests that don't match a real file,
@@ -116,6 +421,8 @@ class _HypervisorBottleServer(webview.http.BottleServer):
             resp.set_header('Cache-Control', 'no-cache, no-store, must-revalidate')
             resp.set_header('Pragma', 'no-cache')
             resp.set_header('Expires', '0')
+            if _plant_cookie:
+                resp.set_cookie('lan_access_key', _plant_cookie, path='/', httponly=True)
             return resp
 
         # --- Custom 404: serve the SPA shell for missing routes ---
@@ -142,7 +449,8 @@ class _HypervisorBottleServer(webview.http.BottleServer):
 
         server.thread = threading.Thread(
             target=lambda: bottle.run(
-                app=app, server=server_adapter, port=server.port, quiet=not _settings['debug']
+                app=app, server=server_adapter, host='0.0.0.0', port=server.port,
+                quiet=not _settings['debug']
             ),
             daemon=True,
         )
@@ -430,6 +738,32 @@ class HypervisorAPI:
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
+    def launch_hypercycle(self):
+        """Launch Hypercycle as a detached subprocess via its shortcut.
+
+        Launching via the .lnk ensures Windows groups the window with the
+        pinned taskbar shortcut (same AppUserModelID) and shows the correct icon.
+        Falls back to direct pythonw invocation if the shortcut doesn't exist.
+        """
+        import os
+        shortcut = HYPERSPACE_ROOT / ".hypercycle" / "Hypercycle.lnk"
+        script = HYPERSPACE_ROOT / ".hypercycle" / "hypercycle.py"
+        try:
+            if shortcut.exists():
+                os.startfile(str(shortcut))
+                return {"ok": True}
+            elif script.exists():
+                subprocess.Popen(
+                    ["pythonw", str(script)],
+                    cwd=str(script.parent),
+                    creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NO_WINDOW,
+                )
+                return {"ok": True}
+            else:
+                return {"ok": False, "error": "hypercycle.py not found"}
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+
     def launch_hypereye(self):
         """Launch HyperEye as a detached subprocess via its shortcut.
 
@@ -706,6 +1040,27 @@ class HypervisorAPI:
             return json.loads(prefs_path.read_text(encoding="utf-8"))
         except (json.JSONDecodeError, OSError):
             return {}
+
+    def get_lan_key(self):
+        """Return the current LAN access key (empty string if unset).
+
+        Used by the 'share key' drawer control to prefill the current value and
+        show the full access URL a coworker would open.
+        """
+        key = _lan_access_key()
+        return {"ok": True, "key": key, "url": _lan_access_url(key)}
+
+    def set_lan_key(self, key):
+        """Set (or clear) the LAN sharing access key.
+
+        Persists to preferences.json under 'lanAccessKey'. An empty value
+        disables LAN sharing entirely (the server denies all non-local
+        requests when no key is set). Read fresh by the server per request,
+        so the change takes effect immediately without an app restart.
+        """
+        self.save_preference("lanAccessKey", (key or "").strip())
+        _k = (key or "").strip()
+        return {"ok": True, "key": _k, "url": _lan_access_url(_k)}
 
     def save_preferences_batch(self, updates):
         """Merge multiple preference keys into preferences.json in one write.
@@ -1023,6 +1378,10 @@ class HypervisorAPI:
     def list_scratch(self):
         """List all scratch files with dates and entry counts.
 
+        Only files whose stem is a YYYY-MM-DD date are surfaced; stray non-date
+        markdown (e.g. a report digest dropped into .scratch/) is skipped so it
+        can't render as an "undefined NaN" row in the history view.
+
         Returns:
             dict with ok and files list [{date, entries, size}], newest first.
         """
@@ -1030,10 +1389,15 @@ class HypervisorAPI:
         if not scratch_dir.exists():
             return {"ok": True, "files": []}
 
+        date_stem = re.compile(r"^\d{4}-\d{2}-\d{2}$")
         files = []
         for f in sorted(scratch_dir.glob("*.md"), reverse=True):
-            # Date is the filename stem (YYYY-MM-DD)
+            # Date is the filename stem (YYYY-MM-DD). Skip anything that isn't a
+            # daily scratch file — the history view formats the stem as a date.
             date = f.stem
+            if not date_stem.match(date):
+                logger.debug("list_scratch: skipping non-date file %s", f.name)
+                continue
             content = read_md(f)
             # Count entries by counting ## HH:MM headings
             entries = content.count("\n## ")
@@ -1684,9 +2048,11 @@ def main():
     # on disk so it persists across app restarts (regardless of port changes).
     icon_path = str((ASSETS_DIR / "hypervisor.ico").resolve())
     storage_dir = str((OUTPUT_DIR.parent / ".webview_data").resolve())
+    # Pin a fixed port so the LAN access URL (http://<lan-ip>:8420/) is stable
+    # across launches. Without this, pywebview picks a random port each start.
     webview.start(background, debug=False, icon=icon_path,
                   private_mode=False, storage_path=storage_dir,
-                  server=_HypervisorBottleServer)
+                  server=_HypervisorBottleServer, http_port=LAN_PORT)
 
     # Cleanup
     print("  Window closed — shutting down")

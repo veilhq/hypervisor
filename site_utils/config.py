@@ -173,6 +173,7 @@ _ECO_APP_PATHS = {
     "hypereye": HYPERSPACE_ROOT / ".hypereye" / "assets" / "hypereye.svg",
     "hyperfield": HYPERSPACE_ROOT / ".hyperfield" / "assets" / "hyperfield.svg",
     "hyperline": ASSETS_DIR / "SVG" / "hyperline.svg",
+    "hypercycle": HYPERSPACE_ROOT / ".hypercycle" / "assets" / "icons" / "hypercycle.svg",
     "launchdev": ASSETS_DIR / "SVG" / "launchdev.svg",
 }
 

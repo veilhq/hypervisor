@@ -343,6 +343,10 @@ LEGACY_PAGE_TEMPLATE = """\
         <i data-lucide="skip-forward" class="action-icon"></i>
         <span class="action-label">end sprint</span>
       </button>
+      <button class="action-item" id="share-key-btn" aria-label="Set LAN sharing access key" style="display:none">
+        <i data-lucide="key-round" class="action-icon"></i>
+        <span class="action-label">share key</span>
+      </button>
       <button class="action-item" id="new-window-btn" aria-label="Open in new window" style="display:none">
         <i data-lucide="app-window" class="action-icon"></i>
         <span class="action-label">new window</span>
@@ -574,6 +578,10 @@ SHELL_TEMPLATE = """\
       <button class="action-item" id="end-sprint-btn" aria-label="End sprint — cascade horizon values" style="display:none">
         <i data-lucide="skip-forward" class="action-icon"></i>
         <span class="action-label">end sprint</span>
+      </button>
+      <button class="action-item" id="share-key-btn" aria-label="Set LAN sharing access key" style="display:none">
+        <i data-lucide="key-round" class="action-icon"></i>
+        <span class="action-label">share key</span>
       </button>
       <button class="action-item" id="new-window-btn" aria-label="Open in new window" style="display:none">
         <i data-lucide="app-window" class="action-icon"></i>

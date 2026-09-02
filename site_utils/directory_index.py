@@ -181,24 +181,31 @@ def generate_home_content(files, build_stats=None, recent_paths=None):
         ("hypereye", "HyperEye", "launch_hypereye"),
         ("hyperfield", "HyperField", "launch_dither_widget"),
         ("hyperline", "Hyperline", "launch_hyperline"),
+        ("hypercycle", "Hypercycle", "launch_hypercycle"),
         ("launchdev", "LaunchDev", "launch_dev"),
     ]
+    # 0-based index drives the CSS stagger, so the row scales to any number of
+    # tiles. Incrementing only for rendered tiles keeps the sequence gapless
+    # when an icon is missing and its tile is skipped.
+    tile_index = 0
     for app_id, label, action in launcher_apps:
         icon = eco_app_icon_svg(app_id, "launcher-icon")
         if not icon:
             continue
         is_active = app_id == "hypervisor"
         cls = "launcher-box active" if is_active else "launcher-box"
+        style = f'style="--launcher-i: {tile_index}"'
         if is_active:
             html.append(
-                f'<div class="{cls}" data-tooltip="{label}" aria-label="{label} (active)">'
+                f'<div class="{cls}" {style} data-tooltip="{label}" aria-label="{label} (active)">'
                 f'{icon}</div>'
             )
         else:
             html.append(
-                f'<button class="{cls}" data-launch="{action}" data-tooltip="{label}" aria-label="Launch {label}">'
+                f'<button class="{cls}" {style} data-launch="{action}" data-tooltip="{label}" aria-label="Launch {label}">'
                 f'{icon}</button>'
             )
+        tile_index += 1
     html.append('</div>')  # .launcher-row
     html.append('</div>')  # .home-anchor
 
@@ -830,14 +837,107 @@ def _render_subdirs_grouped(html, files, dir_prefix, subdirs, dir_has_recent_fn)
 
 
 
+def _meta_description(dir_prefix):
+    """Return the description paragraph from a directory's _meta.md, or ''.
+
+    The _meta.md structure is: H1, a summary line, dash-prefixed metadata, a
+    `---` separator, then the body. The card description is the first real
+    content line after that `---` separator — keying off the rule is more
+    robust than trying to detect the end of the metadata block heuristically.
+    Falls back to the first non-empty body line if no `---` is present.
+    """
+    meta_path = HYPERSPACE_ROOT / dir_prefix / "_meta.md"
+    if not meta_path.exists():
+        return ""
+    md_text = read_md(meta_path)
+    lines = md_text.splitlines()
+
+    # Find the first horizontal-rule separator; the description follows it.
+    start = 0
+    for i, ln in enumerate(lines):
+        if ln.strip() == "---":
+            start = i + 1
+            break
+
+    for ln in lines[start:]:
+        stripped = ln.strip()
+        if not stripped:
+            continue
+        if stripped.startswith(("#", "```", "<", "-", "*", "|")) or stripped == "---":
+            continue
+        return stripped
+    return ""
+
+
+def _render_subdirs_dashboard(html, files, dir_prefix, subdirs, dir_has_recent_fn):
+    """Render subdirectories as rich dashboard cards (title, description, count,
+    and a short preview of recent docs). Used for the Project Context landing so
+    external users can dig into each subject area from the page body, not just
+    the nav rail.
+    """
+    html.append(f'<div class="card-grid dir-dashboard" aria-label="{dir_label(PurePosixPath(dir_prefix).name)} sections">')
+    for sd in subdirs:
+        sd_path = f"{dir_prefix}/{sd}"
+        # Prefer the subdir's _meta.md H1 for the card title, else the label.
+        sd_title = dir_label(sd)
+        meta_path = HYPERSPACE_ROOT / sd_path / "_meta.md"
+        if meta_path.exists():
+            extracted = get_title(read_md(meta_path), "")
+            if extracted:
+                sd_title = extracted
+        sd_desc = (
+            _meta_description(sd_path)
+            or CATEGORY_DESCRIPTIONS.get(sd, "")
+            or f"Documents in {sd_title}."
+        )
+        count = count_docs_under(files, sd_path)
+        sd_icon = CATEGORY_ICONS.get(sd, "folder")
+        recent_cls = " card-recent" if dir_has_recent_fn(sd_path) else ""
+
+        # Preview: up to 3 most-recent docs directly under this subdir.
+        _, child_docs = collect_dir_contents(files, sd_path)
+        previews = []
+        for rel, name in child_docs:
+            if PurePosixPath(str(rel).replace("\\", "/")).name == "_meta.md":
+                continue
+            md_text = read_md(HYPERSPACE_ROOT / rel)
+            doc_title = get_title(md_text, name)
+            dates = extract_dates(md_text)
+            date_str, _ = sort_date(dates)
+            previews.append((doc_title, date_str))
+        previews.sort(key=lambda x: x[1], reverse=True)
+        previews = previews[:3]
+
+        html.append(f'<a href="/{dir_prefix}/{sd}/index.html" class="card dir-dashboard-card{recent_cls}">')
+        html.append('<div class="dir-card-head">')
+        html.append(f'<i data-lucide="{sd_icon}" class="dir-card-icon"></i>')
+        html.append(f'<span class="card-name">{sd_title}</span>')
+        html.append('</div>')
+        if sd_desc:
+            html.append(f'<span class="card-desc">{sd_desc}</span>')
+        if previews:
+            html.append('<ul class="dir-card-preview">')
+            for doc_title, _ in previews:
+                html.append(
+                    f'<li><i data-lucide="file-text" class="dir-card-preview-icon"></i>'
+                    f'<span>{doc_title}</span></li>'
+                )
+            html.append('</ul>')
+        html.append(f'<span class="card-count">{count} doc{"s" if count != 1 else ""}</span>')
+        html.append('</a>')
+    html.append('</div>')
+
+
 def _render_subdirs_dock(html, files, dir_prefix, subdirs, dir_has_recent_fn):
     """Render subdirectories as a dock-style strip (2-10 subdirs, non-top-level)."""
     # Determine if this is a top-level category (children shown in site nav)
     is_top_level = "/" not in dir_prefix and "\\" not in dir_prefix
     if is_top_level:
-        # Top-level categories: children are in the nav rail, no dock needed.
-        # Just show nothing here — the nav handles navigation.
-        pass
+        # Project Context gets a rich dashboard in the page body so external
+        # users can dig into each subject area, not just the nav rail. Other
+        # top-level categories rely on the nav rail (children listed there).
+        if dir_prefix == "context":
+            _render_subdirs_dashboard(html, files, dir_prefix, subdirs, dir_has_recent_fn)
     else:
         # Dock-style strip for deeper directories not in the nav
         html.append('<nav class="home-dock" aria-label="Subdirectories">')

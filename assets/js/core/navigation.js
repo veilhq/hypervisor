@@ -669,6 +669,7 @@
         { name: "Palette Generator", icon: "palette", href: "_utils/palette-generator/index.html" },
         { name: "Password Generator", icon: "lock-keyhole", href: "_utils/password-generator/index.html" },
         { name: "Regex Editor", icon: "regex", href: "_utils/regex-editor/index.html" },
+        { name: "Skills", icon: "boxes", href: "_utils/skills-map/index.html" },
         { name: "Style Guide", icon: "swatch-book", href: "_utils/style-guide/index.html" },
         { name: "Screensaver", icon: "monitor", href: "_utils/screensaver/index.html" },
         { name: "Assessment", icon: "file-check", href: "_utils/assessment/index.html" }
@@ -684,34 +685,49 @@
   })();
 
   // --- Copy button on code blocks ---
-  var codeBlocks = document.querySelectorAll(".code-block");
-  codeBlocks.forEach(function (block) {
-    var btn = document.createElement("button");
-    btn.className = "code-copy";
-    btn.textContent = "copy";
-    btn.setAttribute("aria-label", "Copy code to clipboard");
+  // Re-runs on every content swap: code blocks arrive with each navigated
+  // fragment, so a one-time pass at load only decorates the first page's
+  // blocks and leaves navigated-to pages without copy buttons.
+  function initCodeCopy() {
+    var codeBlocks = document.querySelectorAll(".code-block");
+    codeBlocks.forEach(function (block) {
+      // Guard against decorating a block twice if the hook fires again over
+      // content that survived a swap.
+      if (block.querySelector(".code-copy")) return;
 
-    btn.addEventListener("click", function () {
-      var code = block.querySelector("pre code") || block.querySelector("pre");
-      if (!code) return;
-      var text = code.textContent || code.innerText;
+      var btn = document.createElement("button");
+      btn.className = "code-copy";
+      btn.textContent = "copy";
+      btn.setAttribute("aria-label", "Copy code to clipboard");
 
-      navigator.clipboard.writeText(text).then(function () {
-        btn.textContent = "copied";
-        btn.classList.add("copied");
-        setTimeout(function () {
-          btn.textContent = "copy";
-          btn.classList.remove("copied");
-        }, 1500);
-      }).catch(function () {
-        // Fallback for file:// protocol where clipboard API may not work
-        btn.textContent = "err";
-        setTimeout(function () { btn.textContent = "copy"; }, 1000);
+      btn.addEventListener("click", function () {
+        var code = block.querySelector("pre code") || block.querySelector("pre");
+        if (!code) return;
+        var text = code.textContent || code.innerText;
+
+        navigator.clipboard.writeText(text).then(function () {
+          btn.textContent = "copied";
+          btn.classList.add("copied");
+          setTimeout(function () {
+            btn.textContent = "copy";
+            btn.classList.remove("copied");
+          }, 1500);
+        }).catch(function () {
+          // Fallback for file:// protocol where clipboard API may not work
+          btn.textContent = "err";
+          setTimeout(function () { btn.textContent = "copy"; }, 1000);
+        });
       });
-    });
 
-    block.appendChild(btn);
-  });
+      block.appendChild(btn);
+    });
+  }
+
+  // Decorate the initial page, then re-decorate after every fragment swap.
+  initCodeCopy();
+  if (window.__router && window.__router.onNavigate) {
+    window.__router.onNavigate(null, initCodeCopy);
+  }
 
   // --- Scroll to top ---
   if (scrollBtn) {

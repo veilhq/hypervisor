@@ -82,6 +82,131 @@ def _inject_health_data(html_content: str) -> str:
         return html_content.replace("__HEALTH_DATA__", fallback)
 
 
+def _parse_skill_frontmatter(text: str):
+    """Extract name and description from a SKILL.md YAML frontmatter block.
+
+    Returns (name, description). Falls back to empty strings when a field
+    is absent so the caller can substitute a sensible default.
+    """
+    name, description = "", ""
+    if not text.startswith("---"):
+        return name, description
+    end = text.find("\n---", 3)
+    if end == -1:
+        return name, description
+    block = text[3:end]
+    key = None
+    for line in block.splitlines():
+        if line.startswith("name:"):
+            name = line.split(":", 1)[1].strip()
+            key = None
+        elif line.startswith("description:"):
+            description = line.split(":", 1)[1].strip()
+            key = "description"
+        elif key == "description" and line.startswith((" ", "\t")):
+            # Folded/continued description line.
+            description += " " + line.strip()
+        else:
+            key = None
+    return name, description
+
+
+def _parse_routing_triggers(routing_path):
+    """Map skill slug -> 'When about to...' trigger phrase from the routing table.
+
+    Reads the markdown table in global-tool-routing.md. Absent file or rows
+    yield an empty map; each skill degrades to its own description.
+    """
+    import re
+    triggers = {}
+    if not routing_path.exists():
+        return triggers
+    try:
+        text = routing_path.read_text(encoding="utf-8")
+    except OSError:
+        return triggers
+    # Rows look like: | When about to... | `.kiro/skills/<slug>/SKILL.md` |
+    row_re = re.compile(r"\|(.+?)\|.*?\.kiro/skills/([\w-]+)/SKILL\.md")
+    for line in text.splitlines():
+        m = row_re.search(line)
+        if m:
+            phrase = m.group(1).strip()
+            slug = m.group(2).strip()
+            triggers[slug] = phrase
+    return triggers
+
+
+def _inject_skills_data(html_content: str) -> str:
+    """Replace __SKILLS_DATA__ with the Kiro skill set read from .kiro/skills/.
+
+    Each skill contributes its frontmatter name/description, a section
+    outline (H2/H3 headings), reference-file count, and a routing trigger
+    phrase. The content root is HYPERSPACE_ROOT.parent, so .kiro sits at
+    HYPERSPACE_ROOT.parent / '.kiro'.
+    """
+    import json
+    import re
+
+    project_root = HYPERSPACE_ROOT.parent
+    skills_dir = project_root / ".kiro" / "skills"
+    routing_path = project_root / ".kiro" / "steering" / "global-tool-routing.md"
+
+    triggers = _parse_routing_triggers(routing_path)
+    skills = []
+
+    if skills_dir.exists():
+        for skill_dir in sorted(p for p in skills_dir.iterdir() if p.is_dir()):
+            skill_file = skill_dir / "SKILL.md"
+            if not skill_file.is_file():
+                continue
+            try:
+                text = skill_file.read_text(encoding="utf-8")
+            except OSError:
+                continue
+
+            name, description = _parse_skill_frontmatter(text)
+            slug = skill_dir.name
+            if not name:
+                name = slug
+
+            # Section outline: H2/H3 headings after the frontmatter.
+            body_start = text.find("\n---", 3)
+            body = text[body_start + 4:] if body_start != -1 else text
+            sections = []
+            for line in body.splitlines():
+                if line.startswith("## "):
+                    sections.append({"level": 2, "title": line[3:].strip()})
+                elif line.startswith("### "):
+                    sections.append({"level": 3, "title": line[4:].strip()})
+
+            # Reference files (deeper docs the skill points to).
+            refs_dir = skill_dir / "references"
+            references = []
+            if refs_dir.is_dir():
+                references = sorted(
+                    f.name for f in refs_dir.glob("*.md") if f.is_file()
+                )
+
+            word_count = len(re.findall(r"\w+", body))
+
+            skills.append({
+                "slug": slug,
+                "name": name,
+                "description": description,
+                "trigger": triggers.get(slug, ""),
+                "sections": sections,
+                "references": references,
+                "word_count": word_count,
+            })
+
+    data = {
+        "skills": skills,
+        "count": len(skills),
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M"),
+    }
+    return html_content.replace("__SKILLS_DATA__", json.dumps(data, ensure_ascii=False))
+
+
 def build_utility_pages(build_id):
     """Generate utility page content fragments from HTML snippets in the utilities directory."""
     util_count = 0
@@ -94,6 +219,10 @@ def build_utility_pages(build_id):
         # Data injection: if the page contains __HEALTH_DATA__, run the builder
         if "__HEALTH_DATA__" in util_content:
             util_content = _inject_health_data(util_content)
+
+        # Data injection: if the page contains __SKILLS_DATA__, read the skill set
+        if "__SKILLS_DATA__" in util_content:
+            util_content = _inject_skills_data(util_content)
 
         util_name = util_file.stem.replace("-", " ").replace("_", " ").title()
         util_rel = f"_utils/{util_file.stem}"

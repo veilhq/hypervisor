@@ -4,6 +4,26 @@
 (function () {
   "use strict";
 
+  // --- LAN visitor: disable always-on ambient effects ---
+  // A LAN visitor (viewing over the network, not the operator's local webview)
+  // doesn't need the GPU-heavy ambient effects, which make the page sluggish in
+  // a plain browser. Detect LAN synchronously by hostname (loopback = the
+  // operator's webview; anything else = LAN) and replace the effect globals
+  // with no-ops. The kit modules define the real HvNoiseField/HvCursorTrail/
+  // HvCursorBox first (they load before core), so this OVERWRITES them; when
+  // home-anchor / effects.js later call .start(), they hit the no-op and the
+  // effect never runs. Screensaver is intentionally left enabled (idle-only,
+  // not an always-on drain).
+  (function disableAmbientEffectsForLan() {
+    var h = window.location.hostname;
+    var isLocal = (h === "127.0.0.1" || h === "localhost" || h === "::1" || h === "");
+    if (isLocal) return;
+    var noop = function () {};
+    window.HvNoiseField = { start: noop, stop: noop };
+    window.HvCursorTrail = { start: noop, stop: noop };
+    window.HvCursorBox = { start: noop, stop: noop };
+  })();
+
   // --- PyWebView bridge detection ---
   // PyWebView injects window.pywebview asynchronously AFTER DOMContentLoaded.
   // We can't check it at parse time. Instead, use a mutable flag that gets
@@ -307,6 +327,90 @@
         document.addEventListener("keydown", onKey);
 
         confirmBtn.focus();
+      });
+    };
+  })();
+
+  // --- Custom prompt dialog (styled text input) ---
+  // Replaces native window.prompt with a modal matching the terminal aesthetic.
+  // Usage: window.__hypervisorPrompt("label", { value, placeholder, confirmLabel,
+  //        cancelLabel, hint }).then(val => { val is the string, or null if cancelled })
+  (function initPrompt() {
+    window.__hypervisorPrompt = function (message, opts) {
+      opts = opts || {};
+      return new Promise(function (resolve) {
+        var overlay = document.createElement("div");
+        overlay.className = "hv-confirm-overlay hv-prompt-overlay";
+
+        var box = document.createElement("div");
+        box.className = "hv-confirm-box hv-prompt-box";
+
+        var msg = document.createElement("div");
+        msg.className = "hv-confirm-message";
+        msg.textContent = message;
+
+        var input = document.createElement("input");
+        input.type = "text";
+        input.className = "hv-prompt-input";
+        input.value = opts.value || "";
+        if (opts.placeholder) input.placeholder = opts.placeholder;
+        input.autocomplete = "off";
+        input.spellcheck = false;
+
+        box.appendChild(msg);
+
+        if (opts.hint) {
+          var hint = document.createElement("div");
+          hint.className = "hv-prompt-hint";
+          hint.textContent = opts.hint;
+          box.appendChild(hint);
+        }
+
+        box.appendChild(input);
+
+        var actions = document.createElement("div");
+        actions.className = "hv-confirm-actions";
+
+        var cancelBtn = document.createElement("button");
+        cancelBtn.className = "hv-confirm-btn";
+        cancelBtn.textContent = opts.cancelLabel || "cancel";
+
+        var confirmBtn = document.createElement("button");
+        confirmBtn.className = "hv-confirm-btn";
+        confirmBtn.textContent = opts.confirmLabel || "save";
+
+        actions.appendChild(cancelBtn);
+        actions.appendChild(confirmBtn);
+        box.appendChild(actions);
+        overlay.appendChild(box);
+        document.body.appendChild(overlay);
+
+        requestAnimationFrame(function () { overlay.classList.add("visible"); });
+
+        function dismiss(result) {
+          overlay.classList.remove("visible");
+          setTimeout(function () {
+            if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+          }, 150);
+          document.removeEventListener("keydown", onKey);
+          resolve(result);
+        }
+
+        cancelBtn.addEventListener("click", function () { dismiss(null); });
+        confirmBtn.addEventListener("click", function () { dismiss(input.value); });
+        overlay.addEventListener("click", function (e) {
+          if (e.target === overlay) dismiss(null);
+        });
+
+        function onKey(e) {
+          if (e.key === "Escape") dismiss(null);
+          if (e.key === "Enter") dismiss(input.value);
+        }
+        document.addEventListener("keydown", onKey);
+
+        // Focus + select the input so an existing key is easy to replace.
+        input.focus();
+        input.select();
       });
     };
   })();

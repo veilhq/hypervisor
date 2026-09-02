@@ -1,0 +1,155 @@
+<div class="skills-map">
+  <h1><i data-lucide="boxes" class="utility-title-icon"></i> Kiro Skills</h1>
+  <p class="skills-intro">
+    On-demand capabilities available in this workspace. Only each skill's name and
+    description sit in the agent's context until the full skill file is read — this
+    list mirrors that lightweight index. Click a row to expand.
+  </p>
+
+  <div class="skills-toolbar">
+    <div class="skills-search-wrap">
+      <i data-lucide="search" class="skills-search-icon"></i>
+      <input type="text" id="sk-search" class="skills-search" placeholder="Filter skills by name, trigger, or topic..." autocomplete="off" spellcheck="false">
+    </div>
+    <div class="skills-stats" id="sk-stats"></div>
+  </div>
+
+  <div class="hv-skill-list" id="sk-list"></div>
+
+  <div class="skills-empty" id="sk-empty" style="display:none;">
+    <i data-lucide="search-x" style="width:20px;height:20px"></i>
+    <span>No skills match that filter.</span>
+  </div>
+</div>
+
+<script id="sk-data" type="application/json">__SKILLS_DATA__</script>
+<script>
+(function () {
+  var raw = document.getElementById('sk-data').textContent;
+  var DATA;
+  try { DATA = JSON.parse(raw); } catch (e) { DATA = { skills: [], count: 0, timestamp: '' }; }
+
+  var listEl = document.getElementById('sk-list');
+  var emptyEl = document.getElementById('sk-empty');
+  var statsEl = document.getElementById('sk-stats');
+  var searchEl = document.getElementById('sk-search');
+
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  // Deterministic glyph per slug so each row reads at a glance.
+  var ICONS = {
+    'hyperspace': 'file-text',
+    'analysis': 'clipboard-list',
+    'pr-review': 'git-pull-request',
+    'code-changes': 'code',
+    'debugging': 'bug',
+    'hyperagent': 'bot',
+    'hypervisor-dev': 'layout-dashboard',
+    'architecture-visuals': 'workflow',
+    'hypervisor-prototypes': 'flask-conical',
+    'spec-creation': 'list-checks'
+  };
+  function iconFor(slug) { return ICONS[slug] || 'box'; }
+
+  // Display names: "code-changes" -> "Code Changes", "pr-review" -> "PR Review".
+  // Known acronyms stay uppercase; everything else is word-capitalized.
+  var ACRONYMS = { 'pr': 'PR', 'ado': 'ADO', 'ui': 'UI', 'api': 'API' };
+  function titleCase(name) {
+    return String(name || '').split(/[-_\s]+/).map(function (w) {
+      if (!w) return w;
+      var lower = w.toLowerCase();
+      if (ACRONYMS[lower]) return ACRONYMS[lower];
+      return w.charAt(0).toUpperCase() + w.slice(1);
+    }).join(' ');
+  }
+
+  function searchKey(sk) {
+    return (sk.name + ' ' + sk.slug + ' ' + (sk.trigger || '') + ' ' + (sk.description || '') +
+      ' ' + (sk.sections || []).map(function (s) { return s.title; }).join(' ')).toLowerCase();
+  }
+
+  function rowHTML(sk) {
+    var refCount = (sk.references || []).length;
+    var secCount = (sk.sections || []).length;
+
+    var triggerHTML = sk.trigger
+      ? '<span class="hv-skill-row-trigger">' + esc(sk.trigger) + '</span>'
+      : '<span class="hv-skill-row-trigger"></span>';
+
+    var sectionsHTML = '';
+    if (secCount) {
+      sectionsHTML = '<ul class="hv-skill-row-sections">' +
+        sk.sections.map(function (s) {
+          return '<li class="hv-skill-row-section hv-skill-row-lvl' + s.level + '">' + esc(s.title) + '</li>';
+        }).join('') + '</ul>';
+    }
+
+    var refsHTML = '';
+    if (refCount) {
+      refsHTML = '<div class="hv-skill-row-refs"><span class="hv-skill-row-refs-label">references</span>' +
+        sk.references.map(function (r) {
+          return '<span class="hv-skill-row-ref">' + esc(r) + '</span>';
+        }).join('') + '</div>';
+    }
+
+    var metaHTML = '<div class="hv-skill-row-meta">' +
+      '<span class="hv-skill-row-meta-item"><i data-lucide="hash"></i>' + secCount + ' sections</span>' +
+      (refCount ? '<span class="hv-skill-row-meta-item"><i data-lucide="link"></i>' + refCount + ' refs</span>' : '') +
+      '<span class="hv-skill-row-meta-item"><i data-lucide="type"></i>' + (sk.word_count || 0) + ' words</span>' +
+      '</div>';
+
+    return '<details class="hv-skill-row" data-search="' + esc(searchKey(sk)) + '">' +
+      '<summary class="hv-skill-rowhead">' +
+        '<i data-lucide="' + iconFor(sk.slug) + '" class="hv-skill-row-icon"></i>' +
+        '<span class="hv-skill-row-name">' + esc(titleCase(sk.name)) + '</span>' +
+        triggerHTML +
+        '<i data-lucide="chevron-down" class="hv-skill-row-chevron"></i>' +
+      '</summary>' +
+      '<div class="hv-skill-rowbody">' +
+        '<p class="hv-skill-row-desc">' + esc(sk.description || 'No description provided.') + '</p>' +
+        metaHTML +
+        sectionsHTML +
+        refsHTML +
+      '</div>' +
+    '</details>';
+  }
+
+  function render(list) {
+    if (!list.length) {
+      listEl.innerHTML = '';
+      listEl.style.display = 'none';
+      emptyEl.style.display = 'flex';
+    } else {
+      emptyEl.style.display = 'none';
+      listEl.style.display = '';
+      listEl.innerHTML = list.map(rowHTML).join('');
+    }
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      window.lucide.createIcons();
+    }
+  }
+
+  function updateStats(shown) {
+    var total = DATA.count || DATA.skills.length;
+    var label = shown === total ? total + ' skills' : shown + ' of ' + total + ' skills';
+    statsEl.innerHTML = '<span class="sk-count">' + label + '</span>' +
+      (DATA.timestamp ? '<span class="sk-built">built ' + esc(DATA.timestamp) + '</span>' : '');
+  }
+
+  function applyFilter() {
+    var q = (searchEl.value || '').trim().toLowerCase();
+    var list = !q ? DATA.skills : DATA.skills.filter(function (sk) {
+      return searchKey(sk).indexOf(q) !== -1;
+    });
+    render(list);
+    updateStats(list.length);
+  }
+
+  searchEl.addEventListener('input', applyFilter);
+  render(DATA.skills);
+  updateStats(DATA.skills.length);
+})();
+</script>

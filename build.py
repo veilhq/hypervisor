@@ -300,7 +300,7 @@ def _prune_orphaned_outputs(files):
         expected_fragments.add(str(PurePosixPath(rel.parent / html_file.stem)) + ".json")
 
     # Special fragments (never pruned)
-    skip_prefixes = ("_utils", "learn", "_pins", "_about", "home")
+    skip_prefixes = ("_utils", "learn", "_pins", "_about", "home", "404")
 
     # Walk content directory and find orphaned fragment files
     for root_dir, dirs, dir_files in os.walk(str(content_dir)):

@@ -1,0 +1,24 @@
+/* === Hypervisor: LAN Mode rendering differences ===
+   All rules key off `body.lan-mode`, set by assets/js/features/lan-mode.js when
+   the server reports the viewer is a LAN visitor (not the operator's local
+   webview). This is the single, reusable switch for LAN-vs-local rendering —
+   add new LAN-specific tweaks here rather than scattering per-feature JS.
+
+   Note: the full nav rail (#site-nav) is DOM-removed by lan-mode.js, not hidden
+   here, because CSS-hiding would still leak category names in page source.
+   The rules below hide operator-only chrome that is safe to hide visually
+   (the elements carry no sensitive content themselves). */
+
+/* Slide-out nav/settings panel entry — its Navigate tab re-exposes the full
+   workspace structure, so keep LAN visitors out of it entirely. */
+body.lan-mode #nav-menu-btn,
+body.lan-mode #nav-panel,
+body.lan-mode #nav-backdrop {
+  display: none !important;
+}
+
+/* Actions drawer — operator tools (edit, export, end sprint, share key). */
+body.lan-mode #actions-trigger,
+body.lan-mode #actions-drawer {
+  display: none !important;
+}
