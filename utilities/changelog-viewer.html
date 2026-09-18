@@ -1,0 +1,288 @@
+<style>
+/* =========================================================================
+   Changelog Viewer — browsable archive of kiro-cli release notes.
+   Reads the persistent archive via pywebview.api.refresh_changelog().
+   Self-contained styles, hyperkit tokens throughout. Layout from the shared
+   .utility-body primitive.
+   ========================================================================= */
+
+.cl-toolbar { flex-wrap: wrap; margin-bottom: var(--space-4); }
+.cl-filters { gap: var(--space-1); }
+/* .cl-filter composes .status-chip; only the toggle + interactive cursor are
+   local. Idle = outlined-muted silhouette; .active = filled accent (the JS
+   toggles .active, so the state lives here, not in swapped variant classes). */
+.cl-filter {
+  cursor: pointer;
+  color: var(--text-muted);
+  background: transparent;
+  border: var(--border-hair) solid var(--border-strong);
+}
+.cl-filter:hover { color: var(--accent); border-color: var(--accent); }
+.cl-filter.active {
+  color: var(--bg);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.cl-meta {
+  margin-left: auto;
+  font-size: var(--fs-micro);
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Version block — composes .content-card; adds the staggered reveal and
+   the latest-release accent wash. ---- */
+.cl-version {
+  margin-bottom: var(--space-3);
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(6px);
+  animation: cl-rise var(--motion-slow) var(--ease) forwards;
+}
+@keyframes cl-rise {
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cl-version { animation: none !important; opacity: 1; transform: none; }
+}
+html.a11y-reduce-motion .cl-version { animation: none !important; opacity: 1; transform: none; }
+
+/* Latest release — accent-glow wash + brighter frame to draw the eye. */
+.cl-version.is-latest {
+  border-color: var(--accent-border);
+  background: linear-gradient(var(--accent-glow), transparent 60%), var(--bg-card);
+}
+
+.cl-version-head {
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: var(--border-hair) solid var(--border);
+}
+.cl-version-num {
+  font-size: var(--fs-heading);
+  font-weight: 700;
+  color: var(--text-bright);
+  font-variant-numeric: tabular-nums;
+}
+.cl-version.is-latest .cl-version-num { color: var(--accent); }
+.cl-version-date {
+  font-size: var(--fs-micro);
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+/* "LATEST" flag composes .status-chip.status-chip-filled — extra tracking only. */
+.cl-latest-flag { letter-spacing: 0.1em; }
+
+/* Category summary chips in the header — shape-at-a-glance. Compose
+   .status-chip; only the count layout + per-category color are local. */
+.cl-summary {
+  margin-left: auto;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.cl-summary-chip {
+  gap: var(--space-0-2);
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+.cl-summary-chip b { font-weight: 700; }
+.cl-summary-chip[data-type="Added"]      { color: var(--accent); border-color: var(--accent-border); }
+.cl-summary-chip[data-type="Changed"]     { color: var(--text-muted); }
+.cl-summary-chip[data-type="Fixed"]        { color: var(--cool); }
+.cl-summary-chip[data-type="Security"]     { color: var(--comp); }
+.cl-summary-chip[data-type="Deprecated"]   { color: var(--warm); }
+
+.cl-entries { padding: var(--space-1) 0 var(--space-2); }
+.cl-group-header {
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3) var(--space-1);
+  border-top: var(--border-hair) solid var(--border);
+}
+.cl-group-header:first-child { border-top: none; }
+/* Category badge composes .status-chip; the currentColor border + per-category
+   color are the local part. */
+.cl-type-badge { border-color: currentColor; }
+.cl-group-header[data-type="Added"]      { color: var(--accent); }
+.cl-group-header[data-type="Changed"]     { color: var(--text-muted); }
+.cl-group-header[data-type="Fixed"]        { color: var(--cool); }
+.cl-group-header[data-type="Security"]     { color: var(--comp); }
+.cl-group-header[data-type="Deprecated"]   { color: var(--warm); }
+.cl-group-count { font-size: var(--fs-micro); color: var(--text-dim); font-variant-numeric: tabular-nums; }
+
+.cl-entry {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3) var(--space-1) var(--space-5);
+  font-size: var(--fs-sm);
+  line-height: 1.55;
+  color: var(--text-muted);
+  transition: color var(--motion-fast) var(--ease);
+}
+.cl-entry:hover { color: var(--text); }
+/* Entry tag composes .status-chip; muted color is the only local override. */
+.cl-entry-tag { color: var(--text-dim); }
+.cl-entry.hidden { display: none; }
+.cl-group-header.hidden { display: none; }
+
+.cl-empty {
+  padding: var(--space-5);
+  text-align: center;
+  color: var(--text-dim);
+  font-size: var(--fs-label);
+}
+</style>
+
+<div class="utility-body">
+  <h1><i data-lucide="scroll-text" class="utility-title-icon"></i> Kiro CLI Changelog</h1>
+
+  <div class="cl-toolbar flex-center" id="cl-toolbar" style="display:none;">
+    <div class="cl-filters flex-center" id="cl-filters">
+      <button class="cl-filter status-chip active" data-type="all">All</button>
+      <button class="cl-filter status-chip" data-type="Added">Added</button>
+      <button class="cl-filter status-chip" data-type="Changed">Changed</button>
+      <button class="cl-filter status-chip" data-type="Fixed">Fixed</button>
+      <button class="cl-filter status-chip" data-type="Security">Security</button>
+      <button class="cl-filter status-chip" data-type="Deprecated">Deprecated</button>
+    </div>
+    <button class="cl-refresh action-button" id="cl-refresh"><i data-lucide="refresh-cw" style="width:11px;height:11px;vertical-align:-1px"></i> Refresh</button>
+    <span class="cl-meta" id="cl-meta"></span>
+  </div>
+
+  <div id="cl-list">
+    <div class="cl-empty" id="cl-loading">Loading changelog archive&hellip;</div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var TYPE_ORDER = ["Added", "Changed", "Fixed", "Security", "Deprecated"];
+  var listEl = document.getElementById("cl-list");
+  var toolbarEl = document.getElementById("cl-toolbar");
+  var metaEl = document.getElementById("cl-meta");
+  var activeFilter = "all";
+  var versions = [];
+
+  function esc(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  function renderVersion(v, index, isLatest) {
+    var buckets = {};
+    (v.entries || []).forEach(function (e) {
+      (buckets[e.type] = buckets[e.type] || []).push(e);
+    });
+
+    // Stagger the reveal so blocks cascade in rather than snapping together.
+    var delay = Math.min(index * 60, 400);
+    var cls = "cl-version content-card" + (isLatest ? " is-latest" : "");
+    var html = '<div class="' + cls + '" style="animation-delay:' + delay + 'ms">';
+
+    html += '<div class="cl-version-head flex-center">';
+    html += '<span class="cl-version-num">v' + esc(v.version) + '</span>';
+    if (v.date) html += '<span class="cl-version-date">' + esc(v.date) + '</span>';
+    if (isLatest) html += '<span class="cl-latest-flag status-chip status-chip-filled">Latest</span>';
+
+    // Category summary chips — count per type, in canonical order.
+    html += '<span class="cl-summary flex-center">';
+    TYPE_ORDER.forEach(function (type) {
+      var n = (buckets[type] || []).length;
+      if (!n) return;
+      html += '<span class="cl-summary-chip status-chip" data-type="' + type + '"><b>' + n + '</b> ' + type + '</span>';
+    });
+    html += '</span>';
+    html += '</div>';
+
+    html += '<div class="cl-entries">';
+    TYPE_ORDER.forEach(function (type) {
+      var items = buckets[type];
+      if (!items || !items.length) return;
+      html += '<div class="cl-group-header flex-center" data-type="' + type + '">';
+      html += '<span class="cl-type-badge status-chip">' + type + '</span>';
+      html += '<span class="cl-group-count">' + items.length + '</span>';
+      html += '</div>';
+      items.forEach(function (e) {
+        html += '<div class="cl-entry" data-type="' + type + '">';
+        if (e.tag) html += '<span class="cl-entry-tag status-chip">' + esc(e.tag) + '</span>';
+        html += '<span class="cl-entry-text">' + esc(e.text) + '</span>';
+        html += '</div>';
+      });
+    });
+    html += '</div></div>';
+    return html;
+  }
+
+  function render() {
+    if (!versions.length) {
+      listEl.innerHTML = '<div class="cl-empty">No changelog captured yet. Notes are archived automatically when kiro-cli updates.</div>';
+      toolbarEl.style.display = "none";
+      return;
+    }
+    toolbarEl.style.display = "flex";
+    listEl.innerHTML = versions.map(function (v, i) {
+      return renderVersion(v, i, i === 0);
+    }).join("");
+    applyFilter();
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function applyFilter() {
+    var groups = listEl.querySelectorAll(".cl-group-header");
+    var entries = listEl.querySelectorAll(".cl-entry");
+    entries.forEach(function (el) {
+      var show = activeFilter === "all" || el.dataset.type === activeFilter;
+      el.classList.toggle("hidden", !show);
+    });
+    // Hide group headers whose category is filtered out.
+    groups.forEach(function (el) {
+      var show = activeFilter === "all" || el.dataset.type === activeFilter;
+      el.classList.toggle("hidden", !show);
+    });
+  }
+
+  document.getElementById("cl-filters").addEventListener("click", function (e) {
+    var btn = e.target.closest(".cl-filter");
+    if (!btn) return;
+    activeFilter = btn.dataset.type;
+    listEl.parentNode.querySelectorAll(".cl-filter").forEach(function (b) {
+      b.classList.toggle("active", b.dataset.type === activeFilter);
+    });
+    applyFilter();
+  });
+
+  document.getElementById("cl-refresh").addEventListener("click", function () {
+    listEl.innerHTML = '<div class="cl-empty">Refreshing&hellip;</div>';
+    toolbarEl.style.display = "none";
+    fetchData();
+  });
+
+  function onData(result) {
+    if (result && result.ok) {
+      versions = result.versions || [];
+      var meta = versions.length + " version" + (versions.length === 1 ? "" : "s");
+      if (result.source === "live") meta += " \u00b7 captured live";
+      else if (result.source === "cache") meta += " \u00b7 from archive";
+      metaEl.textContent = meta;
+      render();
+    } else {
+      listEl.innerHTML = '<div class="cl-empty">Error: ' + esc(result && result.error || "unknown") + '</div>';
+    }
+  }
+
+  function fetchData() {
+    if (window.pywebview && window.pywebview.api && window.pywebview.api.refresh_changelog) {
+      window.pywebview.api.refresh_changelog().then(onData);
+    } else {
+      window.addEventListener("pywebviewready", function () {
+        if (window.pywebview.api.refresh_changelog) {
+          window.pywebview.api.refresh_changelog().then(onData);
+        }
+      });
+    }
+  }
+
+  fetchData();
+})();
+</script>

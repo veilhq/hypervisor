@@ -242,7 +242,7 @@
         var marker = document.createElement('span');
         marker.className = 'scratch-card-moved';
         marker.textContent = '(*)';
-        marker.title = 'Moved out of chronological order';
+        marker.setAttribute('data-tooltip', 'Moved out of chronological order');
         head.appendChild(marker);
       }
 
@@ -526,6 +526,12 @@
         // Newest note sits at index 0 — animate its entrance.
         renderEntries(currentContent, { index: 0, kind: 'enter' });
         updateTimeLabel();
+        // Re-render tears down and rebuilds the entries subtree, which can
+        // drop focus back to <body>. Global single-key hotkeys are gated on
+        // the active element not being a textarea, so a lost focus makes the
+        // next keystroke fire a hotkey instead of typing. Restore focus so
+        // continued typing stays in the buffer.
+        if (textarea) textarea.focus();
       }
 
       window.pywebview.api.save_scratch(currentDate, currentContent);
@@ -718,8 +724,10 @@
           currentDate = result.date;
           currentContent = result.content;
           dateFlag.textContent = formatDateLabel(currentDate);
-          renderEntries(currentContent);
+          // Un-hide before rendering so card width/height measurements are
+          // taken against real layout, not a display:none container.
           showJournal();
+          renderEntries(currentContent);
           textarea.focus();
         });
       } else {
@@ -786,7 +794,8 @@
             var delBtn = document.createElement('button');
             delBtn.className = 'scratch-history-delete';
             delBtn.textContent = '\u2715';
-            delBtn.title = 'Delete this scratch file';
+            delBtn.setAttribute('data-tooltip', 'Delete this scratch file');
+            delBtn.setAttribute('aria-label', 'Delete this scratch file');
             delBtn.addEventListener('click', function(e) {
               e.stopPropagation();
               deleteScratch(file.date);
@@ -811,12 +820,16 @@
         currentDate = result.date;
         currentContent = result.content;
         dateFlag.textContent = formatDateLabel(currentDate);
-        renderEntries(currentContent);
 
-        // Switch to journal view for this date
+        // Un-hide the entries container before rendering. renderEntries measures
+        // clientWidth/offsetHeight to square cards and compute the masonry split;
+        // those read 0 on a display:none element, which is why cards loaded from
+        // history came back undersized and mis-columned. Switching to the journal
+        // view first gives the container real layout dimensions to measure.
         historyMode = false;
         historyBtn.classList.remove('active');
         showJournal();
+        renderEntries(currentContent);
         updateTimeLabel();
         textarea.focus();
       });

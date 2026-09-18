@@ -28,17 +28,23 @@
     ];
 
     // --- Utility Registry ---
-    var UTILITIES = [
-      { name: "ADO Dashboard",      icon: "bar-chart-3",  href: "/_utils/ado-dashboard/index.html" },
-      { name: "Health Dashboard",   icon: "activity",     href: "/_utils/health-dashboard/index.html" },
-      { name: "Palette Generator",  icon: "palette",      href: "/_utils/palette-generator/index.html" },
-      { name: "Password Generator", icon: "lock-keyhole", href: "/_utils/password-generator/index.html" },
-      { name: "Regex Editor",       icon: "regex",        href: "/_utils/regex-editor/index.html" },
-      { name: "Skills",             icon: "boxes",        href: "/_utils/skills-map/index.html" },
-      { name: "Style Guide",        icon: "swatch-book",  href: "/_utils/style-guide/index.html" },
-      { name: "Screensaver",        icon: "monitor",      href: "/_utils/screensaver/index.html" },
-      { name: "Assessment",         icon: "file-check",   href: "/_utils/assessment/index.html" }
-    ];
+    // Data-driven: populated from the build-generated _utils/_manifest.json so
+    // it stays in sync with the actual utility files (no hardcoded list).
+    var UTILITIES = [];
+    fetch('/content/_utils/_manifest.json')
+      .then(function (r) { return r.ok ? r.json() : []; })
+      .then(function (list) {
+        // Normalize hrefs to absolute for palette navigation, mutate in place
+        // so any closures already holding UTILITIES see the entries.
+        (list || []).forEach(function (u) {
+          UTILITIES.push({
+            name: u.name,
+            icon: u.icon,
+            href: u.href.charAt(0) === '/' ? u.href : '/' + u.href
+          });
+        });
+      })
+      .catch(function () { /* manifest missing — palette shows no utilities */ });
 
     // --- Navigation Indexes (top-level category pages) ---
     var NAV_INDEXES = [

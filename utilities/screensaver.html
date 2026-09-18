@@ -1,52 +1,54 @@
-<div class="ss-layout">
-  <div class="utility-container" style="max-width:720px">
+<div class="utility-body">
     <h1><i data-lucide="monitor" class="utility-title-icon"></i> Screensaver</h1>
     <p class="ss-subtitle">Choose a screensaver mode. Press <kbd class="ss-kbd">s</kbd> anywhere to launch, or wait for the idle timer.</p>
 
-    <div class="ss-cards" id="ss-cards"></div>
+    <div class="utility-body-split" style="--util-aside:300px">
+      <div class="ss-cards" id="ss-cards"></div>
 
-    <div class="ss-settings">
-      <div class="ss-setting-row">
-        <label for="ss-idle">Idle timeout</label>
-        <select id="ss-idle">
-          <option value="0">Disabled</option>
-          <option value="60000">1 minute</option>
-          <option value="120000">2 minutes</option>
-          <option value="300000">5 minutes</option>
-          <option value="600000">10 minutes</option>
-          <option value="900000">15 minutes</option>
-          <option value="1800000">30 minutes</option>
-        </select>
-      </div>
-      <div class="ss-setting-row">
-        <label for="ss-clock-toggle">Show clock overlay</label>
-        <input type="checkbox" id="ss-clock-toggle" checked>
-      </div>
-      <div class="ss-setting-row">
-        <label for="ss-palette-toggle">Use full palette</label>
-        <input type="checkbox" id="ss-palette-toggle">
-      </div>
-      <div class="ss-setting-row">
-        <label for="ss-grid-mouse-toggle">Grid: mouse interaction</label>
-        <input type="checkbox" id="ss-grid-mouse-toggle" checked>
-      </div>
-      <div class="ss-setting-row">
-        <label for="ss-dither-pattern">GL Dither: pattern</label>
-        <select id="ss-dither-pattern">
-          <option value="trig">Trig Waves</option>
-          <option value="fbm">FBM Noise</option>
-          <option value="warp">Domain Warp</option>
-          <option value="voronoi-trig">Voronoi × Trig</option>
-          <option value="trig-warp-reaction">Voronoi + Warp</option>
-        </select>
-      </div>
-    </div>
+      <aside class="ss-panel">
+        <div class="ss-settings">
+          <div class="ss-setting-row flex-between">
+            <label for="ss-idle">Idle timeout</label>
+            <select id="ss-idle" class="form-select">
+              <option value="0">Disabled</option>
+              <option value="60000">1 minute</option>
+              <option value="120000">2 minutes</option>
+              <option value="300000">5 minutes</option>
+              <option value="600000">10 minutes</option>
+              <option value="900000">15 minutes</option>
+              <option value="1800000">30 minutes</option>
+            </select>
+          </div>
+          <div class="ss-setting-row flex-between">
+            <label for="ss-clock-toggle">Show clock overlay</label>
+            <input type="checkbox" id="ss-clock-toggle" class="form-check" checked>
+          </div>
+          <div class="ss-setting-row flex-between">
+            <label for="ss-palette-toggle">Use full palette</label>
+            <input type="checkbox" id="ss-palette-toggle" class="form-check">
+          </div>
+          <div class="ss-setting-row flex-between">
+            <label for="ss-grid-mouse-toggle">Grid: mouse interaction</label>
+            <input type="checkbox" id="ss-grid-mouse-toggle" class="form-check" checked>
+          </div>
+          <div class="ss-setting-row flex-between">
+            <label for="ss-dither-pattern">GL Dither: pattern</label>
+            <select id="ss-dither-pattern" class="form-select">
+              <option value="trig">Trig Waves</option>
+              <option value="fbm">FBM Noise</option>
+              <option value="warp">Domain Warp</option>
+              <option value="voronoi-trig">Voronoi × Trig</option>
+              <option value="trig-warp-reaction">Voronoi + Warp</option>
+            </select>
+          </div>
+        </div>
 
-    <div class="ss-actions">
-      <button class="ss-launch" id="ss-launch"><i data-lucide="play" style="width:12px;height:12px;vertical-align:-1px"></i> Launch Now</button>
+        <div class="ss-actions flex-center">
+          <button class="ss-launch action-button action-button-primary" id="ss-launch"><i data-lucide="play" style="width:12px;height:12px;vertical-align:-1px"></i> Launch Now</button>
+        </div>
+      </aside>
     </div>
   </div>
-</div>
 
 <script>
 (function () {
@@ -82,7 +84,7 @@
       cardsContainer.innerHTML = "";
       MODES.forEach(function (mode) {
         var card = document.createElement("div");
-        card.className = "ss-card" + (mode.key === currentMode ? " selected" : "");
+        card.className = "ss-card content-card" + (mode.key === currentMode ? " selected content-card-active" : "");
         card.setAttribute("data-mode", mode.key);
         card.setAttribute("role", "button");
         card.setAttribute("tabindex", "0");
@@ -90,8 +92,8 @@
 
         var preview = document.createElement("canvas");
         preview.className = "ss-card-preview";
-        preview.width = 280;
-        preview.height = 140;
+        preview.width = 320;
+        preview.height = 180;
         card.appendChild(preview);
 
         var body = document.createElement("div");
@@ -115,9 +117,9 @@
         // Render static preview
         var pCtx = preview.getContext("2d");
         pCtx.fillStyle = "#000000";
-        pCtx.fillRect(0, 0, 280, 140);
+        pCtx.fillRect(0, 0, 320, 180);
         try {
-          api.preview(mode.key, pCtx, 280, 140);
+          api.preview(mode.key, pCtx, 320, 180);
         } catch (e) {}
 
         // Selection handler

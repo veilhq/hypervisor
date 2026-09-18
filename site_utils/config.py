@@ -14,6 +14,12 @@ OUTPUT_DIR = _HYPERVISOR_DIR / "site"
 ASSETS_DIR = _HYPERVISOR_DIR / "assets"
 JS_DIR = ASSETS_DIR / "js"
 
+# Persistent app data (not part of the generated site). The kiro-cli changelog
+# archive is written here by hyperagent (which detects CLI updates) and read by
+# the hypervisor changelog viewer utility.
+DATA_DIR = _HYPERVISOR_DIR / "data"
+CHANGELOG_CACHE_FILE = DATA_DIR / "changelog.json"
+
 # Hyperkit — shared design system package (WI-142 Phase 1). Canonical source
 # for tokens.css / primitives.css and the ecosystem JS modules (HvNoiseField,
 # HvGreeting, HvCursorTrail, HvToast). Lives one level up from .hypervisor/,
@@ -33,7 +39,7 @@ sys.path.insert(0, str(HYPERKIT_PYTHON_DIR))
 # module that references window.HvNoiseField / HvGreeting / HvCursorTrail /
 # HvToast (i.e. before core/00-core.js and features/*), so they are
 # prepended ahead of everything list_js_modules() would otherwise return.
-HYPERKIT_JS_MODULES = ["utils.js", "noise-field.js", "greeting.js", "cursor-trail.js", "toast.js", "cursor-box.js", "context-menu.js"]
+HYPERKIT_JS_MODULES = ["client-diagnostics.js", "utils.js", "noise-field.js", "greeting.js", "cursor-trail.js", "toast.js", "tooltip.js", "disclosure.js", "collapsible.js", "tabs.js", "cursor-box.js", "context-menu.js", "viz.js", "hv-preview.js"]
 
 
 def list_js_modules():

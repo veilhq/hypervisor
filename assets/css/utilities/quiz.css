@@ -1,17 +1,9 @@
 /* ===== AWS CCP Practice Quiz ===== */
 
 /* ---- Quiz layout ---- */
-.quiz-layout {
-  display: grid;
-  grid-template-columns: 1fr 280px;
-  gap: var(--space-6);
-  align-items: start;
-}
-@media (max-width: 900px) {
-  .quiz-layout { grid-template-columns: 1fr; }
-}
+/* Layout from the shared .utility-body-split primitive (main + 280px aside). */
 .quiz-container {
-  max-width: 680px;
+  min-width: 0;
 }
 .quiz-dataset-title {
   color: var(--text-dim);
@@ -20,10 +12,8 @@
 }
 
 /* ---- Quiz meta bar ---- */
+/* .quiz-meta composes .flex-center (display/align/gap); type + spacing local. */
 .quiz-meta {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
   font-size: var(--fs-caption);
   color: var(--text-dim);
   text-transform: uppercase;
@@ -34,55 +24,48 @@
 .quiz-meta-item { color: var(--text-muted); }
 
 /* ---- Progress bar ---- */
+/* .quiz-progress-bar composes .progress-track; local overrides keep the flat
+   2px hairline (no border/radius, border-colored fill) instead of the
+   primitive's 4px bordered track. */
 .quiz-progress-bar {
   height: 2px;
   background: var(--border);
+  border: none;
+  border-radius: 0;
+  min-width: 0;
   margin-bottom: var(--space-5);
 }
+/* .quiz-progress-fill composes .progress-fill; solid accent (not the primitive
+   gradient) and the 0% initial width are the local part. */
 .quiz-progress-fill {
-  height: 100%;
   background: var(--accent);
-  transition: width var(--motion-slow) var(--ease);
   width: 0%;
 }
 
 /* ---- Quiz card ---- */
+/* .quiz-card composes .content-card (border/radius/bg surface); padding local. */
 .quiz-card {
-  border: var(--border-hair) solid var(--border);
-  border-radius: var(--radius);
-  background: var(--bg-card);
   padding: var(--space-1-25);
 }
 .quiz-card-tags {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
   margin-bottom: var(--space-3);
 }
 .quiz-domain {
-  font-size: 0.6rem;
+  font-size: var(--fs-micro);
   color: var(--cool);
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
+/* .quiz-type-tag composes .status-chip (silhouette); the default outline
+   border + per-type color stay local. */
 .quiz-type-tag {
-  font-size: var(--fs-micro);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  padding: var(--space-0-1) var(--space-0-4);
   border: var(--border-hair) solid var(--border);
-  border-radius: var(--radius);
 }
 .quiz-type-recall { color: var(--text-dim); }
 .quiz-type-scenario { color: var(--warm); border-color: var(--warm); }
+/* .quiz-multi-tag composes .status-chip.status-chip-outlined-accent (accent
+   color + border from the variant); the heavier weight is the local part. */
 .quiz-multi-tag {
-  font-size: var(--fs-micro);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  padding: var(--space-0-1) var(--space-0-4);
-  color: var(--accent);
-  border: var(--border-hair) solid var(--accent);
-  border-radius: var(--radius);
   font-weight: 700;
 }
 .quiz-question {
@@ -93,9 +76,8 @@
 }
 
 /* ---- Options ---- */
+/* .quiz-options composes .flex-stack; the tighter gap + margin are local. */
 .quiz-options {
-  display: flex;
-  flex-direction: column;
   gap: var(--space-0-4);
   margin-bottom: var(--space-4);
 }
@@ -109,7 +91,7 @@
   border-radius: var(--radius);
   color: var(--text);
   font-family: var(--font);
-  font-size: 0.75rem;
+  font-size: var(--fs-sm);
   text-align: left;
   line-height: 1.5;
   transition: border-color var(--motion-fast) var(--ease), background var(--motion-fast) var(--ease);
@@ -123,14 +105,14 @@
   background: var(--accent-glow);
 }
 .quiz-option.correct {
-  border-color: var(--accent);
-  background: rgba(0, 255, 65, 0.08);
-  color: var(--accent);
+  border-color: var(--success);
+  background: color-mix(in srgb, var(--success) 8%, transparent);
+  color: var(--success);
 }
 .quiz-option.incorrect {
-  border-color: var(--comp);
-  background: rgba(255, 51, 51, 0.08);
-  color: var(--comp);
+  border-color: var(--error);
+  background: color-mix(in srgb, var(--error) 8%, transparent);
+  color: var(--error);
 }
 .quiz-option:disabled {
   opacity: 0.7;
@@ -142,7 +124,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.6rem;
+  font-size: var(--fs-micro);
   font-weight: 700;
   color: var(--text-dim);
   border: var(--border-hair) solid var(--border);
@@ -182,9 +164,9 @@
 .quiz-feedback-incorrect {
   color: var(--text);
   padding: var(--space-0-6) var(--space-3);
-  border-left: var(--border-rail) solid var(--comp);
+  border-left: var(--border-rail) solid var(--error);
   border-radius: var(--radius);
-  background: rgba(255, 51, 51, 0.04);
+  background: color-mix(in srgb, var(--error) 4%, transparent);
 }
 
 /* ---- Action buttons ---- */
@@ -193,16 +175,14 @@
   gap: var(--space-2);
   margin-top: var(--space-4);
 }
+/* .quiz-btn composes .action-button; the compact padding, smaller caption
+   size, wider tracking, and solid --bg fill are the local overrides. Per-state
+   accent/cool colors live on the -check/-next variants below. */
 .quiz-btn {
   padding: 0.45rem var(--space-1-2);
-  font-family: var(--font);
   font-size: var(--fs-caption);
-  text-transform: uppercase;
   letter-spacing: 0.08em;
-  border: var(--border-hair) solid;
-  border-radius: var(--radius);
   background: var(--bg);
-  transition: background var(--motion-fast) var(--ease), color var(--motion-fast) var(--ease);
 }
 .quiz-btn-check {
   border-color: var(--accent);
@@ -225,14 +205,10 @@
 }
 
 /* ---- Sidebar ---- */
-.quiz-sidebar {
-  border: var(--border-hair) solid var(--border);
-  border-radius: var(--radius);
-  background: var(--bg-card);
-}
+/* .quiz-sidebar composes .content-card (border/radius/bg surface) — no local
+   overrides needed. */
+/* .quiz-sidebar-header composes .flex-center; type + spacing + rule local. */
 .quiz-sidebar-header {
-  display: flex;
-  align-items: center;
   padding: var(--space-2) var(--space-3);
   font-size: var(--fs-caption);
   font-weight: 700;
@@ -255,33 +231,16 @@
   letter-spacing: 0.04em;
   margin-bottom: var(--space-0-3);
 }
-.quiz-setting select {
-  width: 100%;
-  padding: 0.35rem var(--space-2);
-  background: var(--bg);
-  border: var(--border-hair) solid var(--border-strong);
-  border-radius: var(--radius);
-  color: var(--text);
-  font-family: var(--font);
-  font-size: var(--fs-label);
-}
-.quiz-setting select:focus {
-  border-color: var(--accent);
-  outline: none;
-}
-.quiz-setting input[type="checkbox"] {
-  accent-color: var(--accent);
-}
+/* quiz select + checkbox normalized to shared .form-select / .form-check (see markup). */
+/* .quiz-domain-filters composes .flex-stack; the tighter gap is local. */
 .quiz-domain-filters {
-  display: flex;
-  flex-direction: column;
   gap: var(--space-0-3);
 }
+/* .quiz-domain-label composes .flex-center; the tighter gap + label type
+   (non-uppercase, no tracking) are local. */
 .quiz-domain-label {
-  display: flex;
-  align-items: center;
   gap: var(--space-0-4);
-  font-size: 0.68rem;
+  font-size: var(--fs-caption);
   color: var(--text);
   text-transform: none !important;
   letter-spacing: 0 !important;
@@ -292,10 +251,9 @@
 }
 
 /* ---- Session stats ---- */
+/* .quiz-stat-row composes .flex-between; type + padding local. */
 .quiz-stat-row {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.68rem;
+  font-size: var(--fs-caption);
   color: var(--text-muted);
   padding: var(--space-1) 0;
 }
@@ -304,10 +262,8 @@
 }
 
 /* ---- Summary ---- */
+/* .quiz-summary composes .content-card (border/radius/bg surface); padding local. */
 .quiz-summary {
-  border: var(--border-hair) solid var(--border);
-  border-radius: var(--radius);
-  background: var(--bg-card);
   padding: var(--space-5);
 }
 .quiz-summary-score {
@@ -334,16 +290,14 @@
 }
 .quiz-final-note {
   display: block;
-  font-size: 0.6rem;
+  font-size: var(--fs-micro);
   color: var(--text-dim);
   margin-top: var(--space-0-4);
   letter-spacing: 0.04em;
 }
+/* .quiz-summary-actions composes .flex-center-all; margin-top local. */
 .quiz-summary-actions {
-  display: flex;
-  gap: var(--space-2);
   margin-top: var(--space-1-25);
-  justify-content: center;
 }
 
 /* ---- Domain breakdown ---- */
@@ -354,12 +308,11 @@
   letter-spacing: 0.06em;
   margin-bottom: var(--space-3);
 }
+/* .quiz-breakdown-row composes .flex-center; the wider gap + type + margin are local. */
 .quiz-breakdown-row {
-  display: flex;
-  align-items: center;
   gap: var(--space-3);
   margin-bottom: var(--space-2);
-  font-size: 0.68rem;
+  font-size: var(--fs-caption);
 }
 .quiz-breakdown-domain {
   flex: 0 0 140px;
@@ -368,19 +321,23 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* .quiz-breakdown-bar composes .progress-track; local overrides keep the flat
+   border-colored track (no border/radius/min-width) and let it flex. */
 .quiz-breakdown-bar {
   flex: 1;
   height: 4px;
   background: var(--border);
-  position: relative;
+  border: none;
+  border-radius: 0;
+  min-width: 0;
 }
+/* .quiz-breakdown-fill composes .progress-fill; absolute overlay positioning
+   and the solid accent (not gradient) are local. */
 .quiz-breakdown-fill {
   position: absolute;
   top: 0;
   left: 0;
-  height: 100%;
   background: var(--accent);
-  transition: width var(--motion-slow) var(--ease);
 }
 .quiz-breakdown-pct {
   flex: 0 0 2.5rem;
@@ -411,4 +368,100 @@
 .quiz-tab.active {
   color: var(--accent);
   border-bottom-color: var(--accent);
+}
+
+
+/* ===== Study Guide tab ===== */
+/* Domain nav — a wrapped row of toggle chips. Each composes .status-chip
+   (silhouette); the .active state fills accent, inactive is outlined-muted. */
+.guide-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-bottom: var(--space-4);
+}
+.guide-nav-btn {
+  cursor: pointer;
+  color: var(--text-muted);
+  background: transparent;
+  border: var(--border-hair) solid var(--border-strong);
+  /* Larger than the chip default — these are primary filter controls, not
+     inline status pills, so lift the font size and padding for comfortable
+     clicking. */
+  font-size: var(--fs-label);
+  padding: var(--space-1) var(--space-3);
+  line-height: 1.4;
+}
+.guide-nav-btn:hover { color: var(--accent); border-color: var(--accent); }
+.guide-nav-btn.active {
+  color: var(--bg);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.guide-nav-num {
+  font-weight: 700;
+  margin-right: var(--space-0-4);
+}
+.guide-nav-num::after { content: ':'; }
+
+/* Domain sections */
+.guide-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.guide-domain {
+  border: var(--border-hair) solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: var(--space-4);
+}
+.guide-domain-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: var(--border-hair) solid var(--border);
+}
+.guide-domain-title {
+  font-size: var(--fs-body);
+  font-weight: 700;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.guide-domain-weight {
+  flex-shrink: 0;
+  font-size: var(--fs-micro);
+  color: var(--text-dim);
+  letter-spacing: 0.04em;
+}
+.guide-section + .guide-section { margin-top: var(--space-4); }
+.guide-section-title {
+  font-size: var(--fs-caption);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--warm);
+  margin: 0 0 var(--space-2);
+}
+.guide-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.guide-list li {
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+  line-height: 1.6;
+  padding-left: var(--space-3);
+  border-left: var(--border-hair) solid var(--border);
+}
+.guide-term {
+  color: var(--text-bright);
+  font-weight: 700;
 }

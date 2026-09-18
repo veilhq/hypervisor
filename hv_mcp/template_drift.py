@@ -153,7 +153,7 @@ TEMPLATE_MAP = {
 # The markdown template includes them as guidance/placeholders, but the MCP
 # tool only generates the minimum required structure on creation.
 OPTIONAL_SECTIONS = {
-    "work-item": {"pr notes"},
+    "work-item": {"open questions", "pr notes"},
     "idea": {"key questions"},
     "adr": {"implementation", "references", "notes"},
     "bugfix": set(),

@@ -28,7 +28,7 @@
       var btn = document.createElement("button");
       btn.className = "idea-dismiss-btn";
       btn.setAttribute("aria-label", "Remove " + slug);
-      btn.title = "Implemented \u2014 remove";
+      btn.setAttribute("data-tooltip", "Implemented \u2014 remove");
       btn.innerHTML = '<i data-lucide="check-circle-2"></i>';
       li.appendChild(btn);
 

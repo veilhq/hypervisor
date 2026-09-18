@@ -83,6 +83,7 @@ def copy_assets():
         "content.css",
         "cards.css",
         "features.css",
+        "viz.css",
         "accessibility.css",
     )
     for name in hyperkit_css_order:

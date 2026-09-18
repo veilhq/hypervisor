@@ -1,0 +1,345 @@
+{
+  "captured": "2026-09-14T11:40:39",
+  "versions": [
+    {
+      "version": "2.21.4",
+      "date": "2026-09-11",
+      "entries": [
+        {
+          "type": "Added",
+          "tag": "V3",
+          "text": "Session search now includes agent responses by default; choose what it searches in `/settings`"
+        },
+        {
+          "type": "Added",
+          "tag": null,
+          "text": "`--v2` flag to explicitly select the V2 agent engine, overriding persisted settings"
+        },
+        {
+          "type": "Changed",
+          "tag": null,
+          "text": "Settings menus now share one keyboard contract: Left/Right change a value, Enter selects or opens a submenu, and Esc goes back. The `/verbosity` preview moves to `ctrl+x` (`ctrl+p` still works for now)."
+        },
+        {
+          "type": "Changed",
+          "tag": null,
+          "text": "Removed the left status rail and replaced it with a small agent-colored response indicator"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Dismiss pending approval and question prompts when a turn fails so you are not stranded on a dead modal"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "The tangent indicator (\u00e2\u2020\u00af tangent-N) is now shown when resuming a tangent session with `--resume-id`, `/chat`, or the session picker"
+        }
+      ]
+    },
+    {
+      "version": "2.21.3",
+      "date": "2026-09-10",
+      "entries": [
+        {
+          "type": "Added",
+          "tag": "V3",
+          "text": "Installed powers appear in the `/` command picker"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "`code` tool results appear on completed tool cards"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "Agent `model:` pins resolve against the served model list"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "Failed tool calls show a plain error message instead of raw JSON"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "Kiro can now read Java definitions inside external library JARs when navigating code"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "MCP tool listing refreshes when MCP is disabled mid-session"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "Model, mode, and effort selections survive an immediate restart"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "Sessions created moments before a session list request are no longer missing"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "Shell commands no longer always prompt for approval under `logbash` and `logzsh`"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "`/usage` non-interactive output again shows the full breakdown (plan, limits, and usage percentages) instead of a one-line summary"
+        }
+      ]
+    },
+    {
+      "version": "2.21.2",
+      "date": "2026-09-08",
+      "entries": [
+        {
+          "type": "Changed",
+          "tag": null,
+          "text": "Welcome screen no longer animates the wordmark on first launch"
+        },
+        {
+          "type": "Changed",
+          "tag": null,
+          "text": "Terminal theme detection now reconciles the fast COLORFGBG startup signal with an authoritative OSC 11 response after first paint"
+        },
+        {
+          "type": "Changed",
+          "tag": "V3",
+          "text": "Shell tool streaming output now updates partial lines in place instead of expanding into multiple entries"
+        },
+        {
+          "type": "Changed",
+          "tag": null,
+          "text": "Terminal history is now preserved across redraws by default; set `chat.preserveScrollback` to false to restore the previous clear-and-repaint behavior"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "`/settings` no longer toggles a value on one screen and ignores Enter on another; every settings footer now names what Enter does on the focused row"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "ACP session creation no longer advertises a hardcoded model list when the model-list fetch fails; it retries briefly, then reports the list as unknown"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Announce agent switches made through the ACP protocol so the TUI stops showing the previous agent"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Kiro is ready for input up to 20\u00c3\u2014 faster by removing redundant binary hashing and moving backend connection work behind the first usable frame"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Chat no longer jumps up and back down when the prompt footer hint disappears while you type or a turn runs"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "The reasoning block's \"ctrl+o to view\" hint now disappears as the turn leaves the live region, so a committed \"Thought for Ns\" row no longer advertises a toggle that does nothing"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Leaving the agent monitor or session dashboard no longer reprints the conversation"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "An agent swap now commits its notice and greeting instead of holding them until the next prompt"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "A status dot no longer leaves a gap in the left accent bar"
+        }
+      ]
+    },
+    {
+      "version": "2.21.1",
+      "date": "2026-09-03",
+      "entries": [
+        {
+          "type": "Added",
+          "tag": null,
+          "text": "Customize the busy indicator verbs via the chat.spinnerVerbs setting (opt-in with chat.enableCustomSpinnerVerbs), with append and replace modes and optional verb links"
+        },
+        {
+          "type": "Changed",
+          "tag": "V3",
+          "text": "Large tool outputs are saved in full under the session's `tool-outputs/` directory instead of clipped"
+        },
+        {
+          "type": "Changed",
+          "tag": null,
+          "text": "Surface provider refusal reasons instead of a generic \"failed to generate a response\" error"
+        },
+        {
+          "type": "Changed",
+          "tag": null,
+          "text": "Submitted prompts hide the input chevron when the prompt background distinguishes them in conversation history"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Workspace `cli.json` settings now override global settings in the TUI"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "`--no-interactive` no longer hangs callers waiting for the run output to close"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "A non-interactive run resumed with `--resume-id` no longer reports the loaded conversation as its own output"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "API-key authentication now discovers non-commercial service endpoints correctly"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "Interrupting a `--no-interactive` run now writes a terminal `runError` with stage `interrupted` to `--output-format stream-json`, instead of ending the stream with no final record"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Submitted prompts no longer extend the active response accent into the blank row before thinking"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "A `--no-interactive` run that is interrupted or terminated now stops the engine and the processes it started, instead of leaving them behind"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Nameless subagents no longer appear as `undefined` in the agent panel"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Sessions permanently failing with `TokenExpiredError` after an auto-update removed the running binary"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Replayed failed tool cards no longer print a doubled output label under the output header"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Session-start tool cards render below the banner and What's-new block at boot, adjacent to the conversation, instead of sandwiched between them"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "Agents without a configured model now honor saved model and effort defaults while agent-pinned models still win"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "Duplicate notifications no longer emitted when steering or skills files change"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "Mid-stream stalls during reasoning-only responses are automatically re-issued instead of failing the turn"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "Resumed sessions replay tool cards with their deterministic titles, real arguments, and tool IDs"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "SessionStart hook content is kept on every turn instead of dropping after the first"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Enterprise MCP registries no longer fail with HTTP 403 on hosts that require a User-Agent"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Active-tail accent no longer paints on wrap-disabled or lite surfaces that drop the left status bar"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Per-turn usage footer now renders with a consistent leading blank line and no stray leading space whether the turn was committed live or replayed on resume"
+        }
+      ]
+    },
+    {
+      "version": "2.21.0",
+      "date": "2026-09-01",
+      "entries": [
+        {
+          "type": "Added",
+          "tag": "V3",
+          "text": "`/config` panel to view configured agents, MCP servers, powers, steering, skills, and hooks"
+        },
+        {
+          "type": "Added",
+          "tag": "V3",
+          "text": "`/sessions` dashboard to browse, search, resume and clean up past sessions"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Kept completed turns visually stable when they move into preserved scrollback, preventing detached viewports from jumping or corrupting history"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Selecting swap from the `/agent` menu without an agent name now opens the agent picker instead of failing with \"Agent 'swap' not found\""
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Prevented preserved-scrollback turn completion from replaying terminal history while retaining full-width prompts with a leading \u00e2\u20ac\u00ba marker, tool output, iTerm alignment, and the bounded active-tail accent"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "Task list panel now shows the finished all-done state at the end of a run instead of vanishing, and clears it when a new prompt starts"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Java code navigation in V2 now opens decompiled source for external libraries"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "Turn errors no longer display twice, and the error row's accent bar now matches its status dot color"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "MCP tool cards resolve their server identity from agent metadata instead of the display title"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "Session-start tool card no longer shows as cancelled when creating or resuming a session"
+        }
+      ]
+    }
+  ]
+}

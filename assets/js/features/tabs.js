@@ -8,22 +8,30 @@
     var tabIdCounter = 0;
 
     // --- DOM Setup ---
-    var highlight = null;
 
     function createTabBar() {
       tabBar = document.createElement("div");
       tabBar.className = "tab-bar";
       tabBar.setAttribute("role", "tablist");
-      // Sliding highlight
-      highlight = document.createElement("div");
-      highlight.className = "tab-highlight";
-      tabBar.appendChild(highlight);
       // Insert after topbar
       var topbar = document.querySelector(".topbar");
       if (topbar && topbar.nextSibling) {
         topbar.parentNode.insertBefore(tabBar, topbar.nextSibling);
       } else {
         document.body.prepend(tabBar);
+      }
+      // Keyboard nav + roving tabindex + ARIA via the shared HvTabs primitive.
+      // The tab model stays here; HvTabs only routes arrow-key selection back
+      // into switchTab via the tab element's data-tab-id.
+      if (window.HvTabs) {
+        window.HvTabs.register({
+          tablist: tabBar,
+          tabSelector: ".tab-item",
+          onSelect: function (tabEl) {
+            var id = tabEl.getAttribute("data-tab-id");
+            if (id && id !== activeTabId) switchTab(id);
+          }
+        });
       }
     }
 
@@ -99,16 +107,16 @@
       // Show/hide based on tab count
       tabBar.classList.toggle("visible", tabs.length > 1);
 
-      // Remove old tab items (keep highlight)
+      // Remove old tab items
       var old = tabBar.querySelectorAll(".tab-item");
       old.forEach(function (el) { el.remove(); });
 
       tabs.forEach(function (tab) {
         var el = document.createElement("div");
-        el.className = "tab-item" + (tab.id === activeTabId ? " active" : "") + (tab.stale ? " tab-stale" : "");
+        el.className = "nav-tab tab-item" + (tab.id === activeTabId ? " active" : "") + (tab.stale ? " tab-stale" : "");
         el.setAttribute("role", "tab");
         el.setAttribute("aria-selected", tab.id === activeTabId ? "true" : "false");
-        el.setAttribute("title", tab.title || tab.path);
+        el.setAttribute("data-tooltip", tab.title || tab.path);
         el.setAttribute("data-tab-id", tab.id);
 
         var title = document.createElement("span");
@@ -132,21 +140,6 @@
 
         tabBar.appendChild(el);
       });
-
-      positionHighlight();
-    }
-
-    function positionHighlight() {
-      if (!highlight || !tabBar) return;
-      var active = tabBar.querySelector(".tab-item.active");
-      if (active) {
-        var barRect = tabBar.getBoundingClientRect();
-        var tabRect = active.getBoundingClientRect();
-        highlight.style.setProperty("--tab-hl-left", (tabRect.left - barRect.left + tabBar.scrollLeft) + "px");
-        highlight.style.setProperty("--tab-hl-width", tabRect.width + "px");
-      } else {
-        highlight.style.setProperty("--tab-hl-width", "0");
-      }
     }
 
     // --- Persistence ---

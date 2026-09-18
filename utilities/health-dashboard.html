@@ -3,12 +3,12 @@
 
   <!-- Loading skeleton -->
   <div class="health-loading" id="hd-loading">
-    <div class="health-cards">
-      <div class="health-card"><div class="loading-skeleton loading-skeleton-line loading-skeleton-xl" style="width:40%"></div><div class="loading-skeleton loading-skeleton-line loading-skeleton-sm" style="width:60%"></div></div>
-      <div class="health-card"><div class="loading-skeleton loading-skeleton-line loading-skeleton-xl" style="width:30%"></div><div class="loading-skeleton loading-skeleton-line loading-skeleton-sm" style="width:50%"></div></div>
-      <div class="health-card"><div class="loading-skeleton loading-skeleton-line loading-skeleton-xl" style="width:35%"></div><div class="loading-skeleton loading-skeleton-line loading-skeleton-sm" style="width:55%"></div></div>
+    <div class="health-cards kpi-grid">
+      <div class="health-card kpi-tile"><div class="loading-skeleton loading-skeleton-line loading-skeleton-xl" style="width:40%"></div><div class="loading-skeleton loading-skeleton-line loading-skeleton-sm" style="width:60%"></div></div>
+      <div class="health-card kpi-tile"><div class="loading-skeleton loading-skeleton-line loading-skeleton-xl" style="width:30%"></div><div class="loading-skeleton loading-skeleton-line loading-skeleton-sm" style="width:50%"></div></div>
+      <div class="health-card kpi-tile"><div class="loading-skeleton loading-skeleton-line loading-skeleton-xl" style="width:35%"></div><div class="loading-skeleton loading-skeleton-line loading-skeleton-sm" style="width:55%"></div></div>
     </div>
-    <div class="health-section" style="margin-top:var(--space-4)">
+    <div class="health-section content-card" style="margin-top:var(--space-4)">
       <div class="loading-skeleton loading-skeleton-line" style="width:30%;margin-bottom:var(--space-2)"></div>
       <li class="loading-skeleton loading-skeleton-row"></li>
       <li class="loading-skeleton loading-skeleton-row"></li>
@@ -16,7 +16,7 @@
       <li class="loading-skeleton loading-skeleton-row"></li>
       <li class="loading-skeleton loading-skeleton-row"></li>
     </div>
-    <div class="health-section" style="margin-top:var(--space-4)">
+    <div class="health-section content-card" style="margin-top:var(--space-4)">
       <div class="loading-skeleton loading-skeleton-line" style="width:25%;margin-bottom:var(--space-2)"></div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--space-4)">
         <div class="loading-skeleton loading-skeleton-block" style="height:8rem"></div>
@@ -29,40 +29,40 @@
   <!-- Dashboard content (hidden until loaded) -->
   <div class="health-content" id="hd-content" style="display:none;">
 
-    <!-- Summary Stats Strip -->
-    <div class="health-cards">
-      <div class="health-card" id="hd-total">
-        <div class="health-card-value" id="hd-total-val">—</div>
-        <div class="health-card-label">Documents</div>
+    <!-- Summary Stats -->
+    <div class="health-cards kpi-grid">
+      <div class="health-card kpi-tile" id="hd-total">
+        <div class="health-card-label kpi-tile-label">Documents</div>
+        <div class="health-card-value kpi-tile-value" id="hd-total-val">—</div>
       </div>
-      <div class="health-card health-card-good" id="hd-valid">
-        <div class="health-card-value" id="hd-valid-val">—</div>
-        <div class="health-card-label">Valid</div>
+      <div class="health-card kpi-tile health-card-good" id="hd-valid">
+        <div class="health-card-label kpi-tile-label">Valid</div>
+        <div class="health-card-value kpi-tile-value" id="hd-valid-val">—</div>
       </div>
-      <div class="health-card health-card-warn" id="hd-violations">
-        <div class="health-card-value" id="hd-violations-val">—</div>
-        <div class="health-card-label">With Issues</div>
+      <div class="health-card kpi-tile health-card-warn" id="hd-violations">
+        <div class="health-card-label kpi-tile-label">With Issues</div>
+        <div class="health-card-value kpi-tile-value" id="hd-violations-val">—</div>
       </div>
     </div>
 
     <!-- Actions row -->
-    <div class="health-actions" id="hd-actions">
-      <button class="health-refresh-btn" id="hd-refresh">
+    <div class="health-actions flex-center" id="hd-actions">
+      <button class="health-refresh-btn action-button" id="hd-refresh">
         <i data-lucide="refresh-cw" style="width:11px;height:11px;vertical-align:-1px"></i> Refresh
       </button>
-      <button class="health-fix-btn" id="hd-fix" style="display:none;">
+      <button class="health-fix-btn action-button" id="hd-fix" style="display:none;">
         <i data-lucide="wrench" style="width:11px;height:11px;vertical-align:-1px"></i> Fix Violations
       </button>
       <span class="health-timestamp" id="hd-timestamp"></span>
     </div>
 
     <!-- Fix violations results panel (hidden until triggered) -->
-    <div class="health-fix-panel" id="hd-fix-panel" style="display:none;">
-      <div class="health-fix-header">
+    <div class="health-fix-panel content-card" id="hd-fix-panel" style="display:none;">
+      <div class="health-fix-header flex-between">
         <h2><i data-lucide="wrench" style="width:14px;height:14px;vertical-align:-2px"></i> Auto-Fix Results</h2>
-        <div class="health-fix-actions" id="hd-fix-actions">
-          <button class="health-fix-apply-btn" id="hd-fix-apply" style="display:none;">Apply Fixes</button>
-          <button class="health-fix-dismiss-btn" id="hd-fix-dismiss">Dismiss</button>
+        <div class="health-fix-actions flex-center" id="hd-fix-actions">
+          <button class="health-fix-apply-btn action-button action-button-primary" id="hd-fix-apply" style="display:none;">Apply Fixes</button>
+          <button class="health-fix-dismiss-btn action-button" id="hd-fix-dismiss">Dismiss</button>
         </div>
       </div>
       <div class="health-fix-summary" id="hd-fix-summary"></div>
@@ -71,7 +71,7 @@
     </div>
 
     <!-- Top Issues -->
-    <div class="health-section">
+    <div class="health-section content-card">
       <h2><i data-lucide="alert-triangle" style="width:14px;height:14px;vertical-align:-2px"></i> Issues by Rule</h2>
       <div class="health-issues" id="hd-issues">
         <div class="health-empty">No issues found</div>
@@ -79,13 +79,13 @@
     </div>
 
     <!-- Affected Files -->
-    <div class="health-section" id="hd-affected-panel" style="display:none;">
+    <div class="health-section content-card" id="hd-affected-panel" style="display:none;">
       <h2><i data-lucide="file-warning" style="width:14px;height:14px;vertical-align:-2px"></i> Affected Files</h2>
       <div class="health-affected-list" id="hd-affected-list"></div>
     </div>
 
     <!-- Tag Analytics (full width, multi-column) -->
-    <div class="health-section health-section-tags">
+    <div class="health-section health-section-tags content-card">
       <h2><i data-lucide="tags" style="width:14px;height:14px;vertical-align:-2px"></i> Tag Analytics</h2>
       <div class="health-tag-stats" id="hd-tag-stats"></div>
 
@@ -125,13 +125,13 @@
 
     var violCard = document.getElementById('hd-violations');
     if (health.current.violations === 0) {
-      violCard.className = 'health-card health-card-good';
+      violCard.className = 'health-card kpi-tile health-card-good';
       document.getElementById('hd-fix').style.display = 'none';
     } else if (health.current.violations <= 5) {
-      violCard.className = 'health-card health-card-warn';
+      violCard.className = 'health-card kpi-tile health-card-warn';
       document.getElementById('hd-fix').style.display = 'inline-flex';
     } else {
-      violCard.className = 'health-card health-card-bad';
+      violCard.className = 'health-card kpi-tile health-card-bad';
       document.getElementById('hd-fix').style.display = 'inline-flex';
     }
 
@@ -139,9 +139,9 @@
     var issuesEl = document.getElementById('hd-issues');
     if (health.top_remaining_issues && health.top_remaining_issues.length > 0) {
       issuesEl.innerHTML = health.top_remaining_issues.map(function(issue) {
-        return '<div class="health-issue-row">' +
+        return '<div class="health-issue-row flex-between">' +
           '<span class="health-issue-rule">' + issue.rule + '</span>' +
-          '<span class="health-issue-count">' + issue.count + '</span>' +
+          '<span class="health-issue-count status-chip status-chip-filled">' + issue.count + '</span>' +
           '</div>';
       }).join('');
     } else {
@@ -183,7 +183,7 @@
     var coEl = document.getElementById('hd-cooccurrence');
     if (tags.co_occurrence && tags.co_occurrence.length > 0) {
       coEl.innerHTML = tags.co_occurrence.slice(0, 12).map(function(pair) {
-        return '<div class="health-tag-row">' +
+        return '<div class="health-tag-row flex-between">' +
           '<span class="health-tag-pair">' + pair.tags.join(' <span class="health-tag-sep">+</span> ') + '</span>' +
           '<span class="health-tag-meta">' + pair.count + '\u00d7 <span class="health-tag-pct">' + pair.percentage + '%</span></span>' +
           '</div>';
@@ -196,7 +196,7 @@
     var underEl = document.getElementById('hd-underused');
     if (tags.underused && tags.underused.length > 0) {
       underEl.innerHTML = tags.underused.map(function(t) {
-        return '<div class="health-tag-row">' +
+        return '<div class="health-tag-row flex-between">' +
           '<span class="health-tag-name">' + t.tag + '</span>' +
           '<span class="health-tag-meta">' + t.count + ' use' + (t.count !== 1 ? 's' : '') + '</span>' +
           '</div>';
@@ -209,7 +209,7 @@
     var mergeEl = document.getElementById('hd-merge');
     if (tags.merge_candidates && tags.merge_candidates.length > 0) {
       mergeEl.innerHTML = tags.merge_candidates.slice(0, 8).map(function(mc) {
-        return '<div class="health-tag-row health-merge-item">' +
+        return '<div class="health-tag-row health-merge-item flex-between">' +
           '<span class="health-merge-tags">' + mc.tags.join(' \u2194 ') + '</span>' +
           '<span class="health-tag-meta">' + mc.overlap + '</span>' +
           '</div>';

@@ -1,898 +1,735 @@
+<!-- nav-meta: {"name": "Style Guide", "icon": "swatch-book", "order": 90} -->
 <div class="style-guide markdown-body">
 
-<h1>Style Guide</h1>
-<p>Visual reference for every design system primitive in the Hypervisor ecosystem. Use this page to see how each element renders with the current theme and accent color.</p>
+<h1><i data-lucide="swatch-book" class="utility-title-icon"></i> Style Guide</h1>
 
-<!-- ═══════════════════════════════════════════════════════════════════════
-     TYPOGRAPHY
-     ═══════════════════════════════════════════════════════════════════════ -->
+<p class="sg-intro">Every design-system primitive in the Hypervisor ecosystem, one card per component. Each card renders live against the current theme and accent color. Use the filters to isolate a category.</p>
 
-<h2>Typography</h2>
-
-<h3>Heading Scale</h3>
-
-<div style="display:flex; flex-direction:column; gap:var(--space-3); margin:var(--space-4) 0;">
-  <div><span style="color:var(--text-dim); font-size:var(--fs-caption); letter-spacing:0.08em; text-transform:uppercase;">H1 — fs-h1 / 1.5rem / accent</span></div>
-  <h1 style="margin:0; padding:0; border:none;">Heading One</h1>
-  <div><span style="color:var(--text-dim); font-size:var(--fs-caption); letter-spacing:0.08em; text-transform:uppercase;">H2 — fs-h2 / 1.15rem / text-bright</span></div>
-  <h2 style="margin:0; padding:0; border:none;">Heading Two</h2>
-  <div><span style="color:var(--text-dim); font-size:var(--fs-caption); letter-spacing:0.08em; text-transform:uppercase;">H3 — fs-h3 / 0.95rem / warm</span></div>
-  <h3 style="margin:0; padding:0; border:none;">Heading Three</h3>
-  <div><span style="color:var(--text-dim); font-size:var(--fs-caption); letter-spacing:0.08em; text-transform:uppercase;">H4 — fs-body / 0.85rem / cool</span></div>
-  <h4 style="margin:0; padding:0; border:none;">Heading Four</h4>
-  <div><span style="color:var(--text-dim); font-size:var(--fs-caption); letter-spacing:0.08em; text-transform:uppercase;">H5/H6 — fs-h5-6 / 0.8rem / text-muted / uppercase</span></div>
-  <h5 style="margin:0; padding:0; border:none;">Heading Five</h5>
+<!-- Category filter toolbar -->
+<div class="sg-toolbar" id="sg-toolbar">
+  <button class="sg-filter active" data-filter="all">All</button>
+  <button class="sg-filter" data-filter="tokens">Tokens</button>
+  <button class="sg-filter" data-filter="controls">Controls</button>
+  <button class="sg-filter" data-filter="containers">Containers</button>
+  <button class="sg-filter" data-filter="feedback">Feedback</button>
+  <button class="sg-filter" data-filter="content">Content</button>
+  <button class="sg-filter" data-filter="navigation">Navigation</button>
 </div>
 
-<h3>Type Scale Reference</h3>
+<div class="sg-masonry" id="sg-masonry">
 
-<table>
-<thead>
-<tr><th>Token</th><th>Size</th><th>Usage</th><th>Sample</th></tr>
-</thead>
-<tbody>
-<tr><td><code>--fs-micro</code></td><td>0.55rem</td><td>Badge/chip text</td><td><span style="font-size:var(--fs-micro)">MICRO TEXT</span></td></tr>
-<tr><td><code>--fs-detail</code></td><td>0.6rem</td><td>Metadata, compact detail</td><td><span style="font-size:var(--fs-detail)">Detail text</span></td></tr>
-<tr><td><code>--fs-caption</code></td><td>0.65rem</td><td>Tooltips, panel headers</td><td><span style="font-size:var(--fs-caption)">Caption text</span></td></tr>
-<tr><td><code>--fs-label</code></td><td>0.7rem</td><td>Button labels, nav</td><td><span style="font-size:var(--fs-label)">Label text</span></td></tr>
-<tr><td><code>--fs-sm</code></td><td>0.75rem</td><td>Card text, descriptions</td><td><span style="font-size:var(--fs-sm)">Small text</span></td></tr>
-<tr><td><code>--fs-body</code></td><td>0.85rem</td><td>Body copy</td><td><span style="font-size:var(--fs-body)">Body text</span></td></tr>
-<tr><td><code>--fs-heading</code></td><td>0.9rem</td><td>Section headings</td><td><span style="font-size:var(--fs-heading)">Heading text</span></td></tr>
-<tr><td><code>--fs-hero</code></td><td>1rem</td><td>Hero taglines</td><td><span style="font-size:var(--fs-hero)">Hero text</span></td></tr>
-</tbody>
-</table>
+  <!-- ══════════════════ TOKENS ══════════════════ -->
 
-<h3>Text Colors</h3>
-
-<div style="display:flex; flex-direction:column; gap:var(--space-2); margin:var(--space-4) 0; font-size:var(--fs-body);">
-  <span style="color:var(--text-bright);">--text-bright: Primary emphasis text</span>
-  <span style="color:var(--text);">--text: Default body text</span>
-  <span style="color:var(--text-muted);">--text-muted: Secondary/supporting text</span>
-  <span style="color:var(--text-dim);">--text-dim: Tertiary/inactive text</span>
-  <span style="color:var(--accent);">--accent: Accent-colored text</span>
-  <span style="color:var(--warm);">--warm: Warm-colored text (headings, keywords)</span>
-  <span style="color:var(--cool);">--cool: Cool-colored text (functions, info)</span>
-  <span style="color:var(--comp);">--comp: Complementary/alert text</span>
-</div>
-
-<!-- ═══════════════════════════════════════════════════════════════════════
-     COLORS & BACKGROUNDS
-     ═══════════════════════════════════════════════════════════════════════ -->
-
-<h2>Colors &amp; Backgrounds</h2>
-
-<h3>Surface Scale</h3>
-
-<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:var(--space-2); margin:var(--space-4) 0;">
-  <div style="background:var(--bg); border:var(--border-hair) solid var(--border); border-radius:var(--radius); padding:var(--space-3); text-align:center;">
-    <div style="font-size:var(--fs-caption); color:var(--text-dim); letter-spacing:0.06em;">--bg</div>
-    <div style="font-size:var(--fs-detail); color:var(--text-dim); margin-top:var(--space-1);">#030305</div>
-  </div>
-  <div style="background:var(--bg-surface); border:var(--border-hair) solid var(--border); border-radius:var(--radius); padding:var(--space-3); text-align:center;">
-    <div style="font-size:var(--fs-caption); color:var(--text-dim); letter-spacing:0.06em;">--bg-surface</div>
-    <div style="font-size:var(--fs-detail); color:var(--text-dim); margin-top:var(--space-1);">#060608</div>
-  </div>
-  <div style="background:var(--bg-card); border:var(--border-hair) solid var(--border); border-radius:var(--radius); padding:var(--space-3); text-align:center;">
-    <div style="font-size:var(--fs-caption); color:var(--text-dim); letter-spacing:0.06em;">--bg-card</div>
-    <div style="font-size:var(--fs-detail); color:var(--text-dim); margin-top:var(--space-1);">#0a0a0e</div>
-  </div>
-  <div style="background:var(--bg-card-hover); border:var(--border-hair) solid var(--border); border-radius:var(--radius); padding:var(--space-3); text-align:center;">
-    <div style="font-size:var(--fs-caption); color:var(--text-dim); letter-spacing:0.06em;">--bg-card-hover</div>
-    <div style="font-size:var(--fs-detail); color:var(--text-dim); margin-top:var(--space-1);">#111115</div>
-  </div>
-  <div style="background:var(--bg-elevated); border:var(--border-hair) solid var(--border); border-radius:var(--radius); padding:var(--space-3); text-align:center;">
-    <div style="font-size:var(--fs-caption); color:var(--text-dim); letter-spacing:0.06em;">--bg-elevated</div>
-    <div style="font-size:var(--fs-detail); color:var(--text-dim); margin-top:var(--space-1);">#0d0d11</div>
-  </div>
-</div>
-
-<h3>Accent & Semantic Colors</h3>
-
-<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:var(--space-2); margin:var(--space-4) 0;">
-  <div style="border:var(--border-hair) solid var(--accent); border-radius:var(--radius); padding:var(--space-3); text-align:center;">
-    <div style="width:24px; height:24px; background:var(--accent); border-radius:var(--radius); margin:0 auto var(--space-2);"></div>
-    <div style="font-size:var(--fs-caption); color:var(--accent);">--accent</div>
-  </div>
-  <div style="border:var(--border-hair) solid var(--accent-dim); border-radius:var(--radius); padding:var(--space-3); text-align:center;">
-    <div style="width:24px; height:24px; background:var(--accent-dim); border-radius:var(--radius); margin:0 auto var(--space-2);"></div>
-    <div style="font-size:var(--fs-caption); color:var(--accent-dim);">--accent-dim</div>
-  </div>
-  <div style="border:var(--border-hair) solid var(--warm); border-radius:var(--radius); padding:var(--space-3); text-align:center;">
-    <div style="width:24px; height:24px; background:var(--warm); border-radius:var(--radius); margin:0 auto var(--space-2);"></div>
-    <div style="font-size:var(--fs-caption); color:var(--warm);">--warm</div>
-  </div>
-  <div style="border:var(--border-hair) solid var(--cool); border-radius:var(--radius); padding:var(--space-3); text-align:center;">
-    <div style="width:24px; height:24px; background:var(--cool); border-radius:var(--radius); margin:0 auto var(--space-2);"></div>
-    <div style="font-size:var(--fs-caption); color:var(--cool);">--cool</div>
-  </div>
-  <div style="border:var(--border-hair) solid var(--comp); border-radius:var(--radius); padding:var(--space-3); text-align:center;">
-    <div style="width:24px; height:24px; background:var(--comp); border-radius:var(--radius); margin:0 auto var(--space-2);"></div>
-    <div style="font-size:var(--fs-caption); color:var(--comp);">--comp</div>
-  </div>
-</div>
-
-<!-- ═══════════════════════════════════════════════════════════════════════
-     SPACING
-     ═══════════════════════════════════════════════════════════════════════ -->
-
-<h2>Spacing Scale</h2>
-
-<div style="display:flex; flex-direction:column; gap:var(--space-2); margin:var(--space-4) 0;">
-  <div style="display:flex; align-items:center; gap:var(--space-3);">
-    <span style="font-size:var(--fs-caption); color:var(--text-dim); width:10ch; text-align:right;">--space-1</span>
-    <div style="height:12px; width:0.25rem; background:var(--accent); border-radius:var(--radius);"></div>
-    <span style="font-size:var(--fs-detail); color:var(--text-muted);">0.25rem</span>
-  </div>
-  <div style="display:flex; align-items:center; gap:var(--space-3);">
-    <span style="font-size:var(--fs-caption); color:var(--text-dim); width:10ch; text-align:right;">--space-2</span>
-    <div style="height:12px; width:0.5rem; background:var(--accent); border-radius:var(--radius);"></div>
-    <span style="font-size:var(--fs-detail); color:var(--text-muted);">0.5rem</span>
-  </div>
-  <div style="display:flex; align-items:center; gap:var(--space-3);">
-    <span style="font-size:var(--fs-caption); color:var(--text-dim); width:10ch; text-align:right;">--space-3</span>
-    <div style="height:12px; width:0.75rem; background:var(--accent); border-radius:var(--radius);"></div>
-    <span style="font-size:var(--fs-detail); color:var(--text-muted);">0.75rem</span>
-  </div>
-  <div style="display:flex; align-items:center; gap:var(--space-3);">
-    <span style="font-size:var(--fs-caption); color:var(--text-dim); width:10ch; text-align:right;">--space-4</span>
-    <div style="height:12px; width:1rem; background:var(--accent); border-radius:var(--radius);"></div>
-    <span style="font-size:var(--fs-detail); color:var(--text-muted);">1rem</span>
-  </div>
-  <div style="display:flex; align-items:center; gap:var(--space-3);">
-    <span style="font-size:var(--fs-caption); color:var(--text-dim); width:10ch; text-align:right;">--space-5</span>
-    <div style="height:12px; width:1.5rem; background:var(--accent); border-radius:var(--radius);"></div>
-    <span style="font-size:var(--fs-detail); color:var(--text-muted);">1.5rem</span>
-  </div>
-  <div style="display:flex; align-items:center; gap:var(--space-3);">
-    <span style="font-size:var(--fs-caption); color:var(--text-dim); width:10ch; text-align:right;">--space-6</span>
-    <div style="height:12px; width:2rem; background:var(--accent); border-radius:var(--radius);"></div>
-    <span style="font-size:var(--fs-detail); color:var(--text-muted);">2rem</span>
-  </div>
-</div>
-
-<!-- ═══════════════════════════════════════════════════════════════════════
-     CHIPS
-     ═══════════════════════════════════════════════════════════════════════ -->
-
-<h2>Chips</h2>
-
-<h3>Chip Variants</h3>
-
-<div style="display:flex; flex-wrap:wrap; gap:var(--space-3); align-items:center; margin:var(--space-4) 0;">
-  <span class="status-chip status-chip-filled">Filled</span>
-  <span class="status-chip status-chip-outlined-accent">Outlined Accent</span>
-  <span class="status-chip status-chip-outlined-muted">Outlined Muted</span>
-</div>
-
-<h3>Chip Usage Patterns</h3>
-
-<div style="display:flex; flex-wrap:wrap; gap:var(--space-2); align-items:center; margin:var(--space-4) 0;">
-  <span class="status-chip status-chip-filled">WI-142</span>
-  <span class="status-chip status-chip-outlined-accent">In Progress</span>
-  <span class="status-chip status-chip-outlined-muted">Planned</span>
-  <span class="status-chip status-chip-outlined-muted" style="color:var(--comp); border-color:var(--comp);">JW</span>
-  <span class="status-chip status-chip-outlined-muted" style="color:var(--cool); border-color:var(--cool);">Sprint</span>
-  <span class="status-chip status-chip-outlined-muted" style="color:var(--warm); border-color:var(--warm);">hypervisor</span>
-</div>
-
-<!-- ═══════════════════════════════════════════════════════════════════════
-     BADGES
-     ═══════════════════════════════════════════════════════════════════════ -->
-
-<h2>Badges</h2>
-
-<div style="display:flex; flex-wrap:wrap; gap:var(--space-3); align-items:center; margin:var(--space-4) 0;">
-  <span class="label-badge">Default</span>
-  <span class="label-badge label-badge-accent">Accent</span>
-  <span class="label-badge label-badge-warm">Warm</span>
-  <span class="label-badge label-badge-cool">Cool</span>
-  <span class="label-badge label-badge-comp">Comp</span>
-  <span class="label-badge label-badge-muted">Muted</span>
-</div>
-
-<!-- ═══════════════════════════════════════════════════════════════════════
-     BUTTONS
-     ═══════════════════════════════════════════════════════════════════════ -->
-
-<h2>Buttons</h2>
-
-<h3>Button Variants</h3>
-
-<div style="display:flex; flex-wrap:wrap; gap:var(--space-3); align-items:center; margin:var(--space-4) 0;">
-  <button class="action-button">Ghost (Default)</button>
-  <button class="action-button action-button-primary">Primary</button>
-  <button class="action-button action-button-danger">Danger</button>
-  <button class="action-button" disabled>Disabled</button>
-</div>
-
-<h3>Icon Buttons</h3>
-
-<div style="display:flex; flex-wrap:wrap; gap:var(--space-3); align-items:center; margin:var(--space-4) 0;">
-  <button class="icon-button"><i data-lucide="settings" class="icon-button-glyph"></i></button>
-  <button class="icon-button"><i data-lucide="search" class="icon-button-glyph"></i></button>
-  <button class="icon-button"><i data-lucide="pin" class="icon-button-glyph"></i></button>
-  <button class="icon-button active"><i data-lucide="check" class="icon-button-glyph"></i></button>
-</div>
-
-<h3>Text Buttons</h3>
-
-<div style="display:flex; flex-wrap:wrap; gap:var(--space-3); align-items:center; margin:var(--space-4) 0;">
-  <button class="text-button"><i data-lucide="plus" class="text-button-glyph"></i> Create</button>
-  <button class="text-button"><i data-lucide="refresh-cw" class="text-button-glyph"></i> Rebuild</button>
-  <button class="text-button active"><i data-lucide="eye" class="text-button-glyph"></i> Active</button>
-</div>
-
-<!-- ═══════════════════════════════════════════════════════════════════════
-     INPUTS
-     ═══════════════════════════════════════════════════════════════════════ -->
-
-<h2>Form Inputs</h2>
-
-<div style="display:flex; flex-direction:column; gap:var(--space-3); max-width:400px; margin:var(--space-4) 0;">
-  <input class="form-input" type="text" placeholder="Standard input..." />
-  <div style="display:flex; align-items:center; gap:var(--space-2); padding:var(--space-2) var(--space-3); border:var(--border-hair) solid var(--border); border-radius:var(--radius);">
-    <i data-lucide="search" style="width:14px; height:14px; color:var(--text-dim);"></i>
-    <input class="form-input-inline" type="text" placeholder="Inline input (inside container)..." />
-  </div>
-</div>
-
-<!-- ═══════════════════════════════════════════════════════════════════════
-     ROWS
-     ═══════════════════════════════════════════════════════════════════════ -->
-
-<h2>Row Primitive</h2>
-
-<p>Three-column grid: chip slot / body / right meta. Standard interactive row for lists.</p>
-
-<div style="margin:var(--space-4) 0; border:var(--border-hair) solid var(--border); border-radius:var(--radius); overflow:hidden;">
-  <a href="#" class="list-row" onclick="return false">
-    <span class="status-chip status-chip-filled">WI-23</span>
-    <span class="list-row-title" style="color:var(--text-bright);">Implement RBAC Permission Inheritance</span>
-    <span style="color:var(--text-dim); font-size:var(--fs-caption);">3d ago</span>
-  </a>
-  <a href="#" class="list-row" onclick="return false">
-    <span class="status-chip status-chip-outlined-accent">WI-45</span>
-    <span class="list-row-title" style="color:var(--text-bright);">Add Semantic Search to Hypervisor</span>
-    <span style="color:var(--text-dim); font-size:var(--fs-caption);">1w ago</span>
-  </a>
-  <a href="#" class="list-row" onclick="return false">
-    <span class="status-chip status-chip-outlined-muted">WI-67</span>
-    <span class="list-row-title" style="color:var(--text-bright);">Style Guide Utility Page</span>
-    <span style="color:var(--text-dim); font-size:var(--fs-caption);">today</span>
-  </a>
-</div>
-
-<!-- ═══════════════════════════════════════════════════════════════════════
-     SECTIONS
-     ═══════════════════════════════════════════════════════════════════════ -->
-
-<h2>Section Panels</h2>
-
-<h3>Bordered Section (.content-section)</h3>
-
-<div class="content-section" style="animation:none;">
-  <h2 style="color:var(--accent);">Section Title</h2>
-  <p>This is a bordered section panel with rounded corners, surface background, and the standard section padding. Used for grouping related content in directory indexes and dashboards.</p>
-</div>
-
-<h3>Quiet Section (.content-section-quiet)</h3>
-
-<div class="content-section-quiet" style="animation:none;">
-  <h2>Quiet Section Title</h2>
-  <p>A frameless section variant. Groups content with generous spacing and heading weight — no colored rail or border. Use for content sections that should read as document structure, not navigation targets.</p>
-</div>
-
-<!-- ═══════════════════════════════════════════════════════════════════════
-     PROGRESS BARS
-     ═══════════════════════════════════════════════════════════════════════ -->
-
-<h2>Progress Bars</h2>
-
-<div style="display:flex; flex-direction:column; gap:var(--space-3); margin:var(--space-4) 0; max-width:400px;">
-  <div>
-    <span style="font-size:var(--fs-caption); color:var(--text-dim); letter-spacing:0.06em;">0%</span>
-    <span class="progress-track"><span class="progress-fill" style="width:0%"></span></span>
-  </div>
-  <div>
-    <span style="font-size:var(--fs-caption); color:var(--text-dim); letter-spacing:0.06em;">25%</span>
-    <span class="progress-track"><span class="progress-fill" style="width:25%"></span></span>
-  </div>
-  <div>
-    <span style="font-size:var(--fs-caption); color:var(--text-dim); letter-spacing:0.06em;">50%</span>
-    <span class="progress-track"><span class="progress-fill" style="width:50%"></span></span>
-  </div>
-  <div>
-    <span style="font-size:var(--fs-caption); color:var(--text-dim); letter-spacing:0.06em;">75%</span>
-    <span class="progress-track"><span class="progress-fill" style="width:75%"></span></span>
-  </div>
-  <div>
-    <span style="font-size:var(--fs-caption); color:var(--text-dim); letter-spacing:0.06em;">100%</span>
-    <span class="progress-track"><span class="progress-fill" style="width:100%"></span></span>
-  </div>
-  <div>
-    <span style="font-size:var(--fs-caption); color:var(--text-dim); letter-spacing:0.06em;">Empty state (no data)</span>
-    <span class="progress-track progress-track-empty"></span>
-  </div>
-</div>
-
-<!-- ═══════════════════════════════════════════════════════════════════════
-     CARDS
-     ═══════════════════════════════════════════════════════════════════════ -->
-
-<h2>Cards</h2>
-
-<h3>Category Card</h3>
-
-<div class="card-grid" style="margin:var(--space-4) 0;">
-  <a href="#" class="card" style="animation:none; opacity:1;" onclick="return false">
-    <div class="card-name">Research</div>
-    <div class="card-desc">Technical investigations, comparisons, and ADRs</div>
-    <div class="card-count">12 documents</div>
-  </a>
-  <a href="#" class="card card-recent" style="animation:none; opacity:1;" onclick="return false">
-    <div class="card-name">Work</div>
-    <div class="card-desc">Actionable work items with design and acceptance criteria</div>
-    <div class="card-count">8 documents</div>
-  </a>
-</div>
-
-<h3>Work Item Card</h3>
-
-<div class="work-card-grid" style="margin:var(--space-4) 0;">
-  <a href="#" class="work-card" onclick="return false">
-    <div class="work-card-meta">
-      <span class="status-chip status-chip-filled work-card-chip">WI-142</span>
-      <span class="work-card-assignee">JW</span>
-      <span class="work-card-days">3d</span>
+  <div class="sg-card" data-cat="tokens">
+    <div class="sg-card-head"><span class="sg-card-title">Heading Scale</span><span class="sg-card-note">--fs-h1 → --fs-h5-6</span></div>
+    <div class="sg-card-body">
+      <span class="sg-spec-label">H1 / accent</span><h1>Heading One</h1>
+      <span class="sg-spec-label">H2 / text-bright</span><h2>Heading Two</h2>
+      <span class="sg-spec-label">H3 / warm</span><h3>Heading Three</h3>
+      <span class="sg-spec-label">H4 / cool</span><h4>Heading Four</h4>
+      <span class="sg-spec-label">H5-6 / muted / caps</span><h5>Heading Five</h5>
     </div>
-    <div class="work-card-title">Hyperkit Primitive Extraction</div>
-    <div class="work-card-desc">Extract shared primitives from Hypervisor CSS into the Hyperkit layer for ecosystem consumption.</div>
-    <div class="work-card-progress">
-      <span class="progress-track pulse-bar"><span class="progress-fill" style="width:60%"></span></span>
-      <span class="work-card-progress-label">6/10</span>
+  </div>
+
+  <div class="sg-card" data-cat="tokens">
+    <div class="sg-card-head"><span class="sg-card-title">Type Scale</span><span class="sg-card-note">--fs-micro → --fs-hero</span></div>
+    <div class="sg-card-body">
+      <table>
+        <thead><tr><th>Token</th><th>Size</th><th>Sample</th></tr></thead>
+        <tbody>
+          <tr><td><code>--fs-micro</code></td><td>0.55rem</td><td><span style="font-size:var(--fs-micro)">MICRO</span></td></tr>
+          <tr><td><code>--fs-detail</code></td><td>0.6rem</td><td><span style="font-size:var(--fs-detail)">Detail</span></td></tr>
+          <tr><td><code>--fs-caption</code></td><td>0.65rem</td><td><span style="font-size:var(--fs-caption)">Caption</span></td></tr>
+          <tr><td><code>--fs-label</code></td><td>0.7rem</td><td><span style="font-size:var(--fs-label)">Label</span></td></tr>
+          <tr><td><code>--fs-sm</code></td><td>0.75rem</td><td><span style="font-size:var(--fs-sm)">Small</span></td></tr>
+          <tr><td><code>--fs-body</code></td><td>0.85rem</td><td><span style="font-size:var(--fs-body)">Body</span></td></tr>
+          <tr><td><code>--fs-heading</code></td><td>0.9rem</td><td><span style="font-size:var(--fs-heading)">Heading</span></td></tr>
+          <tr><td><code>--fs-hero</code></td><td>1rem</td><td><span style="font-size:var(--fs-hero)">Hero</span></td></tr>
+        </tbody>
+      </table>
     </div>
-  </a>
-</div>
+  </div>
 
-<h3>Idea Card</h3>
+  <div class="sg-card" data-cat="tokens">
+    <div class="sg-card-head"><span class="sg-card-title">Text Colors</span><span class="sg-card-note">hierarchy</span></div>
+    <div class="sg-card-body" style="font-size:var(--fs-body);">
+      <span style="color:var(--text-bright);">--text-bright: primary emphasis</span>
+      <span style="color:var(--text);">--text: default body</span>
+      <span style="color:var(--text-muted);">--text-muted: secondary</span>
+      <span style="color:var(--text-dim);">--text-dim: tertiary/inactive</span>
+      <span style="color:var(--accent);">--accent: accent text</span>
+      <span style="color:var(--warm);">--warm: warm (headings)</span>
+      <span style="color:var(--cool);">--cool: cool (info)</span>
+      <span style="color:var(--comp);">--comp: complementary/alert</span>
+    </div>
+  </div>
 
-<div class="idea-card-grid" style="margin:var(--space-4) 0;">
-  <a href="#" class="idea-card" onclick="return false">
-    <div class="idea-card-title">WebGL Particle System for Background</div>
-    <div class="idea-card-desc">Ambient floating particles that react to scroll position and mouse proximity.</div>
-    <div class="idea-card-footer">
-      <div class="idea-card-tags">
-        <span class="idea-card-tag">webgl</span>
-        <span class="idea-card-tag">visual</span>
+  <div class="sg-card" data-cat="tokens">
+    <div class="sg-card-head"><span class="sg-card-title">Surface Scale</span><span class="sg-card-note">--bg → --bg-elevated</span></div>
+    <div class="sg-card-body">
+      <div class="sg-swatch-grid">
+        <div class="sg-swatch" style="background:var(--bg);"><div class="sg-swatch-name">--bg</div><div class="sg-swatch-val">#030305</div></div>
+        <div class="sg-swatch" style="background:var(--bg-surface);"><div class="sg-swatch-name">--bg-surface</div><div class="sg-swatch-val">#060608</div></div>
+        <div class="sg-swatch" style="background:var(--bg-card);"><div class="sg-swatch-name">--bg-card</div><div class="sg-swatch-val">#0a0a0e</div></div>
+        <div class="sg-swatch" style="background:var(--bg-card-hover);"><div class="sg-swatch-name">--bg-card-hover</div><div class="sg-swatch-val">#111115</div></div>
+        <div class="sg-swatch" style="background:var(--bg-elevated);"><div class="sg-swatch-name">--bg-elevated</div><div class="sg-swatch-val">#0d0d11</div></div>
       </div>
-      <span class="idea-card-date">2026-08-15</span>
     </div>
-  </a>
-</div>
+  </div>
 
-<h3>Sticky Note (.scratch-card)</h3>
+  <div class="sg-card" data-cat="tokens">
+    <div class="sg-card-head"><span class="sg-card-title">Accent &amp; Semantic</span><span class="sg-card-note">theme colors</span></div>
+    <div class="sg-card-body">
+      <div class="sg-swatch-grid">
+        <div class="sg-swatch" style="border-color:var(--accent);"><div class="sg-swatch-chip" style="background:var(--accent);"></div><div class="sg-swatch-name" style="color:var(--accent);">--accent</div></div>
+        <div class="sg-swatch" style="border-color:var(--accent-dim);"><div class="sg-swatch-chip" style="background:var(--accent-dim);"></div><div class="sg-swatch-name" style="color:var(--accent-dim);">--accent-dim</div></div>
+        <div class="sg-swatch" style="border-color:var(--warm);"><div class="sg-swatch-chip" style="background:var(--warm);"></div><div class="sg-swatch-name" style="color:var(--warm);">--warm</div></div>
+        <div class="sg-swatch" style="border-color:var(--cool);"><div class="sg-swatch-chip" style="background:var(--cool);"></div><div class="sg-swatch-name" style="color:var(--cool);">--cool</div></div>
+        <div class="sg-swatch" style="border-color:var(--comp);"><div class="sg-swatch-chip" style="background:var(--comp);"></div><div class="sg-swatch-name" style="color:var(--comp);">--comp</div></div>
+      </div>
+    </div>
+  </div>
 
-<p style="color:var(--text-muted); font-size:var(--fs-caption); max-width:68ch;">
-  Fully-filled note cards for the ephemeral scratch pinboard. The surface is the full-strength
-  cycle color, so all inner content switches to <code>--note-ink</code> (the app background) for
-  contrast. The peeled top-right corner reads as paper lifting off the board and grows on hover.
-  Color cycle is <code>c1</code> / <code>c2</code> / <code>c3</code> (accent, warm, cool) —
-  <code>--comp</code> is deliberately excluded, reserved for alerts and indicators.
-</p>
+  <div class="sg-card" data-cat="tokens">
+    <div class="sg-card-head"><span class="sg-card-title">Spacing Scale</span><span class="sg-card-note">--space-1 → --space-6</span></div>
+    <div class="sg-card-body">
+      <div class="sg-motion-row"><span class="sg-motion-label">--space-1</span><div style="height:12px; width:0.25rem; background:var(--accent); border-radius:var(--radius);"></div><span class="sg-swatch-val" style="margin:0;">0.25rem</span></div>
+      <div class="sg-motion-row"><span class="sg-motion-label">--space-2</span><div style="height:12px; width:0.5rem; background:var(--accent); border-radius:var(--radius);"></div><span class="sg-swatch-val" style="margin:0;">0.5rem</span></div>
+      <div class="sg-motion-row"><span class="sg-motion-label">--space-3</span><div style="height:12px; width:0.75rem; background:var(--accent); border-radius:var(--radius);"></div><span class="sg-swatch-val" style="margin:0;">0.75rem</span></div>
+      <div class="sg-motion-row"><span class="sg-motion-label">--space-4</span><div style="height:12px; width:1rem; background:var(--accent); border-radius:var(--radius);"></div><span class="sg-swatch-val" style="margin:0;">1rem</span></div>
+      <div class="sg-motion-row"><span class="sg-motion-label">--space-5</span><div style="height:12px; width:1.5rem; background:var(--accent); border-radius:var(--radius);"></div><span class="sg-swatch-val" style="margin:0;">1.5rem</span></div>
+      <div class="sg-motion-row"><span class="sg-motion-label">--space-6</span><div style="height:12px; width:2rem; background:var(--accent); border-radius:var(--radius);"></div><span class="sg-swatch-val" style="margin:0;">2rem</span></div>
+    </div>
+  </div>
 
-<div class="scratch-entries" style="max-height:none; padding:var(--space-4) 0;">
-  <div class="scratch-col">
-    <div class="scratch-card scratch-card-c1">
-      <div class="scratch-card-head">
-        <span class="scratch-card-handle" aria-hidden="true">&#8759;</span>
-        <span class="scratch-card-time">2m ago</span>
-        <div class="scratch-card-actions">
-          <button class="scratch-card-btn scratch-card-edit" onclick="return false">edit</button>
-          <button class="scratch-card-btn scratch-card-delete" onclick="return false">&#10005;</button>
+  <div class="sg-card" data-cat="tokens">
+    <div class="sg-card-head"><span class="sg-card-title">Borders &amp; Radius</span><span class="sg-card-note">--border / --radius</span></div>
+    <div class="sg-card-body">
+      <div class="sg-swatch" style="border-color:var(--border);"><div class="sg-swatch-name">--border / hair</div><div class="sg-swatch-val">1px solid #1a1a22</div></div>
+      <div class="sg-swatch" style="border-color:var(--border-strong);"><div class="sg-swatch-name">--border-strong</div><div class="sg-swatch-val">1px solid #282832</div></div>
+      <div class="sg-swatch" style="border:var(--border-rail) solid var(--accent);"><div class="sg-swatch-name" style="color:var(--accent);">--accent / rail</div><div class="sg-swatch-val">2px solid accent</div></div>
+    </div>
+  </div>
+
+  <div class="sg-card" data-cat="tokens">
+    <div class="sg-card-head"><span class="sg-card-title">Shadows</span><span class="sg-card-note">--shadow-*</span></div>
+    <div class="sg-card-body">
+      <div class="sg-swatch" style="background:var(--bg-card); box-shadow:var(--shadow-hover);"><div class="sg-swatch-name">--shadow-hover</div></div>
+      <div class="sg-swatch" style="background:var(--bg-card); box-shadow:var(--shadow-panel);"><div class="sg-swatch-name">--shadow-panel</div></div>
+      <div class="sg-swatch" style="background:var(--bg-card); box-shadow:var(--shadow-glow);"><div class="sg-swatch-name">--shadow-glow</div></div>
+    </div>
+  </div>
+
+  <div class="sg-card" data-cat="tokens">
+    <div class="sg-card-head"><span class="sg-card-title">Motion</span><span class="sg-card-note">hover to preview</span></div>
+    <div class="sg-card-body">
+      <div class="sg-motion-row"><span class="sg-motion-label">instant 0.05s</span><div class="sg-motion-track"><div class="sg-motion-fill" style="background:var(--accent); transition:transform 0.05s var(--ease);"></div></div></div>
+      <div class="sg-motion-row"><span class="sg-motion-label">tick 0.1s</span><div class="sg-motion-track"><div class="sg-motion-fill" style="background:var(--warm); transition:transform 0.1s var(--ease);"></div></div></div>
+      <div class="sg-motion-row"><span class="sg-motion-label">fast 0.15s</span><div class="sg-motion-track"><div class="sg-motion-fill" style="background:var(--cool); transition:transform 0.15s var(--ease);"></div></div></div>
+      <div class="sg-motion-row"><span class="sg-motion-label">base 0.2s</span><div class="sg-motion-track"><div class="sg-motion-fill" style="background:var(--comp); transition:transform 0.2s var(--ease);"></div></div></div>
+      <div class="sg-motion-row"><span class="sg-motion-label">medium 0.25s</span><div class="sg-motion-track"><div class="sg-motion-fill" style="background:var(--accent-dim); transition:transform 0.25s var(--ease);"></div></div></div>
+      <div class="sg-motion-row"><span class="sg-motion-label">slow 0.3s</span><div class="sg-motion-track"><div class="sg-motion-fill" style="background:var(--accent); transition:transform 0.3s var(--ease);"></div></div></div>
+    </div>
+  </div>
+
+  <div class="sg-card" data-cat="tokens">
+    <div class="sg-card-head"><span class="sg-card-title">Z-Index Scale</span><span class="sg-card-note">--z-*</span></div>
+    <div class="sg-card-body">
+      <table>
+        <thead><tr><th>Token</th><th>Value</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td><code>--z-base</code></td><td>0</td><td>Default</td></tr>
+          <tr><td><code>--z-topbar</code></td><td>100</td><td>Nav bar</td></tr>
+          <tr><td><code>--z-dropdown</code></td><td>200</td><td>Dropdowns</td></tr>
+          <tr><td><code>--z-overlay</code></td><td>300</td><td>Overlays</td></tr>
+          <tr><td><code>--z-modal</code></td><td>400</td><td>Modals</td></tr>
+          <tr><td><code>--z-toast</code></td><td>500</td><td>Toasts</td></tr>
+          <tr><td><code>--z-splash</code></td><td>700</td><td>Boot splash</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══════════════════ CONTROLS ══════════════════ -->
+
+  <div class="sg-card" data-cat="controls">
+    <div class="sg-card-head"><span class="sg-card-title">Buttons</span><span class="sg-card-note">.action-button</span></div>
+    <div class="sg-card-body">
+      <div class="sg-row">
+        <button class="action-button">Ghost</button>
+        <button class="action-button action-button-primary">Primary</button>
+        <button class="action-button action-button-danger">Danger</button>
+        <button class="action-button" disabled>Disabled</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="sg-card" data-cat="controls">
+    <div class="sg-card-head"><span class="sg-card-title">Icon Buttons</span><span class="sg-card-note">.icon-button</span></div>
+    <div class="sg-card-body">
+      <div class="sg-row">
+        <button class="icon-button"><i data-lucide="settings" class="icon-button-glyph"></i></button>
+        <button class="icon-button"><i data-lucide="search" class="icon-button-glyph"></i></button>
+        <button class="icon-button"><i data-lucide="pin" class="icon-button-glyph"></i></button>
+        <button class="icon-button active"><i data-lucide="check" class="icon-button-glyph"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="sg-card" data-cat="controls">
+    <div class="sg-card-head"><span class="sg-card-title">Text Buttons</span><span class="sg-card-note">.text-button</span></div>
+    <div class="sg-card-body">
+      <div class="sg-row">
+        <button class="text-button"><i data-lucide="plus" class="text-button-glyph"></i> Create</button>
+        <button class="text-button"><i data-lucide="refresh-cw" class="text-button-glyph"></i> Rebuild</button>
+        <button class="text-button active"><i data-lucide="eye" class="text-button-glyph"></i> Active</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="sg-card" data-cat="controls">
+    <div class="sg-card-head"><span class="sg-card-title">Form Inputs</span><span class="sg-card-note">.form-input</span></div>
+    <div class="sg-card-body">
+      <input class="form-input" type="text" placeholder="Standard input..." />
+      <div style="display:flex; align-items:center; gap:var(--space-2); padding:var(--space-2) var(--space-3); border:var(--border-hair) solid var(--border); border-radius:var(--radius);">
+        <i data-lucide="search" style="width:14px; height:14px; color:var(--text-dim);"></i>
+        <input class="form-input-inline" type="text" placeholder="Inline input..." />
+      </div>
+    </div>
+  </div>
+
+  <div class="sg-card" data-cat="controls">
+    <div class="sg-card-head"><span class="sg-card-title">Chips</span><span class="sg-card-note">.status-chip</span></div>
+    <div class="sg-card-body">
+      <div class="sg-row">
+        <span class="status-chip status-chip-filled">Filled</span>
+        <span class="status-chip status-chip-outlined-accent">Outlined Accent</span>
+        <span class="status-chip status-chip-outlined-muted">Outlined Muted</span>
+      </div>
+      <div class="sg-row">
+        <span class="status-chip status-chip-filled">WI-142</span>
+        <span class="status-chip status-chip-outlined-accent">In Progress</span>
+        <span class="status-chip status-chip-outlined-muted" style="color:var(--comp); border-color:var(--comp);">JW</span>
+        <span class="status-chip status-chip-outlined-muted" style="color:var(--cool); border-color:var(--cool);">Sprint</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="sg-card" data-cat="controls">
+    <div class="sg-card-head"><span class="sg-card-title">Badges</span><span class="sg-card-note">.label-badge</span></div>
+    <div class="sg-card-body">
+      <div class="sg-row">
+        <span class="label-badge">Default</span>
+        <span class="label-badge label-badge-accent">Accent</span>
+        <span class="label-badge label-badge-warm">Warm</span>
+        <span class="label-badge label-badge-cool">Cool</span>
+        <span class="label-badge label-badge-comp">Comp</span>
+        <span class="label-badge label-badge-muted">Muted</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════ CONTAINERS ══════════════════ -->
+
+  <div class="sg-card" data-cat="containers">
+    <div class="sg-card-head"><span class="sg-card-title">Row Primitive</span><span class="sg-card-note">.list-row</span></div>
+    <div class="sg-card-body" style="padding:0;">
+      <a href="#" class="list-row" onclick="return false">
+        <span class="status-chip status-chip-filled">WI-23</span>
+        <span class="list-row-title" style="color:var(--text-bright);">Implement RBAC Inheritance</span>
+        <span style="color:var(--text-dim); font-size:var(--fs-caption);">3d ago</span>
+      </a>
+      <a href="#" class="list-row" onclick="return false">
+        <span class="status-chip status-chip-outlined-accent">WI-45</span>
+        <span class="list-row-title" style="color:var(--text-bright);">Add Semantic Search</span>
+        <span style="color:var(--text-dim); font-size:var(--fs-caption);">1w ago</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="sg-card" data-cat="containers">
+    <div class="sg-card-head"><span class="sg-card-title">Section Panels</span><span class="sg-card-note">.content-section</span></div>
+    <div class="sg-card-body">
+      <div class="content-section" style="animation:none;">
+        <h2 style="color:var(--accent);">Bordered Section</h2>
+        <p>Rounded corners, surface background, standard padding.</p>
+      </div>
+      <div class="content-section-quiet" style="animation:none;">
+        <h2>Quiet Section</h2>
+        <p>Frameless variant, no colored rail or border.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="sg-card" data-cat="containers">
+    <div class="sg-card-head"><span class="sg-card-title">Directory Surface</span><span class="sg-card-note">.dir-surface / .dir-zone</span></div>
+    <div class="sg-card-body">
+      <div class="dir-surface" style="animation:none; padding:var(--space-4);">
+        <div class="dir-zone">
+          <div class="dir-zone-label"><i data-lucide="folder" class="dir-zone-icon"></i> Folders</div>
+          <div class="card-grid dir-dashboard">
+            <a href="#" class="card dir-dashboard-card" onclick="return false" style="animation:none;">
+              <div class="dir-card-head"><i data-lucide="folder" class="dir-card-icon"></i><span class="card-name">Docs</span></div>
+              <span class="card-desc">Documents in Docs.</span>
+              <span class="card-count">8 docs</span>
+            </a>
+          </div>
+        </div>
+        <div class="dir-zone">
+          <div class="dir-zone-label"><i data-lucide="file-text" class="dir-zone-icon"></i> Files</div>
+          <div class="dir-items">
+            <div class="dir-item" style="animation:none;">
+              <a href="#" onclick="return false"><i data-lucide="file-text" class="doc-icon"></i><span class="txt">Utility Pages Consumption Audit</span></a>
+              <span class="doc-date">Sep 09</span>
+              <span class="doc-row-snippet">Audit of hypervisor utility pages for token consumption.</span>
+            </div>
+            <div class="dir-item" style="animation:none;">
+              <a href="#" onclick="return false"><i data-lucide="file-text" class="doc-icon"></i><span class="txt">Hypervisor Upgrade Roadmap</span></a>
+              <span class="doc-date">Jul 14</span>
+              <span class="doc-row-snippet">Planned improvements across the static site generator.</span>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="scratch-card-body">Accent note (c1). Short entries square up to a minimum height; long ones grow taller.</div>
     </div>
-    <div class="scratch-card scratch-card-c3">
-      <div class="scratch-card-head">
-        <span class="scratch-card-handle" aria-hidden="true">&#8759;</span>
-        <span class="scratch-card-time">1h ago</span>
-        <span class="scratch-card-moved" title="Moved out of chronological order">(*)</span>
-        <div class="scratch-card-actions">
-          <button class="scratch-card-btn scratch-card-edit" onclick="return false">edit</button>
-          <button class="scratch-card-btn scratch-card-delete" onclick="return false">&#10005;</button>
+  </div>
+
+  <div class="sg-card" data-cat="content">
+    <div class="sg-card-head"><span class="sg-card-title">Directory Item</span><span class="sg-card-note">.dir-item</span></div>
+    <div class="sg-card-body">
+      <div class="dir-items">
+        <div class="dir-item" style="animation:none;">
+          <a href="#" onclick="return false"><i data-lucide="file-text" class="doc-icon"></i><span class="txt">Raised file object — hover to lift</span></a>
+          <span class="doc-date">Sep 17</span>
+          <span class="doc-row-snippet">A file resting inside the drawer; hover lifts it with an accent glow.</span>
+          <span class="doc-row-tags"><span class="doc-row-tag">ux</span><span class="doc-row-tag">frontend</span></span>
         </div>
       </div>
-      <div class="scratch-card-body">Cool note (c3), with the out-of-order marker shown.</div>
     </div>
   </div>
-  <div class="scratch-col">
-    <div class="scratch-card scratch-card-c2">
-      <div class="scratch-card-head">
-        <span class="scratch-card-handle" aria-hidden="true">&#8759;</span>
-        <span class="scratch-card-time">yesterday</span>
-        <div class="scratch-card-actions">
-          <button class="scratch-card-btn scratch-card-edit" onclick="return false">edit</button>
-          <button class="scratch-card-btn scratch-card-delete" onclick="return false">&#10005;</button>
+
+  <div class="sg-card" data-cat="containers">
+    <div class="sg-card-head"><span class="sg-card-title">Category Card</span><span class="sg-card-note">.card</span></div>
+    <div class="sg-card-body">
+      <a href="#" class="card" style="animation:none; opacity:1;" onclick="return false">
+        <div class="card-name">Research</div>
+        <div class="card-desc">Technical investigations, comparisons, and ADRs</div>
+        <div class="card-count">12 documents</div>
+      </a>
+    </div>
+  </div>
+
+  <div class="sg-card" data-cat="containers">
+    <div class="sg-card-head"><span class="sg-card-title">Work Item Card</span><span class="sg-card-note">.work-card</span></div>
+    <div class="sg-card-body">
+      <a href="#" class="work-card" onclick="return false">
+        <div class="work-card-meta">
+          <span class="status-chip status-chip-filled work-card-chip">WI-142</span>
+          <span class="work-card-assignee">JW</span>
+          <span class="work-card-days">3d</span>
+        </div>
+        <div class="work-card-title">Hyperkit Primitive Extraction</div>
+        <div class="work-card-desc">Extract shared primitives from Hypervisor CSS into the Hyperkit layer.</div>
+        <div class="work-card-progress">
+          <span class="progress-track pulse-bar"><span class="progress-fill" style="width:60%"></span></span>
+          <span class="work-card-progress-label">6/10</span>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <div class="sg-card" data-cat="containers">
+    <div class="sg-card-head"><span class="sg-card-title">Idea Card</span><span class="sg-card-note">.idea-card</span></div>
+    <div class="sg-card-body">
+      <a href="#" class="idea-card" onclick="return false">
+        <div class="idea-card-title">WebGL Particle Background</div>
+        <div class="idea-card-desc">Ambient particles reacting to scroll and mouse proximity.</div>
+        <div class="idea-card-footer">
+          <div class="idea-card-tags"><span class="idea-card-tag">webgl</span><span class="idea-card-tag">visual</span></div>
+          <span class="idea-card-date">2026-08-15</span>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <div class="sg-card" data-cat="containers">
+    <div class="sg-card-head"><span class="sg-card-title">Sticky Note</span><span class="sg-card-note">.scratch-card</span></div>
+    <div class="sg-card-body">
+      <div class="scratch-card scratch-card-c1">
+        <div class="scratch-card-head">
+          <span class="scratch-card-handle" aria-hidden="true">&#8759;</span>
+          <span class="scratch-card-time">2m ago</span>
+          <div class="scratch-card-actions">
+            <button class="scratch-card-btn scratch-card-edit" onclick="return false">edit</button>
+            <button class="scratch-card-btn scratch-card-delete" onclick="return false">&#10005;</button>
+          </div>
+        </div>
+        <div class="scratch-card-body">Accent note (c1). Full-strength cycle color, ink switches for contrast.</div>
+      </div>
+      <div class="scratch-card scratch-card-c2">
+        <div class="scratch-card-head">
+          <span class="scratch-card-handle" aria-hidden="true">&#8759;</span>
+          <span class="scratch-card-time">yesterday</span>
+          <div class="scratch-card-actions">
+            <button class="scratch-card-btn scratch-card-edit" onclick="return false">edit</button>
+            <button class="scratch-card-btn scratch-card-delete" onclick="return false">&#10005;</button>
+          </div>
+        </div>
+        <div class="scratch-card-body">Warm note (c2). Hover reveals actions and grows the corner peel.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sg-card" data-cat="containers">
+    <div class="sg-card-head"><span class="sg-card-title">Modal Panel</span><span class="sg-card-note">.modal-panel</span></div>
+    <div class="sg-card-body">
+      <div style="position:relative; background:rgba(0,0,0,0.5); border-radius:var(--radius); padding:var(--space-4);">
+        <div class="modal-panel" style="position:static; animation:none; max-width:100%;">
+          <div style="font-size:var(--fs-heading); font-weight:700; color:var(--text-bright); margin-bottom:var(--space-3);">Modal Title</div>
+          <p style="font-size:var(--fs-body); color:var(--text); margin-bottom:var(--space-4);">Confirm dialogs, command palette, and overlay UI.</p>
+          <div style="display:flex; justify-content:flex-end; gap:var(--space-3);">
+            <button class="action-button">Cancel</button>
+            <button class="action-button action-button-primary">Confirm</button>
+          </div>
         </div>
       </div>
-      <div class="scratch-card-body">Warm note (c2). Hover a card to reveal its actions and grow the corner peel.</div>
     </div>
-    <div class="scratch-card-placeholder"></div>
   </div>
-</div>
 
-<h3>Skill Row (.skill-row)</h3>
-
-<p style="color:var(--text-muted); font-size:var(--fs-caption); max-width:68ch;">
-  A bordered list of skills as collapsible rows. Each row is a native
-  <code>&lt;details&gt;</code>: the <code>.skill-rowhead</code> summary shows the icon,
-  name, trigger phrase, and a chevron; the <code>.skill-rowbody</code> reveals the
-  description, a meta line, and the section outline on click. No JS needed.
-</p>
-
-<div class="skill-list" style="margin:var(--space-4) 0;">
-  <details class="skill-row" open>
-    <summary class="skill-rowhead">
-      <i data-lucide="code" class="skill-row-icon"></i>
-      <span class="skill-row-name">code-changes</span>
-      <span class="skill-row-trigger">Write or modify source code in any repo</span>
-      <i data-lucide="chevron-down" class="skill-row-chevron"></i>
-    </summary>
-    <div class="skill-rowbody">
-      <p class="skill-row-desc">Defines comment conventions, the boundary that keeps hyperspace references out of committed code, and change hygiene.</p>
-      <div class="skill-row-meta">
-        <span class="skill-row-meta-item"><i data-lucide="hash"></i>10 sections</span>
-        <span class="skill-row-meta-item"><i data-lucide="type"></i>879 words</span>
+  <div class="sg-card" data-cat="containers">
+    <div class="sg-card-head"><span class="sg-card-title">Skill Row</span><span class="sg-card-note">.skill-row</span></div>
+    <div class="sg-card-body">
+      <div class="skill-list">
+        <details class="skill-row" open>
+          <summary class="skill-rowhead">
+            <i data-lucide="code" class="skill-row-icon"></i>
+            <span class="skill-row-name">code-changes</span>
+            <span class="skill-row-trigger">Write or modify source code</span>
+            <i data-lucide="chevron-down" class="skill-row-chevron"></i>
+          </summary>
+          <div class="skill-rowbody">
+            <p class="skill-row-desc">Comment conventions and change hygiene.</p>
+            <div class="skill-row-meta">
+              <span class="skill-row-meta-item"><i data-lucide="hash"></i>10 sections</span>
+              <span class="skill-row-meta-item"><i data-lucide="type"></i>879 words</span>
+            </div>
+          </div>
+        </details>
       </div>
-      <ul class="skill-row-sections">
-        <li class="skill-row-section skill-row-lvl2">Source Code Comment Boundaries</li>
-        <li class="skill-row-section skill-row-lvl3">Boundaries by file type</li>
-      </ul>
     </div>
-  </details>
-  <details class="skill-row">
-    <summary class="skill-rowhead">
-      <i data-lucide="bug" class="skill-row-icon"></i>
-      <span class="skill-row-name">debugging</span>
-      <span class="skill-row-trigger">Diagnose an error, stack trace, or failing build</span>
-      <i data-lucide="chevron-down" class="skill-row-chevron"></i>
-    </summary>
-    <div class="skill-rowbody">
-      <p class="skill-row-desc">Defines the systematic tracing order and cross-repo consistency checks.</p>
-      <div class="skill-row-meta">
-        <span class="skill-row-meta-item"><i data-lucide="hash"></i>4 sections</span>
-        <span class="skill-row-meta-item"><i data-lucide="type"></i>287 words</span>
+  </div>
+
+  <div class="sg-card" data-cat="containers">
+    <div class="sg-card-head"><span class="sg-card-title">Preview Card</span><span class="sg-card-note">.preview-card / .preview-masonry</span></div>
+    <div class="sg-card-body">
+      <div class="preview-masonry" style="column-count:1;">
+        <a href="#" class="preview-card" style="animation:none; opacity:1;" onclick="return false">
+          <span class="preview-card-media">
+            <span class="preview-card-frame" style="background:radial-gradient(120% 100% at 0% 0%, color-mix(in srgb, var(--accent) 22%, var(--bg-card)), var(--bg-card) 60%);">
+              <span class="preview-card-glyph"><i data-lucide="image"></i></span>
+            </span>
+          </span>
+          <span class="preview-card-body">
+            <span class="preview-card-title">Ribbon Boundary WebGL</span>
+            <span class="preview-card-desc">Animated multi-strand ribbon layered over a blob gradient — a hero/body divider proof of concept exploring accent-colored negative space.</span>
+            <span class="preview-card-meta">
+              <span class="status-chip status-chip-outlined-accent status-in-progress">In Progress</span>
+              <span class="preview-card-ref"><i data-lucide="git-pull-request"></i>WI-142</span>
+            </span>
+          </span>
+        </a>
+        <a href="#" class="preview-card" style="animation:none; opacity:1;" onclick="return false">
+          <span class="preview-card-media">
+            <span class="preview-card-frame" style="background:radial-gradient(120% 100% at 0% 0%, color-mix(in srgb, var(--comp) 22%, var(--bg-card)), var(--bg-card) 60%);">
+              <span class="preview-card-glyph"><i data-lucide="image"></i></span>
+            </span>
+          </span>
+          <span class="preview-card-body">
+            <span class="preview-card-title">CLI Idle Game</span>
+            <span class="preview-card-desc">Cookie Clicker-style idle game teaching terminal commands.</span>
+            <span class="preview-card-meta">
+              <span class="status-chip status-chip-outlined-muted status-idea">Idea</span>
+              <span class="preview-card-ref"><i data-lucide="lightbulb"></i>idea</span>
+            </span>
+          </span>
+        </a>
       </div>
-      <ul class="skill-row-sections">
-        <li class="skill-row-section skill-row-lvl2">Systematic Tracing Order</li>
-      </ul>
+      <p style="font-size:var(--fs-sm); color:var(--text-dim); margin-top:var(--space-2);">The framed screen contains a lazy, inert <code>&lt;iframe&gt;</code> of the prototype (loaded by <code>HvPreview</code> on scroll); the frame's <code>overflow:hidden</code> clips it so it can never overlap card content. Shown here in the glyph-poster state. Status chip + reference chip (WI or idea) surface the detail.</p>
     </div>
-  </details>
-</div>
-
-<!-- ═══════════════════════════════════════════════════════════════════════
-     HOVER PRIMITIVES
-     ═══════════════════════════════════════════════════════════════════════ -->
-
-<h2>Hover Effects</h2>
-
-<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:var(--space-3); margin:var(--space-4) 0;">
-  <div class="element-hover-lift" style="padding:var(--space-4); border:var(--border-hair) solid var(--border); border-radius:var(--radius); text-align:center; background:var(--bg-card);">
-    <div style="font-size:var(--fs-caption); color:var(--text-dim); letter-spacing:0.06em; text-transform:uppercase;">element-hover-lift</div>
-    <div style="font-size:var(--fs-sm); color:var(--text-muted); margin-top:var(--space-2);">Hover me — translateY(-2px) + accent border</div>
   </div>
-  <div class="element-hover-brightness" style="padding:var(--space-4); border:var(--border-hair) solid var(--border); border-radius:var(--radius); text-align:center; background:var(--accent); color:var(--bg);">
-    <div style="font-size:var(--fs-caption); letter-spacing:0.06em; text-transform:uppercase;">element-hover-brightness</div>
-    <div style="font-size:var(--fs-sm); margin-top:var(--space-2);">Hover me — brightness(1.15)</div>
+
+  <!-- ══════════════════ FEEDBACK ══════════════════ -->
+
+  <div class="sg-card" data-cat="feedback">
+    <div class="sg-card-head"><span class="sg-card-title">Progress Bars</span><span class="sg-card-note">.progress-track</span></div>
+    <div class="sg-card-body">
+      <div><span class="sg-spec-label">25%</span><span class="progress-track"><span class="progress-fill" style="width:25%"></span></span></div>
+      <div><span class="sg-spec-label">50%</span><span class="progress-track"><span class="progress-fill" style="width:50%"></span></span></div>
+      <div><span class="sg-spec-label">75%</span><span class="progress-track"><span class="progress-fill" style="width:75%"></span></span></div>
+      <div><span class="sg-spec-label">100%</span><span class="progress-track"><span class="progress-fill" style="width:100%"></span></span></div>
+      <div><span class="sg-spec-label">empty (no data)</span><span class="progress-track progress-track-empty"></span></div>
+    </div>
   </div>
-</div>
 
-<!-- ═══════════════════════════════════════════════════════════════════════
-     SKELETONS
-     ═══════════════════════════════════════════════════════════════════════ -->
-
-<h2>Skeleton Loading</h2>
-
-<div style="display:flex; flex-direction:column; gap:var(--space-3); margin:var(--space-4) 0; max-width:500px;">
-  <div class="loading-skeleton loading-skeleton-line loading-skeleton-xl" style="width:60%"></div>
-  <div class="loading-skeleton loading-skeleton-line" style="width:100%"></div>
-  <div class="loading-skeleton loading-skeleton-line loading-skeleton-sm" style="width:80%"></div>
-  <div class="loading-skeleton loading-skeleton-line loading-skeleton-xs" style="width:40%"></div>
-  <div style="display:flex; gap:var(--space-3); align-items:center; margin-top:var(--space-2);">
-    <div class="loading-skeleton loading-skeleton-circle"></div>
-    <div style="flex:1; display:flex; flex-direction:column; gap:var(--space-2);">
-      <div class="loading-skeleton loading-skeleton-line" style="width:50%"></div>
+  <div class="sg-card" data-cat="feedback">
+    <div class="sg-card-head"><span class="sg-card-title">Skeleton Loading</span><span class="sg-card-note">.loading-skeleton</span></div>
+    <div class="sg-card-body">
+      <div class="loading-skeleton loading-skeleton-line loading-skeleton-xl" style="width:60%"></div>
+      <div class="loading-skeleton loading-skeleton-line" style="width:100%"></div>
       <div class="loading-skeleton loading-skeleton-line loading-skeleton-sm" style="width:80%"></div>
+      <div style="display:flex; gap:var(--space-3); align-items:center;">
+        <div class="loading-skeleton loading-skeleton-circle"></div>
+        <div style="flex:1; display:flex; flex-direction:column; gap:var(--space-2);">
+          <div class="loading-skeleton loading-skeleton-line" style="width:50%"></div>
+          <div class="loading-skeleton loading-skeleton-line loading-skeleton-sm" style="width:80%"></div>
+        </div>
+      </div>
+      <div class="loading-skeleton loading-skeleton-block"></div>
     </div>
   </div>
-  <div class="loading-skeleton loading-skeleton-block"></div>
-  <div class="loading-skeleton loading-skeleton-card"></div>
-</div>
 
-<!-- ═══════════════════════════════════════════════════════════════════════
-     TOASTS
-     ═══════════════════════════════════════════════════════════════════════ -->
-
-<h2>Toast Notifications</h2>
-
-<p>Static examples (normally animated via JS). Variants: success, info, warn, error.</p>
-
-<div style="display:flex; flex-direction:column; gap:var(--space-2); margin:var(--space-4) 0; max-width:400px;">
-  <div class="notification-toast notification-toast-success notification-toast-visible" style="position:static; opacity:1; transform:none;">
-    <span class="notification-toast-icon"><i data-lucide="check-circle" style="width:16px; height:16px;"></i></span>
-    <div class="notification-toast-body">
-      <div class="notification-toast-title">Success</div>
-      <div class="notification-toast-message">Document saved successfully.</div>
-    </div>
-    <button class="notification-toast-close">&times;</button>
-  </div>
-  <div class="notification-toast notification-toast-info notification-toast-visible" style="position:static; opacity:1; transform:none;">
-    <span class="notification-toast-icon"><i data-lucide="info" style="width:16px; height:16px;"></i></span>
-    <div class="notification-toast-body">
-      <div class="notification-toast-title">Info</div>
-      <div class="notification-toast-message">Build completed in 2.3s.</div>
-    </div>
-    <button class="notification-toast-close">&times;</button>
-  </div>
-  <div class="notification-toast notification-toast-warn notification-toast-visible" style="position:static; opacity:1; transform:none;">
-    <span class="notification-toast-icon"><i data-lucide="alert-triangle" style="width:16px; height:16px;"></i></span>
-    <div class="notification-toast-body">
-      <div class="notification-toast-title">Warning</div>
-      <div class="notification-toast-message">3 documents have validation errors.</div>
-    </div>
-    <button class="notification-toast-close">&times;</button>
-  </div>
-  <div class="notification-toast notification-toast-error notification-toast-visible" style="position:static; opacity:1; transform:none;">
-    <span class="notification-toast-icon"><i data-lucide="x-circle" style="width:16px; height:16px;"></i></span>
-    <div class="notification-toast-body">
-      <div class="notification-toast-title">Error</div>
-      <div class="notification-toast-message">Failed to write file — permission denied.</div>
-    </div>
-    <button class="notification-toast-close">&times;</button>
-  </div>
-</div>
-
-<!-- ═══════════════════════════════════════════════════════════════════════
-     CONTENT / MARKDOWN BODY ELEMENTS
-     ═══════════════════════════════════════════════════════════════════════ -->
-
-<h2>Content Primitives (Markdown Body)</h2>
-
-<h3>Inline Code</h3>
-
-<p>Reference a variable like <code>--accent</code>, a function like <code>build_fragment()</code>, or a file like <code>tokens.css</code>.</p>
-
-<h3>Code Block</h3>
-
-<div class="code-block">
-  <span class="code-lang">python</span>
-  <pre><code><span class="highlight"><span class="k">def</span> <span class="nf">build_fragment</span><span class="p">(</span><span class="n">html</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">toc</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="s2">"""Build a JSON content fragment for the SPA shell."""</span>
-    <span class="k">return</span> <span class="p">{</span>
-        <span class="s2">"title"</span><span class="p">:</span> <span class="n">title</span><span class="p">,</span>
-        <span class="s2">"html"</span><span class="p">:</span> <span class="n">html</span><span class="p">,</span>
-        <span class="s2">"toc"</span><span class="p">:</span> <span class="n">toc</span><span class="p">,</span>
-    <span class="p">}</span></span></code></pre>
-</div>
-
-<h3>Blockquote</h3>
-
-<blockquote>
-  <p>Terminal aesthetic with refined edges. Blue-tinted dark backgrounds, monospace everything, accent-driven interaction feedback.</p>
-</blockquote>
-
-<h3>Lists</h3>
-
-<h4>Unordered</h4>
-<ul>
-  <li>First item — with a dash marker styled in accent-dim</li>
-  <li>Second item with some <code>inline code</code> inside</li>
-  <li>Third item with <strong>bold text</strong> and a <a href="#">link</a></li>
-</ul>
-
-<h4>Ordered</h4>
-<ol>
-  <li>Parse markdown source files</li>
-  <li>Generate HTML fragments via Pygments + markdown extensions</li>
-  <li>Write JSON content fragments to the output directory</li>
-</ol>
-
-<h3>Task List</h3>
-
-<ul>
-  <li class="task task-done"><span class="task-box">&#x2713;</span> Extract tokens to hyperkit</li>
-  <li class="task task-done"><span class="task-box">&#x2713;</span> Move primitives to shared layer</li>
-  <li class="task"><span class="task-box">&#x25CB;</span> Build style guide page</li>
-  <li class="task"><span class="task-box">&#x25CB;</span> Add skeleton loading states</li>
-</ul>
-
-<h3>Table</h3>
-
-<table>
-<thead>
-<tr><th>Token</th><th>Duration</th><th>Use Case</th></tr>
-</thead>
-<tbody>
-<tr><td><code>--motion-instant</code></td><td>0.05s</td><td>Active/pressed feedback</td></tr>
-<tr><td><code>--motion-tick</code></td><td>0.1s</td><td>Very fast toggles</td></tr>
-<tr><td><code>--motion-fast</code></td><td>0.15s</td><td>Chip/button micro-interactions</td></tr>
-<tr><td><code>--motion-base</code></td><td>0.2s</td><td>Default UI transitions</td></tr>
-<tr><td><code>--motion-medium</code></td><td>0.25s</td><td>Dropdown expand/collapse</td></tr>
-<tr><td><code>--motion-slow</code></td><td>0.3s</td><td>Page-level fade-in</td></tr>
-</tbody>
-</table>
-
-<h3>Horizontal Rule</h3>
-
-<hr />
-
-<h3>Admonitions</h3>
-
-<div class="admonition admonition-note">
-  <div class="admonition-title"><i data-lucide="info" class="admonition-icon"></i> Note</div>
-  <div class="admonition-content"><p>This is a note admonition. Use for supplementary information that adds context without being critical.</p></div>
-</div>
-
-<div class="admonition admonition-tip">
-  <div class="admonition-title"><i data-lucide="lightbulb" class="admonition-icon"></i> Tip</div>
-  <div class="admonition-content"><p>This is a tip admonition. Use for helpful suggestions and best practices.</p></div>
-</div>
-
-<div class="admonition admonition-warning">
-  <div class="admonition-title"><i data-lucide="alert-triangle" class="admonition-icon"></i> Warning</div>
-  <div class="admonition-content"><p>This is a warning admonition. Use for potential pitfalls or common mistakes.</p></div>
-</div>
-
-<div class="admonition admonition-caution">
-  <div class="admonition-title"><i data-lucide="alert-octagon" class="admonition-icon"></i> Caution</div>
-  <div class="admonition-content"><p>This is a caution admonition. Use for critical information about destructive actions or breaking changes.</p></div>
-</div>
-
-<h3>Bookmark Card</h3>
-
-<a href="#" class="bookmark-card" onclick="return false">
-  <span class="bookmark-card-title">Hyperkit Design System Documentation</span>
-  <span class="bookmark-card-url">hyperspace/.hyperkit/css/tokens.css</span>
-</a>
-
-<!-- ═══════════════════════════════════════════════════════════════════════
-     OVERLAYS & PANELS
-     ═══════════════════════════════════════════════════════════════════════ -->
-
-<h2>Panel Variants (static preview)</h2>
-
-<h3>Modal Panel</h3>
-
-<div style="position:relative; background:rgba(0,0,0,0.5); border-radius:var(--radius); padding:var(--space-6); margin:var(--space-4) 0;">
-  <div class="modal-panel" style="position:static; animation:none; max-width:100%;">
-    <div style="font-size:var(--fs-heading); font-weight:700; color:var(--text-bright); margin-bottom:var(--space-3);">Modal Title</div>
-    <p style="font-size:var(--fs-body); color:var(--text); margin-bottom:var(--space-4);">This is modal panel content. Used for confirm dialogs, command palette, and other overlay UI that demands attention.</p>
-    <div style="display:flex; justify-content:flex-end; gap:var(--space-3);">
-      <button class="action-button">Cancel</button>
-      <button class="action-button action-button-primary">Confirm</button>
+  <div class="sg-card" data-cat="feedback">
+    <div class="sg-card-head"><span class="sg-card-title">Toasts</span><span class="sg-card-note">.notification-toast</span></div>
+    <div class="sg-card-body">
+      <div class="notification-toast notification-toast-success notification-toast-visible" style="position:static; opacity:1; transform:none;">
+        <span class="notification-toast-icon"><i data-lucide="check-circle" style="width:16px; height:16px;"></i></span>
+        <div class="notification-toast-body"><div class="notification-toast-title">Success</div><div class="notification-toast-message">Document saved.</div></div>
+        <button class="notification-toast-close">&times;</button>
+      </div>
+      <div class="notification-toast notification-toast-info notification-toast-visible" style="position:static; opacity:1; transform:none;">
+        <span class="notification-toast-icon"><i data-lucide="info" style="width:16px; height:16px;"></i></span>
+        <div class="notification-toast-body"><div class="notification-toast-title">Info</div><div class="notification-toast-message">Build completed in 2.3s.</div></div>
+        <button class="notification-toast-close">&times;</button>
+      </div>
+      <div class="notification-toast notification-toast-warn notification-toast-visible" style="position:static; opacity:1; transform:none;">
+        <span class="notification-toast-icon"><i data-lucide="alert-triangle" style="width:16px; height:16px;"></i></span>
+        <div class="notification-toast-body"><div class="notification-toast-title">Warning</div><div class="notification-toast-message">3 validation errors.</div></div>
+        <button class="notification-toast-close">&times;</button>
+      </div>
+      <div class="notification-toast notification-toast-error notification-toast-visible" style="position:static; opacity:1; transform:none;">
+        <span class="notification-toast-icon"><i data-lucide="x-circle" style="width:16px; height:16px;"></i></span>
+        <div class="notification-toast-body"><div class="notification-toast-title">Error</div><div class="notification-toast-message">Permission denied.</div></div>
+        <button class="notification-toast-close">&times;</button>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- ═══════════════════════════════════════════════════════════════════════
-     DOC HEADER STRIP
-     ═══════════════════════════════════════════════════════════════════════ -->
-
-<h2>Document Header Strip</h2>
-
-<p>Metadata presentation for document pages — chips, tags, and dates in a 3-column grid.</p>
-
-<div class="doc-header-strip" style="animation:none;">
-  <div class="doc-header-chips">
-    <span class="status-chip status-chip-filled doc-header-chip doc-header-chip-wi">WI-142</span>
-    <span class="status-chip status-chip-outlined-accent doc-header-chip doc-header-chip-status-active">In Progress</span>
-    <span class="status-chip status-chip-outlined-muted doc-header-chip doc-header-chip-assignee" style="color:var(--comp); border-color:var(--comp);">JW</span>
-  </div>
-  <div class="doc-header-tags">
-    <span class="doc-header-tag">hypervisor</span>
-    <span class="doc-header-tag">css</span>
-    <span class="doc-header-tag">design-system</span>
-  </div>
-  <div class="doc-header-dates">
-    <span class="doc-header-date"><span class="doc-header-date-label">Created</span><span class="doc-header-date-value">2026-08-20</span></span>
-    <span class="doc-header-date"><span class="doc-header-date-label">Updated</span><span class="doc-header-date-value">2026-08-27</span></span>
-  </div>
-</div>
-
-<!-- ═══════════════════════════════════════════════════════════════════════
-     BORDERS & RADIUS
-     ═══════════════════════════════════════════════════════════════════════ -->
-
-<h2>Borders &amp; Radius</h2>
-
-<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:var(--space-3); margin:var(--space-4) 0;">
-  <div style="padding:var(--space-4); border:var(--border-hair) solid var(--border); border-radius:var(--radius); text-align:center;">
-    <div style="font-size:var(--fs-caption); color:var(--text-dim); text-transform:uppercase; letter-spacing:0.06em;">--border / hair</div>
-    <div style="font-size:var(--fs-detail); color:var(--text-muted); margin-top:var(--space-1);">1px solid #1a1a22</div>
-  </div>
-  <div style="padding:var(--space-4); border:var(--border-hair) solid var(--border-strong); border-radius:var(--radius); text-align:center;">
-    <div style="font-size:var(--fs-caption); color:var(--text-dim); text-transform:uppercase; letter-spacing:0.06em;">--border-strong / hair</div>
-    <div style="font-size:var(--fs-detail); color:var(--text-muted); margin-top:var(--space-1);">1px solid #282832</div>
-  </div>
-  <div style="padding:var(--space-4); border:var(--border-rail) solid var(--accent); border-radius:var(--radius); text-align:center;">
-    <div style="font-size:var(--fs-caption); color:var(--text-dim); text-transform:uppercase; letter-spacing:0.06em;">--accent / rail</div>
-    <div style="font-size:var(--fs-detail); color:var(--text-muted); margin-top:var(--space-1);">2px solid accent</div>
-  </div>
-  <div style="padding:var(--space-4); border:var(--border-rail) solid var(--warm); border-radius:var(--radius); text-align:center;">
-    <div style="font-size:var(--fs-caption); color:var(--text-dim); text-transform:uppercase; letter-spacing:0.06em;">--warm / rail</div>
-    <div style="font-size:var(--fs-detail); color:var(--text-muted); margin-top:var(--space-1);">2px solid warm</div>
-  </div>
-</div>
-
-<!-- ═══════════════════════════════════════════════════════════════════════
-     SHADOWS
-     ═══════════════════════════════════════════════════════════════════════ -->
-
-<h2>Shadows &amp; Elevation</h2>
-
-<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:var(--space-4); margin:var(--space-4) 0;">
-  <div style="padding:var(--space-4); border:var(--border-hair) solid var(--border); border-radius:var(--radius); background:var(--bg-card); box-shadow:var(--shadow-hover); text-align:center;">
-    <div style="font-size:var(--fs-caption); color:var(--text-dim); text-transform:uppercase; letter-spacing:0.06em;">--shadow-hover</div>
-  </div>
-  <div style="padding:var(--space-4); border:var(--border-hair) solid var(--border); border-radius:var(--radius); background:var(--bg-card); box-shadow:var(--shadow-panel); text-align:center;">
-    <div style="font-size:var(--fs-caption); color:var(--text-dim); text-transform:uppercase; letter-spacing:0.06em;">--shadow-panel</div>
-  </div>
-  <div style="padding:var(--space-4); border:var(--border-hair) solid var(--border); border-radius:var(--radius); background:var(--bg-card); box-shadow:var(--shadow-glow); text-align:center;">
-    <div style="font-size:var(--fs-caption); color:var(--text-dim); text-transform:uppercase; letter-spacing:0.06em;">--shadow-glow</div>
-  </div>
-</div>
-
-<!-- ═══════════════════════════════════════════════════════════════════════
-     DOCK & NAVIGATION
-     ═══════════════════════════════════════════════════════════════════════ -->
-
-<h2>Dock Navigation</h2>
-
-<div class="home-dock" style="animation:none; margin:var(--space-4) 0;">
-  <a href="#" class="dock-item" onclick="return false">
-    <i data-lucide="briefcase" class="dock-icon"></i>
-    <span class="dock-label">Work</span>
-    <span class="dock-count">8</span>
-  </a>
-  <a href="#" class="dock-item dock-item-recent" onclick="return false">
-    <i data-lucide="microscope" class="dock-icon"></i>
-    <span class="dock-label">Research</span>
-    <span class="dock-count">12</span>
-  </a>
-  <a href="#" class="dock-item" onclick="return false">
-    <i data-lucide="lightbulb" class="dock-icon"></i>
-    <span class="dock-label">Ideas</span>
-    <span class="dock-count">15</span>
-  </a>
-  <a href="#" class="dock-item" onclick="return false">
-    <i data-lucide="puzzle" class="dock-icon"></i>
-    <span class="dock-label">Patterns</span>
-    <span class="dock-count">4</span>
-  </a>
-</div>
-
-<!-- ═══════════════════════════════════════════════════════════════════════
-     DOC LIST
-     ═══════════════════════════════════════════════════════════════════════ -->
-
-<h2>Document List</h2>
-
-<ul class="doc-list">
-  <li>
-    <a href="#" onclick="return false"><i data-lucide="file-text" class="doc-icon" style="width:14px; height:14px; vertical-align:-2px; margin-right:0.3rem; color:var(--text-dim);"></i>Hypervisor Technical Reference</a>
-    <span class="doc-date">2026-08-20</span>
-    <span class="doc-row-snippet">Comprehensive module-by-module walkthrough of the static site generator internals.</span>
-    <span class="doc-row-tags"><span class="doc-row-tag">hypervisor</span><span class="doc-row-tag">architecture</span></span>
-  </li>
-  <li class="doc-recent">
-    <a href="#" onclick="return false"><i data-lucide="file-text" class="doc-icon" style="width:14px; height:14px; vertical-align:-2px; margin-right:0.3rem; color:var(--text-dim);"></i>Hyperkit Primitive Extraction</a>
-    <span class="doc-date">2026-08-27</span>
-    <span class="doc-row-snippet">Extract shared CSS primitives into the ecosystem-wide Hyperkit layer.</span>
-    <span class="doc-row-tags"><span class="doc-row-tag">css</span><span class="doc-row-tag">design-system</span></span>
-  </li>
-  <li>
-    <a href="#" onclick="return false"><i data-lucide="file-text" class="doc-icon" style="width:14px; height:14px; vertical-align:-2px; margin-right:0.3rem; color:var(--text-dim);"></i>RBAC Permission Model Design</a>
-    <span class="doc-date">2026-08-12</span>
-    <span class="doc-row-snippet">Role-based access control with inheritance and scope delegation.</span>
-  </li>
-</ul>
-
-<!-- ═══════════════════════════════════════════════════════════════════════
-     DIRECTORY HEADER
-     ═══════════════════════════════════════════════════════════════════════ -->
-
-<h2>Directory Header</h2>
-
-<div class="dir-header" style="animation:none;">
-  <div class="dir-header-top">
-    <i data-lucide="book-open" class="dir-header-icon"></i>
-    <h1 class="dir-header-title" style="font-size:var(--fs-h1); border:none; padding:0; margin:0;">Context</h1>
-  </div>
-  <div class="dir-header-desc">Project overviews, architecture docs, and high-level references</div>
-  <div class="dir-header-stats">
-    <span class="dir-stat"><i data-lucide="file-text" class="dir-stat-icon"></i><span class="dir-stat-val">14</span><span class="dir-stat-label">docs</span></span>
-    <span class="dir-stat"><i data-lucide="folder" class="dir-stat-icon"></i><span class="dir-stat-val">3</span><span class="dir-stat-label">dirs</span></span>
-    <span class="dir-stat"><i data-lucide="clock" class="dir-stat-icon"></i><span class="dir-stat-val">2026-08-27</span><span class="dir-stat-label">last activity</span></span>
-  </div>
-</div>
-
-<!-- ═══════════════════════════════════════════════════════════════════════
-     Z-INDEX SCALE
-     ═══════════════════════════════════════════════════════════════════════ -->
-
-<h2>Z-Index Scale</h2>
-
-<table>
-<thead>
-<tr><th>Token</th><th>Value</th><th>Purpose</th></tr>
-</thead>
-<tbody>
-<tr><td><code>--z-base</code></td><td>0</td><td>Default stacking</td></tr>
-<tr><td><code>--z-topbar</code></td><td>100</td><td>Fixed navigation bar</td></tr>
-<tr><td><code>--z-dropdown</code></td><td>200</td><td>Dropdown menus</td></tr>
-<tr><td><code>--z-overlay</code></td><td>300</td><td>Background overlays</td></tr>
-<tr><td><code>--z-modal</code></td><td>400</td><td>Modal dialogs</td></tr>
-<tr><td><code>--z-toast</code></td><td>500</td><td>Toast notifications</td></tr>
-<tr><td><code>--z-cursor</code></td><td>550</td><td>Cursor companion box</td></tr>
-<tr><td><code>--z-screensaver</code></td><td>600</td><td>Screensaver overlay</td></tr>
-<tr><td><code>--z-splash</code></td><td>700</td><td>Boot splash (highest)</td></tr>
-</tbody>
-</table>
-
-<!-- ═══════════════════════════════════════════════════════════════════════
-     MOTION TOKENS DEMO
-     ═══════════════════════════════════════════════════════════════════════ -->
-
-<h2>Motion Tokens (Interactive)</h2>
-
-<p>Hover each bar to see its transition speed in action.</p>
-
-<div style="display:flex; flex-direction:column; gap:var(--space-2); margin:var(--space-4) 0;">
-  <div style="display:flex; align-items:center; gap:var(--space-3);">
-    <span style="font-size:var(--fs-caption); color:var(--text-dim); width:14ch; text-align:right;">instant (0.05s)</span>
-    <div style="flex:1; height:8px; background:var(--border); border-radius:var(--radius); position:relative; overflow:hidden;">
-      <div style="position:absolute; inset:0; background:var(--accent); transform:scaleX(0); transform-origin:left; transition:transform 0.05s var(--ease);"></div>
+  <div class="sg-card" data-cat="feedback">
+    <div class="sg-card-head"><span class="sg-card-title">Admonitions</span><span class="sg-card-note">.admonition</span></div>
+    <div class="sg-card-body">
+      <div class="admonition admonition-note">
+        <div class="admonition-title"><i data-lucide="info" class="admonition-icon"></i> Note</div>
+        <div class="admonition-content"><p>Supplementary context.</p></div>
+      </div>
+      <div class="admonition admonition-tip">
+        <div class="admonition-title"><i data-lucide="lightbulb" class="admonition-icon"></i> Tip</div>
+        <div class="admonition-content"><p>Helpful suggestions and best practices.</p></div>
+      </div>
+      <div class="admonition admonition-warning">
+        <div class="admonition-title"><i data-lucide="alert-triangle" class="admonition-icon"></i> Warning</div>
+        <div class="admonition-content"><p>Potential pitfalls.</p></div>
+      </div>
+      <div class="admonition admonition-caution">
+        <div class="admonition-title"><i data-lucide="alert-octagon" class="admonition-icon"></i> Caution</div>
+        <div class="admonition-content"><p>Destructive or breaking changes.</p></div>
+      </div>
     </div>
   </div>
-  <div style="display:flex; align-items:center; gap:var(--space-3);">
-    <span style="font-size:var(--fs-caption); color:var(--text-dim); width:14ch; text-align:right;">tick (0.1s)</span>
-    <div style="flex:1; height:8px; background:var(--border); border-radius:var(--radius); position:relative; overflow:hidden;">
-      <div style="position:absolute; inset:0; background:var(--warm); transform:scaleX(0); transform-origin:left; transition:transform 0.1s var(--ease);"></div>
+
+  <div class="sg-card" data-cat="feedback">
+    <div class="sg-card-head"><span class="sg-card-title">Hover Effects</span><span class="sg-card-note">.element-hover-*</span></div>
+    <div class="sg-card-body">
+      <div class="element-hover-lift" style="padding:var(--space-4); border:var(--border-hair) solid var(--border); border-radius:var(--radius); text-align:center; background:var(--bg-card);">
+        <div class="sg-spec-label">element-hover-lift</div>
+        <div style="font-size:var(--fs-sm); color:var(--text-muted); margin-top:var(--space-2);">translateY(-2px) + accent border</div>
+      </div>
+      <div class="element-hover-brightness" style="padding:var(--space-4); border:var(--border-hair) solid var(--border); border-radius:var(--radius); text-align:center; background:var(--accent); color:var(--bg);">
+        <div class="sg-spec-label" style="color:var(--bg);">element-hover-brightness</div>
+        <div style="font-size:var(--fs-sm); margin-top:var(--space-2);">brightness(1.15)</div>
+      </div>
     </div>
   </div>
-  <div style="display:flex; align-items:center; gap:var(--space-3);">
-    <span style="font-size:var(--fs-caption); color:var(--text-dim); width:14ch; text-align:right;">fast (0.15s)</span>
-    <div style="flex:1; height:8px; background:var(--border); border-radius:var(--radius); position:relative; overflow:hidden;">
-      <div style="position:absolute; inset:0; background:var(--cool); transform:scaleX(0); transform-origin:left; transition:transform 0.15s var(--ease);"></div>
+
+  <!-- ══════════════════ CONTENT ══════════════════ -->
+
+  <div class="sg-card" data-cat="content">
+    <div class="sg-card-head"><span class="sg-card-title">Inline Code</span><span class="sg-card-note">&lt;code&gt;</span></div>
+    <div class="sg-card-body">
+      <p>Reference a variable like <code>--accent</code>, a function like <code>build_fragment()</code>, or a file like <code>tokens.css</code>.</p>
     </div>
   </div>
-  <div style="display:flex; align-items:center; gap:var(--space-3);">
-    <span style="font-size:var(--fs-caption); color:var(--text-dim); width:14ch; text-align:right;">base (0.2s)</span>
-    <div style="flex:1; height:8px; background:var(--border); border-radius:var(--radius); position:relative; overflow:hidden;">
-      <div style="position:absolute; inset:0; background:var(--comp); transform:scaleX(0); transform-origin:left; transition:transform 0.2s var(--ease);"></div>
+
+  <div class="sg-card" data-cat="content">
+    <div class="sg-card-head"><span class="sg-card-title">Code Block</span><span class="sg-card-note">.code-block</span></div>
+    <div class="sg-card-body">
+      <div class="code-block">
+        <span class="code-lang">python</span>
+        <pre><code><span class="highlight"><span class="k">def</span> <span class="nf">build_fragment</span><span class="p">(</span><span class="n">html</span><span class="p">,</span> <span class="n">title</span><span class="p">):</span>
+    <span class="s2">"""Build a JSON content fragment."""</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">"title"</span><span class="p">:</span> <span class="n">title</span><span class="p">,</span> <span class="s2">"html"</span><span class="p">:</span> <span class="n">html</span><span class="p">}</span></span></code></pre>
+      </div>
     </div>
   </div>
-  <div style="display:flex; align-items:center; gap:var(--space-3);">
-    <span style="font-size:var(--fs-caption); color:var(--text-dim); width:14ch; text-align:right;">medium (0.25s)</span>
-    <div style="flex:1; height:8px; background:var(--border); border-radius:var(--radius); position:relative; overflow:hidden;">
-      <div style="position:absolute; inset:0; background:var(--accent-dim); transform:scaleX(0); transform-origin:left; transition:transform 0.25s var(--ease);"></div>
+
+  <div class="sg-card" data-cat="content">
+    <div class="sg-card-head"><span class="sg-card-title">Blockquote</span><span class="sg-card-note">&lt;blockquote&gt;</span></div>
+    <div class="sg-card-body">
+      <blockquote><p>Terminal aesthetic with refined edges. Blue-tinted dark backgrounds, monospace everything.</p></blockquote>
     </div>
   </div>
-  <div style="display:flex; align-items:center; gap:var(--space-3);">
-    <span style="font-size:var(--fs-caption); color:var(--text-dim); width:14ch; text-align:right;">slow (0.3s)</span>
-    <div style="flex:1; height:8px; background:var(--border); border-radius:var(--radius); position:relative; overflow:hidden;">
-      <div style="position:absolute; inset:0; background:var(--accent); transform:scaleX(0); transform-origin:left; transition:transform 0.3s var(--ease);"></div>
+
+  <div class="sg-card" data-cat="content">
+    <div class="sg-card-head"><span class="sg-card-title">Lists</span><span class="sg-card-note">ul / ol</span></div>
+    <div class="sg-card-body">
+      <h4>Unordered</h4>
+      <ul>
+        <li>First item — dash marker in accent-dim</li>
+        <li>Second with <code>inline code</code></li>
+        <li>Third with <strong>bold</strong> and a <a href="#" onclick="return false">link</a></li>
+      </ul>
+      <h4>Ordered</h4>
+      <ol>
+        <li>Parse markdown source</li>
+        <li>Generate HTML fragments</li>
+        <li>Write JSON fragments</li>
+      </ol>
     </div>
   </div>
+
+  <div class="sg-card" data-cat="content">
+    <div class="sg-card-head"><span class="sg-card-title">Task List</span><span class="sg-card-note">.task</span></div>
+    <div class="sg-card-body">
+      <ul>
+        <li class="task task-done"><span class="task-box">&#x2713;</span> Extract tokens to hyperkit</li>
+        <li class="task task-done"><span class="task-box">&#x2713;</span> Move primitives to shared layer</li>
+        <li class="task"><span class="task-box">&#x25CB;</span> Build style guide page</li>
+        <li class="task"><span class="task-box">&#x25CB;</span> Add skeleton states</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="sg-card" data-cat="content">
+    <div class="sg-card-head"><span class="sg-card-title">Table</span><span class="sg-card-note">&lt;table&gt;</span></div>
+    <div class="sg-card-body">
+      <table>
+        <thead><tr><th>Token</th><th>Duration</th><th>Use</th></tr></thead>
+        <tbody>
+          <tr><td><code>--motion-instant</code></td><td>0.05s</td><td>Pressed feedback</td></tr>
+          <tr><td><code>--motion-fast</code></td><td>0.15s</td><td>Micro-interactions</td></tr>
+          <tr><td><code>--motion-base</code></td><td>0.2s</td><td>Default transitions</td></tr>
+          <tr><td><code>--motion-slow</code></td><td>0.3s</td><td>Page fade-in</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="sg-card" data-cat="content">
+    <div class="sg-card-head"><span class="sg-card-title">Bookmark Card</span><span class="sg-card-note">.bookmark-card</span></div>
+    <div class="sg-card-body">
+      <a href="#" class="bookmark-card" onclick="return false">
+        <span class="bookmark-card-title">Hyperkit Design System</span>
+        <span class="bookmark-card-url">hyperspace/.hyperkit/css/tokens.css</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="sg-card" data-cat="content">
+    <div class="sg-card-head"><span class="sg-card-title">Doc Header Strip</span><span class="sg-card-note">.doc-header-strip</span></div>
+    <div class="sg-card-body">
+      <div class="doc-header-strip" style="animation:none;">
+        <div class="doc-header-chips">
+          <span class="status-chip status-chip-filled doc-header-chip doc-header-chip-wi">WI-142</span>
+          <span class="status-chip status-chip-outlined-accent doc-header-chip doc-header-chip-status-active">In Progress</span>
+          <span class="status-chip status-chip-outlined-muted doc-header-chip doc-header-chip-assignee" style="color:var(--comp); border-color:var(--comp);">JW</span>
+        </div>
+        <div class="doc-header-tags">
+          <span class="doc-header-tag">hypervisor</span>
+          <span class="doc-header-tag">css</span>
+        </div>
+        <div class="doc-header-dates">
+          <span class="doc-header-date"><span class="doc-header-date-label">Created</span><span class="doc-header-date-value">2026-08-20</span></span>
+          <span class="doc-header-date"><span class="doc-header-date-label">Updated</span><span class="doc-header-date-value">2026-08-27</span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════ NAVIGATION ══════════════════ -->
+
+  <div class="sg-card" data-cat="navigation">
+    <div class="sg-card-head"><span class="sg-card-title">Dock Navigation</span><span class="sg-card-note">.home-dock</span></div>
+    <div class="sg-card-body">
+      <div class="home-dock" style="animation:none;">
+        <a href="#" class="dock-item" onclick="return false"><i data-lucide="briefcase" class="dock-icon"></i><span class="dock-label">Work</span><span class="dock-count">8</span></a>
+        <a href="#" class="dock-item dock-item-recent" onclick="return false"><i data-lucide="microscope" class="dock-icon"></i><span class="dock-label">Research</span><span class="dock-count">12</span></a>
+        <a href="#" class="dock-item" onclick="return false"><i data-lucide="lightbulb" class="dock-icon"></i><span class="dock-label">Ideas</span><span class="dock-count">15</span></a>
+        <a href="#" class="dock-item" onclick="return false"><i data-lucide="puzzle" class="dock-icon"></i><span class="dock-label">Patterns</span><span class="dock-count">4</span></a>
+      </div>
+    </div>
+  </div>
+
+  <div class="sg-card" data-cat="navigation">
+    <div class="sg-card-head"><span class="sg-card-title">Document List</span><span class="sg-card-note">.doc-list</span></div>
+    <div class="sg-card-body">
+      <ul class="doc-list">
+        <li>
+          <a href="#" onclick="return false"><i data-lucide="file-text" class="doc-icon" style="width:14px; height:14px; vertical-align:-2px; margin-right:0.3rem; color:var(--text-dim);"></i>Hypervisor Technical Reference</a>
+          <span class="doc-date">2026-08-20</span>
+          <span class="doc-row-snippet">Module-by-module walkthrough of the generator internals.</span>
+          <span class="doc-row-tags"><span class="doc-row-tag">hypervisor</span><span class="doc-row-tag">architecture</span></span>
+        </li>
+        <li class="doc-recent">
+          <a href="#" onclick="return false"><i data-lucide="file-text" class="doc-icon" style="width:14px; height:14px; vertical-align:-2px; margin-right:0.3rem; color:var(--text-dim);"></i>Hyperkit Primitive Extraction</a>
+          <span class="doc-date">2026-08-27</span>
+          <span class="doc-row-snippet">Extract shared CSS primitives into the ecosystem-wide layer.</span>
+          <span class="doc-row-tags"><span class="doc-row-tag">css</span><span class="doc-row-tag">design-system</span></span>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="sg-card" data-cat="navigation">
+    <div class="sg-card-head"><span class="sg-card-title">Directory Header</span><span class="sg-card-note">.dir-header</span></div>
+    <div class="sg-card-body">
+      <div class="dir-header" style="animation:none;">
+        <div class="dir-header-top">
+          <i data-lucide="book-open" class="dir-header-icon"></i>
+          <h1 class="dir-header-title" style="font-size:var(--fs-h1); border:none; padding:0; margin:0;">Context</h1>
+        </div>
+        <div class="dir-header-desc">Project overviews and high-level references</div>
+        <div class="dir-header-stats">
+          <span class="dir-stat"><i data-lucide="file-text" class="dir-stat-icon"></i><span class="dir-stat-val">14</span><span class="dir-stat-label">docs</span></span>
+          <span class="dir-stat"><i data-lucide="folder" class="dir-stat-icon"></i><span class="dir-stat-val">3</span><span class="dir-stat-label">dirs</span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </div>
 
-<style>
-  /* Motion demo hover — fills the bar on parent hover */
-  .style-guide [style*="transform:scaleX(0)"]:hover,
-  .style-guide div:has(> [style*="transform:scaleX(0)"]):hover > [style*="transform:scaleX(0)"] {
-    transform: scaleX(1) !important;
-  }
-</style>
+<script>
+(function() {
+  var toolbar = document.getElementById('sg-toolbar');
+  var masonry = document.getElementById('sg-masonry');
+  if (!toolbar || !masonry) return;
+
+  toolbar.addEventListener('click', function(e) {
+    var btn = e.target.closest('.sg-filter');
+    if (!btn) return;
+    var filter = btn.getAttribute('data-filter');
+
+    // Toggle active state on the pressed button.
+    toolbar.querySelectorAll('.sg-filter').forEach(function(b) {
+      b.classList.toggle('active', b === btn);
+    });
+
+    // Show/hide cards by category.
+    masonry.querySelectorAll('.sg-card').forEach(function(card) {
+      var match = filter === 'all' || card.getAttribute('data-cat') === filter;
+      card.classList.toggle('sg-hidden', !match);
+    });
+  });
+})();
+</script>
 
 </div>

@@ -4,6 +4,9 @@ All builders now output content fragments (JSON) for the SPA shell architecture.
 """
 
 import shutil
+import json
+import re
+import html
 from datetime import datetime
 
 from .config import HYPERSPACE_ROOT, OUTPUT_DIR, SKIP_DIRS
@@ -207,11 +210,69 @@ def _inject_skills_data(html_content: str) -> str:
     return html_content.replace("__SKILLS_DATA__", json.dumps(data, ensure_ascii=False))
 
 
+def _wrap_utility_scaffold(body_html, name, icon, description=""):
+    """Wrap a utility page's body in the shared utility-page scaffold.
+
+    Produces the header strip (icon + title, optional description) above a
+    raised surface panel that holds the page body. This is the single place the
+    utilities get their site-level page structure, so individual utility HTML
+    files carry only their own content, not a bespoke heading/layout.
+
+    Args:
+        body_html: The utility's own inner markup.
+        name: Display title for the header strip.
+        icon: Lucide icon name rendered before the title.
+        description: Optional one-line description under the title.
+
+    Returns:
+        The body wrapped in .utility-page > (.utility-head + .utility-surface).
+    """
+    safe_name = html.escape(name)
+    safe_icon = html.escape(icon, quote=True)
+    desc_html = ""
+    if description:
+        desc_html = f'<p class="utility-desc">{html.escape(description)}</p>'
+
+    # Strip the page's own title heading. The pages each hand-rolled an opening
+    # `<h1><i data-lucide=...> Title</h1>` line (usually nested a couple of
+    # wrapper divs deep), and the scaffold head now supplies the single title,
+    # so removing the in-body one prevents a double heading. Only the FIRST
+    # <h1> is removed (count=1); in every utility the title heading is the first
+    # <h1> in source order, so style-guide specimen headings and the
+    # JS-generated export-report headings (which appear far later) are untouched.
+    body_html = re.sub(r"<h1\b[^>]*>.*?</h1>\s*", "", body_html, count=1,
+                       flags=re.DOTALL)
+
+    return (
+        '<div class="utility-page">'
+        '<header class="utility-head">'
+        '<div class="utility-title-row">'
+        f'<i data-lucide="{safe_icon}" class="utility-title-icon"></i>'
+        f'<h1 class="utility-title">{safe_name}</h1>'
+        '</div>'
+        f'{desc_html}'
+        '</header>'
+        f'<div class="utility-surface">{body_html}</div>'
+        '</div>'
+    )
+
+
 def build_utility_pages(build_id):
     """Generate utility page content fragments from HTML snippets in the utilities directory."""
     util_count = 0
     if not UTILITIES_DIR.exists():
         return util_count
+
+    # Default icons by stem, used when a utility declares no nav-meta icon.
+    _DEFAULT_ICONS = {
+        "ado-dashboard": "bar-chart-3", "changelog-viewer": "scroll-text",
+        "health-dashboard": "activity", "log-viewer": "terminal",
+        "palette-generator": "palette", "password-generator": "lock-keyhole",
+        "regex-editor": "regex", "skills-map": "boxes", "style-guide": "swatch-book",
+        "screensaver": "monitor", "assessment": "file-check", "portal-dashboard": "layout-dashboard",
+    }
+
+    manifest = []  # {name, icon, href, order} per utility — drives nav + command palette
 
     for util_file in sorted(UTILITIES_DIR.glob("*.html")):
         util_content = util_file.read_text(encoding="utf-8")
@@ -224,11 +285,35 @@ def build_utility_pages(build_id):
         if "__SKILLS_DATA__" in util_content:
             util_content = _inject_skills_data(util_content)
 
-        util_name = util_file.stem.replace("-", " ").replace("_", " ").title()
+        # Optional per-file nav metadata: <!-- nav-meta: {"name": "...", "icon": "...", "order": N} -->
+        nav_meta = {}
+        m = re.search(r"<!--\s*nav-meta:\s*(\{.*?\})\s*-->", util_content, re.DOTALL)
+        if m:
+            try:
+                nav_meta = json.loads(m.group(1))
+            except ValueError:
+                nav_meta = {}
+
+        default_name = util_file.stem.replace("-", " ").replace("_", " ").title()
+        util_name = nav_meta.get("name", default_name)
         util_rel = f"_utils/{util_file.stem}"
+        util_icon = nav_meta.get("icon", _DEFAULT_ICONS.get(util_file.stem, "square"))
+        util_desc = nav_meta.get("description", "")
+
+        manifest.append({
+            "name": util_name,
+            "icon": util_icon,
+            "href": f"{util_rel}/index.html",
+            "order": nav_meta.get("order", 100),
+        })
+
+        # Wrap the page body in the shared utility-page scaffold (header strip +
+        # raised surface) so every utility reads as part of the site's page
+        # vocabulary rather than a bespoke one-off layout.
+        scaffolded = _wrap_utility_scaffold(util_content, util_name, util_icon, util_desc)
 
         fragment = build_fragment(
-            util_content, util_name, util_rel,
+            scaffolded, util_name, util_rel,
             page_type="utility", source_path=f"utility: {util_file.stem}",
         )
         fragment_path = OUTPUT_DIR / "content" / f"_utils/{util_file.stem}.json"
@@ -247,6 +332,18 @@ def build_utility_pages(build_id):
                     shutil.copy2(item, dest)
 
         util_count += 1
+
+    # Emit the manifest — the single source of truth for the utilities nav list
+    # and the command palette. Sorted by declared order, then name.
+    manifest.sort(key=lambda u: (u["order"], u["name"].lower()))
+    manifest_path = OUTPUT_DIR / "content" / "_utils" / "_manifest.json"
+    manifest_path.parent.mkdir(parents=True, exist_ok=True)
+    manifest_path.write_text(
+        json.dumps(manifest, ensure_ascii=False, separators=(",", ":")),
+        encoding="utf-8",
+    )
+
+    return util_count
 
     return util_count
 
@@ -344,14 +441,16 @@ def build_pinboard_page(build_id):
     and the JS module populates the content dynamically.
     """
     content_html = """\
-<div class="pinboard-page">
-  <div class="dir-header">
-    <div class="dir-header-top">
-      <i data-lucide="pin" class="dir-header-icon"></i>
-      <h1 class="dir-header-title">Pinboard</h1>
+<div class="dir-head">
+  <div class="dir-headings">
+    <div class="dir-title-row">
+      <i data-lucide="pin" class="dir-title-icon"></i>
+      <h1 class="dir-title">Pinboard</h1>
     </div>
-    <div class="dir-header-desc">Documents you've pinned for quick access. Pins are stored locally in your browser.</div>
+    <div class="dir-desc">Documents you've pinned for quick access. Pins are stored locally in your browser.</div>
   </div>
+</div>
+<div class="dir-surface">
   <div class="pinboard-content"></div>
 </div>"""
 
@@ -439,4 +538,5 @@ def build_raw_html_pages():
         out_dir.mkdir(parents=True, exist_ok=True)
         shutil.copy2(html_file, out_dir / "index.html")
         count += 1
+
     return count

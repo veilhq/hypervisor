@@ -8,7 +8,7 @@ Non-square artwork is scaled to fit and centered on a transparent square canvas
 so the glyph isn't distorted.
 
 Usage:
-    python svg-to-ico.py <input.svg> [output_prefix] [--sizes 16,32,48]
+    python svg-to-ico.py <input.svg> [output_prefix] [--sizes=16,24,32,48]
 """
 import io
 import re
@@ -16,9 +16,20 @@ import sys
 from pathlib import Path
 
 import fitz
-from PIL import Image
+from PIL import Image, ImageDraw
 
-DEFAULT_SIZES = [16, 32, 48]
+# 20 and 24 are the sizes Windows uses for the taskbar at common DPI scales.
+# Embedding them directly avoids a live downscale from the 32px frame, which
+# softens diagonal edges (e.g. rotated glyphs) noticeably.
+DEFAULT_SIZES = [16, 20, 24, 32, 48]
+
+# Rounded-corner radius as a fraction of icon size, applied as an alpha mask
+# after rasterizing. MuPDF ignores SVG clip-path, so tiles that rely on a
+# clipPath for their rounded corners (e.g. an embedded gradient image) render
+# square. Masking in Pillow makes the rounded-app-icon look reliable for every
+# SVG regardless of how its tile is constructed. 11% matches the rx="6.62" on
+# the 60-unit box tiles used across the ecosystem icons.
+CORNER_RADIUS_PCT = 0.11
 # Render at 4x the largest target for clean downsampling.
 SUPERSAMPLE = 4
 
@@ -86,7 +97,17 @@ def render_square(svg_text: str, size: int) -> Image.Image:
 
     canvas = Image.new("RGBA", (target, target), (0, 0, 0, 0))
     canvas.paste(art, ((target - art.width) // 2, (target - art.height) // 2), art)
-    return canvas.resize((size, size), Image.LANCZOS)
+
+    # Apply a rounded-rect alpha mask at supersampled resolution so the corners
+    # antialias cleanly on the final downscale. This intersects with existing
+    # alpha, so square tiles get rounded and already-rounded tiles are unchanged.
+    radius = round(target * CORNER_RADIUS_PCT)
+    mask = Image.new("L", (target, target), 0)
+    ImageDraw.Draw(mask).rounded_rectangle([0, 0, target - 1, target - 1], radius=radius, fill=255)
+    rounded = Image.new("RGBA", (target, target), (0, 0, 0, 0))
+    rounded.paste(canvas, (0, 0), mask)
+
+    return rounded.resize((size, size), Image.LANCZOS)
 
 
 def main() -> None:

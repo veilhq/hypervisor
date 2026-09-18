@@ -11,22 +11,52 @@
   padding: var(--space-2) 0;
 }
 .dash-full { grid-column: 1 / -1; }
-.dash-card {
+/* Sprint summary panel — groups the header row + KPI tiles in one bordered
+   container spanning the full dashboard width. */
+.dash-summary {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4);
   background: var(--bg-card);
   border: var(--border-hair) solid var(--border);
   border-radius: var(--radius);
+}
+/* KPI tiles: fixed 5-up so all sprint KPIs sit on one row inside the panel. */
+.dash-summary .kpi-grid {
+  grid-template-columns: repeat(5, 1fr);
+}
+/* Donut + team row — three cards across on a wide surface, spanning the full
+   dash grid, collapsing to fewer columns as width shrinks. */
+.dash-donut-row {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-4);
+}
+/* .dash-card composes .content-card (surface: bg/border/radius/transition) +
+   .flex-stack (column layout). Local: padding, and the tighter gap override
+   (flex-stack defaults to --space-3; this dashboard uses --space-2). */
+.dash-card {
   padding: var(--space-4);
-  display: flex;
-  flex-direction: column;
   gap: var(--space-2);
 }
+/* Static display surfaces (charts, donuts, lists) — suppress the .content-card
+   hover lift/shadow/accent-border; these cards aren't interactive targets. */
+.dash-card:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: var(--border);
+  background: var(--bg-card);
+}
+/* .dash-card-title composes .flex-center (row + align-items:center). Local:
+   the caption typography and the tighter gap override. */
 .dash-card-title {
   font-size: var(--fs-label);
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: var(--text-dim);
-  display: flex;
-  align-items: center;
   gap: var(--space-0-4);
 }
 .dash-card-title i { width: 14px; height: 14px; }
@@ -34,14 +64,32 @@
   font-size: var(--fs-body);
   color: var(--text-muted);
 }
+/* .dash-header composes .flex-center (row + align-center). One row: title on
+   the left, sprint metadata pushed to the right of it, actions at the far end.
+   Local: the grid-column span, the underline, and vertical padding. */
 .dash-header {
   grid-column: 1 / -1;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  gap: var(--space-4);
   padding: var(--space-2) 0;
   border-bottom: var(--border-hair) solid var(--border);
   margin-bottom: 0;
+  flex-wrap: wrap;
+}
+/* Sprint metadata sits just right of the title; actions get pushed to the end. */
+.dash-header-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-0-4) var(--space-1-2);
+  margin-left: var(--space-4);
+  font-size: var(--fs-label);
+  color: var(--text-muted);
+}
+.dash-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-left: auto;
 }
 .dash-header h1 {
   font-size: var(--fs-h2);
@@ -52,7 +100,9 @@
   align-items: center;
   gap: var(--space-2);
 }
-.dash-header h1 i { width: 20px; height: 20px; color: var(--accent); }
+.dash-header h1 i,
+.dash-header h1 svg,
+.dash-header h1 [data-lucide] { width: 18px; height: 18px; color: var(--accent); }
 .dash-meta {
   font-size: var(--fs-micro);
   color: var(--text-dim);
@@ -60,26 +110,17 @@
 }
 .dash-meta span { display: block; }
 
-/* Metadata strip below header */
-.dash-meta-strip {
-  grid-column: 1 / -1;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-0-4) var(--space-1-2);
-  padding: var(--space-2) 0;
-  margin-bottom: var(--space-2);
-  font-size: var(--fs-label);
-  color: var(--text-muted);
-}
+/* Metadata strip below header — composes .flex-between. Local: grid-column
+   span, wrap, the two-axis gap override, spacing, and caption typography. */
+/* .dash-meta-strip-item composes .flex-center. Local: the tighter gap
+   override and nowrap. Used inside .dash-header-meta now. */
 .dash-meta-strip-item {
-  display: flex;
-  align-items: center;
   gap: var(--space-0-3);
   white-space: nowrap;
 }
-.dash-meta-strip-item i { width: 11px; height: 11px; color: var(--text-dim); }
+.dash-meta-strip-item i,
+.dash-meta-strip-item svg,
+.dash-meta-strip-item [data-lucide] { width: 11px; height: 11px; color: var(--text-dim); }
 .dash-meta-strip-value {
   color: var(--accent);
   font-weight: 700;
@@ -88,31 +129,23 @@
   color: var(--border);
 }
 
-/* Refresh button */
+/* Refresh button — composes .action-button (inline-flex, transparent ghost,
+   radius, hover-to-accent). Local: the compact dashboard sizing (smaller
+   padding/gap, no bold, lighter border than the primitive's --border-strong),
+   and the .is-loading spinner state. */
 .dash-refresh-btn {
   background: var(--bg-card);
-  border: var(--border-hair) solid var(--border);
-  border-radius: var(--radius);
-  color: var(--text-muted);
-  font-family: var(--font);
-  font-size: var(--fs-label);
-  text-transform: uppercase;
+  border-color: var(--border);
   letter-spacing: 0.06em;
   padding: var(--space-0-3) var(--space-0-6);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
   gap: var(--space-0-3);
-  transition: color var(--motion-base) var(--ease), border-color var(--motion-base) var(--ease);
-}
-.dash-refresh-btn:hover {
-  color: var(--accent);
-  border-color: var(--accent);
 }
 .dash-refresh-btn:active {
   opacity: 0.7;
 }
-.dash-refresh-btn i { width: 12px; height: 12px; }
+.dash-refresh-btn i,
+.dash-refresh-btn svg,
+.dash-refresh-btn [data-lucide] { width: 12px; height: 12px; }
 .dash-refresh-btn.is-loading {
   pointer-events: none;
   opacity: 0.5;
@@ -126,112 +159,20 @@
 }
 
 /* Bar chart */
-.dash-bars { display: flex; flex-direction: column; gap: var(--space-0-4); }
-.dash-bar-row {
-  display: grid;
-  grid-template-columns: 90px 1fr 40px;
-  align-items: center;
-  gap: var(--space-2);
-}
-.dash-bar-label {
-  font-size: var(--fs-body);
-  color: var(--text);
-  text-align: right;
-  white-space: nowrap;
-}
-.dash-bar-track {
-  height: 20px;
-  background: var(--bg-surface);
-  border: var(--border-hair) solid var(--border);
-  border-radius: var(--radius);
-  position: relative;
-  overflow: hidden;
-}
-.dash-bar-fill {
-  height: 100%;
-  position: absolute;
-  top: 0;
-  left: 0;
-  opacity: 0.85;
-  border-radius: var(--radius);
-  transition: width var(--motion-slow) var(--ease);
-}
-.dash-bar-val {
-  font-size: var(--fs-body);
-  color: var(--text-muted);
-}
-
-/* Stacked bar */
-.dash-stacked {
-  height: 28px;
-  display: flex;
-  border: var(--border-hair) solid var(--border);
-  border-radius: var(--radius);
-  overflow: hidden;
-}
-.dash-stacked-seg {
-  height: 100%;
-  opacity: 0.85;
-  transition: width var(--motion-slow) var(--ease);
-}
-.dash-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2) var(--space-1-2);
-  margin-top: var(--space-2);
-}
-.dash-legend-item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-0-3);
-  font-size: var(--fs-label);
-  color: var(--text-muted);
-}
-.dash-legend-swatch {
-  width: 10px;
-  height: 10px;
-  border-radius: var(--radius);
-  opacity: 0.85;
-}
+/* Bar chart, stacked bar, and legend now use the shared hv-viz-* primitives
+   (hyperkit css/viz.css + js/viz.js), available via the hypervisor shell. */
 
 /* Team grid */
-.dash-team { display: flex; flex-direction: column; gap: var(--space-3); flex: 1; justify-content: center; }
-.dash-team-row {
-  display: grid;
-  grid-template-columns: 120px 1fr 50px;
-  align-items: center;
-  gap: var(--space-0-6);
-}
-.dash-team-name {
-  font-size: var(--fs-body);
-  color: var(--text-bright);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.dash-team-bar {
-  height: 24px;
-  display: flex;
-  border: var(--border-hair) solid var(--border);
-  border-radius: var(--radius);
-  overflow: hidden;
-}
-.dash-team-seg {
-  height: 100%;
-  opacity: 0.85;
-}
-.dash-team-pts {
-  font-size: var(--fs-label);
-  color: var(--text-muted);
-  text-align: right;
-}
+/* Team grid now uses the shared hv-viz-team-* primitives. */
 
-/* PR list */
-.dash-pr-list { display: flex; flex-direction: column; gap: var(--space-0-3); }
+/* PR list — composes .flex-stack. Local: the tighter row gap override. */
+.dash-pr-list { gap: var(--space-0-3); }
+/* Row composes .list-row (grid base, align-center, transition). KEPT LOCAL:
+   the per-row grid-template-columns (list-row's --row-grid won't match), and
+   the bordered-tile silhouette (full border + radius + surface fill) that
+   diverges from list-row's divider silhouette. */
 .dash-pr-item {
-  display: grid;
   grid-template-columns: 40px 1fr 80px 50px;
-  align-items: center;
   gap: var(--space-2);
   padding: var(--space-0-3) var(--space-2);
   background: var(--bg-surface);
@@ -259,11 +200,10 @@
 .dash-pr-age-mid { color: var(--warm); }
 .dash-pr-age-old { color: var(--comp); }
 
-/* Risks */
-.dash-risks { display: flex; flex-direction: column; gap: var(--space-0-3); }
+/* Risks — .dash-risks composes .flex-stack (local: tighter gap); each
+   .dash-risk composes .flex-center (local: gap + the left-rail tile look). */
+.dash-risks { gap: var(--space-0-3); }
 .dash-risk {
-  display: flex;
-  align-items: center;
   gap: var(--space-2);
   padding: var(--space-0-3) var(--space-2);
   font-size: var(--fs-body);
@@ -272,115 +212,52 @@
   border-radius: 0 var(--radius) var(--radius) 0;
   background: var(--bg-surface);
 }
+/* Risk tag composes .status-chip (uppercase silhouette). Local: comp color +
+   nowrap; caption size kept so the dense row stays compact. */
 .dash-risk-tag {
   font-size: var(--fs-caption);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
   color: var(--comp);
   white-space: nowrap;
 }
 
-/* Burndown chart */
-.dash-burndown {
-  position: relative;
-  width: 100%;
-  height: 180px;
-  overflow: hidden;
-}
-.dash-burndown canvas {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-}
-.dash-burndown-legend {
-  display: flex;
-  gap: var(--space-1-2);
-  margin-top: var(--space-2);
-  font-size: var(--fs-micro);
-  color: var(--text-muted);
-}
-.dash-burndown-legend-item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-0-3);
-}
-.dash-burndown-legend-line {
-  width: 16px;
-  height: 2px;
-}
-.dash-burndown-legend-line-dashed {
-  width: 16px;
-  height: 0;
-  border-top: 2px dashed var(--text-dim);
-}
-
-/* Sparkline */
+/* Burndown chart, sparkline, and their legends now use the shared
+   hv-viz-line / hv-viz-sparkline / hv-viz-legend primitives. Only the
+   flex wrapper that positions the sparkline + month labels is app-local. */
 .dash-sparkline-wrap {
   display: flex;
-  align-items: center;
-  gap: var(--space-3);
-}
-.dash-sparkline {
-  flex: 1;
-  height: 120px;
-  position: relative;
-}
-.dash-sparkline canvas {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-}
-.dash-sparkline-labels {
-  display: flex;
-  justify-content: space-between;
-  font-size: var(--fs-micro);
-  color: var(--text-dim);
-  margin-top: 2px;
+  flex-direction: column;
+  gap: var(--space-1);
 }
 
 /* Responsive */
 @media (max-width: 700px) {
   .dash { grid-template-columns: 1fr; }
-  .dash-bar-row { grid-template-columns: 70px 1fr 30px; }
+  /* KPI tiles wrap to 2-up when the fixed 5-up row would be too cramped. */
+  .dash-summary .kpi-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
 /* Tab switcher */
+/* Tabs compose the shared .nav-tab primitive (notched shape, --bg-card surface,
+   hover/active background). Per the primitive contract, local styles add ONLY
+   sizing/typography — no border, no bar, no background override. The active
+   state (accent-glow wash) comes from .nav-tab-active, toggled by the JS. */
 .dash-tabs {
   grid-column: 1 / -1;
   display: flex;
-  gap: 0;
-  border-bottom: var(--border-hair) solid var(--border);
-  margin-bottom: var(--space-2);
+  gap: var(--space-1);
+  margin-top: var(--space-6);
+  margin-bottom: var(--space-4);
 }
 .dash-tab {
-  background: transparent;
-  border: var(--border-hair) solid var(--border);
-  border-bottom: none;
-  border-radius: var(--radius) var(--radius) 0 0;
-  color: var(--text-muted);
+  padding: var(--space-2) var(--space-5);
   font-family: var(--font);
   font-size: var(--fs-label);
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  padding: var(--space-0-4) var(--space-4);
-  cursor: pointer;
-  transition: color var(--motion-base) var(--ease), border-color var(--motion-base) var(--ease), background var(--motion-base) var(--ease);
-  margin-bottom: -1px;
+  color: var(--text-muted);
 }
-.dash-tab:hover {
-  color: var(--text-bright);
-  border-color: var(--text-muted);
-}
-.dash-tab.is-active {
-  color: var(--accent);
-  border-color: var(--accent);
-  border-bottom: var(--border-hair) solid var(--bg);
-  background: var(--bg);
-}
+.dash-tab:hover { color: var(--text-bright); }
+.dash-tab.nav-tab-active { color: var(--accent); }
 .dash-tab-panel { display: none; grid-column: 1 / -1; }
 .dash-tab-panel.is-active {
   display: grid;
@@ -388,12 +265,12 @@
   gap: var(--space-4);
 }
 
-/* Commit list */
-.dash-commit-list { display: flex; flex-direction: column; gap: var(--space-0-3); }
+/* Commit list — composes .flex-stack (local: tighter gap). */
+.dash-commit-list { gap: var(--space-0-3); }
+/* Row composes .list-row. KEPT LOCAL: per-row grid columns + bordered-tile
+   silhouette (full border + radius + surface fill). */
 .dash-commit-item {
-  display: grid;
   grid-template-columns: 70px 55px 100px 1fr 120px 50px;
-  align-items: center;
   gap: var(--space-2);
   padding: var(--space-0-3) var(--space-2);
   background: var(--bg-surface);
@@ -408,12 +285,12 @@
 .dash-commit-repo { color: var(--comp); font-size: var(--fs-label); font-weight: 700; font-style: italic; }
 .dash-commit-age { text-align: right; }
 
-/* Branch list */
-.dash-branch-list { display: flex; flex-direction: column; gap: var(--space-0-3); }
+/* Branch list — composes .flex-stack (local: tighter gap). */
+.dash-branch-list { gap: var(--space-0-3); }
+/* Row composes .list-row. KEPT LOCAL: per-row grid columns + bordered-tile
+   silhouette. */
 .dash-branch-item {
-  display: grid;
   grid-template-columns: 80px 1fr 55px 1fr 100px 50px;
-  align-items: center;
   gap: var(--space-2);
   padding: var(--space-0-3) var(--space-2);
   background: var(--bg-surface);
@@ -428,12 +305,12 @@
 .dash-branch-author { color: var(--text-muted); font-size: var(--fs-label); text-align: right; }
 .dash-branch-time { color: var(--text-dim); font-size: var(--fs-label); text-align: right; }
 
-/* Conflict list */
-.dash-conflict-list { display: flex; flex-direction: column; gap: var(--space-0-3); }
+/* Conflict list — composes .flex-stack (local: tighter gap). */
+.dash-conflict-list { gap: var(--space-0-3); }
+/* Row composes .list-row. KEPT LOCAL: per-row grid columns + bordered-tile
+   silhouette + the interactive accent-border hover. */
 .dash-conflict-item {
-  display: grid;
   grid-template-columns: 1fr auto 1fr 60px 80px;
-  align-items: center;
   gap: var(--space-2);
   padding: var(--space-0-4) var(--space-2);
   background: var(--bg-surface);
@@ -447,15 +324,16 @@
 .dash-conflict-branch { color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .dash-conflict-arrow { color: var(--text-dim); font-size: var(--fs-label); text-align: center; }
 .dash-conflict-repo { color: var(--comp); font-size: var(--fs-label); font-weight: 700; font-style: italic; text-align: right; }
+/* Severity badge composes .status-chip + an outlined variant; the per-severity
+   color is applied by the -low/-high modifiers below. Local: bold weight +
+   compact padding for the dense row. */
 .dash-conflict-badge {
-  font-size: var(--fs-label);
   font-weight: 700;
   padding: var(--space-0-1) var(--space-0-4);
-  border-radius: var(--radius);
   text-align: center;
 }
-.dash-conflict-badge-low { color: var(--warm); border: var(--border-hair) solid var(--warm); }
-.dash-conflict-badge-high { color: var(--comp); border: var(--border-hair) solid var(--comp); }
+.dash-conflict-badge-low { color: var(--warm); border-color: var(--warm); }
+.dash-conflict-badge-high { color: var(--comp); border-color: var(--comp); }
 .dash-conflict-files {
   display: none;
   grid-column: 1 / -1;
@@ -471,12 +349,12 @@
 .dash-conflict-clear svg { width: 14px; height: 14px; vertical-align: -2px; }
 .dash-conflict-note { color: var(--text-dim); font-size: var(--fs-label); padding: var(--space-0-3) var(--space-2); font-style: italic; }
 
-/* Pipeline list */
-.dash-pipeline-list { display: flex; flex-direction: column; gap: var(--space-0-3); }
+/* Pipeline list — composes .flex-stack (local: tighter gap). */
+.dash-pipeline-list { gap: var(--space-0-3); }
+/* Row composes .list-row. KEPT LOCAL: per-row grid columns + bordered-tile
+   silhouette. */
 .dash-pipeline-item {
-  display: grid;
   grid-template-columns: 20px 1fr 60px 80px 50px;
-  align-items: center;
   gap: var(--space-2);
   padding: var(--space-0-3) var(--space-2);
   background: var(--bg-surface);
@@ -495,13 +373,13 @@
 .dash-pipeline-by { color: var(--text-muted); font-size: var(--fs-label); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .dash-pipeline-time { color: var(--text-dim); font-size: var(--fs-label); text-align: right; }
 
-/* Pipeline param badges */
-.dash-param-badges { display: flex; flex-wrap: wrap; gap: var(--space-0-2); margin-top: var(--space-0-3); }
+/* Pipeline param badges — wrapper composes .flex-center (local: wrap + tighter
+   gap + top margin). Each badge composes .status-chip + .status-chip-outlined-*
+   silhouette; local: the cool border/color, truncation, and max-width. */
+.dash-param-badges { flex-wrap: wrap; gap: var(--space-0-2); margin-top: var(--space-0-3); }
 .dash-param-badge {
-  font-size: var(--fs-caption);
   color: var(--cool);
-  border: var(--border-hair) solid var(--cool);
-  border-radius: var(--radius);
+  border-color: var(--cool);
   padding: var(--space-0-1) var(--space-0-4);
   white-space: nowrap;
   max-width: 200px;
@@ -516,11 +394,10 @@
   padding: var(--space-2);
 }
 
-/* Work Request items */
+/* Work Request items — row composes .list-row. KEPT LOCAL: per-row grid
+   columns + bordered-tile silhouette + interactive accent-border hover. */
 .dash-wr-item {
-  display: grid;
   grid-template-columns: 40px 1fr 80px 100px;
-  align-items: center;
   gap: var(--space-2);
   padding: var(--space-0-3) var(--space-2);
   background: var(--bg-surface);
@@ -536,27 +413,21 @@
   border-color: var(--accent);
 }
 
-/* Work Request filters */
+/* Work Request filters — wrapper composes .flex-center (local: wrap + gap +
+   margin). Each filter composes .action-button (ghost pill); local: the card
+   fill, compact sizing, lighter border, and the .is-active accent state. */
 .dash-wr-filters {
-  display: flex;
   flex-wrap: wrap;
   gap: var(--space-0-3);
   margin-bottom: var(--space-2);
 }
 .dash-wr-filter {
   background: var(--bg-card);
-  border: var(--border-hair) solid var(--border);
-  border-radius: var(--radius);
-  color: var(--text-muted);
-  font-family: var(--font);
-  font-size: var(--fs-label);
-  text-transform: uppercase;
+  border-color: var(--border);
   letter-spacing: 0.04em;
   padding: var(--space-0-2) var(--space-2);
-  cursor: pointer;
-  transition: color var(--motion-fast) var(--ease), border-color var(--motion-fast) var(--ease);
 }
-.dash-wr-filter:hover {
+.dash-wr-filter:hover:not(:disabled) {
   color: var(--text-bright);
   border-color: var(--text-muted);
 }
@@ -593,15 +464,13 @@
 .dash-tab-loading {
   display: none;
 }
-.dash-loading .dash-card,
-.dash-loading .dash-meta-strip {
+.dash-loading .dash-card {
   opacity: 0;
 }
 .dash-loading .dash-skeleton .dash-card {
   opacity: 1;
 }
-.dash-loaded .dash-card,
-.dash-loaded .dash-meta-strip {
+.dash-loaded .dash-card {
   animation: dash-fade-in var(--motion-slow) var(--ease) forwards;
 }
 @keyframes dash-fade-in {
@@ -616,41 +485,64 @@
 </style>
 
 <div class="dash dash-loading">
-  <!-- Header -->
-  <div class="dash-header">
+  <!-- Sprint summary panel: header row + KPI tiles grouped in one container -->
+  <div class="dash-summary">
+  <!-- Header: title + sprint metadata + actions, one row -->
+  <div class="dash-header flex-center">
     <h1><i data-lucide="bar-chart-3"></i> Sprint Dashboard</h1>
-    <div style="display:flex;align-items:center;gap:0.5rem;">
-      <button class="dash-refresh-btn" id="dash-report-btn" title="Generate sprint report">
+    <div class="dash-header-meta">
+      <span class="dash-meta-strip-item flex-center"><i data-lucide="flag"></i> <span class="dash-meta-strip-value" id="dash-sprint">—</span></span>
+      <span class="dash-meta-strip-sep">|</span>
+      <span class="dash-meta-strip-item flex-center"><i data-lucide="calendar"></i> <span id="dash-dates">—</span></span>
+      <span class="dash-meta-strip-sep">|</span>
+      <span class="dash-meta-strip-item flex-center"><i data-lucide="clock"></i> <span id="dash-generated">never</span></span>
+    </div>
+    <div class="dash-header-actions">
+      <button class="dash-refresh-btn action-button" id="dash-report-btn" data-tooltip="Generate sprint report">
         <i data-lucide="file-text"></i> Report
       </button>
-      <button class="dash-refresh-btn" id="dash-refresh-btn" title="Refresh data from Azure DevOps">
+      <button class="dash-refresh-btn action-button" id="dash-refresh-btn" data-tooltip="Refresh data from Azure DevOps">
         <i data-lucide="refresh-cw"></i> Refresh
       </button>
     </div>
   </div>
 
-  <!-- Metadata strip -->
-  <div class="dash-meta-strip">
-    <span class="dash-meta-strip-item"><i data-lucide="flag"></i> <span class="dash-meta-strip-value" id="dash-sprint">—</span></span>
-    <span class="dash-meta-strip-sep">|</span>
-    <span class="dash-meta-strip-item"><i data-lucide="calendar"></i> <span id="dash-dates">—</span></span>
-    <span class="dash-meta-strip-sep">|</span>
-    <span class="dash-meta-strip-item"><i data-lucide="target"></i> <span class="dash-meta-strip-value" id="kpi-total-pts">—</span> pts committed</span>
-    <span class="dash-meta-strip-sep">|</span>
-    <span class="dash-meta-strip-item"><i data-lucide="flame"></i> <span class="dash-meta-strip-value" id="kpi-remaining-pts">—</span> remaining <span id="kpi-pct-label"></span></span>
-    <span class="dash-meta-strip-sep">|</span>
-    <span class="dash-meta-strip-item"><i data-lucide="calendar-clock"></i> <span class="dash-meta-strip-value" id="kpi-days-left">—</span> days left</span>
-    <span class="dash-meta-strip-sep">|</span>
-    <span class="dash-meta-strip-item"><i data-lucide="git-pull-request"></i> <span class="dash-meta-strip-value" id="kpi-prs">—</span> active PRs</span>
-    <span class="dash-meta-strip-sep">|</span>
-    <span class="dash-meta-strip-item"><i data-lucide="clock"></i> <span id="dash-generated">never</span></span>
+  <!-- KPI tiles -->
+  <div class="kpi-grid">
+    <div class="kpi-tile">
+      <div class="kpi-tile-label">Committed</div>
+      <div class="kpi-tile-value" id="kpi-total-pts">—</div>
+      <div class="kpi-tile-sub">story points</div>
+    </div>
+    <div class="kpi-tile">
+      <div class="kpi-tile-label">Remaining</div>
+      <div class="kpi-tile-value" id="kpi-remaining-pts">—</div>
+      <div class="kpi-tile-sub"><span id="kpi-pct-label"></span> burned</div>
+    </div>
+    <div class="kpi-tile">
+      <div class="kpi-tile-label">Days Left</div>
+      <div class="kpi-tile-value" id="kpi-days-left">—</div>
+      <div class="kpi-tile-sub">working days</div>
+    </div>
+    <div class="kpi-tile">
+      <div class="kpi-tile-label">Active PRs</div>
+      <div class="kpi-tile-value" id="kpi-prs">—</div>
+      <div class="kpi-tile-sub">open for review</div>
+    </div>
+    <div class="kpi-tile">
+      <div class="kpi-tile-label">Work Requests</div>
+      <div class="kpi-tile-value" id="kpi-wr-count">—</div>
+      <div class="kpi-tile-sub">outstanding</div>
+    </div>
   </div>
+  </div>
+  <!-- /dash-summary -->
 
   <!-- Tab Switcher -->
   <div class="dash-tabs">
-    <button class="dash-tab is-active" data-tab="sprint">Sprint</button>
-    <button class="dash-tab" data-tab="source">Source</button>
-    <button class="dash-tab" data-tab="pipelines">Pipelines</button>
+    <button class="dash-tab nav-tab nav-tab-active" data-tab="sprint">Sprint</button>
+    <button class="dash-tab nav-tab" data-tab="source">Source</button>
+    <button class="dash-tab nav-tab" data-tab="pipelines">Pipelines</button>
   </div>
 
   <!-- Sprint Tab -->
@@ -658,41 +550,41 @@
 
   <!-- Skeleton: sprint tab loading state -->
   <div class="dash-skeleton" id="sprint-loading">
-    <div class="dash-card dash-full">
+    <div class="dash-card dash-full content-card flex-stack">
       <div class="loading-skeleton loading-skeleton-line loading-skeleton-sm" style="width:40%"></div>
       <div class="loading-skeleton loading-skeleton-block" style="height:120px"></div>
     </div>
-    <div class="dash-card dash-full">
+    <div class="dash-card dash-full content-card flex-stack">
       <div class="loading-skeleton loading-skeleton-line loading-skeleton-sm" style="width:30%"></div>
       <div class="loading-skeleton loading-skeleton-block" style="height:28px"></div>
     </div>
-    <div class="dash-card dash-full">
+    <div class="dash-card dash-full content-card flex-stack">
       <div class="loading-skeleton loading-skeleton-line loading-skeleton-sm" style="width:25%"></div>
       <div class="loading-skeleton loading-skeleton-block" style="height:180px"></div>
     </div>
-    <div class="dash-card">
+    <div class="dash-card content-card flex-stack">
       <div class="loading-skeleton loading-skeleton-line loading-skeleton-sm" style="width:35%"></div>
       <div class="loading-skeleton loading-skeleton-block" style="height:6rem"></div>
     </div>
-    <div class="dash-card">
+    <div class="dash-card content-card flex-stack">
       <div class="loading-skeleton loading-skeleton-line loading-skeleton-sm" style="width:40%"></div>
       <li class="loading-skeleton loading-skeleton-row"></li>
       <li class="loading-skeleton loading-skeleton-row"></li>
       <li class="loading-skeleton loading-skeleton-row"></li>
       <li class="loading-skeleton loading-skeleton-row"></li>
     </div>
-    <div class="dash-card dash-full">
+    <div class="dash-card dash-full content-card flex-stack">
       <div class="loading-skeleton loading-skeleton-line loading-skeleton-sm" style="width:35%"></div>
       <li class="loading-skeleton loading-skeleton-row"></li>
       <li class="loading-skeleton loading-skeleton-row"></li>
       <li class="loading-skeleton loading-skeleton-row"></li>
     </div>
-    <div class="dash-card dash-full">
+    <div class="dash-card dash-full content-card flex-stack">
       <div class="loading-skeleton loading-skeleton-line loading-skeleton-sm" style="width:40%"></div>
       <li class="loading-skeleton loading-skeleton-row"></li>
       <li class="loading-skeleton loading-skeleton-row"></li>
     </div>
-    <div class="dash-card dash-full">
+    <div class="dash-card dash-full content-card flex-stack">
       <div class="loading-skeleton loading-skeleton-line loading-skeleton-sm" style="width:30%"></div>
       <li class="loading-skeleton loading-skeleton-row"></li>
       <li class="loading-skeleton loading-skeleton-row"></li>
@@ -700,68 +592,72 @@
   </div>
 
   <!-- Velocity Sparkline -->
-  <div class="dash-card dash-full">
-    <div class="dash-card-title"><i data-lucide="activity"></i> Velocity (last 6 sprints)</div>
+  <div class="dash-card dash-full content-card flex-stack">
+    <div class="dash-card-title flex-center"><i data-lucide="activity"></i> Velocity (last 6 sprints)</div>
     <div class="dash-sparkline-wrap">
-      <div class="dash-sparkline">
+      <div class="hv-viz-sparkline">
         <canvas id="velocity-canvas"></canvas>
       </div>
     </div>
     <div class="dash-kpi-label">avg 54 pts/sprint — current pace: 63 committed</div>
   </div>
 
-  <div class="dash-card dash-full">
-    <div class="dash-card-title"><i data-lucide="trending-up"></i> Sprint Progress</div>
-    <div class="dash-stacked" id="progress-bar"></div>
-    <div class="dash-legend" id="progress-legend"></div>
+  <div class="dash-card dash-full content-card flex-stack">
+    <div class="dash-card-title flex-center"><i data-lucide="trending-up"></i> Sprint Progress</div>
+    <div class="hv-viz-stacked" id="progress-bar"></div>
+    <div class="hv-viz-legend" id="progress-legend"></div>
   </div>
 
   <!-- Burndown Chart -->
-  <div class="dash-card dash-full">
-    <div class="dash-card-title"><i data-lucide="trending-down"></i> Burndown</div>
-    <div class="dash-burndown">
+  <div class="dash-card dash-full content-card flex-stack">
+    <div class="dash-card-title flex-center"><i data-lucide="trending-down"></i> Burndown</div>
+    <div class="hv-viz-line">
       <canvas id="burndown-canvas"></canvas>
     </div>
-    <div class="dash-burndown-legend">
-      <div class="dash-burndown-legend-item">
-        <div class="dash-burndown-legend-line" style="background:var(--accent)"></div>
+    <div class="hv-viz-legend">
+      <div class="hv-viz-legend-item">
+        <div class="hv-viz-legend-line" style="background:var(--accent)"></div>
         Actual
       </div>
-      <div class="dash-burndown-legend-item">
-        <div class="dash-burndown-legend-line-dashed"></div>
+      <div class="hv-viz-legend-item">
+        <div class="hv-viz-legend-line-dashed"></div>
         Ideal
       </div>
     </div>
   </div>
 
-  <!-- State Breakdown -->
-  <div class="dash-card">
-    <div class="dash-card-title"><i data-lucide="bar-chart"></i> By State</div>
-    <div class="dash-bars" id="state-bars"></div>
-  </div>
-
-  <!-- Team Workload -->
-  <div class="dash-card">
-    <div class="dash-card-title"><i data-lucide="users"></i> Team Workload</div>
-    <div class="dash-team" id="team-grid"></div>
+  <!-- State donuts + Team workload -->
+  <div class="dash-donut-row">
+    <div class="dash-card dashboard-card">
+      <div class="dashboard-card-title"><i data-lucide="pie-chart"></i> Work by State</div>
+      <div id="state-donut"></div>
+    </div>
+    <div class="dash-card dashboard-card">
+      <div class="dashboard-card-title"><i data-lucide="chart-pie"></i> Points by State</div>
+      <div id="points-donut"></div>
+    </div>
+    <div class="dash-card dashboard-card">
+      <div class="dashboard-card-title"><i data-lucide="users"></i> Team Workload</div>
+      <div class="hv-viz-team" id="team-grid"></div>
+    </div>
   </div>
 
   <!-- Pull Requests -->
-  <div class="dash-card dash-full">
-    <div class="dash-card-title"><i data-lucide="git-pull-request"></i> Active Pull Requests</div>
+  <div class="dash-card dash-full content-card flex-stack">
+    <div class="dash-card-title flex-center"><i data-lucide="git-pull-request"></i> Active Pull Requests</div>
     <div class="dash-pr-list" id="pr-list"></div>
   </div>
 
   <!-- Work Requests -->
-  <div class="dash-card dash-full">
-    <div class="dash-card-title"><i data-lucide="inbox"></i> Outstanding Work Requests <span id="wr-count" style="color:var(--accent);margin-left:0.4rem;"></span></div>
+  <div class="dash-card dash-full content-card flex-stack">
+    <div class="dash-card-title flex-center"><i data-lucide="inbox"></i> Outstanding Work Requests <span id="wr-count" style="color:var(--accent);margin-left:0.4rem;"></span></div>
     <div class="dash-wr-filters" id="wr-filters"></div>
     <div class="dash-pr-list" id="wr-list"></div>
   </div>
 
   <!-- Risks -->
-  <div class="dash-card dash-full">
-    <div class="dash-card-title"><i data-lucide="alert-triangle"></i> Risks & Blockers</div>
+  <div class="dash-card dash-full content-card flex-stack">
+    <div class="dash-card-title flex-center"><i data-lucide="alert-triangle"></i> Risks & Blockers</div>
     <div class="dash-risks" id="risks"></div>
   </div>
 
@@ -771,7 +667,7 @@
   <div class="dash-tab-panel" id="tab-source">
     <!-- Skeleton: source tab loading state -->
     <div class="dash-skeleton" id="source-loading">
-      <div class="dash-card dash-full">
+      <div class="dash-card dash-full content-card flex-stack">
         <div class="loading-skeleton loading-skeleton-line loading-skeleton-sm" style="width:30%"></div>
         <li class="loading-skeleton loading-skeleton-row"></li>
         <li class="loading-skeleton loading-skeleton-row"></li>
@@ -779,13 +675,13 @@
         <li class="loading-skeleton loading-skeleton-row"></li>
         <li class="loading-skeleton loading-skeleton-row"></li>
       </div>
-      <div class="dash-card dash-full">
+      <div class="dash-card dash-full content-card flex-stack">
         <div class="loading-skeleton loading-skeleton-line loading-skeleton-sm" style="width:25%"></div>
         <li class="loading-skeleton loading-skeleton-row"></li>
         <li class="loading-skeleton loading-skeleton-row"></li>
         <li class="loading-skeleton loading-skeleton-row"></li>
       </div>
-      <div class="dash-card dash-full">
+      <div class="dash-card dash-full content-card flex-stack">
         <div class="loading-skeleton loading-skeleton-line loading-skeleton-sm" style="width:30%"></div>
         <li class="loading-skeleton loading-skeleton-row"></li>
         <li class="loading-skeleton loading-skeleton-row"></li>
@@ -795,20 +691,20 @@
       </div>
     </div>
     <!-- Active Branches -->
-    <div class="dash-card dash-full">
-      <div class="dash-card-title"><i data-lucide="git-branch"></i> Active Branches</div>
+    <div class="dash-card dash-full content-card flex-stack">
+      <div class="dash-card-title flex-center"><i data-lucide="git-branch"></i> Active Branches</div>
       <div class="dash-branch-list" id="branch-list"></div>
     </div>
 
     <!-- Conflict Risk -->
-    <div class="dash-card dash-full">
-      <div class="dash-card-title"><i data-lucide="git-merge"></i> Conflict Risk</div>
+    <div class="dash-card dash-full content-card flex-stack">
+      <div class="dash-card-title flex-center"><i data-lucide="git-merge"></i> Conflict Risk</div>
       <div class="dash-conflict-list" id="conflict-list"></div>
     </div>
 
     <!-- Recent Commits -->
-    <div class="dash-card dash-full">
-      <div class="dash-card-title"><i data-lucide="git-commit"></i> Recent Commits</div>
+    <div class="dash-card dash-full content-card flex-stack">
+      <div class="dash-card-title flex-center"><i data-lucide="git-commit"></i> Recent Commits</div>
       <div class="dash-commit-list" id="commit-list"></div>
     </div>
   </div><!-- /tab-source -->
@@ -817,13 +713,13 @@
   <div class="dash-tab-panel" id="tab-pipelines">
     <!-- Skeleton: pipelines tab loading state -->
     <div class="dash-skeleton" id="pipelines-loading">
-      <div class="dash-card dash-full">
+      <div class="dash-card dash-full content-card flex-stack">
         <div class="loading-skeleton loading-skeleton-line loading-skeleton-sm" style="width:35%"></div>
         <li class="loading-skeleton loading-skeleton-row"></li>
         <li class="loading-skeleton loading-skeleton-row"></li>
         <li class="loading-skeleton loading-skeleton-row"></li>
       </div>
-      <div class="dash-card dash-full">
+      <div class="dash-card dash-full content-card flex-stack">
         <div class="loading-skeleton loading-skeleton-line loading-skeleton-sm" style="width:35%"></div>
         <li class="loading-skeleton loading-skeleton-row"></li>
         <li class="loading-skeleton loading-skeleton-row"></li>
@@ -832,16 +728,16 @@
       </div>
     </div>
     <!-- Active/Queued Pipelines -->
-    <div class="dash-card dash-full">
-      <div class="dash-card-title"><i data-lucide="play-circle"></i> Active / Queued Pipelines</div>
+    <div class="dash-card dash-full content-card flex-stack">
+      <div class="dash-card-title flex-center"><i data-lucide="play-circle"></i> Active / Queued Pipelines</div>
       <div class="dash-pipeline-list" id="active-pipelines-list">
         <div class="dash-empty">No pipelines running</div>
       </div>
     </div>
 
     <!-- Recent Runs -->
-    <div class="dash-card dash-full">
-      <div class="dash-card-title"><i data-lucide="history"></i> Recent Pipeline Runs</div>
+    <div class="dash-card dash-full content-card flex-stack">
+      <div class="dash-card-title flex-center"><i data-lucide="history"></i> Recent Pipeline Runs</div>
       <div class="dash-pipeline-list" id="pipeline-runs-list"></div>
     </div>
   </div><!-- /tab-pipelines -->
@@ -870,7 +766,7 @@
     var sticky = opts.duration === 'sticky' || (variant === 'error' && opts.duration == null);
     var duration = opts.duration != null && opts.duration !== 'sticky' ? opts.duration : (variant === 'warn' ? 5000 : 3000);
     var el = document.createElement('div');
-    el.style.cssText = 'font-family:"Departure Mono",monospace;font-size:0.7rem;line-height:1.35;color:#ccc;background:#0a0a0a;border:1px solid #333;border-left:2px solid ' + color + ';padding:0.5rem 0.75rem;opacity:0;transform:translateY(8px);transition:opacity 0.25s,transform 0.25s;pointer-events:auto;';
+    el.style.cssText = 'font-family:"Departure Mono",monospace;font-size: var(--fs-caption);line-height:1.35;color:#ccc;background:#0a0a0a;border:1px solid #333;border-left:2px solid ' + color + ';padding:0.5rem 0.75rem;opacity:0;transform:translateY(8px);transition:opacity 0.25s,transform 0.25s;pointer-events:auto;';
     if (opts.title) {
       var t = document.createElement('div');
       t.textContent = opts.title;
@@ -902,7 +798,7 @@
   var ACTIVE_TAB_KEY = 'hv-dash-active-tab';
 
   function switchTab(tabName) {
-    tabs.forEach(function(t) { t.classList.toggle('is-active', t.getAttribute('data-tab') === tabName); });
+    tabs.forEach(function(t) { t.classList.toggle('nav-tab-active', t.getAttribute('data-tab') === tabName); });
     panels.forEach(function(p) { p.classList.toggle('is-active', p.id === 'tab-' + tabName); });
     try { localStorage.setItem(ACTIVE_TAB_KEY, tabName); } catch(e) {}
     // Manage pipeline auto-poll
@@ -1043,156 +939,45 @@
   var totalDays = 0;
 
   function drawBurndown() {
-    var canvas = document.getElementById('burndown-canvas');
-    if (!canvas) return;
-    var container = canvas.parentElement;
-    var dpr = window.devicePixelRatio || 1;
-    var w = container.offsetWidth;
-    var h = container.offsetHeight || 180;
-    canvas.width = w * dpr;
-    canvas.height = h * dpr;
+    var container = document.querySelector('.hv-viz-line');
+    if (!container) return;
 
-    var ctx = canvas.getContext('2d');
-    ctx.scale(dpr, dpr);
-
-    // Get theme colors from CSS
-    var styles = getComputedStyle(document.documentElement);
-    var accent = styles.getPropertyValue('--accent').trim() || '#00ff41';
-    var textDim = styles.getPropertyValue('--text-dim').trim() || '#666666';
-    var textMuted = styles.getPropertyValue('--text-muted').trim() || '#909090';
-    var border = styles.getPropertyValue('--border').trim() || '#222222';
-    var font = '10px ' + (styles.getPropertyValue('--font').trim() || 'monospace');
-
-    // No sprint data yet — show placeholder
+    // No sprint data yet — placeholder handled by lineChart's emptyMessage.
     if (!sprintStart || !sprintFinish || sprintDays.length === 0) {
-      ctx.fillStyle = textMuted;
-      ctx.font = font;
-      ctx.textAlign = 'center';
-      ctx.fillText('click refresh to load sprint data', w / 2, h / 2);
+      if (window.HvViz) {
+        HvViz.lineChart(container, { series: [], emptyMessage: 'click refresh to load sprint data' });
+      }
       return;
     }
 
-    var padLeft = 40;
-    var padRight = 12;
-    var padTop = 16;
-    var padBottom = 34;
-    var chartW = w - padLeft - padRight;
-    var chartH = h - padTop - padBottom;
-
-    // Y-axis: full range 0 to totalPoints
-    var yMin = 0;
-    var yMax = totalPoints || 1;  // prevent division by zero
-    var yRange = yMax - yMin;
-
-    // Grid lines — auto-step based on total (aim for 4-6 lines)
-    ctx.strokeStyle = border;
-    ctx.lineWidth = 1;
-    var yStep = Math.ceil(yMax / 5 / 5) * 5; // round to nearest 5
-    if (yStep < 5) yStep = 5;
-    for (var val = 0; val <= yMax; val += yStep) {
-      var y = padTop + chartH * (1 - val / yRange);
-      ctx.beginPath();
-      ctx.moveTo(padLeft, y);
-      ctx.lineTo(padLeft + chartW, y);
-      ctx.stroke();
-
-      ctx.fillStyle = textDim;
-      ctx.font = font;
-      ctx.textAlign = 'right';
-      ctx.fillText(val, padLeft - 6, y + 4);
+    // Ideal line: linear from totalPoints down to 0 across the sprint.
+    var n = sprintDays.length;
+    var ideal = [];
+    for (var i = 0; i < n; i++) {
+      ideal.push(totalPoints * (1 - i / Math.max(1, n - 1)));
     }
 
-    // X-axis labels
-    ctx.textAlign = 'center';
-    ctx.fillStyle = textDim;
-    for (var i = 0; i < sprintDays.length; i++) {
-      var x = padLeft + (chartW / (sprintDays.length - 1)) * i;
-      ctx.fillText(sprintDays[i].split(' ')[1], x, padTop + chartH + 14);
+    // Today marker index — nearest past working day within the sprint.
+    var todayStr = new Date().toISOString().slice(0, 10);
+    var workingDates = getWorkingDateStrings(sprintStart, sprintFinish);
+    var todayIdx = -1;
+    for (var k = workingDates.length - 1; k >= 0; k--) {
+      if (workingDates[k] <= todayStr) { todayIdx = k; break; }
     }
+    if (todayStr > sprintFinish) todayIdx = -1;
 
-    // Axis titles
-    ctx.fillStyle = textMuted;
-    ctx.font = '9px ' + (styles.getPropertyValue('--font').trim() || 'monospace');
-    // Y-axis title (rotated)
-    ctx.save();
-    ctx.translate(10, padTop + chartH / 2);
-    ctx.rotate(-Math.PI / 2);
-    ctx.textAlign = 'center';
-    ctx.fillText('remaining points', 0, 0);
-    ctx.restore();
-    // X-axis title
-    ctx.textAlign = 'center';
-    ctx.fillText('sprint day', padLeft + chartW / 2, h - 2);
-
-    // Ideal line (dashed) — linear from totalPoints to 0 over full sprint
-    ctx.strokeStyle = textMuted;
-    ctx.lineWidth = 1.5;
-    ctx.setLineDash([6, 4]);
-    ctx.beginPath();
-    var idealStartY = padTop + chartH * (1 - totalPoints / yRange);
-    var idealEndY = padTop + chartH;  // 0 points at the end
-    ctx.moveTo(padLeft, idealStartY);
-    ctx.lineTo(padLeft + chartW, idealEndY);
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    // Actual burndown line — only plot days that have data
-    var actualCount = actual.length;
-    if (actualCount > 0) {
-      ctx.strokeStyle = accent;
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      for (var i = 0; i < actualCount; i++) {
-        var x = padLeft + (chartW / (sprintDays.length - 1)) * i;
-        var y = padTop + chartH * (1 - actual[i] / yRange);
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      }
-      ctx.stroke();
-
-      // Data points
-      for (var i = 0; i < actualCount; i++) {
-        var x = padLeft + (chartW / (sprintDays.length - 1)) * i;
-        var y = padTop + chartH * (1 - actual[i] / yRange);
-        ctx.fillStyle = accent;
-        ctx.fillRect(x - 3, y - 3, 6, 6); // square dots, no border-radius
-      }
-
-      // "Today" marker — positioned at the current date within the sprint
-      var now = new Date();
-      var todayStr = now.toISOString().slice(0, 10);
-      var workingDatesForMarker = getWorkingDateStrings(sprintStart, sprintFinish);
-      var todayIdx = -1;
-      // Find the working day index for today (or nearest past working day)
-      for (var i = workingDatesForMarker.length - 1; i >= 0; i--) {
-        if (workingDatesForMarker[i] <= todayStr) {
-          todayIdx = i;
-          break;
-        }
-      }
-      // Only show marker if today falls within the sprint
-      if (todayIdx >= 0 && todayStr <= sprintFinish) {
-        var todayX = padLeft + (chartW / (sprintDays.length - 1)) * todayIdx;
-        ctx.strokeStyle = accent;
-        ctx.lineWidth = 1;
-        ctx.setLineDash([3, 3]);
-        ctx.beginPath();
-        ctx.moveTo(todayX, padTop);
-        ctx.lineTo(todayX, padTop + chartH);
-        ctx.stroke();
-        ctx.setLineDash([]);
-
-        ctx.fillStyle = accent;
-        ctx.font = '9px ' + (styles.getPropertyValue('--font').trim() || 'monospace');
-        ctx.textAlign = 'center';
-        ctx.fillText('today', todayX, padTop - 2);
-      }
-    } else {
-      // No data yet — show hint
-      ctx.fillStyle = textMuted;
-      ctx.font = '10px ' + (styles.getPropertyValue('--font').trim() || 'monospace');
-      ctx.textAlign = 'center';
-      ctx.fillText('refresh to collect burndown data', padLeft + chartW / 2, padTop + chartH / 2);
+    if (window.HvViz) {
+      HvViz.lineChart(container, {
+        yMax: totalPoints || 1,
+        xLabels: sprintDays.map(function (d) { return d.split(' ')[1]; }),
+        yTitle: 'remaining points',
+        xTitle: 'sprint day',
+        todayIndex: todayIdx,
+        series: [
+          { points: ideal, dashed: true, color: 'var(--text-muted)' },
+          { points: actual, color: 'var(--accent)' }
+        ]
+      });
     }
   }
 
@@ -1205,88 +990,25 @@
   var velocityLabels = ['2026-04','2026-05','2026-06','2026-07','2026-08','2026-09'];
 
   function drawSparkline() {
-    var canvas = document.getElementById('velocity-canvas');
-    if (!canvas) return;
-    var container = canvas.parentElement;
-    var dpr = window.devicePixelRatio || 1;
-    var w = container.offsetWidth;
-    var h = container.offsetHeight || 120;
-    canvas.width = w * dpr;
-    canvas.height = h * dpr;
+    var container = document.querySelector('.hv-viz-sparkline');
+    if (!container || !window.HvViz) return;
+    HvViz.sparkline(container, { values: velocityData, baseline: true, showValues: true });
 
-    var ctx = canvas.getContext('2d');
-    ctx.scale(dpr, dpr);
-
-    var styles = getComputedStyle(document.documentElement);
-    var accent = styles.getPropertyValue('--accent').trim() || '#00ff41';
-    var border = styles.getPropertyValue('--border').trim() || '#222222';
-    var textDim = styles.getPropertyValue('--text-dim').trim() || '#666666';
-    var textMuted = styles.getPropertyValue('--text-muted').trim() || '#909090';
-    var fontFam = styles.getPropertyValue('--font').trim() || 'monospace';
-
-    var padLeft = 12;
-    var padRight = 12;
-    var padTop = 20;   // room for value labels above points
-    var padBottom = 18; // room for sprint labels below
-    var chartW = w - padLeft - padRight;
-    var chartH = h - padTop - padBottom;
-
-    var minV = Math.min.apply(null, velocityData) - 3;
-    var maxV = Math.max.apply(null, velocityData) + 3;
-    var range = maxV - minV;
-
-    // Average baseline
-    var avg = velocityData.reduce(function(a, b) { return a + b; }, 0) / velocityData.length;
-    var avgY = padTop + chartH * (1 - (avg - minV) / range);
-    ctx.strokeStyle = border;
-    ctx.lineWidth = 1;
-    ctx.setLineDash([4, 4]);
-    ctx.beginPath();
-    ctx.moveTo(padLeft, avgY);
-    ctx.lineTo(padLeft + chartW, avgY);
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    // "avg" label
-    ctx.fillStyle = textDim;
-    ctx.font = '9px ' + fontFam;
-    ctx.textAlign = 'left';
-    ctx.fillText('avg ' + Math.round(avg), padLeft + chartW + 2, avgY + 3);
-
-    // Line
-    ctx.strokeStyle = accent;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    for (var i = 0; i < velocityData.length; i++) {
-      var x = padLeft + (chartW / (velocityData.length - 1)) * i;
-      var y = padTop + chartH * (1 - (velocityData[i] - minV) / range);
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
+    // Month labels beneath, via the shared label primitive.
+    var wrap = container.parentElement;
+    var labels = wrap ? wrap.querySelector('.hv-viz-sparkline-labels') : null;
+    if (!labels && wrap) {
+      labels = document.createElement('div');
+      labels.className = 'hv-viz-sparkline-labels';
+      wrap.appendChild(labels);
     }
-    ctx.stroke();
-
-    // Points and value labels
-    ctx.font = '10px ' + fontFam;
-    ctx.textAlign = 'center';
-    for (var i = 0; i < velocityData.length; i++) {
-      var x = padLeft + (chartW / (velocityData.length - 1)) * i;
-      var y = padTop + chartH * (1 - (velocityData[i] - minV) / range);
-
-      // Square dot
-      ctx.fillStyle = accent;
-      ctx.fillRect(x - 3, y - 3, 6, 6);
-
-      // Value above
-      ctx.fillStyle = textMuted;
-      ctx.fillText(velocityData[i], x, y - 10);
-    }
-
-    // Sprint labels below
-    ctx.fillStyle = textDim;
-    ctx.font = '9px ' + fontFam;
-    for (var i = 0; i < velocityLabels.length; i++) {
-      var x = padLeft + (chartW / (velocityLabels.length - 1)) * i;
-      ctx.fillText(velocityLabels[i], x, h - 2);
+    if (labels) {
+      labels.innerHTML = '';
+      velocityLabels.forEach(function (lab) {
+        var span = document.createElement('span');
+        span.textContent = lab;
+        labels.appendChild(span);
+      });
     }
   }
 
@@ -1362,79 +1084,119 @@
     var progressBar = document.getElementById('progress-bar');
     var progressLegend = document.getElementById('progress-legend');
     if (progressBar && data.states) {
-      var totalItems = 0;
       var stateOrder = ['Closed','Review','In Progress','Ready','Hold','Active'];
       var stateEntries = [];
-      // Collect all states
-      for (var s in data.states) { totalItems += data.states[s]; }
       stateOrder.forEach(function(st) {
         if (data.states[st]) stateEntries.push({state: st, count: data.states[st]});
       });
-      // Add any states not in the predefined order
       for (var s in data.states) {
         if (stateOrder.indexOf(s) === -1) stateEntries.push({state: s, count: data.states[s]});
       }
 
-      progressBar.innerHTML = '';
-      progressLegend.innerHTML = '';
-      stateEntries.forEach(function(entry) {
-        var pct = (entry.count / totalItems * 100).toFixed(1);
-        var seg = document.createElement('div');
-        seg.className = 'dash-stacked-seg';
-        seg.style.width = pct + '%';
-        seg.style.background = getStateColor(entry.state);
-        progressBar.appendChild(seg);
+      if (window.HvViz) {
+        // stackedBar renders the bar; legend is rendered separately into its
+        // own container so the existing layout (bar then legend) is preserved.
+        HvViz.stackedBar(progressBar, {
+          segments: stateEntries.map(function(e) {
+            return { label: e.state, value: e.count, color: getStateColor(e.state) };
+          }),
+          legend: false
+        });
+        if (progressLegend) {
+          HvViz.legend(progressLegend, stateEntries.map(function(e) {
+            return { label: e.state + ' (' + e.count + ')', color: getStateColor(e.state) };
+          }));
+        }
+      } else {
+        // Standalone-open fallback.
+        var totalItems = 0;
+        for (var s2 in data.states) { totalItems += data.states[s2]; }
+        progressBar.innerHTML = '';
+        if (progressLegend) progressLegend.innerHTML = '';
+        stateEntries.forEach(function(entry) {
+          var pct = (entry.count / totalItems * 100).toFixed(1);
+          var seg = document.createElement('div');
+          seg.className = 'hv-viz-stacked-seg';
+          seg.style.width = pct + '%';
+          seg.style.background = getStateColor(entry.state);
+          progressBar.appendChild(seg);
+          if (progressLegend) {
+            var lg = document.createElement('div');
+            lg.className = 'hv-viz-legend-item';
+            lg.innerHTML = '<div class="hv-viz-legend-swatch" style="background:' + getStateColor(entry.state) + '"></div>' + entry.state + ' (' + entry.count + ')';
+            progressLegend.appendChild(lg);
+          }
+        });
+      }
+    }
 
-        var legend = document.createElement('div');
-        legend.className = 'dash-legend-item';
-        legend.innerHTML = '<div class="dash-legend-swatch" style="background:' + getStateColor(entry.state) + '"></div>' + entry.state + ' (' + entry.count + ')';
-        progressLegend.appendChild(legend);
+    // State donuts — Work by State (counts) + Points by State (story points).
+    var stateDonut = document.getElementById('state-donut');
+    if (stateDonut && data.states && window.HvViz) {
+      var stateOrder2 = ['Closed','Review','In Progress','Ready','Hold','Active'];
+      var orderedStates = [];
+      stateOrder2.forEach(function(st) { if (data.states[st]) orderedStates.push(st); });
+      for (var s in data.states) { if (stateOrder2.indexOf(s) === -1) orderedStates.push(s); }
+      HvViz.donut('state-donut', {
+        segments: orderedStates.map(function(st) {
+          return { label: st, value: data.states[st], color: getStateColor(st) };
+        }),
+        totalLabel: 'items',
+        emptyMessage: 'No work items'
       });
     }
 
-    // State Breakdown bars
-    var stateBars = document.getElementById('state-bars');
-    if (stateBars && data.states) {
-      var maxCount = 0;
-      for (var s in data.states) { if (data.states[s] > maxCount) maxCount = data.states[s]; }
-      stateBars.innerHTML = '';
-      var stateOrder2 = ['Closed','Review','In Progress','Ready','Hold','Active'];
-      var allStates = [];
-      stateOrder2.forEach(function(st) { if (data.states[st]) allStates.push({state: st, count: data.states[st]}); });
-      for (var s in data.states) { if (stateOrder2.indexOf(s) === -1) allStates.push({state: s, count: data.states[s]}); }
-      allStates.sort(function(a, b) { return b.count - a.count; });
-
-      allStates.forEach(function(entry) {
-        var pct = (entry.count / maxCount * 100).toFixed(0);
-        var row = document.createElement('div');
-        row.className = 'dash-bar-row';
-        row.innerHTML = '<span class="dash-bar-label">' + entry.state + '</span>' +
-          '<div class="dash-bar-track"><div class="dash-bar-fill" style="width:' + pct + '%;background:' + getStateColor(entry.state) + '"></div></div>' +
-          '<span class="dash-bar-val">' + entry.count + '</span>';
-        stateBars.appendChild(row);
+    var pointsDonut = document.getElementById('points-donut');
+    if (pointsDonut && data.state_points && window.HvViz) {
+      var sp = data.state_points;
+      var stateOrder3 = ['Closed','Review','In Progress','Ready','Hold','Active'];
+      var orderedSp = [];
+      stateOrder3.forEach(function(st) { if (sp[st]) orderedSp.push(st); });
+      for (var s3 in sp) { if (stateOrder3.indexOf(s3) === -1 && sp[s3]) orderedSp.push(s3); }
+      HvViz.donut('points-donut', {
+        segments: orderedSp.map(function(st) {
+          return { label: st, value: Math.round(sp[st]), color: getStateColor(st) };
+        }),
+        totalLabel: 'pts',
+        emptyMessage: 'No points'
       });
     }
 
     // Team Workload
     var teamGrid = document.getElementById('team-grid');
     if (teamGrid && data.team) {
-      teamGrid.innerHTML = '';
       data.team.sort(function(a, b) { return b.points - a.points; });
-      data.team.forEach(function(member) {
-        if (member.points === 0) return;
-        var row = document.createElement('div');
-        row.className = 'dash-team-row';
-        var barHtml = '';
-        var totalPts = member.points || 1;
-        for (var st in member.states) {
-          var segPct = (member.states[st] / totalPts * 100).toFixed(0);
-          barHtml += '<div class="dash-team-seg" style="width:' + segPct + '%;background:' + getStateColor(st) + '"></div>';
-        }
-        row.innerHTML = '<span class="dash-team-name">' + member.name + '</span>' +
-          '<div class="dash-team-bar">' + barHtml + '</div>' +
-          '<span class="dash-team-pts">' + member.points + ' pts</span>';
-        teamGrid.appendChild(row);
-      });
+      var members = data.team.filter(function(m) { return m.points !== 0; });
+
+      if (window.HvViz) {
+        HvViz.teamBars(teamGrid, {
+          rows: members.map(function(member) {
+            var segs = [];
+            for (var st in member.states) {
+              segs.push({ label: st, value: member.states[st], color: getStateColor(st) });
+            }
+            return { name: member.name, meta: member.points + ' pts', segments: segs };
+          })
+        });
+      } else {
+        // Standalone-open fallback.
+        teamGrid.innerHTML = '';
+        teamGrid.className = 'hv-viz-team';
+        members.forEach(function(member) {
+          var row = document.createElement('div');
+          row.className = 'hv-viz-team-row';
+          var barHtml = '';
+          var totalPts = member.points || 1;
+          for (var st in member.states) {
+            var segPct = (member.states[st] / totalPts * 100).toFixed(0);
+            barHtml += '<div class="hv-viz-team-seg" style="width:' + segPct + '%;background:' + getStateColor(st) + '"></div>';
+          }
+          row.innerHTML = '<span class="hv-viz-team-name">' + member.name + '</span>' +
+            '<div class="hv-viz-team-bar">' + barHtml + '</div>' +
+            '<span class="hv-viz-team-meta">' + member.points + ' pts</span>';
+          teamGrid.appendChild(row);
+        });
+      }
     }
 
     // Pull Requests
@@ -1447,7 +1209,7 @@
         if (pr.age_days > 7) ageClass = 'dash-pr-age-old';
         else if (pr.age_days > 2) ageClass = 'dash-pr-age-mid';
         var item = document.createElement('a');
-        item.className = 'dash-pr-item';
+        item.className = 'dash-pr-item list-row';
         if (baseUrl && pr.repo) {
           item.href = baseUrl + '/_git/' + pr.repo + '/pullrequest/' + pr.id;
           item.target = '_blank';
@@ -1465,12 +1227,12 @@
     if (risksEl && data.risks) {
       risksEl.innerHTML = '';
       if (data.risks.length === 0) {
-        risksEl.innerHTML = '<div style="font-size:0.7rem;color:var(--text-muted)">No risks detected</div>';
+        risksEl.innerHTML = '<div style="font-size: var(--fs-caption);color:var(--text-muted)">No risks detected</div>';
       } else {
         data.risks.forEach(function(risk) {
           var item = document.createElement('div');
-          item.className = 'dash-risk';
-          item.innerHTML = '<span class="dash-risk-tag">' + risk.type + '</span>' +
+          item.className = 'dash-risk flex-center';
+          item.innerHTML = '<span class="dash-risk-tag status-chip">' + risk.type + '</span>' +
             risk.title + ' (' + risk.id + ')' + (risk.assigned ? ' — ' + risk.assigned : '');
           risksEl.appendChild(item);
         });
@@ -1495,24 +1257,27 @@
         wrStates[wr.state] = (wrStates[wr.state] || 0) + 1;
         if (completedStates.indexOf(wr.state) === -1) uncompletedCount++;
       });
+      // KPI tile — outstanding (uncompleted) work requests.
+      var kpiWr = document.getElementById('kpi-wr-count');
+      if (kpiWr) kpiWr.textContent = uncompletedCount;
       if (wrFilters) {
         wrFilters.innerHTML = '';
         // Uncompleted (default)
         var uncBtn = document.createElement('button');
-        uncBtn.className = 'dash-wr-filter is-active';
+        uncBtn.className = 'dash-wr-filter action-button is-active';
         uncBtn.textContent = 'Open (' + uncompletedCount + ')';
         uncBtn.setAttribute('data-filter', 'uncompleted');
         wrFilters.appendChild(uncBtn);
         // All
         var allBtn = document.createElement('button');
-        allBtn.className = 'dash-wr-filter';
+        allBtn.className = 'dash-wr-filter action-button';
         allBtn.textContent = 'All (' + data.work_requests.length + ')';
         allBtn.setAttribute('data-filter', 'all');
         wrFilters.appendChild(allBtn);
         var stateNames = Object.keys(wrStates).sort();
         stateNames.forEach(function(st) {
           var btn = document.createElement('button');
-          btn.className = 'dash-wr-filter';
+          btn.className = 'dash-wr-filter action-button';
           btn.textContent = st + ' (' + wrStates[st] + ')';
           btn.setAttribute('data-filter', st);
           wrFilters.appendChild(btn);
@@ -1560,7 +1325,7 @@
 
       wrList.innerHTML = '';
       if (filtered.length === 0) {
-        wrList.innerHTML = '<div style="font-size:0.7rem;color:var(--text-muted)">No work requests match this filter</div>';
+        wrList.innerHTML = '<div style="font-size: var(--fs-caption);color:var(--text-muted)">No work requests match this filter</div>';
         return;
       }
       filtered.forEach(function(wr) {
@@ -1570,7 +1335,7 @@
         else if (wr.state === 'Completed') stateColor = 'var(--accent)';
         else if (wr.state === 'New') stateColor = 'var(--text-dim)';
         var item = document.createElement('a');
-        item.className = 'dash-wr-item';
+        item.className = 'dash-wr-item list-row';
         var baseUrl = window.__wrBaseUrl || '';
         if (baseUrl) {
           item.href = baseUrl + '/_workitems/edit/' + wr.id;
@@ -1578,8 +1343,8 @@
         }
         item.innerHTML = '<span class="dash-pr-id">' + wr.id + '</span>' +
           '<span class="dash-pr-title">' + wr.title + '</span>' +
-          '<span style="color:' + stateColor + ';font-size:0.6rem;">' + wr.state + '</span>' +
-          '<span style="color:var(--text-muted);font-size:0.6rem;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (wr.assigned || '—') + '</span>';
+          '<span style="color:' + stateColor + ';font-size: var(--fs-micro);">' + wr.state + '</span>' +
+          '<span style="color:var(--text-muted);font-size: var(--fs-micro);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (wr.assigned || '—') + '</span>';
         wrList.appendChild(item);
       });
     }
@@ -1686,7 +1451,7 @@
     }
     commits.forEach(function(c) {
       var item = document.createElement('div');
-      item.className = 'dash-commit-item';
+      item.className = 'dash-commit-item list-row';
       item.innerHTML = '<span class="dash-commit-repo">' + c.repo + '</span>' +
         '<span class="dash-commit-hash">' + c.hash + '</span>' +
         '<span class="dash-commit-author">' + c.author + '</span>' +
@@ -1708,7 +1473,7 @@
     }
     branches.forEach(function(b) {
       var item = document.createElement('div');
-      item.className = 'dash-branch-item';
+      item.className = 'dash-branch-item list-row';
       item.innerHTML = '<span class="dash-branch-repo">' + b.repo + '</span>' +
         '<span class="dash-branch-name">' + b.name + '</span>' +
         '<span class="dash-branch-hash">' + b.last_commit_hash + '</span>' +
@@ -1732,13 +1497,13 @@
     conflicts.forEach(function(c) {
       var severity = c.file_count >= 3 ? 'high' : 'low';
       var item = document.createElement('div');
-      item.className = 'dash-conflict-item';
+      item.className = 'dash-conflict-item list-row';
       item.innerHTML =
         '<span class="dash-conflict-branch" title="' + c.branch_a + '">' + c.branch_a + '</span>' +
         '<span class="dash-conflict-arrow">&#8596;</span>' +
         '<span class="dash-conflict-branch" title="' + c.branch_b + '">' + c.branch_b + '</span>' +
         '<span class="dash-conflict-repo">' + c.repo + '</span>' +
-        '<span class="dash-conflict-badge dash-conflict-badge-' + severity + '">' + c.file_count + ' file' + (c.file_count !== 1 ? 's' : '') + '</span>' +
+        '<span class="dash-conflict-badge status-chip status-chip-outlined-muted dash-conflict-badge-' + severity + '">' + c.file_count + ' file' + (c.file_count !== 1 ? 's' : '') + '</span>' +
         '<div class="dash-conflict-files">' +
           c.overlapping_files.map(function(f) { return '<div class="dash-conflict-file">' + f + '</div>'; }).join('') +
         '</div>';
@@ -1772,7 +1537,7 @@
         timeStr = 'queued';
       }
       var item = document.createElement('div');
-      item.className = 'dash-pipeline-item';
+      item.className = 'dash-pipeline-item list-row';
       item.innerHTML = '<span class="dash-pipeline-icon ' + iconClass + '">' + statusLabel + '</span>' +
         '<span class="dash-pipeline-name">' + p.name + '</span>' +
         '<span class="dash-pipeline-duration">' + timeStr + '</span>' +
@@ -1785,7 +1550,7 @@
         badges.style.gridColumn = '1 / -1';
         for (var key in p.parameters) {
           var badge = document.createElement('span');
-          badge.className = 'dash-param-badge';
+          badge.className = 'dash-param-badge status-chip status-chip-outlined-muted';
           var val = key + '=' + p.parameters[key];
           badge.textContent = val.length > 30 ? val.slice(0, 30) + '...' : val;
           badge.title = key + '=' + p.parameters[key];
@@ -1813,7 +1578,7 @@
       else if (r.result === 'canceled') { icon = '&#8212;'; iconClass = 'dash-pipeline-icon-cancel'; }
 
       var item = document.createElement('div');
-      item.className = 'dash-pipeline-item';
+      item.className = 'dash-pipeline-item list-row';
       item.innerHTML = '<span class="dash-pipeline-icon ' + iconClass + '">' + icon + '</span>' +
         '<span class="dash-pipeline-name">' + r.name + '</span>' +
         '<span class="dash-pipeline-duration">' + r.duration_min + 'm</span>' +
@@ -1826,7 +1591,7 @@
         badges.style.gridColumn = '1 / -1';
         for (var key in r.parameters) {
           var badge = document.createElement('span');
-          badge.className = 'dash-param-badge';
+          badge.className = 'dash-param-badge status-chip status-chip-outlined-muted';
           var val = key + '=' + r.parameters[key];
           badge.textContent = val.length > 30 ? val.slice(0, 30) + '...' : val;
           badge.title = key + '=' + r.parameters[key];
@@ -1974,10 +1739,10 @@
           var pts = (d.state_points && d.state_points[entry.state]) ? d.state_points[entry.state] : 0;
           var color = reportStateColors[entry.state] || '#666';
           stateBarHtml += '<div style="display:grid;grid-template-columns:100px 1fr 40px 50px;align-items:center;gap:0.5rem;margin-bottom:0.4rem;">'
-            + '<span style="font-size:0.75rem;color:#ccc;text-align:right;">' + entry.state + '</span>'
+            + '<span style="font-size: var(--fs-sm);color:#ccc;text-align:right;">' + entry.state + '</span>'
             + '<div style="height:20px;background:#111;border:1px solid #222;position:relative;"><div style="height:100%;width:' + pct + '%;background:' + color + ';opacity:0.85;"></div></div>'
-            + '<span style="font-size:0.7rem;color:#909090;">' + entry.count + '</span>'
-            + '<span style="font-size:0.7rem;color:#909090;">' + pts + ' pts</span>'
+            + '<span style="font-size: var(--fs-caption);color:#909090;">' + entry.count + '</span>'
+            + '<span style="font-size: var(--fs-caption);color:#909090;">' + pts + ' pts</span>'
             + '</div>';
         });
       }
@@ -1992,7 +1757,7 @@
           var pct = (entry.count / totalItems * 100).toFixed(1);
           var color = reportStateColors[entry.state] || '#666';
           progressHtml += '<div style="height:100%;width:' + pct + '%;background:' + color + ';opacity:0.85;"></div>';
-          progressLegendHtml += '<span style="display:inline-flex;align-items:center;gap:0.3rem;margin-right:1rem;font-size:0.65rem;color:#909090;">'
+          progressLegendHtml += '<span style="display:inline-flex;align-items:center;gap:0.3rem;margin-right:1rem;font-size: var(--fs-detail);color:#909090;">'
             + '<span style="width:10px;height:10px;background:' + color + ';display:inline-block;opacity:0.85;"></span>'
             + entry.state + ' (' + entry.count + ')</span>';
         });
@@ -2012,9 +1777,9 @@
             barHtml += '<div style="height:100%;width:' + segPct + '%;background:' + color + ';opacity:0.85;"></div>';
           }
           teamHtml += '<div style="display:grid;grid-template-columns:140px 1fr 50px;align-items:center;gap:0.6rem;margin-bottom:0.6rem;">'
-            + '<span style="font-size:0.75rem;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + m.name + '</span>'
+            + '<span style="font-size: var(--fs-sm);color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + m.name + '</span>'
             + '<div style="height:22px;display:flex;border:1px solid #222;overflow:hidden;">' + barHtml + '</div>'
-            + '<span style="font-size:0.65rem;color:#909090;text-align:right;">' + m.points + ' pts</span>'
+            + '<span style="font-size: var(--fs-detail);color:#909090;text-align:right;">' + m.points + ' pts</span>'
             + '</div>';
         });
       }
@@ -2024,28 +1789,28 @@
       if (d.prs && d.prs.length) {
         d.prs.forEach(function(pr) {
           var ageColor = pr.age_days > 7 ? '#ff3333' : pr.age_days > 2 ? '#ffb000' : accent;
-          prHtml += '<div style="display:grid;grid-template-columns:40px 1fr 90px 40px;align-items:center;gap:0.5rem;padding:0.3rem 0.5rem;background:#0a0a0a;border:1px solid #222;margin-bottom:0.3rem;font-size:0.7rem;">'
+          prHtml += '<div style="display:grid;grid-template-columns:40px 1fr 90px 40px;align-items:center;gap:0.5rem;padding:0.3rem 0.5rem;background:#0a0a0a;border:1px solid #222;margin-bottom:0.3rem;font-size: var(--fs-caption);">'
             + '<span style="color:' + accent + ';">#' + pr.id + '</span>'
             + '<span style="color:#ccc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + pr.title + '</span>'
-            + '<span style="color:#666;font-size:0.6rem;">' + pr.repo + '</span>'
+            + '<span style="color:#666;font-size: var(--fs-micro);">' + pr.repo + '</span>'
             + '<span style="color:' + ageColor + ';text-align:right;">' + pr.age_days + 'd</span>'
             + '</div>';
         });
       } else {
-        prHtml = '<div style="font-size:0.7rem;color:#909090;">No active pull requests</div>';
+        prHtml = '<div style="font-size: var(--fs-caption);color:#909090;">No active pull requests</div>';
       }
 
       // Build risks
       var risksHtml = '';
       if (d.risks && d.risks.length) {
         d.risks.forEach(function(r) {
-          risksHtml += '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem 0.5rem;font-size:0.7rem;color:#ccc;border-left:3px solid #ff3333;background:#0a0a0a;margin-bottom:0.3rem;">'
-            + '<span style="font-size:0.55rem;text-transform:uppercase;letter-spacing:0.06em;color:#ff3333;white-space:nowrap;">' + r.type + '</span>'
+          risksHtml += '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem 0.5rem;font-size: var(--fs-caption);color:#ccc;border-left:3px solid #ff3333;background:#0a0a0a;margin-bottom:0.3rem;">'
+            + '<span style="font-size: var(--fs-micro);text-transform:uppercase;letter-spacing:0.06em;color:#ff3333;white-space:nowrap;">' + r.type + '</span>'
             + r.title + ' (' + r.id + ')' + (r.assigned ? ' — ' + r.assigned : '')
             + '</div>';
         });
       } else {
-        risksHtml = '<div style="font-size:0.7rem;color:#909090;">No risks detected</div>';
+        risksHtml = '<div style="font-size: var(--fs-caption);color:#909090;">No risks detected</div>';
       }
 
       // Assemble the full report HTML
@@ -2058,15 +1823,15 @@
         + '.report-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }\n'
         + '.report-full { grid-column: 1 / -1; }\n'
         + '.report-card { background: #0a0a0a; border: 1px solid #222; padding: 1rem; }\n'
-        + '.report-card-title { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; color: #666; margin-bottom: 0.75rem; }\n'
+        + '.report-card-title { font-size: var(--fs-detail); text-transform: uppercase; letter-spacing: 0.1em; color: #666; margin-bottom: 0.75rem; }\n'
         + '.report-header { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #222; margin-bottom: 0.5rem; }\n'
         + '.report-header h1 { font-size: 1.1rem; color: #fff; text-transform: uppercase; letter-spacing: 0.08em; }\n'
-        + '.report-meta { grid-column: 1 / -1; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.4rem 1.2rem; padding: 0.4rem 0 0.8rem; font-size: 0.65rem; color: #909090; }\n'
+        + '.report-meta { grid-column: 1 / -1; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.4rem 1.2rem; padding: 0.4rem 0 0.8rem; font-size: var(--fs-detail); color: #909090; }\n'
         + '.report-meta-val { color: ' + accent + '; font-weight: 700; }\n'
         + '.report-meta-sep { color: #222; }\n'
         + '</style>\n</head><body>\n'
         + '<div class="report-grid">\n'
-        + '  <div class="report-header"><h1>Sprint Report: ' + sprintName + '</h1><span style="font-size:0.6rem;color:#666;">Generated ' + now + '</span></div>\n'
+        + '  <div class="report-header"><h1>Sprint Report: ' + sprintName + '</h1><span style="font-size: var(--fs-micro);color:#666;">Generated ' + now + '</span></div>\n'
         + '  <div class="report-meta">\n'
         + '    <span><span class="report-meta-val">' + sprintName + '</span></span>\n'
         + '    <span class="report-meta-sep">|</span>\n'

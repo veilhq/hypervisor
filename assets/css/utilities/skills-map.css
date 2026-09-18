@@ -1,15 +1,9 @@
 /* ===== Kiro Skills Map (page chrome) =====
    Rows use the shared .skill-row primitive (hyperkit/css/cards.css).
-   This file styles only the page-level wrapper: intro, toolbar, search,
-   stats, and empty state. Tokens from hyperkit/css/tokens.css. */
+   This file styles only the page-level chrome: intro, toolbar, search,
+   stats, and empty state. Layout comes from the shared .utility-body
+   primitive. Tokens from hyperkit/css/tokens.css. */
 
-.skills-map {
-  width: 100%;
-  animation: fadeSlideIn var(--motion-slow) var(--ease) both;
-}
-.skills-map h1 {
-  margin-bottom: var(--space-3);
-}
 .skills-intro {
   color: var(--text-muted);
   font-size: var(--fs-body);
@@ -20,9 +14,6 @@
 
 /* ---- Toolbar ---- */
 .skills-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
   gap: var(--space-4);
   margin-bottom: var(--space-5);
   flex-wrap: wrap;
@@ -42,26 +33,13 @@
   color: var(--text-dim);
   pointer-events: none;
 }
+/* Composes .form-input; keeps the card fill, body font, and icon-left padding. */
 .skills-search {
-  width: 100%;
   background: var(--bg-card);
-  border: var(--border-hair) solid var(--border);
-  border-radius: var(--radius);
-  color: var(--text-bright);
-  font-family: inherit;
   font-size: var(--fs-body);
   padding: var(--space-2) var(--space-3) var(--space-2) calc(var(--space-3) * 2 + 13px);
-  transition: border-color var(--motion-fast) var(--ease);
-}
-.skills-search:focus {
-  outline: none;
-  border-color: var(--accent);
-}
-.skills-search::placeholder {
-  color: var(--text-dim);
 }
 .skills-stats {
-  display: flex;
   align-items: baseline;
   gap: var(--space-3);
   font-size: var(--fs-detail);

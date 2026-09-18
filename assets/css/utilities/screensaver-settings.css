@@ -1,7 +1,7 @@
 /* ===== Screensaver Utility ===== */
 
 .ss-subtitle {
-  font-size: 0.75rem;
+  font-size: var(--fs-sm);
   color: var(--text-muted);
   margin: var(--space-1) 0 var(--space-1-25);
   line-height: 1.6;
@@ -9,7 +9,7 @@
 .ss-kbd {
   display: inline-block;
   font-family: var(--font);
-  font-size: 0.6rem;
+  font-size: var(--fs-micro);
   color: var(--text-bright);
   background: var(--bg-elevated);
   border: var(--border-hair) solid var(--border-strong);
@@ -18,17 +18,16 @@
   vertical-align: 1px;
 }
 
-/* ---- Mode cards grid ---- */
+/* ---- Mode cards grid (main column of the split) ---- */
 .ss-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: var(--space-3);
-  margin-bottom: var(--space-5);
+  align-content: start;
 }
+/* Composes .content-card; keeps the preview clip and the card's own faster
+   hover (lift + strong border) distinct from the primitive default. */
 .ss-card {
-  border: var(--border-hair) solid var(--border);
-  border-radius: var(--radius);
-  background: var(--bg-card);
   transition: border-color var(--motion-base) var(--ease), background var(--motion-fast) var(--ease), transform var(--motion-fast) var(--ease);
   overflow: hidden;
 }
@@ -37,6 +36,7 @@
   background: var(--bg-card-hover);
   transform: translateY(-2px);
 }
+/* Composes .content-card-active; keeps the solid-accent border + steady fill. */
 .ss-card.selected {
   border-color: var(--accent);
   background: var(--bg-card);
@@ -49,7 +49,7 @@
 .ss-card-preview {
   display: block;
   width: 100%;
-  height: 140px;
+  height: 180px;
   border-bottom: var(--border-hair) solid var(--border);
   image-rendering: pixelated;
 }
@@ -77,7 +77,7 @@
   color: var(--accent);
 }
 .ss-card-name {
-  font-size: 0.75rem;
+  font-size: var(--fs-sm);
   font-weight: 700;
   color: var(--text-bright);
   text-transform: uppercase;
@@ -95,21 +95,27 @@
   line-height: 1.5;
 }
 
-/* ---- Settings ---- */
+/* ---- Settings rail (aside of the split) ---- */
+/* Sticks below the topbar so the controls stay in view while the mode-card
+   grid scrolls in the main column. */
+.ss-panel {
+  position: sticky;
+  top: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
 .ss-settings {
   border: var(--border-hair) solid var(--border);
   border-radius: var(--radius);
   background: var(--bg-card);
   padding: var(--space-3);
-  margin-bottom: var(--space-4);
   display: flex;
   flex-direction: column;
   gap: var(--space-0-6);
 }
+/* Composes .flex-between; keeps the wider inter-item gap. */
 .ss-setting-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
   gap: var(--space-4);
 }
 .ss-setting-row label {
@@ -118,42 +124,17 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
-.ss-setting-row select {
-  padding: 0.35rem var(--space-2);
-  background: var(--bg);
-  border: var(--border-hair) solid var(--border-strong);
-  border-radius: var(--radius);
-  color: var(--text);
-  font-family: var(--font);
-  font-size: var(--fs-label);
-}
-.ss-setting-row select:focus {
-  border-color: var(--accent);
-  outline: none;
-}
-.ss-setting-row input[type="checkbox"] {
-  accent-color: var(--accent);
-}
+/* ss select + checkbox normalized to shared .form-select / .form-check (see markup). */
 
-/* ---- Actions ---- */
+/* ---- Actions (rail footer) ---- */
+/* Composes .flex-center; the launch button fills the rail width. */
 .ss-actions {
-  display: flex;
-  gap: var(--space-2);
 }
+/* Composes .action-button.action-button-primary; keeps the wider launch
+   padding and the tighter tracking. Full-width in the rail. */
 .ss-launch {
+  width: 100%;
   padding: var(--space-2) var(--space-1-2);
-  background: var(--bg);
-  border: var(--border-hair) solid var(--accent);
-  border-radius: var(--radius);
-  color: var(--accent);
-  font-family: var(--font);
-  font-size: var(--fs-label);
-  text-transform: uppercase;
   letter-spacing: 0.08em;
-  transition: background var(--motion-fast) var(--ease), color var(--motion-fast) var(--ease);
-}
-.ss-launch:hover {
-  background: var(--accent);
-  color: var(--bg);
 }
 

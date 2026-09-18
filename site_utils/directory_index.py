@@ -372,7 +372,7 @@ def generate_home_content(files, build_stats=None, recent_paths=None):
         summary_parts.append(f'built {build_time}')
     pulse_summary = ' &middot; '.join(summary_parts)
     html.append(
-        f'<h2 class="home-section-header"><i data-lucide="rocket" class="section-icon"></i> Active'
+        f'<h2 class="home-section-header"><i data-lucide="rocket" class="section-icon"></i> In Progress'
         f' <span class="pulse-summary">{pulse_summary}</span></h2>'
     )
 
@@ -559,35 +559,47 @@ def generate_dir_index_content(files, dir_prefix, recent_paths=None):
 
     html = []
 
-    # --- Directory header ---
+    # --- Directory header (sits ABOVE the drawer, outside .dir-surface) ---
     _render_dir_header(html, files, dir_prefix, title)
 
-    # --- Subdirectories ---
+    # --- The directory contents are the objects inside a recessed drawer ---
+    html.append('<div class="dir-surface">')
+
+    # --- Subdirectories: a "Folders" zone at the top. Subdirs are objects you
+    #     click into (normal navigation), not inline-expanded sections. Rich
+    #     tiles for a manageable count; a compact dock strip when there are many.
     if subdirs:
         dir_has_recent_fn = _dir_has_recent_factory(recent_paths)
-
-        if len(subdirs) == 1:
-            _render_subdirs_single(html, files, dir_prefix, subdirs[0], recent_paths)
-        elif len(subdirs) > COMPACT_THRESHOLD:
-            _render_subdirs_grouped(html, files, dir_prefix, subdirs, dir_has_recent_fn)
-        else:
+        html.append('<div class="dir-zone">')
+        html.append('<div class="dir-zone-label"><i data-lucide="folder" class="dir-zone-icon"></i> Folders</div>')
+        if len(subdirs) > COMPACT_THRESHOLD:
             _render_subdirs_dock(html, files, dir_prefix, subdirs, dir_has_recent_fn)
+        else:
+            _render_subdirs_dashboard(html, files, dir_prefix, subdirs, dir_has_recent_fn)
+        html.append('</div>')
 
-    # --- Document entries ---
+    # --- Document entries: a "Files" zone. The ridge label only appears when
+    #     subdirs are also present (otherwise the whole drawer is just files).
     if doc_entries:
         is_work_dir = dir_prefix.startswith("work/to-do") or dir_prefix.startswith("work/done")
         is_ideas_dir = dir_prefix == "ideas"
 
+        html.append('<div class="dir-zone">')
+        if subdirs:
+            html.append('<div class="dir-zone-label"><i data-lucide="file-text" class="dir-zone-icon"></i> Files</div>')
         if (is_work_dir or is_ideas_dir) and len(doc_entries) > 5:
             _render_work_items_list(html, files, dir_prefix, doc_entries, recent_paths, is_ideas_dir)
         else:
             _render_doc_list_standard(html, files, dir_prefix, doc_entries, recent_paths)
+        html.append('</div>')
 
     if not subdirs and not doc_entries:
         html.append('<p class="empty-msg">No documents in this directory.</p>')
 
-    # --- Raw HTML prototypes ---
+    # --- Raw HTML prototypes: a "Prototypes" zone inside the drawer ---
     _render_prototypes(html, dir_prefix)
+
+    html.append('</div>')  # .dir-surface
 
     return "\n".join(html), title
 
@@ -628,14 +640,16 @@ def _render_dir_header(html, files, dir_prefix, title):
             if date_str > last_activity:
                 last_activity = date_str
 
-    html.append('<div class="dir-header">')
-    html.append('<div class="dir-header-top">')
-    html.append(f'<i data-lucide="{icon}" class="dir-header-icon"></i>')
-    html.append(f'<h1 class="dir-header-title">{title}</h1>')
+    html.append('<div class="dir-head">')
+    html.append('<div class="dir-headings">')
+    html.append('<div class="dir-title-row">')
+    html.append(f'<i data-lucide="{icon}" class="dir-title-icon"></i>')
+    html.append(f'<h1 class="dir-title">{title}</h1>')
     html.append('</div>')
     if desc:
-        html.append(f'<div class="dir-header-desc">{desc}</div>')
-    html.append('<div class="dir-header-stats">')
+        html.append(f'<div class="dir-desc">{desc}</div>')
+    html.append('</div>')
+    html.append('<div class="dir-stats">')
     html.append(f'<span class="dir-stat"><i data-lucide="file-text" class="dir-stat-icon"></i><span class="dir-stat-val">{total_docs}</span><span class="dir-stat-label">docs</span></span>')
     html.append(f'<span class="dir-stat"><i data-lucide="folder" class="dir-stat-icon"></i><span class="dir-stat-val">{len(subdirs)}</span><span class="dir-stat-label">dirs</span></span>')
     if last_activity and not last_activity.startswith("0000"):
@@ -646,14 +660,21 @@ def _render_dir_header(html, files, dir_prefix, title):
 
 
 def _render_subdirs_single(html, files, dir_prefix, sd, recent_paths):
-    """Render a single subdirectory inline — expand its contents instead of showing a lone dock item."""
+    """DEAD CODE (unreferenced since the Option-2 folder-zone routing).
+
+    Formerly expanded a lone subdirectory inline. Directories now render
+    subdirs as folder rows in a "Folders" zone via _render_subdirs_dashboard /
+    _render_subdirs_dock; nothing calls this. Retained rather than deleted to
+    keep the diff small; safe to remove.
+    """
     _dir_has_recent = _dir_has_recent_factory(recent_paths)
     sd_path = f"{dir_prefix}/{sd}"
     sd_label = dir_label(sd)
     child_subdirs, child_docs = collect_dir_contents(files, sd_path)
 
-    # Show a linked section header for the single child
-    html.append('<div class="content-section documents-section">')
+    # Show a linked section header for the single child. Frameless wrapper —
+    # this sits inside the .dir-surface drawer, so no bordered card of its own.
+    html.append('<div class="dir-subsection">')
     sd_icon = CATEGORY_ICONS.get(sd, "folder")
     html.append(f'<h2><a href="{sd}/index.html" style="color:inherit;text-decoration:none;border:none"><i data-lucide="{sd_icon}" class="section-icon"></i> {sd_label}</a></h2>')
 
@@ -743,7 +764,13 @@ def _render_subdirs_single(html, files, dir_prefix, sd, recent_paths):
 
 
 def _render_subdirs_grouped(html, files, dir_prefix, subdirs, dir_has_recent_fn):
-    """Render subdirectories as grouped shelves by application (>10 subdirs)."""
+    """DEAD CODE (unreferenced since the Option-2 folder-zone routing).
+
+    Formerly rendered app-grouped shelves for directories with >10 subdirs.
+    That case now uses the compact _render_subdirs_dock strip in the "Folders"
+    zone; nothing calls this. Retained rather than deleted to keep the diff
+    small; safe to remove.
+    """
     subdir_data = []
     for sd in subdirs:
         sd_path = f"{dir_prefix}/{sd}"
@@ -774,21 +801,22 @@ def _render_subdirs_grouped(html, files, dir_prefix, subdirs, dir_has_recent_fn)
     # Collect unique statuses across all items
     statuses = sorted(set((d[4] or "").strip() for d in subdir_data if d[4]))
 
-    html.append('<div class="content-section documents-section">')
+    # Frameless wrapper — sits inside the .dir-surface drawer, no bordered card.
+    html.append('<div class="dir-subsection">')
     html.append(f'<h2><i data-lucide="folder" class="section-icon"></i> Items ({len(subdir_data)})</h2>')
     html.append('<div class="todo-filters" id="todo-filters">')
-    html.append('  <input type="text" class="todo-filter-input" id="todo-filter-name" placeholder="filter by name" spellcheck="false">')
-    html.append('  <select class="todo-filter-select" id="todo-filter-app">')
+    html.append('  <input type="text" class="todo-filter-input form-input" id="todo-filter-name" placeholder="filter by name" spellcheck="false">')
+    html.append('  <select class="todo-filter-select form-select" id="todo-filter-app">')
     html.append('    <option value="">all apps</option>')
     for gk in ordered_groups:
         html.append(f'    <option value="{gk}">{seen_groups[gk]}</option>')
     html.append('  </select>')
-    html.append('  <select class="todo-filter-select" id="todo-filter-type">')
+    html.append('  <select class="todo-filter-select form-select" id="todo-filter-type">')
     html.append('    <option value="">all types</option>')
     html.append('    <option value="personal">personal</option>')
     html.append('    <option value="professional">professional</option>')
     html.append('  </select>')
-    html.append('  <select class="todo-filter-select" id="todo-filter-status">')
+    html.append('  <select class="todo-filter-select form-select" id="todo-filter-status">')
     html.append('    <option value="">all statuses</option>')
     for s in statuses:
         html.append(f'    <option value="{s.lower()}">{s}</option>')
@@ -929,32 +957,27 @@ def _render_subdirs_dashboard(html, files, dir_prefix, subdirs, dir_has_recent_f
 
 
 def _render_subdirs_dock(html, files, dir_prefix, subdirs, dir_has_recent_fn):
-    """Render subdirectories as a dock-style strip (2-10 subdirs, non-top-level)."""
-    # Determine if this is a top-level category (children shown in site nav)
-    is_top_level = "/" not in dir_prefix and "\\" not in dir_prefix
-    if is_top_level:
-        # Project Context gets a rich dashboard in the page body so external
-        # users can dig into each subject area, not just the nav rail. Other
-        # top-level categories rely on the nav rail (children listed there).
-        if dir_prefix == "context":
-            _render_subdirs_dashboard(html, files, dir_prefix, subdirs, dir_has_recent_fn)
-    else:
-        # Dock-style strip for deeper directories not in the nav
-        html.append('<nav class="home-dock" aria-label="Subdirectories">')
-        for sd in subdirs:
-            sd_path = f"{dir_prefix}/{sd}"
-            sd_label = dir_label(sd)
-            count = count_docs_under(files, sd_path)
-            sd_icon = CATEGORY_ICONS.get(sd, "folder")
-            dock_cls = "dock-item dock-item-recent" if dir_has_recent_fn(sd_path) else "dock-item"
-            html.append(
-                f'<a href="{sd}/index.html" class="{dock_cls}" data-tooltip="{sd_label} ({count})">'
-                f'<i data-lucide="{sd_icon}" class="dock-icon"></i>'
-                f'<span class="dock-label">{sd_label}</span>'
-                f'<span class="dock-count">{count}</span>'
-                f'</a>'
-            )
-        html.append('</nav>')
+    """Render subdirectories as a compact dock-style strip.
+
+    Used for the "Folders" zone when a directory has many subdirs (above
+    COMPACT_THRESHOLD); the caller decides dock vs. dashboard tiles. Renders the
+    strip unconditionally with root-absolute hrefs so it resolves from any depth.
+    """
+    html.append('<nav class="home-dock" aria-label="Subdirectories">')
+    for sd in subdirs:
+        sd_path = f"{dir_prefix}/{sd}"
+        sd_label = dir_label(sd)
+        count = count_docs_under(files, sd_path)
+        sd_icon = CATEGORY_ICONS.get(sd, "folder")
+        dock_cls = "dock-item dock-item-recent" if dir_has_recent_fn(sd_path) else "dock-item"
+        html.append(
+            f'<a href="/{dir_prefix}/{sd}/index.html" class="{dock_cls}" data-tooltip="{sd_label} ({count})">'
+            f'<i data-lucide="{sd_icon}" class="dock-icon"></i>'
+            f'<span class="dock-label">{sd_label}</span>'
+            f'<span class="dock-count">{count}</span>'
+            f'</a>'
+        )
+    html.append('</nav>')
 
 
 
@@ -962,7 +985,11 @@ def _render_work_items_list(html, files, dir_prefix, doc_entries, recent_paths, 
     """Render work items or ideas with filter controls and flat sorted list."""
     from .file_utils import _extract_status_from_text, _extract_type_from_text, _extract_tags_from_text, infer_app_group
 
-    html.append('<div class="content-section documents-section">')
+    # Sits inside the .dir-surface drawer opened by the caller — a plain
+    # grouping wrapper, not its own bordered card. Filter controls and horizon
+    # shelves render inside the drawer; row structure (.todo-list li) is
+    # preserved so the todo-filter and shelf JS keep working.
+    html.append('<div class="dir-work-list">')
 
     enriched = []
     statuses_set = set()
@@ -1027,21 +1054,20 @@ def _render_work_items_list(html, files, dir_prefix, doc_entries, recent_paths, 
         if k not in ordered_groups:
             ordered_groups.append(k)
 
-    html.append(f'<h2><i data-lucide="{"lightbulb" if is_ideas else "file-text"}" class="section-icon"></i> {"Ideas" if is_ideas else "Items"} ({len(enriched)})</h2>')
     html.append('<div class="todo-filters" id="todo-filters">')
-    html.append('  <input type="text" class="todo-filter-input" id="todo-filter-name" placeholder="filter by name" spellcheck="false">')
-    html.append('  <select class="todo-filter-select" id="todo-filter-app">')
+    html.append('  <input type="text" class="todo-filter-input form-input" id="todo-filter-name" placeholder="filter by name" spellcheck="false">')
+    html.append('  <select class="todo-filter-select form-select" id="todo-filter-app">')
     html.append('    <option value="">all apps</option>')
     for gk in ordered_groups:
         html.append(f'    <option value="{gk}">{app_groups_seen[gk]}</option>')
     html.append('  </select>')
-    html.append('  <select class="todo-filter-select" id="todo-filter-type">')
+    html.append('  <select class="todo-filter-select form-select" id="todo-filter-type">')
     html.append('    <option value="">all types</option>')
     html.append('    <option value="personal">personal</option>')
     html.append('    <option value="professional">professional</option>')
     html.append('  </select>')
     if not is_ideas:
-        html.append('  <select class="todo-filter-select" id="todo-filter-status">')
+        html.append('  <select class="todo-filter-select form-select" id="todo-filter-status">')
         html.append('    <option value="">all statuses</option>')
         for s in statuses:
             html.append(f'    <option value="{s.lower()}">{s}</option>')
@@ -1110,10 +1136,12 @@ def _render_work_item_row(html, rel, doc_title, status, item_type, app_key, desc
 
 
 def _render_doc_list_standard(html, files, dir_prefix, doc_entries, recent_paths):
-    """Render a standard document list (non-work, non-ideas directories)."""
-    html.append('<div class="content-section documents-section">')
-    html.append('<h2><i data-lucide="file-text" class="section-icon"></i> Documents</h2>')
-    html.append('<ul class="doc-list">')
+    """Render a standard document list (non-work, non-ideas directories).
+
+    Rows render as raised .dir-item objects resting inside the .dir-surface
+    drawer opened by the caller; no bordered card wrapper of its own.
+    """
+    html.append('<div class="dir-items">')
 
     # Enrich entries with date metadata for sorting
     enriched = []
@@ -1157,11 +1185,11 @@ def _render_doc_list_standard(html, files, dir_prefix, doc_entries, recent_paths
 
     is_external = dir_prefix == ".external"
 
-    for rel, doc_title, date_str, date_label, doc_tags, doc_snippet in enriched:
+    for idx, (rel, doc_title, date_str, date_label, doc_tags, doc_snippet) in enumerate(enriched):
         rel_posix = str(rel).replace("\\", "/")
         fname_stem = PurePosixPath(rel_posix).stem
         date_content = display_date(date_str) if date_label else ""
-        li_cls = ' class="doc-recent"' if rel_posix in recent_paths else ''
+        recent_cls = " dir-item-recent" if rel_posix in recent_paths else ""
         # Tags as small chips
         tags_html = ""
         if doc_tags:
@@ -1173,28 +1201,134 @@ def _render_doc_list_standard(html, files, dir_prefix, doc_entries, recent_paths
         # Hidden doc-path for external delete buttons (consumed by drop-import.js)
         doc_path_html = f'<span class="doc-path">{PurePosixPath(rel_posix).name}</span>' if is_external else ''
         html.append(
-            f'<li{li_cls}>'
-            f'<a href="{fname_stem}/index.html"><i data-lucide="file-text" class="doc-icon"></i> {doc_title}</a>'
+            f'<div class="dir-item{recent_cls}" style="--i:{idx}">'
+            f'<a href="{fname_stem}/index.html"><i data-lucide="file-text" class="doc-icon"></i><span class="txt">{doc_title}</span></a>'
             f'<span class="doc-date">{date_content}</span>'
             f'{snippet_html}{tags_html}{doc_path_html}'
-            f'</li>'
+            f'</div>'
         )
-    html.append('</ul>')
     html.append('</div>')
 
 
+def _parse_prototypes_meta(dir_path):
+    """Parse the 'Current Prototypes' table in a directory's _meta.md.
+
+    Returns a dict keyed by prototype stem (the .html filename without
+    extension) with {'desc', 'idea_href', 'idea_label', 'status'}. Absent
+    file or table yields an empty dict — callers fall back to glob-only.
+
+    The table format is:
+      | [stem](stem.html) | Description | [label](path) or -- | Status |
+    Enrichment is best-effort: a row that doesn't parse is skipped, not fatal.
+    """
+    meta_path = dir_path / "_meta.md"
+    if not meta_path.exists():
+        return {}
+    out = {}
+    # Match a table row whose first cell links to a *.html file.
+    link_re = re.compile(r'\[[^\]]*\]\(([^)]+?)\.html\)')
+    idea_re = re.compile(r'\[([^\]]+)\]\(([^)]+)\)')
+    for line in read_md(meta_path).splitlines():
+        stripped = line.strip()
+        if not stripped.startswith("|"):
+            continue
+        cells = [c.strip() for c in stripped.strip("|").split("|")]
+        if len(cells) < 4:
+            continue
+        m = link_re.search(cells[0])
+        if not m:
+            continue
+        stem = PurePosixPath(m.group(1)).name
+        desc = cells[1]
+        idea_cell = cells[2]
+        status = cells[3]
+        idea_href = idea_label = ""
+        im = idea_re.search(idea_cell)
+        if im:
+            idea_label = im.group(1)
+            idea_href = im.group(2)
+        out[stem] = {
+            "desc": desc,
+            "idea_href": idea_href,
+            "idea_label": idea_label,
+            "status": "" if status in ("", "-", "--", "—") else status,
+        }
+    return out
+
+
 def _render_prototypes(html, dir_prefix):
-    """Render links to raw HTML prototype files in the directory."""
+    """Render raw HTML prototypes as a masonry gallery of live-preview cards.
+
+    Each card is a link to the prototype's standalone page; its media area is a
+    lazy, scaled, inert <iframe> of that page (loaded by hv-preview.js only when
+    scrolled into view). Description / idea-link / status are enriched from the
+    directory's _meta.md 'Current Prototypes' table where a matching row exists;
+    prototypes with no row still render (title + live preview).
+    """
     dir_path = HYPERSPACE_ROOT / dir_prefix
-    if dir_path.is_dir():
-        html_files = sorted(dir_path.glob("*.html"))
-        if html_files:
-            html.append('<div class="content-section documents-section">')
-            html.append('<h2><i data-lucide="code" class="section-icon"></i> Prototypes</h2>')
-            html.append('<ul class="doc-list">')
-            for hf in html_files:
-                hf_name = hf.stem.replace("-", " ").replace("_", " ").title()
-                html.append(f'<li><a href="{hf.stem}/index.html"><i data-lucide="layout" class="doc-icon"></i> {hf_name}</a>'
-                            f'<span class="doc-path">{hf.name}</span></li>')
-            html.append('</ul>')
-            html.append('</div>')
+    if not dir_path.is_dir():
+        return
+    html_files = sorted(dir_path.glob("*.html"))
+    if not html_files:
+        return
+
+    meta = _parse_prototypes_meta(dir_path)
+
+    html.append('<div class="dir-zone">')
+    html.append('<div class="dir-zone-label"><i data-lucide="layout-grid" class="dir-zone-icon"></i> Prototypes</div>')
+    html.append('<div class="preview-masonry">')
+    for hf in html_files:
+        stem = hf.stem
+        info = meta.get(stem, {})
+        title = stem.replace("-", " ").replace("_", " ").title()
+        # Media frame: a bordered inner "screen" containing a lazy live iframe
+        # of the prototype (loaded by hv-preview.js on scroll) over a quiet
+        # glyph poster shown until it paints. The frame's overflow:hidden clips
+        # the iframe, so it is structurally contained and cannot overlap body.
+        media = (
+            '<span class="preview-card-media">'
+            '<span class="preview-card-frame">'
+            f'<iframe data-preview-src="{stem}/index.html" title="{title} preview" '
+            'loading="lazy" tabindex="-1" aria-hidden="true" scrolling="no"></iframe>'
+            '<span class="preview-card-glyph"><i data-lucide="layout"></i></span>'
+            '</span>'
+            '</span>'
+        )
+        # Body: title, optional description, meta row (status chip + reference chip).
+        body_parts = [f'<span class="preview-card-title">{title}</span>']
+        desc = info.get("desc", "")
+        if desc:
+            body_parts.append(f'<span class="preview-card-desc">{desc}</span>')
+        meta_parts = []
+        status = info.get("status", "")
+        if status:
+            status_cls = "status-" + status.lower().replace(" ", "-")
+            # Active work reads accent; ideas/explorations read quiet.
+            variant = (
+                "outlined-accent"
+                if "progress" in status.lower()
+                else "outlined-muted"
+            )
+            meta_parts.append(
+                render_chip(variant, status, extra_class=status_cls)
+            )
+        idea_href = info.get("idea_href", "")
+        if idea_href:
+            label = info.get("idea_label") or "idea"
+            # A WI reference gets the pull-request glyph; a doc link the bulb.
+            icon = "git-pull-request" if label.upper().startswith("WI-") else "lightbulb"
+            meta_parts.append(
+                f'<span class="preview-card-ref">'
+                f'<i data-lucide="{icon}"></i>{label}'
+                f'</span>'
+            )
+        if meta_parts:
+            body_parts.append(
+                '<span class="preview-card-meta">' + "".join(meta_parts) + '</span>'
+            )
+        body = f'<span class="preview-card-body">{"".join(body_parts)}</span>'
+        html.append(
+            f'<a class="preview-card" href="{stem}/index.html">{media}{body}</a>'
+        )
+    html.append('</div>')  # /.preview-masonry
+    html.append('</div>')  # /.dir-zone

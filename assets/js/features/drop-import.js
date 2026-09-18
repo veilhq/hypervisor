@@ -33,13 +33,13 @@
   }
 
   function initDropZone() {
-    _dropZone = document.createElement("li");
-    _dropZone.className = "drop-zone";
+    _dropZone = document.createElement("div");
+    _dropZone.className = "dir-item drop-zone";
     _dropZone.innerHTML =
       '<i data-lucide="file-down"></i>' +
       "<span>drop .md files here to import</span>";
 
-    var docList = document.querySelector(".doc-list");
+    var docList = document.querySelector(".dir-items");
     if (docList) {
       docList.insertBefore(_dropZone, docList.firstChild);
     } else {
@@ -82,12 +82,12 @@
 
       // Show importing state: insert skeleton rows after the drop zone
       _dropZone.classList.add("importing");
-      var docList = document.querySelector(".doc-list");
+      var docList = document.querySelector(".dir-items");
       var skeletonItems = [];
       var insertRef = _dropZone.nextSibling;
       for (var i = 0; i < mdFiles.length; i++) {
-        var skeletonLi = document.createElement("li");
-        skeletonLi.className = "loading-skeleton-row doc-skeleton";
+        var skeletonLi = document.createElement("div");
+        skeletonLi.className = "dir-item loading-skeleton-row doc-skeleton";
         skeletonLi.innerHTML =
           '<span class="loading-skeleton loading-skeleton-line doc-skeleton-title"></span>' +
           '<span class="loading-skeleton loading-skeleton-line loading-skeleton-sm doc-skeleton-date"></span>';
@@ -135,7 +135,7 @@
   }
 
   function initDeleteButtons() {
-    var items = document.querySelectorAll(".doc-list li");
+    var items = document.querySelectorAll(".dir-item");
     items.forEach(function (li) {
       var pathSpan = li.querySelector(".doc-path");
       if (!pathSpan) return;

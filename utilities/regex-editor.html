@@ -1,13 +1,13 @@
-<div class="rx-layout">
+<div class="utility-body-split" style="--util-aside:320px">
   <div class="rx-editor">
     <h1><i data-lucide="regex" class="utility-title-icon"></i> Regex Editor</h1>
 
     <!-- Pattern input -->
     <div class="rx-pattern-wrap">
       <span class="rx-delim">/</span>
-      <input type="text" id="rx-pattern" class="rx-pattern" placeholder="enter pattern..." spellcheck="false" autocomplete="off">
+      <input type="text" id="rx-pattern" class="rx-pattern form-input-inline" placeholder="enter pattern..." spellcheck="false" autocomplete="off">
       <span class="rx-delim">/</span>
-      <div class="rx-flags" id="rx-flags">
+      <div class="rx-flags flex-center" id="rx-flags">
         <button class="rx-flag active" data-flag="g" data-tooltip="Global — match all occurrences">g</button>
         <button class="rx-flag" data-flag="i" data-tooltip="Case insensitive">i</button>
         <button class="rx-flag" data-flag="m" data-tooltip="Multiline — ^ and $ match line boundaries">m</button>
@@ -20,7 +20,7 @@
     <div class="rx-error" id="rx-error"></div>
 
     <!-- Test string -->
-    <div class="rx-test-label">
+    <div class="rx-test-label flex-between">
       <span>Test String</span>
       <span class="rx-match-count" id="rx-match-count"></span>
     </div>
@@ -36,109 +36,109 @@ https://example.com/path?q=hello&lang=en#section
     </div>
 
     <!-- Substitution -->
-    <div class="rx-sub-row">
+    <div class="rx-sub-row flex-center">
       <label class="rx-sub-label" for="rx-replace">Replace</label>
-      <input type="text" id="rx-replace" class="rx-replace" placeholder="replacement string..." spellcheck="false" autocomplete="off">
+      <input type="text" id="rx-replace" class="rx-replace form-input" placeholder="replacement string..." spellcheck="false" autocomplete="off">
     </div>
     <div class="rx-sub-output-wrap" id="rx-sub-output-wrap" style="display:none">
-      <div class="rx-sub-output-label">
+      <div class="rx-sub-output-label flex-between">
         <span>Result</span>
-        <button class="rx-sub-copy" id="rx-sub-copy">copy</button>
+        <button class="rx-sub-copy text-button" id="rx-sub-copy">copy</button>
       </div>
       <pre class="rx-sub-output" id="rx-sub-output"></pre>
     </div>
   </div>
 
-  <!-- Right panel: match details + reference -->
-  <div class="rx-sidebar">
+  <!-- Right panel: match details -->
+  <div class="rx-sidebar flex-stack">
     <!-- Match details -->
-    <div class="rx-matches-panel" id="rx-matches-panel">
-      <div class="rx-panel-header">
+    <div class="rx-matches-panel content-card" id="rx-matches-panel">
+      <div class="rx-panel-header flex-center">
         <span><i data-lucide="scan-search" style="width:12px;height:12px;vertical-align:-1px"></i> Matches</span>
       </div>
       <div class="rx-matches-list" id="rx-matches-list">
         <div class="rx-matches-empty">matches appear here</div>
       </div>
     </div>
+  </div>
+</div>
 
-    <!-- Quick reference -->
-    <div class="rx-ref-panel" id="rx-ref-panel">
-      <button class="rx-ref-toggle" id="rx-ref-toggle">
-        <i data-lucide="book-open" style="width:12px;height:12px;vertical-align:-1px"></i>
-        Quick Reference
-        <i data-lucide="chevron-down" class="rx-ref-chevron" id="rx-ref-chevron" style="width:12px;height:12px"></i>
-      </button>
-      <div class="rx-ref-body" id="rx-ref-body">
-        <div class="rx-ref-section">
-          <div class="rx-ref-section-title">Character Classes</div>
-          <div class="rx-ref-table">
-            <div class="rx-ref-row"><code>.</code><span>any char except newline</span></div>
-            <div class="rx-ref-row"><code>\d</code><span>digit [0-9]</span></div>
-            <div class="rx-ref-row"><code>\D</code><span>non-digit</span></div>
-            <div class="rx-ref-row"><code>\w</code><span>word char [a-zA-Z0-9_]</span></div>
-            <div class="rx-ref-row"><code>\W</code><span>non-word char</span></div>
-            <div class="rx-ref-row"><code>\s</code><span>whitespace</span></div>
-            <div class="rx-ref-row"><code>\S</code><span>non-whitespace</span></div>
-            <div class="rx-ref-row"><code>\b</code><span>word boundary</span></div>
-          </div>
-        </div>
-        <div class="rx-ref-section">
-          <div class="rx-ref-section-title">Quantifiers</div>
-          <div class="rx-ref-table">
-            <div class="rx-ref-row"><code>*</code><span>0 or more (greedy)</span></div>
-            <div class="rx-ref-row"><code>+</code><span>1 or more (greedy)</span></div>
-            <div class="rx-ref-row"><code>?</code><span>0 or 1 (greedy)</span></div>
-            <div class="rx-ref-row"><code>{n}</code><span>exactly n</span></div>
-            <div class="rx-ref-row"><code>{n,m}</code><span>between n and m</span></div>
-            <div class="rx-ref-row"><code>*?</code><span>0 or more (lazy)</span></div>
-            <div class="rx-ref-row"><code>+?</code><span>1 or more (lazy)</span></div>
-          </div>
-        </div>
-        <div class="rx-ref-section">
-          <div class="rx-ref-section-title">Anchors</div>
-          <div class="rx-ref-table">
-            <div class="rx-ref-row"><code>^</code><span>start of string/line</span></div>
-            <div class="rx-ref-row"><code>$</code><span>end of string/line</span></div>
-            <div class="rx-ref-row"><code>\b</code><span>word boundary</span></div>
-            <div class="rx-ref-row"><code>\B</code><span>non-word boundary</span></div>
-          </div>
-        </div>
-        <div class="rx-ref-section">
-          <div class="rx-ref-section-title">Groups</div>
-          <div class="rx-ref-table">
-            <div class="rx-ref-row"><code>(abc)</code><span>capture group</span></div>
-            <div class="rx-ref-row"><code>(?:abc)</code><span>non-capturing group</span></div>
-            <div class="rx-ref-row"><code>(?&lt;n&gt;abc)</code><span>named group</span></div>
-            <div class="rx-ref-row"><code>\1</code><span>backreference</span></div>
-            <div class="rx-ref-row"><code>(?=abc)</code><span>lookahead (+)</span></div>
-            <div class="rx-ref-row"><code>(?!abc)</code><span>lookahead (-)</span></div>
-            <div class="rx-ref-row"><code>(?&lt;=abc)</code><span>lookbehind (+)</span></div>
-            <div class="rx-ref-row"><code>(?&lt;!abc)</code><span>lookbehind (-)</span></div>
-          </div>
-        </div>
-        <div class="rx-ref-section">
-          <div class="rx-ref-section-title">Character Sets</div>
-          <div class="rx-ref-table">
-            <div class="rx-ref-row"><code>[abc]</code><span>a, b, or c</span></div>
-            <div class="rx-ref-row"><code>[^abc]</code><span>not a, b, or c</span></div>
-            <div class="rx-ref-row"><code>[a-z]</code><span>range: a to z</span></div>
-            <div class="rx-ref-row"><code>[a-zA-Z0-9]</code><span>alphanumeric</span></div>
-          </div>
-        </div>
-        <div class="rx-ref-section">
-          <div class="rx-ref-section-title">Flags</div>
-          <div class="rx-ref-table">
-            <div class="rx-ref-row"><code>g</code><span>global — all matches</span></div>
-            <div class="rx-ref-row"><code>i</code><span>case insensitive</span></div>
-            <div class="rx-ref-row"><code>m</code><span>multiline (^/$ per line)</span></div>
-            <div class="rx-ref-row"><code>s</code><span>dotall (. matches \n)</span></div>
-            <div class="rx-ref-row"><code>u</code><span>unicode-aware</span></div>
-          </div>
-        </div>
-        <div class="rx-ref-link">
-          <a href="" id="rx-cheatsheet-link"><i data-lucide="external-link" style="width:10px;height:10px;vertical-align:-1px"></i> Full regex cheatsheet</a>
-        </div>
+<!-- Quick reference: full-width multi-column panel below the editor/matches split -->
+<div class="rx-ref-panel content-card" id="rx-ref-panel">
+  <button class="rx-ref-toggle" id="rx-ref-toggle">
+    <i data-lucide="book-open" style="width:12px;height:12px;vertical-align:-1px"></i>
+    Quick Reference
+    <i data-lucide="chevron-down" class="rx-ref-chevron" id="rx-ref-chevron" style="width:12px;height:12px"></i>
+  </button>
+  <div class="rx-ref-body" id="rx-ref-body">
+    <div class="rx-ref-section">
+      <div class="rx-ref-section-title">Character Classes</div>
+      <div class="rx-ref-table">
+        <div class="rx-ref-row"><code>.</code><span>any char except newline</span></div>
+        <div class="rx-ref-row"><code>\d</code><span>digit [0-9]</span></div>
+        <div class="rx-ref-row"><code>\D</code><span>non-digit</span></div>
+        <div class="rx-ref-row"><code>\w</code><span>word char [a-zA-Z0-9_]</span></div>
+        <div class="rx-ref-row"><code>\W</code><span>non-word char</span></div>
+        <div class="rx-ref-row"><code>\s</code><span>whitespace</span></div>
+        <div class="rx-ref-row"><code>\S</code><span>non-whitespace</span></div>
+        <div class="rx-ref-row"><code>\b</code><span>word boundary</span></div>
       </div>
+    </div>
+    <div class="rx-ref-section">
+      <div class="rx-ref-section-title">Quantifiers</div>
+      <div class="rx-ref-table">
+        <div class="rx-ref-row"><code>*</code><span>0 or more (greedy)</span></div>
+        <div class="rx-ref-row"><code>+</code><span>1 or more (greedy)</span></div>
+        <div class="rx-ref-row"><code>?</code><span>0 or 1 (greedy)</span></div>
+        <div class="rx-ref-row"><code>{n}</code><span>exactly n</span></div>
+        <div class="rx-ref-row"><code>{n,m}</code><span>between n and m</span></div>
+        <div class="rx-ref-row"><code>*?</code><span>0 or more (lazy)</span></div>
+        <div class="rx-ref-row"><code>+?</code><span>1 or more (lazy)</span></div>
+      </div>
+    </div>
+    <div class="rx-ref-section">
+      <div class="rx-ref-section-title">Anchors</div>
+      <div class="rx-ref-table">
+        <div class="rx-ref-row"><code>^</code><span>start of string/line</span></div>
+        <div class="rx-ref-row"><code>$</code><span>end of string/line</span></div>
+        <div class="rx-ref-row"><code>\b</code><span>word boundary</span></div>
+        <div class="rx-ref-row"><code>\B</code><span>non-word boundary</span></div>
+      </div>
+    </div>
+    <div class="rx-ref-section">
+      <div class="rx-ref-section-title">Groups</div>
+      <div class="rx-ref-table">
+        <div class="rx-ref-row"><code>(abc)</code><span>capture group</span></div>
+        <div class="rx-ref-row"><code>(?:abc)</code><span>non-capturing group</span></div>
+        <div class="rx-ref-row"><code>(?&lt;n&gt;abc)</code><span>named group</span></div>
+        <div class="rx-ref-row"><code>\1</code><span>backreference</span></div>
+        <div class="rx-ref-row"><code>(?=abc)</code><span>lookahead (+)</span></div>
+        <div class="rx-ref-row"><code>(?!abc)</code><span>lookahead (-)</span></div>
+        <div class="rx-ref-row"><code>(?&lt;=abc)</code><span>lookbehind (+)</span></div>
+        <div class="rx-ref-row"><code>(?&lt;!abc)</code><span>lookbehind (-)</span></div>
+      </div>
+    </div>
+    <div class="rx-ref-section">
+      <div class="rx-ref-section-title">Character Sets</div>
+      <div class="rx-ref-table">
+        <div class="rx-ref-row"><code>[abc]</code><span>a, b, or c</span></div>
+        <div class="rx-ref-row"><code>[^abc]</code><span>not a, b, or c</span></div>
+        <div class="rx-ref-row"><code>[a-z]</code><span>range: a to z</span></div>
+        <div class="rx-ref-row"><code>[a-zA-Z0-9]</code><span>alphanumeric</span></div>
+      </div>
+    </div>
+    <div class="rx-ref-section">
+      <div class="rx-ref-section-title">Flags</div>
+      <div class="rx-ref-table">
+        <div class="rx-ref-row"><code>g</code><span>global — all matches</span></div>
+        <div class="rx-ref-row"><code>i</code><span>case insensitive</span></div>
+        <div class="rx-ref-row"><code>m</code><span>multiline (^/$ per line)</span></div>
+        <div class="rx-ref-row"><code>s</code><span>dotall (. matches \n)</span></div>
+        <div class="rx-ref-row"><code>u</code><span>unicode-aware</span></div>
+      </div>
+    </div>
+    <div class="rx-ref-link">
+      <a href="" id="rx-cheatsheet-link"><i data-lucide="external-link" style="width:10px;height:10px;vertical-align:-1px"></i> Full regex cheatsheet</a>
     </div>
   </div>
 </div>
@@ -279,7 +279,7 @@ https://example.com/path?q=hello&lang=en#section
     var html = '';
     matches.forEach(function(m, idx) {
       html += '<div class="rx-match-item">';
-      html += '<div class="rx-match-header">';
+      html += '<div class="rx-match-header flex-center">';
       html += '<span class="rx-match-idx">' + (idx + 1) + '</span>';
       html += '<span class="rx-match-value">' + esc(m[0]) + '</span>';
       html += '<span class="rx-match-pos">' + m.index + '-' + (m.index + m[0].length) + '</span>';

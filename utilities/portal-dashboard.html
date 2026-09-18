@@ -1,0 +1,317 @@
+<!-- nav-meta: {"name": "Portal Dashboard", "icon": "layout-dashboard", "order": 15} -->
+<style>
+/* ===== Portal Dashboard =====
+   Renders inside the hypervisor shell, so it inherits hyperkit tokens,
+   the hv-viz-* primitives, and HvViz from the shared bundle. Only local
+   structure lives here; all color/spacing/radius come from tokens. */
+
+.range-charts { display: grid; grid-template-columns: 1.6fr 1fr; gap: var(--space-4); align-items: start; }
+.range-grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: var(--space-4); align-items: stretch; }
+@media (max-width: 640px) { .range-charts { grid-template-columns: 1fr; } .range-grid { grid-template-columns: 1fr; } }
+.range-header {
+  grid-column: 1 / -1;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--space-2) 0;
+  border-bottom: var(--border-hair) solid var(--border);
+}
+.range-header h1 {
+  font-size: var(--fs-h2); color: var(--text-bright);
+  text-transform: uppercase; letter-spacing: 0.08em;
+  display: flex; align-items: center; gap: var(--space-2);
+}
+.range-header h1 i { width: 20px; height: 20px; color: var(--accent); }
+.range-status { font-size: var(--fs-label); color: var(--text-dim); display: flex; align-items: center; gap: var(--space-2); }
+.range-full { grid-column: 1 / -1; }
+
+/* KPI tiles + cards compose the shared .kpi-tile / .kpi-grid / .dashboard-card
+   primitives (hyperkit/css/cards.css) — the .range-dash grid keeps only its
+   local 2-col override; the tile/card surfaces come from the primitives. */
+
+/* Token-entry (default/unauthenticated) state */
+.range-auth { max-width: 520px; margin: var(--space-6) auto; display: flex; flex-direction: column; gap: var(--space-3); }
+.range-auth h2 { font-size: var(--fs-heading); color: var(--text-bright); }
+.range-auth p { font-size: var(--fs-sm); color: var(--text-muted); line-height: 1.5; }
+/* range-auth textarea + select normalized to shared .form-textarea / .form-select (see markup). */
+.range-auth-row { display: flex; align-items: center; gap: var(--space-3); }
+.range-btn {
+  background: transparent; border: var(--border-hair) solid var(--accent);
+  border-radius: var(--radius); color: var(--accent); font-family: var(--font);
+  font-size: var(--fs-label); text-transform: uppercase; letter-spacing: 0.06em;
+  padding: var(--space-2) var(--space-4); cursor: pointer;
+  transition: background var(--motion-base) var(--ease), color var(--motion-base) var(--ease);
+}
+.range-btn:hover { background: var(--accent); color: var(--bg); }
+.range-auth-notice { font-size: var(--fs-sm); color: var(--comp); }
+.range-hint { font-size: var(--fs-caption); color: var(--text-dim); }
+.range-hint code { color: var(--text-muted); }
+</style>
+
+<!-- Token entry (default state) -->
+<div class="range-auth" id="range-auth">
+  <h2>Portal Dashboard — Connect</h2>
+  <p>This dashboard reads live range data from the portal's staff-authenticated
+     analytics endpoint. Paste your portal <code>access_token</code> to connect.</p>
+  <div class="range-auth-row">
+    <label class="range-hint" for="range-env">Environment</label>
+    <select id="range-env" class="form-select">
+      <option value="dev">dev</option>
+      <option value="qa">qa</option>
+      <option value="prod">prod</option>
+    </select>
+  </div>
+  <textarea id="range-token" class="form-textarea" placeholder="paste access_token here" spellcheck="false"></textarea>
+  <p class="range-hint">Find it in your browser while logged into the portal:
+     F12 &rarr; Application &rarr; Cookies &rarr; <code>access_token</code>.</p>
+  <div class="range-auth-row">
+    <button class="range-btn" id="range-connect">Connect</button>
+    <span class="range-auth-notice" id="range-notice"></span>
+  </div>
+</div>
+
+<!-- Connected state -->
+<div id="range-connected" style="display:none;">
+  <div class="range-header">
+    <h1><i data-lucide="layout-dashboard"></i> Portal Dashboard</h1>
+    <div class="range-status">
+      <span id="range-updated">—</span>
+      <button class="range-btn" id="range-disconnect" style="padding: 2px 8px;">Disconnect</button>
+    </div>
+  </div>
+
+  <div class="utility-body">
+    <!-- 2-col grid: rows align across columns automatically (grid row height =
+         tallest cell), so the KPI grid and AMI card top/bottom-align, and
+         Instance Status lines up with Sessions by Role. Source order is
+         row-major: [KPIs | AMI], then [Instance Status | Sessions]. -->
+    <div class="range-grid">
+      <div class="range-dash kpi-grid" style="grid-template-columns: 1fr 1fr;">
+        <div class="range-kpi kpi-tile" id="kpi-instances"><div class="range-kpi-label kpi-tile-label">Total Instances</div><div class="range-kpi-value kpi-tile-value">—</div><div class="range-kpi-sub kpi-tile-sub"></div></div>
+        <div class="range-kpi kpi-tile" id="kpi-participants"><div class="range-kpi-label kpi-tile-label">Participants</div><div class="range-kpi-value kpi-tile-value">—</div><div class="range-kpi-sub kpi-tile-sub">using instances</div></div>
+        <div class="range-kpi kpi-tile" id="kpi-classrooms"><div class="range-kpi-label kpi-tile-label">Classrooms</div><div class="range-kpi-value kpi-tile-value">—</div><div class="range-kpi-sub kpi-tile-sub">using instances</div></div>
+        <div class="range-kpi kpi-tile" id="kpi-sgs"><div class="range-kpi-label kpi-tile-label">Security Groups</div><div class="range-kpi-value kpi-tile-value">—</div><div class="range-kpi-sub kpi-tile-sub">EC2 / DynamoDB</div></div>
+        <div class="range-kpi kpi-tile" id="kpi-sessions"><div class="range-kpi-label kpi-tile-label">Active Sessions</div><div class="range-kpi-value kpi-tile-value">—</div><div class="range-kpi-sub kpi-tile-sub">signed in now</div></div>
+        <div class="range-kpi kpi-tile" id="kpi-active-classrooms"><div class="range-kpi-label kpi-tile-label">Active Classrooms</div><div class="range-kpi-value kpi-tile-value">—</div><div class="range-kpi-sub kpi-tile-sub">with signed-in users</div></div>
+      </div>
+
+      <div class="range-card dashboard-card">
+        <div class="range-card-title dashboard-card-title"><i data-lucide="pie-chart"></i> AMI Distribution</div>
+        <div id="range-ami-donut"></div>
+      </div>
+
+      <div class="range-card dashboard-card">
+        <div class="range-card-title dashboard-card-title"><i data-lucide="bar-chart"></i> Instance Status</div>
+        <div id="range-status-bars"></div>
+      </div>
+
+      <div class="range-card dashboard-card">
+        <div class="range-card-title dashboard-card-title"><i data-lucide="users"></i> Sessions by Role</div>
+        <div id="range-sessions-donut"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var POLL_MS = 30000;
+  var pollTimer = null;
+
+  function el(id) { return document.getElementById(id); }
+  function toast(opts) { if (window.__hvToast) window.__hvToast(opts); else if (window.HvToast) window.HvToast.show(opts); }
+
+  var REASONS = {
+    no_token: 'Paste your portal access_token to connect.',
+    auth_expired: 'Session expired — re-paste your access_token.',
+    network_error: 'Could not reach the portal. Check the environment and your connection.',
+    server_error: 'The portal returned an unexpected response.',
+    not_configured: 'Range monitoring is not configured in this environment.'
+  };
+
+  function stopPolling() {
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+  }
+
+  function showAuth(notice) {
+    el('range-connected').style.display = 'none';
+    el('range-auth').style.display = 'flex';
+    el('range-notice').textContent = notice || '';
+    stopPolling();
+  }
+  function showConnected() {
+    el('range-auth').style.display = 'none';
+    el('range-connected').style.display = 'block';
+  }
+
+  function setKpi(id, value, sub, warn) {
+    var card = el(id);
+    // A poll can resolve after the router has swapped this page's DOM away
+    // (the interval outlives the content). The KPI cards are gone, so bail
+    // rather than dereference null. stopPolling() prevents the leak; this is
+    // the belt-and-suspenders guard for an in-flight poll already resolving.
+    if (!card) return;
+    card.querySelector('.range-kpi-value').textContent = value;
+    if (sub != null) card.querySelector('.range-kpi-sub').textContent = sub;
+    card.classList.toggle('kpi-tile-warn', !!warn);
+  }
+
+  function render(content) {
+    var inst = content.instances || {};
+    var stateCounts = inst.state_counts || {};
+    var ami = inst.label_counts || inst.ami_distribution || {};
+    var total = inst.total_db_instances || 0;
+    var participants = (content.participants || {}).using_instances || 0;
+    var classrooms = (content.classrooms || {}).using_instances || 0;
+    var sgs = content.security_groups || { in_ec2: 0, in_dynamo: 0 };
+    var orphans = content.orphans || { instances: [], security_groups: [] };
+    var orphanInst = (orphans.instances || []).length;
+    var sgMismatch = sgs.in_ec2 > 0 && sgs.in_ec2 !== sgs.in_dynamo;
+
+    setKpi('kpi-instances', total, orphanInst ? (orphanInst + ' orphaned') : 'in database', orphanInst > 0);
+    setKpi('kpi-participants', participants);
+    setKpi('kpi-classrooms', classrooms);
+    setKpi('kpi-sgs', sgs.in_ec2 + ' / ' + sgs.in_dynamo, 'EC2 / DynamoDB', sgMismatch);
+
+    // Instance status bars — fixed lifecycle order, per-state colors.
+    var STATE_ORDER = ['queued to boot', 'booting', 'running', 'available', 'queued to terminate', 'terminating'];
+    var STATE_COLOR = {
+      'queued to boot': 'var(--warm)', 'booting': 'var(--warm)', 'running': 'var(--accent)',
+      'available': 'var(--cool)', 'queued to terminate': 'var(--comp)', 'terminating': 'var(--comp)'
+    };
+    if (window.HvViz) {
+      HvViz.bars('range-status-bars', {
+        rows: STATE_ORDER.filter(function (s) { return (stateCounts[s] || 0) > 0; })
+          .map(function (s) { return { label: s, value: stateCounts[s], color: STATE_COLOR[s] || 'var(--text-dim)' }; })
+      });
+      HvViz.donut('range-ami-donut', {
+        segments: Object.keys(ami).map(function (k) { return { label: k, value: ami[k] }; }),
+        totalLabel: 'instances',
+        emptyMessage: 'No AMI data'
+      });
+    }
+
+    el('range-updated').textContent = 'updated ' + new Date().toLocaleTimeString();
+  }
+
+  // Sessions-by-role donut + total-active KPI (from active-sessions endpoint).
+  function renderSessions(content) {
+    var total = content.total || 0;
+    var byRole = content.by_role || {};
+    setKpi('kpi-sessions', total);
+    if (window.HvViz) {
+      HvViz.donut('range-sessions-donut', {
+        segments: Object.keys(byRole).map(function (role) {
+          return { label: role, value: byRole[role] };
+        }),
+        totalLabel: 'sessions',
+        emptyMessage: 'No active sessions'
+      });
+    }
+  }
+
+  // Active-classrooms KPI (from active-classrooms endpoint).
+  function renderClassrooms(content) {
+    setKpi('kpi-active-classrooms', content.total || 0);
+  }
+
+  function poll() {
+    if (!window.pywebview || !window.pywebview.api) return;
+    window.pywebview.api.refresh_range().then(function (res) {
+      if (res && res.ok) {
+        render(res.content || {});
+      } else if (res && res.reason === 'auth_expired') {
+        showAuth(REASONS.auth_expired);
+      } else if (res && res.reason === 'no_token') {
+        showAuth(REASONS.no_token);
+      } else {
+        // Transient error — keep the connected view, surface a toast with detail.
+        var base = REASONS[res && res.reason] || 'Range fetch failed';
+        var detail = '';
+        if (res) {
+          if (res.status) detail += ' [HTTP ' + res.status + ']';
+          if (res.redirected) detail += ' (redirected to ' + (res.final_url || '?') + ')';
+          else if (res.error) detail += ' (' + res.error + ')';
+        }
+        toast({ variant: 'warn', message: base + detail, duration: 8000 });
+      }
+    });
+
+    // Secondary portal-session panels. These are best-effort: a failure here
+    // must not disrupt the range view or trigger the auth-revert (the range
+    // fetch above owns session-expiry handling), so we just render on success.
+    var api = window.pywebview.api;
+    if (api.refresh_sessions) {
+      api.refresh_sessions().then(function (r) { if (r && r.ok) renderSessions(r.content || {}); });
+    }
+    if (api.refresh_classrooms) {
+      api.refresh_classrooms().then(function (r) { if (r && r.ok) renderClassrooms(r.content || {}); });
+    }
+  }
+
+  function connect() {
+    if (!window.pywebview || !window.pywebview.api) {
+      toast({ variant: 'warn', message: 'Requires the desktop app (PyWebView)' });
+      return;
+    }
+    var token = el('range-token').value;
+    var base = el('range-env').value;
+    if (!token.trim()) { el('range-notice').textContent = 'Paste a token first.'; return; }
+    el('range-notice').textContent = '';
+    window.pywebview.api.set_range_token(token, base).then(function (res) {
+      if (!res || !res.ok) { el('range-notice').textContent = (res && res.error) || 'Could not set token.'; return; }
+      el('range-token').value = ''; // don't leave the credential in the DOM
+      showConnected();
+      startPolling();
+    });
+  }
+
+  function disconnect() {
+    if (window.pywebview && window.pywebview.api) window.pywebview.api.clear_range_token();
+    showAuth('');
+  }
+
+  function startPolling() {
+    poll();
+    if (!pollTimer) pollTimer = setInterval(poll, POLL_MS);
+  }
+
+  function init() {
+    el('range-connect').addEventListener('click', connect);
+    el('range-disconnect').addEventListener('click', disconnect);
+    el('range-token').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) connect();
+    });
+    if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
+
+    // Stop the 30s poll when the router swaps this page out. The SPA shell
+    // reuses the JS context across navigations, so a setInterval started here
+    // outlives the dashboard DOM — every subsequent tick would fire render()
+    // against KPI cards that no longer exist. Registered once per session:
+    // teardown hooks accumulate globally, so guard against re-adding on each
+    // visit.
+    if (window.__router && window.__router.onNavigate && !window.__portalDashTeardownRegistered) {
+      window.__portalDashTeardownRegistered = true;
+      window.__router.onNavigate(stopPolling, null);
+    }
+
+    // Restore state: the token lives in the bridge for the life of the
+    // hypervisor process, so a page navigation or refresh keeps the session.
+    // Ask the bridge whether one exists and skip the paste screen if so.
+    if (window.pywebview && window.pywebview.api && window.pywebview.api.range_session_status) {
+      window.pywebview.api.range_session_status().then(function (res) {
+        if (res && res.connected) {
+          if (res.base) el('range-env').value = res.base;
+          showConnected();
+          startPolling();
+        } else {
+          showAuth('');
+        }
+      }).catch(function () { showAuth(''); });
+    } else {
+      showAuth('');
+    }
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>

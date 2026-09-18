@@ -215,6 +215,20 @@ def apply_document_template(
     lines.append(content)
     lines.append("")
 
+    # Append a Sources scaffold for research/analysis docs unless the content
+    # already provides its own Sources/References section. Research and analysis
+    # content is expected to number sources and cite them inline with [N]; the
+    # stub is a no-op prompt for other document kinds.
+    if not re.search(r'(?im)^#{2,6}\s+(sources|references)\b', content):
+        lines.append("## Sources")
+        lines.append("")
+        lines.append(
+            "<!-- For research/analysis content: number sources and cite each "
+            "substantive claim inline with [N]. Web: full URL + descriptor. "
+            "Codebase: `path:line` + symbol. Remove this section for non-analytical docs. -->"
+        )
+        lines.append("")
+
     if related and len(related) > 2:
         lines.append("---")
         lines.append("")

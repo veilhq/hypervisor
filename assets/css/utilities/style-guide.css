@@ -1,0 +1,204 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   STYLE GUIDE — masonry component gallery (shadcn-style)
+   Each design-system primitive lives in its own bordered card. Cards flow
+   into a CSS-columns masonry so short cards (chips, badges) pack tightly
+   beside tall ones (skeletons, cards). Zero-JS: reading order is
+   top-to-bottom per column, then across.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* Page intro sits above the grid, full width. Explicit subtitle sizing so it
+   matches the other utilities' subtitles rather than inheriting the larger
+   markdown-body paragraph size (this page is the only utility on .markdown-body). */
+.sg-intro {
+  margin: 0 0 var(--space-5);
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+/* Sticky category filter bar — jump to a group without scrolling blind. */
+.sg-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-base);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  padding: var(--space-3) 0;
+  margin-bottom: var(--space-4);
+  background: color-mix(in srgb, var(--bg) 92%, transparent);
+  backdrop-filter: blur(6px);
+  border-bottom: var(--border-hair) solid var(--border);
+}
+
+.sg-filter {
+  font-family: inherit;
+  font-size: var(--fs-label);
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  background: transparent;
+  border: var(--border-hair) solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-1) var(--space-3);
+  cursor: pointer;
+  transition: color var(--motion-fast) var(--ease),
+              border-color var(--motion-fast) var(--ease),
+              background var(--motion-fast) var(--ease);
+}
+.sg-filter:hover {
+  color: var(--text-bright);
+  border-color: var(--border-strong);
+}
+.sg-filter.active {
+  color: var(--bg);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+/* Masonry container — column count adapts to width. */
+.sg-masonry {
+  column-count: 3;
+  column-gap: var(--space-4);
+  margin: var(--space-4) 0;
+}
+@media (max-width: 1100px) { .sg-masonry { column-count: 2; } }
+@media (max-width: 720px)  { .sg-masonry { column-count: 1; } }
+
+/* Component card — the atomic unit of the gallery. */
+.sg-card {
+  break-inside: avoid;
+  display: inline-block;   /* prevents column-break orphaning of the card box */
+  width: 100%;
+  margin: 0 0 var(--space-4);
+  background: var(--bg-card);
+  border: var(--border-hair) solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: border-color var(--motion-base) var(--ease),
+              box-shadow var(--motion-base) var(--ease);
+}
+.sg-card:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-panel);
+}
+
+/* When filtering, hidden cards drop out of flow entirely. */
+.sg-card.sg-hidden { display: none; }
+
+/* Card header — label + optional token annotation. */
+.sg-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: var(--border-hair) solid var(--border);
+  background: var(--bg-surface);
+}
+.sg-card-title {
+  font-size: var(--fs-label);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-bright);
+}
+.sg-card-note {
+  font-size: var(--fs-detail);
+  color: var(--text-dim);
+  font-family: inherit;
+}
+
+/* Card body — the live preview surface. */
+.sg-card-body {
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* Rows of inline specimens (chips, badges, buttons) wrap naturally. */
+.sg-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+/* A labelled specimen — small caption above a swatch/element. */
+.sg-spec-label {
+  font-size: var(--fs-caption);
+  color: var(--text-dim);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Reset heading chrome inside cards — the card head is the label, so any
+   demo headings render as pure type specimens with no rail or border. */
+.sg-card-body h1,
+.sg-card-body h2,
+.sg-card-body h3,
+.sg-card-body h4,
+.sg-card-body h5,
+.sg-card-body h6 {
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+/* Swatch tile used by color/surface cards. */
+.sg-swatch {
+  border: var(--border-hair) solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-3);
+  text-align: center;
+}
+.sg-swatch-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: var(--space-2);
+}
+.sg-swatch-name {
+  font-size: var(--fs-caption);
+  color: var(--text-dim);
+  letter-spacing: 0.06em;
+}
+.sg-swatch-val {
+  font-size: var(--fs-detail);
+  color: var(--text-dim);
+  margin-top: var(--space-1);
+}
+.sg-swatch-chip {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius);
+  margin: 0 auto var(--space-2);
+}
+
+/* Motion demo bar — fills on hover to show transition speed. */
+.sg-motion-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.sg-motion-label {
+  font-size: var(--fs-caption);
+  color: var(--text-dim);
+  width: 14ch;
+  text-align: right;
+  flex-shrink: 0;
+}
+.sg-motion-track {
+  flex: 1;
+  height: 8px;
+  background: var(--border);
+  border-radius: var(--radius);
+  position: relative;
+  overflow: hidden;
+}
+.sg-motion-fill {
+  position: absolute;
+  inset: 0;
+  transform: scaleX(0);
+  transform-origin: left;
+}
+.sg-motion-row:hover .sg-motion-fill { transform: scaleX(1); }

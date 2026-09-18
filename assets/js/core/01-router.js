@@ -91,16 +91,10 @@
   // --- TOC update ---
   function updateToc(tocHtml) {
     if (!tocSidebar || !tocBody) return;
-
-    if (tocHtml) {
-      tocBody.innerHTML = tocHtml;
-      tocSidebar.classList.add("visible");
-      if (pageMain) pageMain.classList.add("has-toc");
-    } else {
-      tocBody.innerHTML = "";
-      tocSidebar.classList.remove("visible");
-      if (pageMain) pageMain.classList.remove("has-toc");
-    }
+    // The TOC is now a floating overlay: the router only injects the content;
+    // toc.js reveals the toggle (FAB) when a TOC exists and owns open/close.
+    // Do NOT force the panel visible here.
+    tocBody.innerHTML = tocHtml || "";
   }
 
   // --- Nav rail active state ---
@@ -253,6 +247,21 @@
     // Swap content
     if (contentTarget) {
       contentTarget.innerHTML = fragment.html || "";
+    }
+
+    // Directory-index pages render as an edge-to-edge recessed drawer; the
+    // page shell drops its content padding and becomes a flex column so the
+    // surface can fill to the bottom. The pinboard adopts the same drawer.
+    // Document pages get a sibling surface (page-doc-surface) — the reading
+    // content sits inside a recessed, grows-with-content surface.
+    // Utility pages get page-utility — the raised utility-surface spans the
+    // content area edge-to-edge and fills to the bottom, same as the drawer.
+    // Other page types keep standard padding.
+    if (pageMain) {
+      var isDrawer = fragment.pageType === "index" || fragment.pageType === "pinboard";
+      pageMain.classList.toggle("page-dir-index", isDrawer);
+      pageMain.classList.toggle("page-doc-surface", fragment.pageType === "doc");
+      pageMain.classList.toggle("page-utility", fragment.pageType === "utility");
     }
 
     // Scroll to top (unless navigating with a hash)

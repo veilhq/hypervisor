@@ -5,15 +5,13 @@
 
 /* ---- Container ---- */
 .health-dashboard {
-  max-width: 1000px;
-  margin: 0 auto;
   animation: fadeSlideIn var(--motion-slow) var(--ease) both;
 }
 .health-dashboard h1 {
   margin-bottom: var(--space-5);
 }
 .health-dashboard h2 {
-  font-size: 0.72rem;
+  font-size: var(--fs-caption);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--text-bright);
@@ -30,54 +28,19 @@
   margin: 0 0 var(--space-2);
 }
 
-/* ===== Summary Stats Strip ===== */
+/* ===== Summary Stats (compose .kpi-grid + .kpi-tile) ===== */
+/* Grid + tile surface come from the shared primitives; only the semantic
+   value-color states are local. .health-cards keeps a bottom margin. */
 .health-cards {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0;
   margin-bottom: var(--space-4);
-  border: var(--border-hair) solid var(--border);
-  border-radius: var(--radius);
-  overflow: hidden;
-  background: var(--bg-card);
-}
-.health-card {
-  position: relative;
-  background: transparent;
-  border: none;
-  border-radius: 0;
-  padding: var(--space-4) var(--space-3);
-  text-align: center;
-  transition: background var(--motion-fast) var(--ease);
-}
-.health-card + .health-card {
-  border-left: var(--border-hair) solid var(--border);
-}
-.health-card:hover {
-  background: var(--bg-elevated);
-}
-.health-card-value {
-  font-size: 2rem;
-  font-weight: 700;
-  color: var(--text-bright);
-  line-height: 1;
-  margin-bottom: var(--space-0-4);
-}
-.health-card-label {
-  font-size: 0.58rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-dim);
 }
 .health-card-good .health-card-value { color: var(--accent); }
 .health-card-warn .health-card-value { color: var(--warm); }
 .health-card-bad .health-card-value { color: var(--error); }
 
 /* ===== Actions Row ===== */
+/* .health-actions composes .flex-center (local: bottom margin). */
 .health-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
   margin-bottom: var(--space-4);
 }
 .health-timestamp {
@@ -86,34 +49,24 @@
   color: var(--text-dim);
   letter-spacing: 0.02em;
 }
+/* Refresh + Fix buttons compose .action-button (ghost silhouette, hover-to-
+   accent). Local: the card fill, compact sizing, lighter border, tighter gap.
+   .health-fix-btn-loading + spinner state stays local. */
 .health-refresh-btn,
 .health-fix-btn {
-  display: inline-flex;
-  align-items: center;
   gap: var(--space-0-3);
   background: var(--bg-card);
-  border: var(--border-hair) solid var(--border);
-  border-radius: var(--radius);
-  color: var(--text-muted);
+  border-color: var(--border);
   padding: var(--space-0-3) var(--space-0-8);
   font-size: var(--fs-micro);
-  font-family: var(--font);
-  text-transform: uppercase;
   letter-spacing: 0.04em;
-  cursor: pointer;
-  transition: border-color var(--motion-fast) var(--ease),
-              color var(--motion-fast) var(--ease),
-              background var(--motion-fast) var(--ease);
 }
 .health-refresh-btn:hover,
 .health-fix-btn:hover {
-  border-color: var(--accent);
-  color: var(--accent);
   background: var(--bg-elevated);
 }
 .health-fix-btn:disabled {
   opacity: 0.5;
-  cursor: not-allowed;
 }
 .health-fix-btn-loading {
   border-color: var(--cool);
@@ -132,19 +85,17 @@
 }
 
 /* ===== Sections ===== */
+/* .health-section composes .content-card (surface: bg/border/radius +
+   hover/transition). Local: padding + bottom margin. */
 .health-section {
-  background: var(--bg-card);
-  border: var(--border-hair) solid var(--border);
-  border-radius: var(--radius);
   padding: var(--space-4) var(--space-5);
   margin-bottom: var(--space-4);
 }
 
 /* ===== Issue Rows ===== */
+/* .health-issue-row composes .flex-between. Local: the negative-margin bleed,
+   padding, radius, size, and the divider hover-bg. */
 .health-issue-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   padding: var(--space-2) var(--space-3);
   margin: 0 calc(-1 * var(--space-3));
   border-radius: var(--radius);
@@ -161,18 +112,16 @@
   color: var(--text);
   font-family: var(--font);
 }
+/* Count badge composes .status-chip.status-chip-filled. Local: the warm fill
+   (chip default is accent), the pill min-width/height, and micro font. */
 .health-issue-count {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   min-width: 1.8rem;
   height: 1.4rem;
   padding: 0 var(--space-0-3);
   font-size: var(--fs-micro);
-  font-weight: 700;
   color: var(--bg);
   background: var(--warm);
-  border-radius: var(--radius);
+  border-color: var(--warm);
 }
 
 /* ===== Affected Files ===== */
@@ -206,7 +155,7 @@
   font-size: var(--fs-micro);
 }
 .health-affected-rule {
-  color: var(--comp);
+  color: var(--error);
   font-weight: 700;
   white-space: nowrap;
 }
@@ -253,11 +202,9 @@
   border-bottom: var(--border-hair) solid var(--border);
 }
 
-/* Shared tag row style */
+/* Shared tag row style — composes .flex-between. Local: negative-margin bleed,
+   padding, radius, caption size, and the divider hover-bg. */
 .health-tag-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   padding: var(--space-1) var(--space-2);
   margin: 0 calc(-1 * var(--space-2));
   border-radius: var(--radius);
@@ -295,18 +242,15 @@
 }
 
 /* ===== Fix Panel ===== */
+/* .health-fix-panel composes .content-card (surface). Local: padding, margin,
+   and the faster fadeSlideIn entrance. */
 .health-fix-panel {
-  background: var(--bg-card);
-  border: var(--border-hair) solid var(--border);
-  border-radius: var(--radius);
   padding: var(--space-4) var(--space-5);
   margin-bottom: var(--space-4);
   animation: fadeSlideIn var(--motion-base) var(--ease) both;
 }
+/* .health-fix-header composes .flex-between (local: bottom margin). */
 .health-fix-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
   margin-bottom: var(--space-3);
 }
 .health-fix-header h2 {
@@ -315,42 +259,31 @@
   border: none;
   color: var(--warm);
 }
-.health-fix-actions { display: flex; gap: var(--space-2); }
+/* .health-fix-actions composes .flex-center (local: nothing — default gap). */
+.health-fix-actions {}
+/* Apply button composes .action-button.action-button-primary (filled accent).
+   Local: compact sizing + micro font. */
 .health-fix-apply-btn {
-  background: var(--accent);
-  border: var(--border-hair) solid var(--accent);
-  border-radius: var(--radius);
-  color: var(--bg);
   padding: var(--space-0-3) var(--space-0-8);
   font-size: var(--fs-micro);
-  font-family: var(--font);
-  text-transform: uppercase;
   letter-spacing: 0.04em;
-  cursor: pointer;
-  font-weight: 700;
-  transition: opacity var(--motion-fast) var(--ease);
 }
-.health-fix-apply-btn:hover { opacity: 0.85; }
-.health-fix-apply-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.health-fix-apply-btn:hover:not(:disabled) { filter: none; opacity: 0.85; }
+/* Dismiss button composes .action-button (ghost). Local: the surface fill +
+   compact sizing. */
 .health-fix-dismiss-btn {
   background: var(--bg-surface);
-  border: var(--border-hair) solid var(--border);
-  border-radius: var(--radius);
-  color: var(--text-muted);
+  border-color: var(--border);
   padding: var(--space-0-3) var(--space-0-8);
   font-size: var(--fs-micro);
-  font-family: var(--font);
-  text-transform: uppercase;
   letter-spacing: 0.04em;
-  cursor: pointer;
-  transition: border-color var(--motion-fast) var(--ease), color var(--motion-fast) var(--ease);
 }
-.health-fix-dismiss-btn:hover { border-color: var(--text); color: var(--text); }
+.health-fix-dismiss-btn:hover:not(:disabled) { border-color: var(--text); color: var(--text); }
 .health-fix-summary { margin-bottom: var(--space-3); }
 .health-fix-stat { font-size: var(--fs-caption); color: var(--text); }
-.health-fix-error { color: var(--comp); font-size: var(--fs-caption); }
-.health-fix-clean { color: var(--accent); font-size: var(--fs-caption); }
-.health-fix-success { color: var(--accent); font-size: var(--fs-caption); }
+.health-fix-error { color: var(--error); font-size: var(--fs-caption); }
+.health-fix-clean { color: var(--success); font-size: var(--fs-caption); }
+.health-fix-success { color: var(--success); font-size: var(--fs-caption); }
 .health-fix-breakdown { margin-bottom: var(--space-3); }
 .health-fix-breakdown-row {
   display: flex;

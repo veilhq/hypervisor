@@ -1,16 +1,15 @@
 /* ===== Palette Generator ===== */
 
 .pg-subtitle {
-  font-size: 0.75rem;
+  font-size: var(--fs-sm);
   color: var(--text-muted);
   margin: var(--space-1) 0 var(--space-1-25);
   line-height: 1.6;
 }
 
 /* ---- Section headers ---- */
+/* .pg-section-header composes .flex-center; local keeps the bottom margin. */
 .pg-section-header {
-  display: flex;
-  align-items: center;
   margin-bottom: var(--space-3);
 }
 .pg-section-label {
@@ -27,13 +26,13 @@
 /* ---- Preset card grid ---- */
 .pg-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: var(--space-3);
   margin-bottom: var(--space-5);
 }
 .pg-grid-separator {
   grid-column: 1 / -1;
-  font-size: 0.6rem;
+  font-size: var(--fs-micro);
   font-weight: 700;
   color: var(--text-dim);
   text-transform: uppercase;
@@ -43,36 +42,43 @@
   margin-top: var(--space-2);
 }
 
+/* .pg-card composes .content-card (surface + hover lift); local keeps only the
+   pointer cursor and clips the gradient hero to the card's rounded corners. */
 .pg-card {
-  border: var(--border-hair) solid var(--border);
-  border-radius: var(--radius);
-  background: var(--bg-card);
-  transition: border-color var(--motion-base) var(--ease), transform var(--motion-fast) var(--ease);
   cursor: pointer;
-}
-.pg-card:hover {
-  border-color: var(--border-strong);
-  transform: translateY(-2px);
-}
-.pg-card-active {
-  border-color: var(--accent);
-}
-.pg-card-active:hover {
-  border-color: var(--accent);
+  overflow: hidden;
 }
 
-/* Swatch bar — Coolors-style horizontal color strips */
+/* Gradient hero — the palette rendered as a smooth blend, the tile's focal
+   point. Tall band across the card top; a subtle sheen adds depth. */
+.pg-card-hero {
+  height: 120px;
+  width: 100%;
+  position: relative;
+}
+.pg-card-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0.08), transparent 40%, rgba(0,0,0,0.25));
+  pointer-events: none;
+}
+
+/* Swatch strip — thin row of discrete colors under the hero, click to copy. */
 .pg-card-bar {
   display: flex;
-  height: 48px;
+  height: 20px;
 }
 .pg-card-swatch {
   flex: 1;
-  transition: opacity var(--motion-fast) var(--ease);
+  transition: opacity var(--motion-fast) var(--ease), transform var(--motion-fast) var(--ease);
   position: relative;
+  cursor: pointer;
 }
 .pg-card-swatch:hover {
-  opacity: 0.8;
+  opacity: 0.85;
+  transform: scaleY(1.3);
+  z-index: 1;
 }
 
 /* Card info */
@@ -90,43 +96,30 @@
   letter-spacing: 0.04em;
 }
 .pg-card-desc {
-  font-size: 0.6rem;
+  font-size: var(--fs-micro);
   color: var(--text-dim);
   line-height: 1.4;
 }
 
 /* Card actions */
+/* .pg-card-actions composes .flex-center; local tightens the gap + adds padding. */
 .pg-card-actions {
-  display: flex;
   gap: var(--space-0-3);
   padding: var(--space-0-3) var(--space-0-6) var(--space-2);
 }
+/* .pg-card-btn composes .action-button; local keeps the compact micro size.
+   :disabled shows the active accent (not the primitive's faded state). */
 .pg-card-btn {
   padding: var(--space-0-2) var(--space-0-6);
-  font-family: var(--font);
   font-size: var(--fs-micro);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  background: var(--bg);
-  border: var(--border-hair) solid var(--border-strong);
-  border-radius: var(--radius);
-  color: var(--text-dim);
-  cursor: pointer;
-  transition: color var(--motion-fast) var(--ease), border-color var(--motion-fast) var(--ease);
-}
-.pg-card-btn:hover:not(:disabled) {
-  color: var(--accent);
-  border-color: var(--accent);
 }
 .pg-card-btn:disabled {
+  opacity: 1;
   color: var(--accent);
   border-color: var(--accent);
   cursor: default;
 }
-.pg-card-btn-del:hover {
-  color: var(--comp) !important;
-  border-color: var(--comp) !important;
-}
+/* .pg-card-btn-del composes .action-button-danger for its hover fill. */
 
 /* ---- Create section ---- */
 .pg-create {
@@ -156,9 +149,8 @@
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
+/* .pg-base-row composes .flex-center; local tightens the gap. */
 .pg-base-row {
-  display: flex;
-  align-items: center;
   gap: var(--space-0-6);
 }
 .pg-color-input {
@@ -178,35 +170,13 @@
   font-family: var(--font);
   min-width: 4.5rem;
 }
-.pg-select {
-  padding: var(--space-0-3) var(--space-2);
-  background: var(--bg);
-  border: var(--border-hair) solid var(--border-strong);
-  border-radius: var(--radius);
-  color: var(--text);
-  font-family: var(--font);
-  font-size: 0.68rem;
-}
-.pg-select:focus {
-  border-color: var(--accent);
-  outline: none;
-}
+/* .pg-select normalized to the shared .form-select primitive (see markup). */
+/* .pg-shuffle-btn composes .action-button; local keeps the fixed icon-square
+   size (padding reset to 0 so the button stays 32x28). */
 .pg-shuffle-btn {
   width: 32px;
   height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--bg);
-  border: var(--border-hair) solid var(--border-strong);
-  border-radius: var(--radius);
-  color: var(--text-dim);
-  cursor: pointer;
-  transition: color var(--motion-fast) var(--ease), border-color var(--motion-fast) var(--ease);
-}
-.pg-shuffle-btn:hover {
-  color: var(--accent);
-  border-color: var(--accent);
+  padding: 0;
 }
 
 /* ---- Swatch editor slots ---- */
@@ -256,9 +226,7 @@
   gap: var(--space-0-4);
   cursor: pointer;
 }
-.pg-semantics-toggle input[type="checkbox"] {
-  accent-color: var(--accent);
-}
+/* checkbox accent normalized to the shared .form-check primitive (see markup). */
 .pg-semantics-edit {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -266,14 +234,19 @@
 }
 
 /* ---- Live preview panel ---- */
+/* .pg-preview composes .content-card for its surface; the hover-lift is
+   suppressed since this is a static preview panel, not an interactive card. */
 .pg-preview {
-  border: var(--border-hair) solid var(--border);
-  border-radius: var(--radius);
+}
+.pg-preview:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: var(--border);
   background: var(--bg-card);
 }
 .pg-preview-header {
   padding: var(--space-2) var(--space-3);
-  font-size: 0.6rem;
+  font-size: var(--fs-micro);
   font-weight: 700;
   color: var(--text-dim);
   text-transform: uppercase;
@@ -326,6 +299,50 @@
   border: var(--border-hair) solid;
   border-radius: var(--radius);
 }
+/* Gradient band — the palette as a smooth blend, matching the preset cards. */
+.pg-pv-gradient {
+  height: 40px;
+  border-radius: var(--radius);
+  margin-bottom: var(--space-3);
+}
+/* Button samples — primary (filled) + ghost (bordered), colored live in JS. */
+.pg-pv-buttons {
+  display: flex;
+  gap: var(--space-2);
+}
+.pg-pv-btn-primary,
+.pg-pv-btn-ghost {
+  padding: var(--space-1) var(--space-3);
+  font-family: var(--font);
+  font-size: var(--fs-label);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border: var(--border-hair) solid;
+  border-radius: var(--radius);
+  cursor: default;
+}
+.pg-pv-btn-primary {
+  color: var(--bg);
+}
+.pg-pv-btn-ghost {
+  background: transparent;
+}
+/* Semantic chips — success/warning/error/info, shown when semantics enabled. */
+.pg-pv-semantics {
+  display: flex;
+  gap: var(--space-0-4);
+  flex-wrap: wrap;
+}
+.pg-pv-sem {
+  padding: 0.15rem var(--space-2);
+  font-size: var(--fs-micro);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border: var(--border-hair) solid;
+  border-radius: var(--radius);
+}
 .pg-pv-code {
   padding: var(--space-2) var(--space-0-6);
   background: var(--bg);
@@ -343,46 +360,22 @@
 }
 
 /* ---- Save row ---- */
+/* .pg-save-row composes .flex-center; local adds top margin + wrap. */
 .pg-save-row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
   margin-top: var(--space-5);
   flex-wrap: wrap;
 }
-.pg-name-input,
-.pg-desc-input {
-  padding: 0.45rem var(--space-0-6);
-  background: var(--bg);
-  border: var(--border-hair) solid var(--border-strong);
-  border-radius: var(--radius);
-  color: var(--text);
-  font-family: var(--font);
-  font-size: var(--fs-label);
-  outline: none;
-}
+/* .pg-name-input / .pg-desc-input compose .form-input; local keeps their fixed
+   / flexible widths (the primitive is width:100%). */
 .pg-name-input { width: 160px; }
 .pg-desc-input { flex: 1; min-width: 180px; }
-.pg-name-input:focus,
-.pg-desc-input:focus {
-  border-color: var(--accent);
-}
-.pg-name-input::placeholder,
-.pg-desc-input::placeholder {
-  color: var(--text-dim);
-}
+/* .pg-save-btn / .pg-apply-btn compose .action-button; local keeps the compact
+   padding + caption size and the per-button accent / cool color scheme. */
 .pg-save-btn,
 .pg-apply-btn {
   padding: 0.45rem var(--space-4);
-  font-family: var(--font);
   font-size: var(--fs-caption);
-  text-transform: uppercase;
   letter-spacing: 0.08em;
-  border: var(--border-hair) solid;
-  border-radius: var(--radius);
-  background: var(--bg);
-  cursor: pointer;
-  transition: background var(--motion-fast) var(--ease), color var(--motion-fast) var(--ease);
 }
 .pg-save-btn {
   border-color: var(--accent);

@@ -662,25 +662,20 @@
     // --- Populate utilities list ---
     var utilList = document.getElementById("nav-util-list");
     if (utilList) {
-      var utilities = [
-        { name: "ADO Dashboard", icon: "bar-chart-3", href: "_utils/ado-dashboard/index.html" },
-        { name: "Health Dashboard", icon: "activity", href: "_utils/health-dashboard/index.html" },
-        { name: "Log Viewer", icon: "terminal", href: "_utils/log-viewer/index.html" },
-        { name: "Palette Generator", icon: "palette", href: "_utils/palette-generator/index.html" },
-        { name: "Password Generator", icon: "lock-keyhole", href: "_utils/password-generator/index.html" },
-        { name: "Regex Editor", icon: "regex", href: "_utils/regex-editor/index.html" },
-        { name: "Skills", icon: "boxes", href: "_utils/skills-map/index.html" },
-        { name: "Style Guide", icon: "swatch-book", href: "_utils/style-guide/index.html" },
-        { name: "Screensaver", icon: "monitor", href: "_utils/screensaver/index.html" },
-        { name: "Assessment", icon: "file-check", href: "_utils/assessment/index.html" }
-      ];
-
-      utilList.innerHTML = utilities.map(function (u) {
-        return '<a href="/' + u.href + '" class="nav-link">' +
-               '<i data-lucide="' + u.icon + '" class="nav-link-icon"></i>' +
-               '<span class="nav-link-text">' + u.name + '</span>' +
-               '</a>';
-      }).join('');
+      // Utilities list is data-driven: the build emits _utils/_manifest.json
+      // from the actual utility files, so this never needs manual editing.
+      fetch('/content/_utils/_manifest.json')
+        .then(function (r) { return r.ok ? r.json() : []; })
+        .then(function (utilities) {
+          utilList.innerHTML = (utilities || []).map(function (u) {
+            return '<a href="/' + u.href + '" class="nav-link">' +
+                   '<i data-lucide="' + u.icon + '" class="nav-link-icon"></i>' +
+                   '<span class="nav-link-text">' + u.name + '</span>' +
+                   '</a>';
+          }).join('');
+          if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
+        })
+        .catch(function () { /* manifest missing — leave nav utils empty */ });
     }
   })();
 

@@ -183,10 +183,10 @@ TOP_BAR = """\
                   <span class="status-chip status-chip-outlined-muted mcp-state" id="mcp-state">&hellip;</span>
                 </span>
                 <div class="mcp-actions">
-                  <button class="settings-toggle-btn" id="mcp-restart-btn" aria-label="Restart MCP service" title="Restart — picks up code changes">
+                  <button class="settings-toggle-btn" id="mcp-restart-btn" aria-label="Restart MCP service" data-tooltip="Restart - picks up code changes">
                     <i data-lucide="rotate-cw" class="settings-toggle-icon" id="mcp-restart-icon"></i>
                   </button>
-                  <button class="settings-toggle-btn mcp-stop-btn" id="mcp-stop-btn" aria-label="Stop MCP service" title="Stop the service">
+                  <button class="settings-toggle-btn mcp-stop-btn" id="mcp-stop-btn" aria-label="Stop MCP service" data-tooltip="Stop the service">
                     <i data-lucide="power" class="settings-toggle-icon" id="mcp-stop-icon"></i>
                   </button>
                 </div>
@@ -195,7 +195,7 @@ TOP_BAR = """\
             <div class="nav-group">
               <div class="nav-group-label">Theme</div>
               <div class="settings-preset-row" id="preset-selector">
-                <select class="preset-select" id="preset-select">
+                <select class="preset-select form-select" id="preset-select">
                   <option value="custom">Custom</option>
                 </select>
               </div>
@@ -547,14 +547,16 @@ SHELL_TEMPLATE = """\
   </div>
   {{TOPBAR}}
   {{SITE_NAV}}
-  <nav class="toc-sidebar" id="toc-sidebar" aria-label="Table of contents">
-    <div class="panel-header"><i data-lucide="list" class="toc-icon"></i> Table of Contents</div>
-    <div class="toc-body" id="toc-body"></div>
-  </nav>
   <main class="page" id="page-main">
     <article class="markdown-body" id="content-target">
     </article>
   </main>
+  <aside class="toc-float" id="toc-sidebar" aria-hidden="true" aria-label="Table of contents">
+    <div class="toc-float-head" id="toc-head">
+      <span class="panel-header"><i data-lucide="list" class="toc-icon"></i> Table of Contents</span>
+    </div>
+    <div class="toc-body" id="toc-body"></div>
+  </aside>
   <footer class="page-footer">
     <span class="source-path" id="source-path"></span>
     <span class="footer-sep">|</span>

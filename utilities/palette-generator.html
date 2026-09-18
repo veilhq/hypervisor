@@ -1,26 +1,25 @@
-<div class="pg-layout">
-  <div class="utility-container" style="max-width:960px">
+<div class="utility-body">
     <h1><i data-lucide="palette" class="utility-title-icon"></i> Palette Generator</h1>
     <p class="pg-subtitle">Browse gradient map presets, create custom palettes, and save them for use across the site.</p>
 
     <!-- Browse Section -->
-    <div class="pg-section-header">
+    <div class="pg-section-header flex-center">
       <span class="pg-section-label">Presets</span>
     </div>
     <div class="pg-grid" id="pg-grid"></div>
 
     <!-- Create Section -->
-    <div class="pg-section-header" style="margin-top:2rem">
+    <div class="pg-section-header flex-center" style="margin-top:2rem">
       <span class="pg-section-label">Create</span>
     </div>
     <div class="pg-create">
       <div class="pg-create-controls">
         <div class="pg-control-group">
           <label class="pg-label">Base Color</label>
-          <div class="pg-base-row">
+          <div class="pg-base-row flex-center">
             <input type="color" id="pg-base-color" class="pg-color-input" value="#00ff41">
             <span class="pg-hex-display" id="pg-base-hex">#00ff41</span>
-            <select id="pg-harmony-mode" class="pg-select">
+            <select id="pg-harmony-mode" class="pg-select form-select">
               <optgroup label="Classic Harmonies">
                 <option value="split">Split-complementary</option>
                 <option value="triadic">Triadic</option>
@@ -44,7 +43,7 @@
                 <option value="manual">Manual (freehand)</option>
               </optgroup>
             </select>
-            <button class="pg-shuffle-btn" id="pg-shuffle-btn" title="Regenerate"><i data-lucide="shuffle" style="width:14px;height:14px;vertical-align:-2px"></i></button>
+            <button class="pg-shuffle-btn action-button" id="pg-shuffle-btn" data-tooltip="Regenerate" aria-label="Regenerate"><i data-lucide="shuffle" style="width:14px;height:14px;vertical-align:-2px"></i></button>
           </div>
         </div>
 
@@ -72,7 +71,7 @@
         </div>
 
         <div class="pg-semantics-toggle">
-          <label><input type="checkbox" id="pg-show-semantics"> Include semantic colors</label>
+          <label><input type="checkbox" id="pg-show-semantics" class="form-check"> Include semantic colors</label>
         </div>
         <div class="pg-semantics-edit" id="pg-semantics-edit" style="display:none">
           <div class="pg-swatch-slot">
@@ -99,9 +98,10 @@
       </div>
 
       <!-- Live Preview -->
-      <div class="pg-preview" id="pg-preview">
+      <div class="pg-preview content-card" id="pg-preview">
         <div class="pg-preview-header">Live Preview</div>
         <div class="pg-preview-body">
+          <div class="pg-pv-gradient" id="pg-pv-gradient"></div>
           <div class="pg-preview-bar" id="pg-preview-bar">
             <span class="pg-pv-accent"></span>
             <span class="pg-pv-warm"></span>
@@ -111,11 +111,21 @@
           <div class="pg-preview-samples">
             <div class="pg-pv-heading" id="pg-pv-h1">Heading Text</div>
             <div class="pg-pv-text">Body text on a dark background. The palette should be <span class="pg-pv-link" id="pg-pv-link">readable</span> and distinct.</div>
+            <div class="pg-pv-buttons">
+              <button class="pg-pv-btn-primary" id="pg-pv-btn-primary">Primary</button>
+              <button class="pg-pv-btn-ghost" id="pg-pv-btn-ghost">Ghost</button>
+            </div>
             <div class="pg-pv-badges">
               <span class="pg-pv-badge pg-pv-badge-accent" id="pg-pv-badge-a">accent</span>
               <span class="pg-pv-badge pg-pv-badge-warm" id="pg-pv-badge-w">warm</span>
               <span class="pg-pv-badge pg-pv-badge-cool" id="pg-pv-badge-c">cool</span>
               <span class="pg-pv-badge pg-pv-badge-comp" id="pg-pv-badge-comp">comp</span>
+            </div>
+            <div class="pg-pv-semantics" id="pg-pv-semantics" style="display:none">
+              <span class="pg-pv-sem" id="pg-pv-sem-success">success</span>
+              <span class="pg-pv-sem" id="pg-pv-sem-warning">warning</span>
+              <span class="pg-pv-sem" id="pg-pv-sem-error">error</span>
+              <span class="pg-pv-sem" id="pg-pv-sem-info">info</span>
             </div>
             <div class="pg-pv-code" id="pg-pv-code">
               <span class="pg-pv-kw">const</span> theme = { accent: <span class="pg-pv-str">"#00ff41"</span> };
@@ -126,15 +136,14 @@
     </div>
 
     <!-- Save Controls -->
-    <div class="pg-save-row">
-      <input type="text" id="pg-name" class="pg-name-input" placeholder="Preset name" maxlength="32">
-      <input type="text" id="pg-desc" class="pg-desc-input" placeholder="Short description (optional)" maxlength="64">
-      <button class="pg-save-btn" id="pg-save-btn"><i data-lucide="save" style="width:12px;height:12px;vertical-align:-1px"></i> Save Preset</button>
-      <button class="pg-apply-btn" id="pg-apply-btn"><i data-lucide="check" style="width:12px;height:12px;vertical-align:-1px"></i> Apply to Site</button>
+    <div class="pg-save-row flex-center">
+      <input type="text" id="pg-name" class="pg-name-input form-input" placeholder="Preset name" maxlength="32">
+      <input type="text" id="pg-desc" class="pg-desc-input form-input" placeholder="Short description (optional)" maxlength="64">
+      <button class="pg-save-btn action-button" id="pg-save-btn"><i data-lucide="save" style="width:12px;height:12px;vertical-align:-1px"></i> Save Preset</button>
+      <button class="pg-apply-btn action-button" id="pg-apply-btn"><i data-lucide="check" style="width:12px;height:12px;vertical-align:-1px"></i> Apply to Site</button>
     </div>
     <div class="pg-toast" id="pg-toast"></div>
   </div>
-</div>
 
 <script>
 (function () {
@@ -202,13 +211,21 @@
 
     function makeCard(key, preset, isUser, isActive) {
       var card = document.createElement("div");
-      card.className = "pg-card" + (isActive ? " pg-card-active" : "");
+      card.className = "pg-card content-card" + (isActive ? " pg-card-active content-card-active" : "");
       card.setAttribute("data-key", key);
 
-      // Swatch bar
+      var colors = [preset.accent, preset.warm, preset.cool, preset.comp];
+
+      // Gradient hero — the actual gradient the preset produces, so the tile
+      // previews the palette as a smooth blend rather than only hard stripes.
+      var hero = document.createElement("div");
+      hero.className = "pg-card-hero";
+      hero.style.background = "linear-gradient(90deg, " + colors.join(", ") + ")";
+      card.appendChild(hero);
+
+      // Swatch bar — discrete colors below the hero, click to copy the hex.
       var bar = document.createElement("div");
       bar.className = "pg-card-bar";
-      var colors = [preset.accent, preset.warm, preset.cool, preset.comp];
       colors.forEach(function (c) {
         var swatch = document.createElement("span");
         swatch.className = "pg-card-swatch";
@@ -240,10 +257,10 @@
 
       // Actions
       var actions = document.createElement("div");
-      actions.className = "pg-card-actions";
+      actions.className = "pg-card-actions flex-center";
 
       var applyA = document.createElement("button");
-      applyA.className = "pg-card-btn";
+      applyA.className = "pg-card-btn action-button";
       applyA.textContent = isActive ? "active" : "apply";
       applyA.disabled = isActive;
       applyA.addEventListener("click", function (e) {
@@ -255,7 +272,7 @@
 
       if (isUser) {
         var delBtn = document.createElement("button");
-        delBtn.className = "pg-card-btn pg-card-btn-del";
+        delBtn.className = "pg-card-btn pg-card-btn-del action-button action-button-danger";
         delBtn.textContent = "delete";
         delBtn.addEventListener("click", function (e) {
           e.stopPropagation();
@@ -452,6 +469,38 @@
       document.getElementById("pg-pv-badge-comp").style.color = comp;
       document.getElementById("pg-pv-code").querySelector(".pg-pv-kw").style.color = w;
       document.getElementById("pg-pv-code").querySelector(".pg-pv-str").style.color = a;
+
+      // Gradient band — the palette rendered as a smooth blend (matches the
+      // preset cards' hero), updated live.
+      document.getElementById("pg-pv-gradient").style.background =
+        "linear-gradient(90deg, " + a + ", " + w + ", " + c + ", " + comp + ")";
+
+      // Buttons — primary is accent-filled, ghost is accent-bordered.
+      var btnP = document.getElementById("pg-pv-btn-primary");
+      btnP.style.background = a;
+      btnP.style.borderColor = a;
+      var btnG = document.getElementById("pg-pv-btn-ghost");
+      btnG.style.borderColor = a;
+      btnG.style.color = a;
+
+      // Semantic chips — only meaningful when semantics are enabled.
+      var semWrap = document.getElementById("pg-pv-semantics");
+      if (showSemantics.checked) {
+        semWrap.style.display = "";
+        var semMap = {
+          "pg-pv-sem-success": semSuccess.value,
+          "pg-pv-sem-warning": semWarning.value,
+          "pg-pv-sem-error": semError.value,
+          "pg-pv-sem-info": semInfo.value
+        };
+        Object.keys(semMap).forEach(function (id) {
+          var el = document.getElementById(id);
+          el.style.color = semMap[id];
+          el.style.borderColor = semMap[id];
+        });
+      } else {
+        semWrap.style.display = "none";
+      }
     }
 
     // --- Events ---
@@ -484,10 +533,12 @@
     [semSuccess, semWarning, semError, semInfo].forEach(function (inp) {
       inp.addEventListener("input", function () {
         updateHexDisplays();
+        updatePreview();
       });
     });
     showSemantics.addEventListener("change", function () {
       semanticsEdit.style.display = this.checked ? "" : "none";
+      updatePreview();
     });
 
     // --- Save ---

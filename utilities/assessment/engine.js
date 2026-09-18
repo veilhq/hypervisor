@@ -232,7 +232,7 @@
   function buildDomainFilters() {
     var html = "";
     for (var d in DOMAINS) {
-      html += '<label class="quiz-domain-label"><input type="checkbox" class="quiz-domain-cb" value="' + d + '" checked> ' + escHtml(DOMAINS[d]) + '</label>';
+      html += '<label class="quiz-domain-label flex-center"><input type="checkbox" class="quiz-domain-cb form-check" value="' + d + '" checked> ' + escHtml(DOMAINS[d]) + '</label>';
     }
     if (els.domainFilters) els.domainFilters.innerHTML = html;
   }
@@ -326,7 +326,7 @@
     if (els.typeTag) {
       if (q.t) {
         els.typeTag.textContent = q.t;
-        els.typeTag.className = "quiz-type-tag quiz-type-" + q.t;
+        els.typeTag.className = "quiz-type-tag status-chip quiz-type-" + q.t;
         els.typeTag.style.display = "";
       } else {
         els.typeTag.style.display = "none";
@@ -495,9 +495,9 @@
     for (var d in domainStats) {
       var ds = domainStats[d];
       var dp = Math.round((ds.correct / ds.total) * 100);
-      breakdownHtml += '<div class="quiz-breakdown-row">' +
+      breakdownHtml += '<div class="quiz-breakdown-row flex-center">' +
         '<span class="quiz-breakdown-domain">' + escHtml(DOMAINS[d] || "Domain " + d) + '</span>' +
-        '<span class="quiz-breakdown-bar"><span class="quiz-breakdown-fill" style="width:' + dp + '%"></span></span>' +
+        '<span class="quiz-breakdown-bar progress-track"><span class="quiz-breakdown-fill progress-fill" style="width:' + dp + '%"></span></span>' +
         '<span class="quiz-breakdown-pct ' + (dp >= PASS_THRESHOLD ? "pw-str-strong" : "pw-str-weak") + '">' + dp + '%</span>' +
         '</div>';
     }
@@ -517,9 +517,9 @@
         if (typeStats[t].total > 0) {
           var tp = Math.round((typeStats[t].correct / typeStats[t].total) * 100);
           var typeLabel = t.charAt(0).toUpperCase() + t.slice(1);
-          breakdownHtml += '<div class="quiz-breakdown-row">' +
+          breakdownHtml += '<div class="quiz-breakdown-row flex-center">' +
             '<span class="quiz-breakdown-domain">' + escHtml(typeLabel) + '</span>' +
-            '<span class="quiz-breakdown-bar"><span class="quiz-breakdown-fill" style="width:' + tp + '%"></span></span>' +
+            '<span class="quiz-breakdown-bar progress-track"><span class="quiz-breakdown-fill progress-fill" style="width:' + tp + '%"></span></span>' +
             '<span class="quiz-breakdown-pct ' + (tp >= PASS_THRESHOLD ? "pw-str-strong" : "pw-str-weak") + '">' + tp + '%</span>' +
             '</div>';
         }
@@ -575,7 +575,7 @@
 
     if (guideNav) {
       guideNav.innerHTML = GUIDE.map(function(d) {
-        return '<button class="guide-nav-btn active" data-domain="' + d.domain + '">' +
+        return '<button class="guide-nav-btn status-chip active" data-domain="' + d.domain + '">' +
                '<span class="guide-nav-num">D' + d.domain + '</span> ' + escHtml(d.title) + '</button>';
       }).join("");
 

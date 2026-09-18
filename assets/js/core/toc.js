@@ -6,7 +6,7 @@
   (function initTocLifecycle() {
     var tocSidebar = document.getElementById("toc-sidebar");
     var tocBody = document.getElementById("toc-body");
-    var pageMain = document.getElementById("page-main");
+    var tocHead = document.getElementById("toc-head");
     if (!tocSidebar || !tocBody) return;
 
     var _scrollHandler = null;
@@ -14,8 +14,30 @@
     var _linkMap = {};
     var _currentActive = null;
 
+    // --- Compact card show/hide + collapse ---
+    function showCard() {
+      tocSidebar.classList.add("visible");
+      // Default to condensed each time a doc's TOC appears — expand on click.
+      tocSidebar.classList.add("collapsed");
+      tocSidebar.setAttribute("aria-hidden", "false");
+    }
+    function hideCard() {
+      tocSidebar.classList.remove("visible");
+      tocSidebar.setAttribute("aria-hidden", "true");
+    }
+    // Header click collapses/expands the body (chevron rotates via CSS).
+    // Uses the shared HvCollapsible primitive; the header + panel markup is
+    // owned here, the primitive attaches only the toggle behavior.
+    if (tocHead && window.HvCollapsible) {
+      window.HvCollapsible.register({ header: tocHead, panel: tocSidebar, collapsed: true });
+    } else if (tocHead) {
+      // Fallback if the primitive is unavailable (defensive; should not happen).
+      tocHead.addEventListener("click", function () {
+        tocSidebar.classList.toggle("collapsed");
+      });
+    }
+
     function teardown() {
-      // Remove scroll listener if one was active
       if (_scrollHandler) {
         window.removeEventListener("scroll", _scrollHandler);
         _scrollHandler = null;
@@ -23,21 +45,23 @@
       _headingElements = [];
       _linkMap = {};
       _currentActive = null;
+      // Hide the card on navigation; init re-shows it when the next doc has a TOC.
+      hideCard();
     }
 
     function init(fragment) {
-      // The router already updated the TOC body innerHTML and visibility.
-      // We just need to set up active heading tracking.
-      // The build gates TOC inclusion on li_count >= 3, so if the router
-      // injected TOC content, trust that decision — no runtime height check.
+      // The router already updated the TOC body innerHTML.
+      // Show the card only when the doc actually has a TOC, then set up
+      // active-heading tracking (highlights the current section in the card).
       var article = document.getElementById("content-target");
       if (!article) return;
 
       var tocLinks = tocBody.querySelectorAll("a[href]");
-      if (!tocLinks.length) return;
-
-      tocSidebar.classList.add("visible");
-      if (pageMain) pageMain.classList.add("has-toc");
+      if (!tocLinks.length) {
+        hideCard();
+        return;
+      }
+      showCard();
 
       // Build id → link map
       _linkMap = {};

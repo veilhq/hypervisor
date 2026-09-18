@@ -40,9 +40,16 @@ logger = setup_logger("hypervisor")
 # denied/blocked attempts. Surfaces automatically in the log viewer.
 lan_logger = setup_logger("lan")
 
+# Dedicated WebView (renderer/Chromium) diagnostics log → .hyperspace/.logs/
+# webview.log. Renderer-side errors forwarded from client-diagnostics.js via the
+# log_client_error bridge, plus crash-reporter setup, land here — isolated from
+# hypervisor.log build noise. Surfaces automatically in the Log Viewer utility
+# (it globs *.log). "WebView" becomes a source filter there.
+webview_logger = setup_logger("webview")
+
 import webview.http
 
-from site_utils.config import HYPERSPACE_ROOT, OUTPUT_DIR, ASSETS_DIR
+from site_utils.config import HYPERSPACE_ROOT, OUTPUT_DIR, ASSETS_DIR, CHANGELOG_CACHE_FILE
 from site_utils.file_utils import read_md
 from site_utils.work_items import mark_done as _mark_done
 from site_utils.external_files import import_external_file as _import_external, delete_external_file as _delete_external
@@ -480,6 +487,38 @@ class HypervisorAPI:
     def set_window(self, window):
         """Set the window reference after creation (needed for evaluate_js)."""
         self._window = window
+
+    def log_client_error(self, payload):
+        """Log a renderer-side error/diagnostic into hypervisor.log.
+
+        Called from the JS crash-capture module (client-diagnostics.js) on
+        window.onerror, unhandledrejection, and visibility/memory signals, so
+        renderer failures that precede a WebView2 crash are captured server-side
+        (the renderer process log is otherwise lost when it dies).
+
+        Args:
+            payload: dict with keys like kind, message, source, line, col,
+                     stack, url. Tolerant of partial/missing fields.
+        """
+        try:
+            if isinstance(payload, str):
+                payload = {"kind": "error", "message": payload}
+            payload = payload or {}
+            kind = str(payload.get("kind", "error"))
+            msg = str(payload.get("message", ""))
+            url = str(payload.get("url", ""))
+            src = str(payload.get("source", ""))
+            line = payload.get("line", "")
+            col = payload.get("col", "")
+            stack = str(payload.get("stack", ""))
+            webview_logger.error(
+                "client-%s @ %s :: %s (%s:%s:%s)%s",
+                kind, url, msg, src, line, col,
+                ("\n" + stack) if stack else "",
+            )
+        except Exception as e:  # never let logging crash the bridge
+            webview_logger.error("log_client_error failed: %s", e)
+        return True
 
     def _broadcast_js(self, js_code):
         """Evaluate JS in all open windows."""
@@ -1002,6 +1041,38 @@ class HypervisorAPI:
             win.toggle_fullscreen()
         return {"ok": True}
 
+    def _atomic_write_prefs(self, prefs_path, prefs):
+        """Atomically persist the prefs dict to prefs_path (temp file + rename).
+
+        On Windows, os.replace can raise PermissionError (WinError 5) when the
+        destination is momentarily locked by another process holding a handle --
+        an AV scanner, the file indexer, or a concurrent reader. The lock is
+        transient, so retry with a short backoff before giving up rather than
+        surfacing a spurious failure to the UI. Callers hold self._prefs_lock.
+        """
+        import time
+        tmp_path = prefs_path.with_suffix(".tmp")
+        tmp_path.write_text(json.dumps(prefs, indent=2), encoding="utf-8")
+        last_err = None
+        for attempt in range(5):
+            try:
+                tmp_path.replace(prefs_path)
+                last_err = None
+                break
+            except PermissionError as err:
+                last_err = err
+                time.sleep(0.05 * (attempt + 1))
+        if last_err is not None:
+            # Clean up the temp file so a failed write doesn't leave a dangling
+            # .tmp behind, then report the failure to the caller.
+            try:
+                tmp_path.unlink(missing_ok=True)
+            except OSError:
+                pass
+            logger.error("preferences write failed after retries: %s", last_err)
+            return {"ok": False, "error": str(last_err)}
+        return {"ok": True}
+
     def save_preference(self, key, value):
         """Persist a user preference to disk so it survives app restarts.
 
@@ -1025,11 +1096,7 @@ class HypervisorAPI:
                     except (json.JSONDecodeError, OSError):
                         prefs = {}
             prefs[key] = value
-            # Atomic write: write to temp file then replace
-            tmp_path = prefs_path.with_suffix(".tmp")
-            tmp_path.write_text(json.dumps(prefs, indent=2), encoding="utf-8")
-            tmp_path.replace(prefs_path)
-        return {"ok": True}
+            return self._atomic_write_prefs(prefs_path, prefs)
 
     def load_preferences(self):
         """Load all saved preferences from disk."""
@@ -1086,10 +1153,7 @@ class HypervisorAPI:
             for k, v in updates.items():
                 if isinstance(v, str) or isinstance(v, (int, float, bool)):
                     prefs[k] = v
-            tmp_path = prefs_path.with_suffix(".tmp")
-            tmp_path.write_text(json.dumps(prefs, indent=2), encoding="utf-8")
-            tmp_path.replace(prefs_path)
-        return {"ok": True}
+            return self._atomic_write_prefs(prefs_path, prefs)
 
     def get_user_gradient_maps(self):
         """DEPRECATED: User maps are now returned as part of load_preferences().
@@ -1123,9 +1187,9 @@ class HypervisorAPI:
             if "userGradientMaps" not in prefs:
                 prefs["userGradientMaps"] = {}
             prefs["userGradientMaps"][key] = data
-            tmp_path = prefs_path.with_suffix(".tmp")
-            tmp_path.write_text(json.dumps(prefs, indent=2), encoding="utf-8")
-            tmp_path.replace(prefs_path)
+            result = self._atomic_write_prefs(prefs_path, prefs)
+            if not result.get("ok"):
+                return result
         return {"ok": True, "key": key}
 
     def delete_user_gradient_map(self, key):
@@ -1147,10 +1211,7 @@ class HypervisorAPI:
                 return {"ok": False, "error": f"Preset '{key}' not found"}
             del maps[key]
             prefs["userGradientMaps"] = maps
-            tmp_path = prefs_path.with_suffix(".tmp")
-            tmp_path.write_text(json.dumps(prefs, indent=2), encoding="utf-8")
-            tmp_path.replace(prefs_path)
-        return {"ok": True}
+            return self._atomic_write_prefs(prefs_path, prefs)
 
     def mark_done(self, file_path):
         """Move a work item from work/to-do/ to work/done/ and update index.
@@ -1452,6 +1513,114 @@ class HypervisorAPI:
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
+    def refresh_changelog(self):
+        """Return the persistent kiro-cli changelog archive for the viewer.
+
+        Reads the archive written by hyperagent (which owns capture, since it
+        detects CLI updates and talks to the binary). If the archive is empty
+        or missing — e.g. no update has fired yet — falls back to a one-shot
+        self-contained capture via `kiro-cli version --changelog=all` so the
+        viewer isn't blank on first use.
+
+        Returns:
+            dict with ok, versions (newest-first), captured timestamp, source.
+        """
+        try:
+            versions = self._read_changelog_cache()
+            source = "cache"
+            if not versions:
+                versions = self._capture_changelog_fallback()
+                source = "live" if versions else "empty"
+            return {
+                "ok": True,
+                "versions": versions,
+                "count": len(versions),
+                "source": source,
+            }
+        except Exception as e:
+            logger.warning("refresh_changelog failed: %s", e)
+            return {"ok": False, "error": str(e)}
+
+    def _read_changelog_cache(self):
+        """Read the changelog archive JSON. Returns a list of version blocks."""
+        if not CHANGELOG_CACHE_FILE.exists():
+            return []
+        try:
+            data = json.loads(CHANGELOG_CACHE_FILE.read_text(encoding="utf-8"))
+            return data.get("versions", []) if isinstance(data, dict) else []
+        except Exception as e:
+            logger.debug("_read_changelog_cache failed: %s", e)
+            return []
+
+    def _capture_changelog_fallback(self):
+        """Self-contained one-shot capture when the archive is empty.
+
+        Shells out to `kiro-cli version --changelog=all`, parses all version
+        blocks, and writes them to the archive so subsequent reads hit cache.
+        Kept independent of hyperagent's helpers to preserve app decoupling —
+        hyperagent remains the primary writer via the update pipeline.
+        """
+        kiro = shutil.which("kiro-cli")
+        if not kiro:
+            fallback = Path(os.environ.get("USERPROFILE", "")) / ".kiro" / "bin" / "kiro-cli.exe"
+            kiro = str(fallback) if fallback.exists() else None
+        if not kiro:
+            return []
+        flags = 0x08000000 if os.name == "nt" else 0
+        try:
+            r = subprocess.run(
+                [kiro, "version", "--changelog=all"],
+                capture_output=True, text=True, timeout=10,
+                creationflags=flags,
+            )
+            if r.returncode != 0 or not r.stdout.strip():
+                return []
+        except Exception as e:
+            logger.debug("_capture_changelog_fallback subprocess failed: %s", e)
+            return []
+
+        blocks = self._parse_changelog_blocks(r.stdout)
+        if not blocks:
+            return []
+        try:
+            CHANGELOG_CACHE_FILE.parent.mkdir(parents=True, exist_ok=True)
+            from datetime import datetime as _dt
+            CHANGELOG_CACHE_FILE.write_text(json.dumps({
+                "captured": _dt.now().strftime("%Y-%m-%dT%H:%M:%S"),
+                "versions": blocks,
+            }, indent=2), encoding="utf-8")
+        except Exception as e:
+            logger.debug("_capture_changelog_fallback write failed: %s", e)
+        return blocks
+
+    @staticmethod
+    def _parse_changelog_blocks(text):
+        """Parse `kiro-cli version --changelog` stdout into version blocks."""
+        header_re = re.compile(r"^Version\s+(\S+)\s+\((\d{4}-\d{2}-\d{2})\)\s*$")
+        entry_re = re.compile(r"^\s*-\s*(Added|Changed|Fixed|Security|Deprecated):\s*(.*)$")
+        tag_re = re.compile(r"^\[([^\]]+)\]\s*(.*)$")
+        blocks = []
+        current = None
+        for line in text.splitlines():
+            h = header_re.match(line)
+            if h:
+                if current and current["entries"]:
+                    blocks.append(current)
+                current = {"version": h.group(1), "date": h.group(2), "entries": []}
+                continue
+            e = entry_re.match(line)
+            if e and current is not None:
+                body = e.group(2).strip()
+                tag = None
+                tm = tag_re.match(body)
+                if tm:
+                    tag = tm.group(1)
+                    body = tm.group(2).strip()
+                current["entries"].append({"type": e.group(1), "tag": tag, "text": body})
+        if current and current["entries"]:
+            blocks.append(current)
+        return blocks
+
     def fix_violations(self, dry_run=True):
         """Run schema migration to auto-fix metadata violations.
 
@@ -1507,6 +1676,36 @@ class HypervisorAPI:
         """Lightweight pipeline poll (delegated to ado_bridge)."""
         from ado_bridge import refresh_ado_pipelines
         return refresh_ado_pipelines()
+
+    def set_range_token(self, token, base="dev"):
+        """Seed the range monitoring session with a pasted portal access_token."""
+        from range_bridge import set_range_token
+        return set_range_token(token, base)
+
+    def clear_range_token(self):
+        """Drop the in-memory range monitoring session."""
+        from range_bridge import clear_range_token
+        return clear_range_token()
+
+    def range_session_status(self):
+        """Report whether a live range session exists (for restoring UI on reload)."""
+        from range_bridge import range_session_status
+        return range_session_status()
+
+    def refresh_range(self):
+        """Fetch range monitoring data (delegated to range_bridge)."""
+        from range_bridge import refresh_range
+        return refresh_range()
+
+    def refresh_sessions(self):
+        """Fetch active session counts by role (delegated to range_bridge)."""
+        from range_bridge import refresh_sessions
+        return refresh_sessions()
+
+    def refresh_classrooms(self):
+        """Fetch active classroom count (delegated to range_bridge)."""
+        from range_bridge import refresh_classrooms
+        return refresh_classrooms()
 
 
     # -----------------------------------------------------------------------
@@ -2048,6 +2247,30 @@ def main():
     # on disk so it persists across app restarts (regardless of port changes).
     icon_path = str((ASSETS_DIR / "hypervisor.ico").resolve())
     storage_dir = str((OUTPUT_DIR.parent / ".webview_data").resolve())
+
+    # Enable WebView2 (Edge/Chromium) crash minidumps so a hard renderer crash
+    # leaves a trace. We deliberately DO NOT pass --enable-logging/--log-file:
+    # bare --enable-logging routes Chromium logging to stderr, which allocates a
+    # visible console window on Windows and emits only benign DPI/LLM noise.
+    # The actionable renderer signal (JS errors, unhandled rejections, memory
+    # climb) is already forwarded into hypervisor.log by client-diagnostics.js
+    # via the log_client_error bridge — no second file, no terminal. The one
+    # thing the bridge can't catch is a hard process crash, so we keep the
+    # silent crash reporter, which writes minidumps without a console.
+    # No-op on non-WebView2 backends (the env var is ignored).
+    try:
+        _logs_dir = HYPERSPACE_ROOT / ".logs"
+        _logs_dir.mkdir(parents=True, exist_ok=True)
+        _wv_crashes = str((_logs_dir / "webview2-crashes").resolve())
+        os.makedirs(_wv_crashes, exist_ok=True)
+        os.environ["WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS"] = (
+            "--enable-crash-reporter "
+            f'--crash-dumps-dir="{_wv_crashes}"'
+        )
+        webview_logger.info("WebView2 crash minidumps -> %s", _wv_crashes)
+    except Exception as e:
+        webview_logger.warning("Could not enable WebView2 crash reporting: %s", e)
+
     # Pin a fixed port so the LAN access URL (http://<lan-ip>:8420/) is stable
     # across launches. Without this, pywebview picks a random port each start.
     webview.start(background, debug=False, icon=icon_path,

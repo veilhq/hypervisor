@@ -46,19 +46,19 @@
     if (s.running) {
       chip.classList.add("status-chip-filled");
       chip.textContent = "PID " + s.pid;
-      chip.title = "Running on port " + s.port +
-                   (s.owned ? " (started by this window)" : " (started by a previous window)");
+      chip.setAttribute("data-tooltip", "Running on port " + s.port +
+                   (s.owned ? " (started by this window)" : " (started by a previous window)"));
       if (stopBtn) stopBtn.disabled = false;
-      if (restartBtn) restartBtn.setAttribute("title", "Restart — picks up code changes");
+      if (restartBtn) restartBtn.setAttribute("data-tooltip", "Restart - picks up code changes");
     } else {
       chip.classList.add("status-chip-outlined-muted");
       chip.textContent = "stopped";
       // Port open with no lock file means a stray instance is squatting 8321.
-      chip.title = s.port_open
-        ? "Port " + s.port + " is in use but no service is registered — a stray instance may be running"
-        : "Not running";
+      chip.setAttribute("data-tooltip", s.port_open
+        ? "Port " + s.port + " is in use but no service is registered - a stray instance may be running"
+        : "Not running");
       if (stopBtn) stopBtn.disabled = true;
-      if (restartBtn) restartBtn.setAttribute("title", "Start the service");
+      if (restartBtn) restartBtn.setAttribute("data-tooltip", "Start the service");
     }
   }
 

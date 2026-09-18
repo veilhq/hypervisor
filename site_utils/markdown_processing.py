@@ -377,12 +377,23 @@ def extract_metadata_block(html: str) -> str:
         html_parts.append('<div class="doc-header-chips">' + "".join(chips) + '</div>')
 
         # --- MIDDLE: topic tag chips only (Project moved to left cluster) ---
+        # Cap visible tags so the header strip never reflows awkwardly on
+        # narrow widths; the remainder collapses into a +N overflow chip whose
+        # title lists the hidden tags.
+        MAX_VISIBLE_TAGS = 2
         tag_parts = []
         tags_val = parsed.get("tags")
         if tags_val:
-            for tag in (t.strip() for t in tags_val.split(",")):
-                if tag:
-                    tag_parts.append(f'<span class="doc-header-tag">{tag}</span>')
+            all_tags = [t.strip() for t in tags_val.split(",") if t.strip()]
+            visible = all_tags[:MAX_VISIBLE_TAGS]
+            hidden = all_tags[MAX_VISIBLE_TAGS:]
+            for tag in visible:
+                tag_parts.append(f'<span class="doc-header-tag">{tag}</span>')
+            if hidden:
+                title_attr = ", ".join(hidden)
+                tag_parts.append(
+                    f'<span class="doc-header-tag doc-header-tag-more" title="{title_attr}">+{len(hidden)}</span>'
+                )
         html_parts.append('<div class="doc-header-tags">' + "".join(tag_parts) + '</div>')
 
         # --- RIGHT: dates + type (Updated → Created → Type) ---
