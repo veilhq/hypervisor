@@ -162,7 +162,7 @@
         src += 'void main() {\n';
         src += '    vec2 uv = gl_FragCoord.xy / u_resolution;\n';
         src += '    float t = u_time * 0.4;\n';
-        src += '    float cellSize = max(2.0, floor(min(u_resolution.x, u_resolution.y) / 400.0));\n';
+        src += '    float cellSize = max(2.0, floor(min(u_resolution.x, u_resolution.y) / 650.0));\n';
         src += '    vec2 cellUv = floor(gl_FragCoord.xy / cellSize) * cellSize;\n';
         src += '    vec2 cellPos = cellUv / u_resolution;\n\n';
         src += PATTERN_MAIN[patternKey] + '\n\n';
@@ -236,7 +236,7 @@
         var rgb = ssHexToRgb(accent);
         var imgData = ctx.createImageData(w, h);
         var data = imgData.data;
-        var cell = Math.max(2, Math.floor(Math.min(w, h) / 80));
+        var cell = Math.max(2, Math.floor(Math.min(w, h) / 130));
         var bayer = [
           [0, 32, 8, 40, 2, 34, 10, 42],
           [48, 16, 56, 24, 50, 18, 58, 26],
