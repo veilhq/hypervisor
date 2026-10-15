@@ -83,8 +83,7 @@
           document.activeElement.tagName !== "INPUT" &&
           document.activeElement.tagName !== "TEXTAREA" &&
           !overlay.classList.contains("visible")) {
-        var exportBtn = document.getElementById("export-btn");
-        if (exportBtn) exportBtn.click();
+        if (window.__hvActions) window.__hvActions.run("export");
       }
       if (e.key === "p" && document.activeElement !== searchInput &&
           document.activeElement.tagName !== "INPUT" &&

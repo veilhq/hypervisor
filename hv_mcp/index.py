@@ -91,6 +91,8 @@ def _infer_doc_type(rel_path: str) -> str:
         return "pattern"
     elif parts[0] == "analysis":
         return "analysis"
+    elif parts[0] == "notes":
+        return "note"
     elif parts[0] == "reference":
         return "reference"
     elif parts[0] == "templates":

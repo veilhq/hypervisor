@@ -16,11 +16,14 @@
       { name: "Toggle Reduce Motion",   icon: "pause",         fn: function () { var b = document.getElementById("a11y-reduce-motion"); if (b) b.click(); } },
       { name: "Toggle Glitch Effect",   icon: "sparkles",      fn: function () { var b = document.getElementById("a11y-no-glitch"); if (b) b.click(); } },
       { name: "Toggle System Cursors",  icon: "mouse-pointer", fn: function () { var b = document.getElementById("a11y-system-cursors"); if (b) b.click(); } },
-      { name: "Start Edit Mode",        icon: "pencil",        fn: function () { var b = document.getElementById("edit-btn"); if (b) b.click(); } },
-      { name: "Open in File Explorer",  icon: "folder-open",   fn: function () { var b = document.getElementById("explorer-btn"); if (b) b.click(); } },
-      { name: "Export Page",            icon: "package",       fn: function () { var b = document.getElementById("export-btn"); if (b) b.click(); } },
-      { name: "Pin / Unpin Page",       icon: "pin",           fn: function () { var b = document.querySelector(".pin-btn"); if (b) b.click(); } },
+      { name: "Start Edit Mode",        icon: "pencil",        fn: function () { if (window.__hvActions) window.__hvActions.run("edit"); } },
+      { name: "Open in File Explorer",  icon: "folder-open",   fn: function () { if (window.__hvActions) window.__hvActions.run("openInExplorer"); } },
+      { name: "Export Page",            icon: "package",       fn: function () { if (window.__hvActions) window.__hvActions.run("export"); } },
+      { name: "Pin / Unpin Page",       icon: "pin",           fn: function () { if (window.__hvActions) window.__hvActions.run("togglePin"); } },
       { name: "Go to Pinboard",         icon: "bookmark",      fn: function () { if (window.__router) window.__router.navigate("/_pins/index.html"); } },
+      { name: "End Sprint",             icon: "skip-forward",  fn: function () { if (window.__hvActions) window.__hvActions.run("endSprint"); } },
+      { name: "Set Share Key",          icon: "key-round",     fn: function () { if (window.__hvActions) window.__hvActions.run("shareKey"); } },
+      { name: "Open in New Window",     icon: "app-window",    fn: function () { if (window.__hvActions) window.__hvActions.run("openInNewWindow"); } },
       { name: "Go to About",            icon: "info",          fn: function () { if (window.__router) window.__router.navigate("/_about/index.html"); } },
       { name: "Scroll to Top",          icon: "arrow-up",      fn: function () { window.scrollTo({ top: 0, behavior: "smooth" }); } },
       { name: "Launch Dev Environment", icon: "terminal",      fn: function () { if (window.pywebview && window.pywebview.api && window.pywebview.api.launch_dev) window.pywebview.api.launch_dev(); } },
@@ -28,23 +31,13 @@
     ];
 
     // --- Utility Registry ---
-    // Data-driven: populated from the build-generated _utils/_manifest.json so
-    // it stays in sync with the actual utility files (no hardcoded list).
-    var UTILITIES = [];
-    fetch('/content/_utils/_manifest.json')
-      .then(function (r) { return r.ok ? r.json() : []; })
-      .then(function (list) {
-        // Normalize hrefs to absolute for palette navigation, mutate in place
-        // so any closures already holding UTILITIES see the entries.
-        (list || []).forEach(function (u) {
-          UTILITIES.push({
-            name: u.name,
-            icon: u.icon,
-            href: u.href.charAt(0) === '/' ? u.href : '/' + u.href
-          });
-        });
-      })
-      .catch(function () { /* manifest missing — palette shows no utilities */ });
+    // Sourced from the shared HvSearchSources loader (core/02-search-sources.js),
+    // which owns the single fetch of _utils/_manifest.json. Read at search time
+    // so entries are picked up once the manifest resolves - no second fetch here.
+    function getUtilities() {
+      return (window.HvSearchSources && window.HvSearchSources.utilities())
+        || [];
+    }
 
     // --- Navigation Indexes (top-level category pages) ---
     var NAV_INDEXES = [
@@ -153,16 +146,31 @@
       });
 
       // 3. Utilities
-      UTILITIES.forEach(function (u) {
+      getUtilities().forEach(function (u) {
         var score = fuzzyMatch(query, u.name);
         if (score > 0) {
           results.push({
             category: "utility",
             name: u.name,
-            icon: u.icon,
+            icon: (window.HvSearchSources ? window.HvSearchSources.iconForKind("utility") : "wrench"),
             hint: "utility",
             score: score,
             action: function () { if (window.__router) window.__router.navigate(u.href); }
+          });
+        }
+      });
+
+      // 3b. Directories (shared source — every indexed hyperspace dir)
+      (window.HvSearchSources ? window.HvSearchSources.directories() : []).forEach(function (d) {
+        var score = Math.max(fuzzyMatch(query, d.name), fuzzyMatch(query, d.path));
+        if (score > 0) {
+          results.push({
+            category: "directory",
+            name: d.path,
+            icon: (window.HvSearchSources ? window.HvSearchSources.iconForKind("directory") : "folder"),
+            hint: "directory",
+            score: score,
+            action: function () { if (window.__router) window.__router.navigate(d.href); }
           });
         }
       });
@@ -207,8 +215,15 @@
         }
       });
 
-      // Sort by score descending, cap at 20 results
-      results.sort(function (a, b) { return b.score - a.score; });
+      // Order by category band first (directories + utilities surface ahead of
+      // documents and the rest), then by score within a band. Cap at 20.
+      var CATEGORY_RANK = { directory: 0, utility: 0, nav: 1, tag: 1, doc: 2, action: 2 };
+      results.sort(function (a, b) {
+        var ra = CATEGORY_RANK[a.category] != null ? CATEGORY_RANK[a.category] : 3;
+        var rb = CATEGORY_RANK[b.category] != null ? CATEGORY_RANK[b.category] : 3;
+        if (ra !== rb) return ra - rb;
+        return b.score - a.score;
+      });
       return results.slice(0, 20);
     }
 

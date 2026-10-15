@@ -179,6 +179,10 @@ class MarkdownHandler(FileSystemEventHandler):
         dest_md = event.dest_path.endswith(".md")
         if not src_md and not dest_md:
             return
+        # Drop the old path's cached hash so renames don't leave stale keys
+        # accumulating in _content_hashes for the life of the process.
+        if src_md:
+            self._remove_hash(event.src_path)
         # File moved — full rebuild to handle old path removal + new path generation
         self._debounce(None)
 

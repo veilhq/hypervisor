@@ -45,16 +45,59 @@
   border-color: var(--accent);
 }
 
-/* ---- Preview canvas ---- */
+/* ---- Preview media (framed "screen", mirrors .preview-card-media) ---- */
+/* A fixed responsive box holds a bordered inner frame; the canvas fills the
+   frame and is drawn at the frame's real pixel size (see markup) so the
+   preview keeps its aspect instead of stretching to the column width. */
+.ss-card-media {
+  display: block;
+  position: relative;
+  width: 100%;
+  height: clamp(150px, 18vw, 220px);
+  background:
+    radial-gradient(120% 100% at 0% 0%,
+      color-mix(in srgb, var(--accent) 14%, var(--bg-card)) 0%,
+      var(--bg-card) 60%),
+    var(--bg-card);
+  padding: var(--space-3);
+  overflow: hidden;
+}
+/* Bordered inner frame — the screen. In-flow block filling the padded media
+   box, clipping the canvas so it can never overlap the card body. */
+.ss-card-frame {
+  display: block;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border: var(--border-hair) solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  overflow: hidden;
+  transition: border-color var(--motion-slow) var(--ease),
+              box-shadow var(--motion-slow) var(--ease);
+}
+/* Hover "power-on": the screen frame lights up with an accent border + soft
+   inner/outer glow, matching the prototype gallery card. */
+.ss-card:hover .ss-card-frame {
+  border-color: var(--accent);
+  box-shadow:
+    0 0 0 1px var(--accent-border),
+    0 0 12px -2px var(--accent-glow, var(--accent-border)),
+    inset 0 0 18px -6px var(--accent-glow, var(--accent-border));
+}
+/* Selected: steady accent frame regardless of hover. */
+.ss-card.selected .ss-card-frame {
+  border-color: var(--accent);
+}
+/* The canvas fills the frame; its backing store is sized to the frame's real
+   pixels in JS, so api.preview() draws at the frame's aspect (no stretch). */
 .ss-card-preview {
   display: block;
+  position: absolute;
+  inset: 0;
   width: 100%;
-  height: 180px;
-  border-bottom: var(--border-hair) solid var(--border);
+  height: 100%;
   image-rendering: pixelated;
-}
-.ss-card.selected .ss-card-preview {
-  border-bottom-color: var(--accent-border);
 }
 
 /* ---- Card body ---- */
@@ -68,8 +111,8 @@
   margin-bottom: var(--space-1);
 }
 .ss-card-icon {
-  width: 14px;
-  height: 14px;
+  width: var(--icon-md);
+  height: var(--icon-md);
   color: var(--text-dim);
   flex-shrink: 0;
 }
@@ -78,7 +121,7 @@
 }
 .ss-card-name {
   font-size: var(--fs-sm);
-  font-weight: 700;
+  font-weight: var(--fw-bold);
   color: var(--text-bright);
   text-transform: uppercase;
   letter-spacing: 0.06em;

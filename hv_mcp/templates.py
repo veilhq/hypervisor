@@ -217,15 +217,19 @@ def apply_document_template(
 
     # Append a Sources scaffold for research/analysis docs unless the content
     # already provides its own Sources/References section. Research and analysis
-    # content is expected to number sources and cite them inline with [N]; the
-    # stub is a no-op prompt for other document kinds.
+    # content is expected to number sources and cite them inline with [N]; at
+    # render time each inline [N] becomes a superscript link to the matching
+    # numbered source entry (source-N), and the list renders as the sources
+    # area. The stub is a no-op prompt for other document kinds.
     if not re.search(r'(?im)^#{2,6}\s+(sources|references)\b', content):
         lines.append("## Sources")
         lines.append("")
         lines.append(
-            "<!-- For research/analysis content: number sources and cite each "
-            "substantive claim inline with [N]. Web: full URL + descriptor. "
-            "Codebase: `path:line` + symbol. Remove this section for non-analytical docs. -->"
+            "<!-- For research/analysis content: number sources (1., 2., ...) and "
+            "cite each substantive claim inline with [N] (or grouped [2][5]). At "
+            "render time [N] becomes a link to the matching source below. Web: full "
+            "URL + descriptor. Codebase: `path:line` + symbol. Remove this section "
+            "for non-analytical docs. -->"
         )
         lines.append("")
 

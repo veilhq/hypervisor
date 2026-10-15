@@ -45,8 +45,9 @@ Example: `homepage-pulse-row--hover.png`, `accent-picker--open.png`.
 
 | Slug | Surface | States | Baseline | Refresh | Notes |
 |------|---------|--------|----------|---------|-------|
-| `doc-header` | Doc header (title, description, metadata chips) | rest | [ ] | [ ] | |
-| `doc-header-chips` | Work ID + Status + Project + Tag chips | rest, hover | [ ] | [ ] | |
+| `doc-header` | Doc header (title row + metadata chips) | rest | [ ] | [ ] | |
+| `doc-title-row` | H1 title with topic tags top-right; tags collapse title-first to a +N chip then an 'N TAGS' blurb as width shrinks (JS-measured) | rest, narrow, resize | [ ] | [ ] | |
+| `doc-header-chips` | Work ID + Status + Project + Horizon + Assignee chips (no tags) | rest, hover | [ ] | [ ] | |
 | `doc-body-h1` | H1 heading style | rest | [ ] | [ ] | |
 | `doc-body-h2` | H2 section panel wrapper | rest, hover | [ ] | [ ] | |
 | `doc-body-h3` | H3 heading (amber) | rest | [ ] | [ ] | |

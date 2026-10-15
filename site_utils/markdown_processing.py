@@ -9,16 +9,55 @@ from .config import MD
 from chips import render_chip
 
 
+_LIST_ITEM_RE = re.compile(r'^\s*(?:\d+[.)]|[-*+])\s')
+
+def separate_glued_lists(md_text: str) -> str:
+    """Insert a blank line before a list that directly follows a paragraph line.
+
+    Python-Markdown (core) will not let a list interrupt a paragraph without a
+    blank line between them - a very common authoring pattern across the corpus
+    (`intro:\\n1. item`) otherwise renders as one run-together paragraph. This
+    inserts the required blank line when a list marker line follows a non-blank,
+    non-list, non-structural line, so authors can write either way.
+
+    Skips lines inside fenced code blocks so sample code is never rewritten.
+    """
+    out = []
+    lines = md_text.split('\n')
+    in_fence = False
+    fence_re = re.compile(r'^\s*(```|~~~)')
+    for i, line in enumerate(lines):
+        if fence_re.match(line):
+            in_fence = not in_fence
+        if (not in_fence and i > 0 and _LIST_ITEM_RE.match(line)):
+            prev = lines[i - 1]
+            prev_stripped = prev.strip()
+            if (prev_stripped
+                    and not _LIST_ITEM_RE.match(prev)
+                    and not prev.lstrip().startswith(('#', '|', '>'))):
+                out.append('')  # the separator the parser needs
+        out.append(line)
+    return '\n'.join(out)
+
+
 def normalize_tables(md_text: str) -> str:
-    """Collapse blank lines within markdown table blocks.
+    """Collapse blank lines *interior* to markdown table blocks.
 
     Some documents are double-spaced (blank line between every line). The markdown
     tables extension requires table rows to be contiguous, so we detect table blocks
-    and strip internal blank lines to let the parser recognize them.
+    and strip blank lines that sit *between two table rows* to let the parser
+    recognize them.
+
+    A blank line is only interior — and therefore droppable — when another table
+    row follows it. A blank that is followed by non-table content marks the end of
+    the table and must be preserved; dropping it would glue the next block (e.g. a
+    following '## Sources' heading) onto the table, causing the parser to absorb it
+    as a trailing table row.
     """
     lines = md_text.split('\n')
     result = []
     table_buf = []
+    pending_blanks = []  # blank lines held while inside a table, fate undecided
     in_table = False
 
     for line in lines:
@@ -29,19 +68,25 @@ def normalize_tables(md_text: str) -> str:
             if not in_table:
                 in_table = True
                 table_buf = []
+            # A table row after held blanks confirms those blanks were interior;
+            # drop them (do not re-emit) so the rows stay contiguous.
+            pending_blanks = []
             table_buf.append(line)
         elif stripped == '' and in_table:
-            # Blank line inside a potential table — hold it, don't flush yet
-            continue
+            # Blank inside a table — hold it; only drop if a table row follows.
+            pending_blanks.append(line)
         else:
-            # Non-table, non-blank line: flush any buffered table
+            # Non-table, non-blank line: the table has ended. Flush its rows,
+            # then re-emit any held blanks as the separator before this line.
             if in_table:
                 result.extend(table_buf)
+                result.extend(pending_blanks)
                 table_buf = []
+                pending_blanks = []
                 in_table = False
             result.append(line)
 
-    # Flush any remaining table buffer at end of file
+    # Flush any remaining table buffer at end of file (trailing blanks dropped).
     if table_buf:
         result.extend(table_buf)
 
@@ -57,6 +102,7 @@ def render_markdown(md_text: str, source_path: str | None = None) -> tuple[str, 
                      When provided, task list items get data-src/data-line attributes for write-back.
     """
     md_text = normalize_tables(md_text)
+    md_text = separate_glued_lists(md_text)
     MD.reset()
     html = MD.convert(md_text)
     toc_html = getattr(MD, 'toc', '')
@@ -70,6 +116,8 @@ def render_markdown(md_text: str, source_path: str | None = None) -> tuple[str, 
 def post_process(html: str, source_path: str | None = None, md_text: str | None = None) -> str:
     """Transform flat markdown HTML into structured document layout."""
     html = rewrite_md_links(html, source_path=source_path)
+    html = link_citations(html)
+    html = structure_sources(html)
     html = extract_metadata_block(html)
     html = convert_admonitions(html)
     html = convert_collapsible_sections(html)
@@ -124,6 +172,197 @@ def rewrite_md_links(html: str, source_path: str | None = None) -> str:
         return full_href + abs_href + '"'
 
     return re.sub(r'(href=")([^"]+?)\.md"', rewrite, html)
+
+
+# Matches a run of one or more adjacent bracketed citation numbers: [1], [2][5].
+# Anchored on the token itself; surrounding-context guards are applied by the
+# caller so array indices and glob patterns inside prose are left alone.
+_CITATION_RUN_RE = re.compile(r'(?:\[\d{1,3}\])+')
+# A single [N] within a run.
+_CITATION_NUM_RE = re.compile(r'\[(\d{1,3})\]')
+# Splits HTML into code/non-code segments so citations inside <code>/<pre> are skipped.
+_CODE_SEGMENT_RE = re.compile(r'(<pre\b.*?</pre>|<code\b.*?</code>)', re.DOTALL | re.IGNORECASE)
+
+
+def link_citations(html: str) -> str:
+    """Link inline [N] citations to a numbered Sources/References list.
+
+    Convention (see the analysis skill's Source Citation section): a document
+    ends with a numbered `## Sources` (or `## References`) list, and every
+    substantive claim carries an inline [N] — or grouped [2][5] — referencing
+    the matching source number. This transform is a no-op unless such a section
+    is present, so ordinary docs that happen to contain [0]-style brackets are
+    untouched.
+
+    Two passes:
+    1. Tag each numbered source <li> with id="source-N" and a wrapping class so
+       the list becomes a link target and can be styled as the sources area.
+    2. Rewrite inline [N] tokens in the body into anchor links pointing at the
+       matching source-N, skipping anything inside <pre>/<code> and skipping the
+       sources list itself (its own numbering must stay plain).
+
+    Runs on flat markdown HTML before section-wrapping, while the Sources
+    heading is still a top-level <h2> immediately followed by its <ol>.
+    """
+    # Locate the Sources/References heading. Everything from here to the next
+    # top-level heading (or end of document) is the sources region.
+    heading_re = re.compile(
+        r'<h2\b[^>]*>\s*(?:<[^>]+>)*\s*(?:Sources|References)\s*(?:</[^>]+>)*\s*</h2>\s*',
+        re.IGNORECASE,
+    )
+    hmatch = heading_re.search(html)
+    if not hmatch:
+        return html
+
+    # The sources region may contain multiple <ol> lists — the ratified format
+    # allows grouping sources under ### sub-headers (Codebase / Live AWS / ...),
+    # and markdown restarts <ol> numbering per group. We number every <li> across
+    # all lists in the region continuously so [7] resolves to the 7th source
+    # overall even when it lives in the second <ol> as its own item 1.
+    region_start = hmatch.end()
+    next_h2 = re.compile(r'<h[12]\b', re.IGNORECASE).search(html, region_start)
+    region_end = next_h2.start() if next_h2 else len(html)
+
+    region = html[region_start:region_end]
+    if '<ol' not in region:
+        return html
+
+    # --- Pass 1: id each source <li> continuously across every <ol>. ---
+    li_counter = [0]
+
+    def _tag_li(m):
+        li_counter[0] += 1
+        return f'<li id="source-{li_counter[0]}" class="source-item">'
+
+    tagged_region = re.sub(r'<li\b[^>]*>', _tag_li, region)
+    tagged_region = re.sub(
+        r'<ol\b', '<ol class="sources-list"', tagged_region, flags=re.IGNORECASE
+    )
+    source_count = li_counter[0]
+    if source_count == 0:
+        return html
+
+    body_before = html[:region_start]
+    body_after = html[region_end:]
+
+    # --- Pass 2: rewrite inline [N] runs in the body, skipping code spans. ---
+    def _rewrite_run(m):
+        run = m.group(0)
+        links = []
+        any_matched = False
+        for num_m in _CITATION_NUM_RE.finditer(run):
+            n = int(num_m.group(1))
+            # Only link numbers that actually have a matching source entry.
+            if 1 <= n <= source_count:
+                any_matched = True
+                links.append(
+                    f'<a href="#source-{n}" class="citation" '
+                    f'data-citation="{n}">{n}</a>'
+                )
+            else:
+                links.append(num_m.group(0))
+        # If nothing in the run maps to a real source, leave the original text
+        # untouched — don't superscript stray brackets that aren't citations.
+        if not any_matched:
+            return run
+        return f'<sup class="citation-group">{"".join(links)}</sup>'
+
+    def _rewrite_segment(segment: str) -> str:
+        return _CITATION_RUN_RE.sub(_rewrite_run, segment)
+
+    # Split on code spans; rewrite only the non-code parts (odd indices are code).
+    parts = _CODE_SEGMENT_RE.split(body_before)
+    for i in range(0, len(parts), 2):
+        parts[i] = _rewrite_segment(parts[i])
+    body_before = "".join(parts)
+
+    return body_before + tagged_region + body_after
+
+
+# Matches a single source <li> tagged by link_citations (id + class source-item).
+# Captures the id number and the inner HTML up to the closing </li>.
+_SOURCE_ITEM_RE = re.compile(
+    r'<li id="source-(\d+)" class="source-item">(.*?)</li>',
+    re.DOTALL,
+)
+# A segment that leads with a <code> span: that code is the ref's source key.
+_LEADING_CODE_RE = re.compile(r'^\s*(<code>.*?</code>)(.*)$', re.DOTALL)
+
+
+def structure_sources(html: str) -> str:
+    """Restructure each ## Sources <li> into a stacked, keyed layout.
+
+    The sources convention writes one numbered item per claim, where an item
+    may pack several file refs separated by '; ', each ref leading with a
+    backtick path (rendered <code>) and trailed by a prose description. Rendered
+    flat, that is a wall of run-on text. This transform rebuilds each item's
+    inner HTML into stacked sub-rows:
+
+        <li id="source-N" class="source-item">
+          <div class="source-ref">
+            <code class="source-key">path</code>
+            <span class="source-desc">...trailing description...</span>
+          </div>
+          <div class="source-ref">...next ';'-split ref...</div>
+        </li>
+
+    The <li> id stays on the group, so inline [N] citations still resolve to the
+    whole source. A segment that does not lead with a <code> path (ADO/web
+    sources like "Azure DevOps PR 1162 metadata ...") renders as a single
+    description-only row — never mangled. Runs after link_citations (which tags
+    the items) and before wrap_h2_sections.
+    """
+    def _rebuild(m):
+        num = m.group(1)
+        inner = m.group(2).strip()
+        if not inner:
+            return m.group(0)
+
+        li_open = f'<li id="source-{num}" class="source-item ref-card">'
+
+        # A source is only a splittable multi-ref manifest when it LEADS with a
+        # code path AND every '; '-split segment also leads with a code path.
+        # Otherwise '; ' is just sentence punctuation (prose sources like an ADO
+        # merge-state explanation: "...metadata: `status:1`; `git branch...`
+        # lists only `x` -> `y` ... not merged"), and splitting shreds one
+        # sentence into ragged left-aligned fragments. Prose sources render as a
+        # single row, untouched.
+        segments = [s.strip() for s in inner.split('; ') if s.strip()]
+        is_manifest = (
+            len(segments) >= 1
+            and all(_LEADING_CODE_RE.match(seg) for seg in segments)
+        )
+
+        if not is_manifest:
+            # Single prose row — keep the whole sentence together. If it happens
+            # to start with a code path, still promote just that leading token as
+            # the key so a single-ref source stays keyed.
+            code_m = _LEADING_CODE_RE.match(inner)
+            if code_m and len(segments) == 1:
+                key_html = code_m.group(1).replace(
+                    '<code>', '<code class="ref-card-key">', 1
+                )
+                desc_html = re.sub(r'^\s*[—–\-:]\s*', '', code_m.group(2).strip())
+                desc_part = (
+                    f'<span class="ref-card-desc">{desc_html}</span>' if desc_html else ''
+                )
+                return li_open + f'<div class="ref-card-ref">{key_html}{desc_part}</div></li>'
+            return li_open + f'<div class="ref-card-ref ref-card-ref-prose">{inner}</div></li>'
+
+        # Manifest: each segment is a keyed file ref, stacked under the one card.
+        rows = []
+        for seg in segments:
+            code_m = _LEADING_CODE_RE.match(seg)
+            key_html = code_m.group(1).replace('<code>', '<code class="ref-card-key">', 1)
+            desc_html = re.sub(r'^\s*[—–\-:]\s*', '', code_m.group(2).strip())
+            desc_part = (
+                f'<span class="ref-card-desc">{desc_html}</span>' if desc_html else ''
+            )
+            rows.append(f'<div class="ref-card-ref">{key_html}{desc_part}</div>')
+
+        return li_open + ''.join(rows) + '</li>'
+
+    return _SOURCE_ITEM_RE.sub(_rebuild, html)
 
 
 def linkify_md_paths(val: str) -> str:
@@ -271,15 +510,18 @@ def extract_metadata_block(html: str) -> str:
     Layout (three columns via grid):
       [WI-XX] [status]     project-tag · topic tags        Updated / Created
     """
-    # Match a <ul> right after </h1> where items look like key: value
+    # Match the <h1> plus the <ul> metadata right after it (optionally with a
+    # subtitle <p> between). The full <h1> is captured so the title can be
+    # wrapped into a flex title-row with the topic tags pulled to its right.
     pattern = re.compile(
-        r'(</h1>\s*)'                          # end of h1
+        r'(<h1\b[^>]*>.*?</h1>)\s*'            # full h1 (captured)
         r'(<p>.*?</p>\s*)?'                    # optional subtitle paragraph
         r'(<ul>\s*(?:<li>[^<]*?:.*?</li>\s*)+</ul>)',  # metadata list
         re.DOTALL
     )
 
-    KNOWN_KEYS = {"id", "status", "project", "tags", "created", "updated", "related", "type", "assignee"}
+    KNOWN_KEYS = {"id", "status", "project", "tags", "created", "updated", "related", "type", "assignee", "horizon",
+                  "pr author", "pr created", "pr link"}
 
     def _parse_items(items):
         """Return a dict of key.lower() -> raw value string, plus a list of
@@ -345,15 +587,6 @@ def extract_metadata_block(html: str) -> str:
                     data_attrs={"writeback-key": "status"},
                 )
             )
-        project = parsed.get("project")
-        if project:
-            chips.append(
-                render_chip(
-                    "outlined-accent",
-                    project,
-                    extra_class="doc-header-chip doc-header-chip-project",
-                )
-            )
         assignee = parsed.get("assignee")
         if assignee:
             chips.append(
@@ -374,29 +607,36 @@ def extract_metadata_block(html: str) -> str:
                     extra_class="doc-header-chip doc-header-chip-horizon",
                 )
             )
+        # PR author — first-class identity chip for PR-review notes (initials,
+        # matching the assignee chip vocabulary) rather than a generic extra row.
+        pr_author = parsed.get("pr author")
+        if pr_author:
+            chips.append(
+                render_chip(
+                    "outlined-muted",
+                    _initials(pr_author),
+                    extra_class="doc-header-chip doc-header-chip-pr-author",
+                    data_attrs={"full-value": pr_author},
+                )
+            )
+        # PR link — a chip-styled anchor (render_chip only emits a span, so the
+        # clickable PR link is built directly, composed on the same chip primitive).
+        pr_link = parsed.get("pr link")
+        if pr_link:
+            m_num = re.search(r'/pullrequest/(\d+)', pr_link)
+            pr_label = f"PR {m_num.group(1)}" if m_num else "PR"
+            chips.append(
+                f'<a class="status-chip status-chip-outlined-accent '
+                f'doc-header-chip doc-header-chip-pr-link" href="{pr_link}">{pr_label}</a>'
+            )
         html_parts.append('<div class="doc-header-chips">' + "".join(chips) + '</div>')
 
-        # --- MIDDLE: topic tag chips only (Project moved to left cluster) ---
-        # Cap visible tags so the header strip never reflows awkwardly on
-        # narrow widths; the remainder collapses into a +N overflow chip whose
-        # title lists the hidden tags.
-        MAX_VISIBLE_TAGS = 2
-        tag_parts = []
-        tags_val = parsed.get("tags")
-        if tags_val:
-            all_tags = [t.strip() for t in tags_val.split(",") if t.strip()]
-            visible = all_tags[:MAX_VISIBLE_TAGS]
-            hidden = all_tags[MAX_VISIBLE_TAGS:]
-            for tag in visible:
-                tag_parts.append(f'<span class="doc-header-tag">{tag}</span>')
-            if hidden:
-                title_attr = ", ".join(hidden)
-                tag_parts.append(
-                    f'<span class="doc-header-tag doc-header-tag-more" title="{title_attr}">+{len(hidden)}</span>'
-                )
-        html_parts.append('<div class="doc-header-tags">' + "".join(tag_parts) + '</div>')
+        # Tags are no longer rendered in the strip - they live in the title row
+        # (see _build_tags / the title-row wrap in replace_meta). This keeps the
+        # strip's horizontal budget to identity chips + dates, which reflow
+        # cleanly on narrow screens instead of wrapping mid-cluster.
 
-        # --- RIGHT: dates + type (Updated → Created → Type) ---
+        # --- RIGHT: dates + type (Updated → Created → PR Created → Type) ---
         right_entries = []
         for key in ("updated", "created"):
             val = parsed.get(key)
@@ -407,6 +647,16 @@ def extract_metadata_block(html: str) -> str:
                     f'<span class="doc-header-date-value">{_display_date(val)}</span>'
                     f'</span>'
                 )
+        # PR Created — first-class date entry for PR-review notes, in the date
+        # cluster alongside the doc's own Created/Updated rather than a muted extra.
+        pr_created = parsed.get("pr created")
+        if pr_created:
+            right_entries.append(
+                f'<span class="doc-header-date doc-header-date-pr-created">'
+                f'<span class="doc-header-date-label">PR Created</span>'
+                f'<span class="doc-header-date-value">{_display_date(pr_created)}</span>'
+                f'</span>'
+            )
         type_val = parsed.get("type")
         if type_val:
             right_entries.append(
@@ -433,28 +683,58 @@ def extract_metadata_block(html: str) -> str:
         html_parts.append('</div>')
         return "\n".join(html_parts)
 
+    def _build_tags(parsed):
+        """Render topic tags as a right-aligned cluster for the title row.
+
+        All tags are emitted; the client-side overflow module
+        (features/doc-tag-overflow.js) measures the available space and
+        collapses them title-first: full chips while they fit, a +N chip for
+        the remainder, or a single 'N TAGS' blurb when nothing fits. The full
+        comma-joined list is stashed in data-doc-tags so the JS can build the
+        count and the hover tooltip without re-reading the chips."""
+        tags_val = parsed.get("tags")
+        if not tags_val:
+            return ""
+        all_tags = [t.strip() for t in tags_val.split(",") if t.strip()]
+        if not all_tags:
+            return ""
+        import html as _html
+        data_attr = _html.escape(", ".join(all_tags), quote=True)
+        spans = "".join(
+            f'<span class="doc-title-tag">{tag}</span>' for tag in all_tags
+        )
+        return (
+            f'<div class="doc-title-tags" data-doc-tags="{data_attr}">'
+            f'{spans}</div>'
+        )
+
     def replace_meta(m):
-        h1_end = m.group(1)
+        h1_full = m.group(1)
         subtitle = m.group(2) or ""
         meta_ul = m.group(3)
         items = re.findall(r'<li>(.*?)</li>', meta_ul, re.DOTALL)
         parsed, extras = _parse_items(items)
         # Related is handled by the ## Related section — drop from header row
         parsed.pop("related", None)
-        return h1_end + subtitle + _build_strip(parsed, extras)
+        tags_html = _build_tags(parsed)
+        if tags_html:
+            title_row = f'<div class="doc-title-row">{h1_full}{tags_html}</div>'
+        else:
+            title_row = h1_full
+        return title_row + subtitle + _build_strip(parsed, extras)
 
     result = pattern.sub(replace_meta, html, count=1)
 
     # Also handle "Created: ...\nTags: ..." as plain <p> lines after h1 (older docs)
     p_meta_pattern = re.compile(
-        r'(</h1>\s*)'
+        r'(<h1\b[^>]*>.*?</h1>)\s*'
         r'(<p>[^<]*?</p>\s*)?'
         r'((?:<p>[A-Z][a-z]+:\s*.+?</p>\s*)+)',
         re.DOTALL
     )
 
     def replace_p_meta(m):
-        h1_end = m.group(1)
+        h1_full = m.group(1)
         subtitle = m.group(2) or ""
         meta_ps = m.group(3)
         raw_items = re.findall(r'<p>([A-Z][a-z]+:\s*.+?)</p>', meta_ps, re.DOTALL)
@@ -462,7 +742,12 @@ def extract_metadata_block(html: str) -> str:
             return m.group(0)
         parsed, extras = _parse_items(raw_items)
         parsed.pop("related", None)
-        return h1_end + subtitle + _build_strip(parsed, extras)
+        tags_html = _build_tags(parsed)
+        if tags_html:
+            title_row = f'<div class="doc-title-row">{h1_full}{tags_html}</div>'
+        else:
+            title_row = h1_full
+        return title_row + subtitle + _build_strip(parsed, extras)
 
     result = p_meta_pattern.sub(replace_p_meta, result, count=1)
 
@@ -513,6 +798,7 @@ def wrap_h2_sections(html: str) -> str:
         "next": "arrow-right",
         "references": "book-open",
         "reference links": "book-open",
+        "sources": "book-marked",
         "considerations": "scale",
         "examples in codebase": "code",
         "proposed approach": "route",
@@ -520,9 +806,18 @@ def wrap_h2_sections(html: str) -> str:
         "purpose": "target",
         "best practices": "star",
         "overall assessment": "bar-chart-2",
+        "review history": "history",
+        "positive notes": "check-circle",
+        "maintainability concerns": "activity",
+        "suggestions": "sparkles",
+        "reviewer status": "users",
         "pattern overview": "layers",
         "key patterns": "layers",
         "directory structure": "folder-tree",
+        "information": "info",
+        "what users will see": "eye",
+        "deploy prerequisites": "clipboard-list",
+        "shipping in this release": "package",
     }
 
     parts = re.split(r'(<h2[^>]*>)', html)
@@ -553,13 +848,15 @@ def wrap_h2_sections(html: str) -> str:
             section_content = content
 
         id_attr = f' id="{h2_id}"' if h2_id else ""
-        # Resolve section icon from plain text of heading
+        # Resolve section icon from plain text of heading. Unmapped sections
+        # fall back to a neutral "section" glyph (hash) rather than rendering
+        # no icon — a bare, un-indented heading sitting next to icon-led ones
+        # reads as out of place. hash is the codebase's existing "sections"
+        # marker (skills-map), so it stays honest: it signals "a section",
+        # never a borrowed category meaning.
         plain_title = re.sub(r'<[^>]+>', '', h2_inner).strip().lower()
-        icon_name = SECTION_ICONS.get(plain_title)
-        icon_html = (
-            f'<i data-lucide="{icon_name}" class="section-icon"></i>'
-            if icon_name else ""
-        )
+        icon_name = SECTION_ICONS.get(plain_title, "hash")
+        icon_html = f'<i data-lucide="{icon_name}" class="section-icon"></i>'
         # Only the document's first H2 section defaults open (typically
         # "Overview", but templates vary — Problem, Context, Overall
         # Assessment, etc.) — every other section starts collapsed, so a

@@ -186,5 +186,13 @@
   "typescript": {
     "category": "technology",
     "description": "TypeScript language — the Playwright test tier (test/) is the platform's first and only TypeScript"
+  },
+  "notes": {
+    "category": "domain",
+    "description": "Structured notes exported from Hypernote — meeting notes and session write-ups living in notes/"
+  },
+  "release": {
+    "category": "domain",
+    "description": "Release changelogs and deploy-push summaries (qa to prod)"
   }
 }

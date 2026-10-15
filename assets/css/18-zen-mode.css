@@ -1,0 +1,224 @@
+/* === Zen Mode === */
+
+/* Zen is a site-wide focus mode with two body-level flags:
+   - .zen-mode    the persisted preference, present on EVERY page while zen is
+                  on. Drives the site-wide chrome reduction below: the nav rail
+                  and footer are hidden and the content reclaims their space, so
+                  every page gets zen's breathing room. The TOPBAR stays, so
+                  search / breadcrumbs / controls keep the page navigable - no
+                  stranding on a doc with no way out.
+   - .zen-staged  present ONLY on the home page while the composed stage is
+                  mounted (zen-mode.js adds it in buildStage, removes it in
+                  teardownStage). Drives the home-only stage composition.
+   The split is deliberate: chrome reduction is site-wide (.zen-mode); the
+   dashboard-replacing stage is home-only (.zen-staged). */
+
+/* ---- Site-wide chrome reduction (every page in zen) ---- */
+/* Hide the nav rail and footer; keep the topbar for navigation. */
+body.zen-mode .site-nav,
+body.zen-mode .page-footer {
+  display: none;
+}
+
+/* The layout offsets .page by the nav-rail width via
+   padding-left: calc(5rem + var(--site-nav-width)); with the rail gone, zero
+   the variable so content reclaims that gutter (the base 5rem breathing room
+   stays). The calibration-dot grid (body::before) keys off the same variable
+   and realigns in the same stroke. Applies site-wide. */
+body.zen-mode {
+  --site-nav-width: 0px;
+}
+
+/* ---- Ambient bottom gradient ---- */
+/* The bottom gradient is now part of the shared always-on atmosphere layer
+   (Hyperkit globals.css, body::after), identical across apps - no longer
+   zen-scoped. Nothing to add here. */
+
+/* ---- Home stage (home page only, stage mounted) ---- */
+/* The composed stage replaces the dashboard view entirely — hide the whole
+   server-rendered dashboard (the launcher row and work grid are moved/cloned
+   out of it into the stage before this takes visual effect). */
+body.zen-staged .dashboard-wrap {
+  display: none;
+}
+
+/* On the home page zen also hides the topbar BAR (the stage carries its own
+   search + launcher, so the visible bar is redundant there) and centers the
+   stage in the true viewport. The bar is collapsed rather than display:none'd:
+   the nav panel + backdrop (the 'm' menu) are fixed-position descendants of the
+   topbar, and a display:none ancestor would hide them too - so the menu would
+   never appear over the zen dashboard. Instead collapse the bar's box and hide
+   only its visible strip (.topbar-inner's brand/breadcrumbs/button and the blur
+   backdrop), leaving the fixed panel free to render when 'm' opens it.
+   The panel + backdrop keep their own base pointer-events handling
+   (.nav-panel.open / .nav-backdrop.visible toggle it), so the collapsed bar
+   does not intercept clicks over the stage - the zero-height topbar with hidden
+   children has nothing clickable anyway. */
+body.zen-staged .topbar {
+  min-height: 0;
+  border-bottom: none;
+}
+body.zen-staged .topbar::before { display: none; }        /* blur backdrop */
+body.zen-staged .topbar-left { display: none; }            /* brand + breadcrumbs */
+body.zen-staged .nav-menu-btn { display: none; }           /* the bar's menu button */
+body.zen-staged .page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6);
+}
+
+/* ---- The stage ---- */
+/* Centered vertical column: greeting, search, launcher, minimal work. Quiet
+   and ambient — generous negative space, no decorative ink. */
+.zen-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-6);
+  width: 100%;
+  max-width: 42rem;
+  /* Default-visible resting state. The entrance uses `forwards` (holds only the
+     end state), not `both`, so if the animation is deferred or interrupted by a
+     content swap (e.g. the 'r' rebuild-reload) the stage stays visible rather
+     than being stranded at the keyframe's opacity:0 start. */
+  opacity: 1;
+  animation: zen-stage-in var(--motion-slow) var(--ease) forwards;
+}
+
+/* ---- Greeting (prose face) ---- */
+/* Host Grotesk with the optical-size compensation, matching the .pulse-title /
+   .work-card-title prose carve-out: this greeting is reading text, not an
+   instrument label, so it takes the body face while the rest of the stage's
+   chrome (chips, counts, the search affordances) stays mono. */
+.zen-greeting {
+  font-family: var(--font-body);
+  font-size: calc(var(--fs-h1) * var(--font-body-scale));
+  font-weight: var(--fw-semibold);
+  color: var(--text-bright);
+  text-align: center;
+  letter-spacing: 0.01em;
+}
+
+/* Kaomoji greetings keep the shared emote-glow treatment (the .emote class is
+   applied by HvGreeting). No zen-specific override needed — the keyframe lives
+   in hyperkit. */
+
+/* ---- Search (relocated live input + results) ---- */
+/* The input row sits in the stage flow; the results box floats beneath it as a
+   dropdown so a full result list overlays downward instead of expanding the
+   stage and pushing the launcher / work strip off the page. .zen-search is the
+   positioning context. */
+.zen-search {
+  width: 100%;
+  position: relative;
+}
+/* The moved .search-input-row carries its own styling from the search feature
+   CSS; zen only needs it full-width in the stage rather than inside the modal. */
+.zen-search .search-input-row {
+  width: 100%;
+}
+/* Float the results as a dropdown panel. Override the base flex:1 / vh sizing
+   (which assumed the bounded modal column) with an absolute panel anchored to
+   the input. Surface background + hairline border since it no longer sits on
+   the dark overlay scrim. */
+.zen-search .search-results {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  left: 0;
+  right: 0;
+  flex: none;
+  max-height: 50vh;
+  overflow-y: auto;
+  z-index: var(--z-dropdown);
+  background: var(--bg-raised);
+  border: var(--border-hair) solid var(--border);
+  border-radius: var(--radius);
+}
+/* The base rule already hides an empty results box (.search-results:empty),
+   so the stage reads as greeting / launcher / search / work with no gap when
+   nothing is typed. */
+
+/* ---- Launcher row ---- */
+/* The live .launcher-row is moved in; it carries its own tile styling. Center
+   it in the stage. */
+.zen-stage .launcher-row {
+  justify-content: center;
+  /* Tighten the greeting -> launcher gap specifically. The stage uses a uniform
+     --space-6 gap between all children; pulling the launcher up by --space-4
+     nets that pair to --space-2 effective (both real rungs), drawing the
+     launcher closer to the greeting without affecting the other gaps. */
+  margin-top: calc(-1 * var(--space-4));
+}
+
+/* ---- Lower section: Work / Activity view + wordless pill toggle ---- */
+/* A single wordless --comp pill (the .pill-toggle primitive) cycles the lower
+   section between the active-work grid and the recent-activity list. Both are
+   cloned from the hidden dashboard; the pill carries no state, the visible view
+   shows which is active. */
+.zen-section {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* The pill sits centered above the content. .pill-toggle (hyperkit) carries the
+   look; this only centers it in the stage column. */
+.zen-section-toggle {
+  align-self: center;
+}
+
+/* Only the active view shows; both are mounted so the toggle is instant.
+   Both views share one fixed height with internal scroll, so switching between
+   work and activity never shifts the stage layout and a long list stays
+   contained. Keyed to one value so the two views always match. */
+.zen-section-view { display: none; width: 100%; }
+.zen-section-view.active {
+  display: block;
+  /* Up to 44rem, but never more than half the viewport, so the fixed-height
+     section plus the rest of the stage (greeting, launcher, search, toggle)
+     still fits without the whole dashboard scrolling. The internal overflow
+     handles a long list. */
+  height: min(44rem, 50vh);
+  overflow-y: auto;
+}
+/* The activity view is a flex column when active (see note below); preserve
+   that while sharing the fixed-height box. */
+.zen-activity.active { display: flex; }
+
+/* Work view — fixed two-column grid at the stage column width. */
+.zen-work { width: 100%; }
+.zen-work-grid {
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-2);
+  opacity: 0.85;
+}
+
+/* Activity view — the cloned recent-activity rows, quieted to match. The flex
+   column + display:flex-when-active is set above alongside the shared
+   fixed-height box; here only the quiet styling. */
+.zen-activity { flex-direction: column; gap: var(--space-1); opacity: 0.85; }
+
+/* Empty state for either view. */
+.zen-section-empty {
+  font-size: var(--fs-sm);
+  color: var(--text-dim);
+  text-align: center;
+  padding: var(--space-4);
+}
+
+/* ---- Entrance ---- */
+@keyframes zen-stage-in {
+  from { opacity: 0; transform: translateY(var(--space-2)); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zen-stage { animation: none; }
+}
+html.a11y-reduce-motion .zen-stage { animation: none; }

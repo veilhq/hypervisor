@@ -98,7 +98,7 @@ Hypervisor is a zero-framework tool: a Python entry point (`build.py`) backed by
 │       │   ├── toc.js          # Floating table of contents
 │       │   └── theme.js        # Accent color, palette modes, hover effects
 │       ├── features/           # Self-contained features (order-independent)
-│       │   ├── actions-drawer.js # Footer actions drawer
+│       │   ├── 00-actions.js # Action registry (window.__hvActions)
 │       │   ├── command-palette.js # Command palette (Ctrl+K)
 │       │   ├── content.js      # Filters, section copy, zoom, width toggle
 │       │   ├── drop-import.js  # Drag-and-drop .md import

@@ -138,15 +138,13 @@
       });
     }
 
-    // --- Show and wire new-window button ---
-    var newWinBtn = document.getElementById("new-window-btn");
-    if (newWinBtn) {
-      newWinBtn.style.display = "";
-      newWinBtn.addEventListener("click", function () {
-        var path = window.location.pathname || "/index.html";
-        api.open_in_new_window(path);
-      });
-    }
+    // --- Register "open in new window" action ---
+    var A = (window.__hvActions = window.__hvActions || {});
+    A.register("openInNewWindow", function () {
+      if (!(window.pywebview && window.pywebview.api && window.pywebview.api.open_in_new_window)) return;
+      var path = window.location.pathname || "/index.html";
+      window.pywebview.api.open_in_new_window(path);
+    });
   }
 
   // --- Apply all preferences from the single load_preferences() payload ---
@@ -220,6 +218,14 @@
       }
     }
 
+    // --- Zen mode ---
+    // Restore the persisted body-level mode class. zen-mode.js owns the class
+    // name and exposes apply() as the setter; apply() does not re-persist, so
+    // this restore is a pure read of the saved state.
+    if (window.__zenMode && typeof window.__zenMode.apply === "function") {
+      window.__zenMode.apply(data["hypervisor-zen-mode"] === "1");
+    }
+
     // --- Zoom ---
     if (data["hypervisor-zoom"]) {
       var z = parseInt(data["hypervisor-zoom"], 10);
@@ -278,6 +284,23 @@
         var box = document.createElement("div");
         box.className = "confirm-dialog-box";
 
+        // Head cluster: the prose question + optional mono subject read as one
+        // tight group, separated from the actions by the box's section gap.
+        var head = document.createElement("div");
+        head.className = "confirm-dialog-head";
+
+        // Informational icon above the title. Default `info`; a danger dialog
+        // defaults to `alert-triangle`. Callers override via opts.icon, or pass
+        // opts.icon = false to suppress it.
+        var cIconName = opts.icon;
+        if (cIconName === undefined) cIconName = opts.danger ? "alert-triangle" : "info";
+        if (cIconName) {
+          var cIcon = document.createElement("i");
+          cIcon.className = "confirm-dialog-icon" + (opts.danger ? " confirm-dialog-icon-danger" : "");
+          cIcon.setAttribute("data-lucide", cIconName);
+          head.appendChild(cIcon);
+        }
+
         var msg = document.createElement("div");
         msg.className = "confirm-dialog-message";
         msg.textContent = message;
@@ -295,10 +318,20 @@
 
         actions.appendChild(cancelBtn);
         actions.appendChild(confirmBtn);
-        box.appendChild(msg);
+        head.appendChild(msg);
+        // Optional mono data line (the slug/filename the action targets), kept
+        // visually distinct from the proportional prose question above it.
+        if (opts.subject) {
+          var subj = document.createElement("div");
+          subj.className = "confirm-dialog-subject";
+          subj.textContent = opts.subject;
+          head.appendChild(subj);
+        }
+        box.appendChild(head);
         box.appendChild(actions);
         overlay.appendChild(box);
         document.body.appendChild(overlay);
+        if (window.lucide) lucide.createIcons({ nodes: box.querySelectorAll("[data-lucide]"), attrs: { "stroke-width": 2 } });
 
         // Animate in
         requestAnimationFrame(function () {
@@ -345,6 +378,22 @@
         var box = document.createElement("div");
         box.className = "confirm-dialog-box prompt-dialog";
 
+        // Head cluster: question + optional subject + hint read as one tight
+        // group above the input.
+        var head = document.createElement("div");
+        head.className = "confirm-dialog-head";
+
+        // Informational icon above the title. Default `info`; override via
+        // opts.icon, or pass opts.icon = false to suppress it.
+        var pIconName = opts.icon;
+        if (pIconName === undefined) pIconName = "info";
+        if (pIconName) {
+          var pIcon = document.createElement("i");
+          pIcon.className = "confirm-dialog-icon";
+          pIcon.setAttribute("data-lucide", pIconName);
+          head.appendChild(pIcon);
+        }
+
         var msg = document.createElement("div");
         msg.className = "confirm-dialog-message";
         msg.textContent = message;
@@ -357,15 +406,24 @@
         input.autocomplete = "off";
         input.spellcheck = false;
 
-        box.appendChild(msg);
+        head.appendChild(msg);
+
+        // Optional mono data line (the slug the action targets).
+        if (opts.subject) {
+          var subj = document.createElement("div");
+          subj.className = "confirm-dialog-subject";
+          subj.textContent = opts.subject;
+          head.appendChild(subj);
+        }
 
         if (opts.hint) {
           var hint = document.createElement("div");
           hint.className = "prompt-dialog-hint";
           hint.textContent = opts.hint;
-          box.appendChild(hint);
+          head.appendChild(hint);
         }
 
+        box.appendChild(head);
         box.appendChild(input);
 
         var actions = document.createElement("div");
@@ -384,6 +442,7 @@
         box.appendChild(actions);
         overlay.appendChild(box);
         document.body.appendChild(overlay);
+        if (window.lucide) lucide.createIcons({ nodes: box.querySelectorAll("[data-lucide]"), attrs: { "stroke-width": 2 } });
 
         requestAnimationFrame(function () { overlay.classList.add("visible"); });
 

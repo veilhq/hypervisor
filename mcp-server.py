@@ -344,13 +344,22 @@ def create_document_tool(
     directory: str | None = None,
     overview: str | None = None,
     design: str | None = None,
-    acceptance_criteria: dict | None = None,
-    tasks: list[str] | None = None,
-    open_questions: list[str] | None = None,
+    # Optional list/dict params default to empty collections, not None, on
+    # purpose. A `T | None` optional renders in the tool's input JSON schema as
+    # `anyOf: [{array/object}, {null}]`; some MCP clients cannot infer from that
+    # union that the value is a JSON array/object and serialize it as a bare
+    # string, which this server's pydantic model then rejects as list_type/
+    # dict_type. A non-nullable `list[str] = []` / `dict = {}` yields a direct
+    # `type: array`/`type: object` schema that clients serialize correctly.
+    # The downstream crud/template layer treats empty collections and None
+    # identically (truthiness-gated sections), so this is behavior-preserving.
+    acceptance_criteria: dict = {},
+    tasks: list[str] = [],
+    open_questions: list[str] = [],
     concept: str | None = None,
-    key_questions: list[str] | None = None,
+    key_questions: list[str] = [],
     content: str | None = None,
-    related: list[str] | None = None,
+    related: list[str] = [],
     solution_plan: str | None = None,
     number: int | None = None,
     context_text: str | None = None,

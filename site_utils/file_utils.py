@@ -25,7 +25,16 @@ def read_md(path: Path) -> str:
 
 
 def collect_files(root: Path) -> list[Path]:
-    """Walk the hyperspace root and return a sorted list of relative .md paths."""
+    """Walk the hyperspace root and return a sorted list of relative paths.
+
+    Markdown is collected globally (every *.md under the root). Supported
+    non-md file types are collected only under the .external/ prefix - the
+    external directory accepts dropped-in files of assorted types, but the
+    rest of hyperspace stays markdown-only so arbitrary files never leak into
+    work/, research/, etc.
+    """
+    from .external_render import SUPPORTED_EXTS
+
     files = []
     for path in sorted(root.rglob("*.md")):
         rel = path.relative_to(root)
@@ -34,6 +43,20 @@ def collect_files(root: Path) -> list[Path]:
         if path.name in SKIP_FILES:
             continue
         files.append(rel)
+
+    # .external/-scoped non-md discovery (recursive, so nested files like
+    # .external/scripts/*.sql are found and later flattened into the index).
+    external_dir = root / ".external"
+    if external_dir.is_dir():
+        for path in sorted(external_dir.rglob("*")):
+            if not path.is_file():
+                continue
+            if path.suffix.lower() not in SUPPORTED_EXTS:
+                continue
+            if path.name in SKIP_FILES:
+                continue
+            files.append(path.relative_to(root))
+
     return files
 
 

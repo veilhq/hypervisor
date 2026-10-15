@@ -16,9 +16,3 @@ body.lan-mode #nav-panel,
 body.lan-mode #nav-backdrop {
   display: none !important;
 }
-
-/* Actions drawer — operator tools (edit, export, end sprint, share key). */
-body.lan-mode #actions-trigger,
-body.lan-mode #actions-drawer {
-  display: none !important;
-}

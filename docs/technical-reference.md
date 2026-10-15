@@ -59,7 +59,7 @@ There is no bundler, no framework, no build tool chain. The output is a director
         toc.js                # Floating TOC sidebar, active heading tracking
         theme.js              # Accent color picker, palette modes, brand/title hover
       features/               # Self-contained features (order-independent, zz-* last)
-        actions-drawer.js     # Footer actions drawer toggle
+        00-actions.js         # Action registry (window.__hvActions)
         command-palette.js    # Unified command palette (Ctrl+K)
         content.js            # Todo filters, section copy, table copy, zoom, width toggle
         drop-import.js        # Drag-and-drop .md import on .external page

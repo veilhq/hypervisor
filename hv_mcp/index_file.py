@@ -29,6 +29,7 @@ def regenerate_index_file():
     research_entries = [e for e in entries if e["type"] == "research"]
     template_entries = [e for e in entries if e["type"] == "template"]
     analysis_entries = [e for e in entries if e["type"] == "analysis"]
+    notes_entries = [e for e in entries if e["type"] == "note" and not e["path"].startswith("notes/_")]
     external_entries = [e for e in entries if e["type"] == "external"]
 
     def _link(e):
@@ -69,6 +70,7 @@ def regenerate_index_file():
     lines.append("- [Research](#research) - Technical investigations")
     lines.append("- [Templates](#templates) - Boilerplate starting points")
     lines.append("- [Analysis](#analysis) - Progress analysis, PR reviews, and milestone assessments")
+    lines.append("- [Notes](#notes) - Structured meeting and session notes")
     lines.append("- [External](#external) - Documents brought in from outside hyperspace")
     lines.append("")
     lines.append("---")
@@ -185,6 +187,7 @@ def regenerate_index_file():
     _simple_section("Research", "Technical investigations, comparisons, and design explorations.", research_entries)
     _simple_section("Templates", "Boilerplate files and starting points for common tasks.", template_entries)
     _simple_section("Analysis", "Progress analysis, PR reviews, milestone assessments, and project health.", analysis_entries)
+    _simple_section("Notes", "Structured meeting and session notes authored in Hypernote.", notes_entries)
     _simple_section("External", "Documents brought in from outside hyperspace.", external_entries)
 
     # --- Statistics ---
@@ -201,10 +204,11 @@ def regenerate_index_file():
     lines.append(f"| Research | {len(research_entries)} |")
     lines.append(f"| Templates | {len(template_entries)} |")
     lines.append(f"| Analysis | {len(analysis_entries)} |")
+    lines.append(f"| Notes | {len(notes_entries)} |")
     lines.append(f"| External | {len(external_entries)} |")
     total = (len(work_todo) + len(work_done) + len(ideas) + len(context_entries) +
              len(patterns_entries) + len(reference_entries) + len(research_entries) +
-             len(template_entries) + len(analysis_entries) + len(external_entries))
+             len(template_entries) + len(analysis_entries) + len(notes_entries) + len(external_entries))
     lines.append(f"| **Total** | **{total}** |")
     lines.append("")
 

@@ -4,7 +4,6 @@
   (function initPins() {
     var STORAGE_KEY = "hypervisor-pins";
     var _prefsRestored = false;
-    var _currentPinBtn = null;
     var _currentDocPath = null;
 
     function getPins() {
@@ -87,16 +86,12 @@
 
     window.addEventListener("pywebviewready", restorePinsFromPrefs);
 
-    // --- Lifecycle: teardown old pin button ---
+    // --- Lifecycle: teardown per-page pin state ---
     function teardown() {
-      if (_currentPinBtn && _currentPinBtn.parentNode) {
-        _currentPinBtn.parentNode.removeChild(_currentPinBtn);
-      }
-      _currentPinBtn = null;
       _currentDocPath = null;
     }
 
-    // --- Lifecycle: init pin button for new page ---
+    // --- Lifecycle: init pin state for new page ---
     function init(fragment) {
       if (!fragment) return;
 
@@ -105,50 +100,10 @@
       var isPinboardPage = fragment.pageType === "pinboard";
       _currentDocPath = isDocPage ? relPath : null;
 
-      // Add pin button on doc pages
-      if (isDocPage && relPath) {
-        var h1 = document.querySelector("#content-target h1");
-        var pageTitle = h1 ? h1.textContent.trim() : fragment.title || "";
-
-        var drawer = document.querySelector(".actions-drawer-inner");
-        if (drawer) {
-          var pinBtn = document.createElement("button");
-          pinBtn.className = "action-item pin-btn";
-          pinBtn.id = "pin-btn";
-          pinBtn.setAttribute("aria-label", "Pin this document");
-
-          var pinIcon = document.createElement("i");
-          pinIcon.setAttribute("data-lucide", "pin");
-          pinIcon.className = "action-icon";
-          pinBtn.appendChild(pinIcon);
-
-          var pinLabel = document.createElement("span");
-          pinLabel.className = "action-label pin-btn-label";
-          pinLabel.textContent = isPinned(relPath) ? "unpin" : "pin";
-          pinBtn.appendChild(pinLabel);
-
-          if (isPinned(relPath)) pinBtn.classList.add("pinned");
-
-          drawer.insertBefore(pinBtn, drawer.firstChild);
-          if (window.lucide) lucide.createIcons({ nodes: [pinBtn], attrs: { "stroke-width": 2 } });
-
-          pinBtn.addEventListener("click", function () {
-            if (isPinned(relPath)) {
-              removePin(relPath);
-              pinBtn.classList.remove("pinned");
-              pinLabel.textContent = "pin";
-              if (window.__hypervisorToast) window.__hypervisorToast({ variant: "success", message: "unpinned" });
-            } else {
-              addPin(relPath, pageTitle);
-              pinBtn.classList.add("pinned");
-              pinLabel.textContent = "unpin";
-              if (window.__hypervisorToast) window.__hypervisorToast({ variant: "success", message: "pinned to board" });
-            }
-            updateNavPinCount();
-          });
-
-          _currentPinBtn = pinBtn;
-        }
+      // Render pinboard page
+      if (isPinboardPage) {
+        var container = document.querySelector(".pinboard-content");
+        if (container) renderPinboard(container);
       }
 
       // Render pinboard page
@@ -242,7 +197,7 @@
           '<div class="pinboard-empty">' +
           '<i data-lucide="pin-off" class="pinboard-empty-icon"></i>' +
           '<p>no pinned documents yet</p>' +
-          '<p class="pinboard-empty-hint">pin documents from any page using the <strong>pin</strong> button in the footer</p>' +
+          '<p class="pinboard-empty-hint">pin documents from any page by right-clicking and choosing <strong>pin</strong></p>' +
           '</div>';
         if (window.lucide) lucide.createIcons({ attrs: { "stroke-width": 2 } });
         return;
@@ -320,11 +275,40 @@
     window.__hypervisorPinCount = function () { return getPins().length; };
 
     // --- Expose pin API for context menu and other modules ---
+    // Toggle pins the current doc if unpinned, unpins it otherwise, keeping the
+    // nav count in sync. Used by the right-click context menu and command palette.
+    function togglePin(path, title) {
+      if (!path) return;
+      if (isPinned(path)) {
+        removePin(path);
+        if (window.__hypervisorToast) window.__hypervisorToast({ variant: "success", message: "unpinned" });
+      } else {
+        addPin(path, title || "");
+        if (window.__hypervisorToast) window.__hypervisorToast({ variant: "success", message: "pinned to board" });
+      }
+      updateNavPinCount();
+    }
+
     window.HvPins = {
       isPinned: isPinned,
-      add: addPin,
-      remove: removePin
+      add: function (path, title) { addPin(path, title); updateNavPinCount(); },
+      remove: function (path) { removePin(path); updateNavPinCount(); },
+      toggle: togglePin
     };
+
+    // Register the toggle-pin action against the current document.
+    var A = (window.__hvActions = window.__hvActions || {});
+    A.currentPinned = function () {
+      var p = A.currentDocPath ? A.currentDocPath() : "";
+      return p ? isPinned(p) : false;
+    };
+    A.register("togglePin", function () {
+      var p = A.currentDocPath ? A.currentDocPath() : "";
+      if (!p) return;
+      var h1 = document.querySelector("#content-target h1");
+      var title = h1 ? h1.textContent.trim() : p.split("/").pop().replace(/\.md$/, "");
+      togglePin(p, title);
+    });
 
     // Register with router lifecycle
     if (window.__router) {

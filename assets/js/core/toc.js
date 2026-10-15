@@ -1,41 +1,129 @@
 /* === Hypervisor: Table of Contents === */
 
-  // --- Floating TOC sidebar (SPA-aware) ---
-  // The TOC content is injected by the router; this module handles
-  // active heading tracking which must be reinitialized on every navigation.
+  // --- TOC flag + slide-in drawer (SPA-aware) ---
+  // A flag pops out from behind the top-left edge of the doc surface; clicking
+  // it slides a drawer in from the left holding the heading list. The router
+  // injects the list into #toc-body on every navigation; this module reveals
+  // the flag when the doc has a TOC, owns open/close, and tracks the active
+  // heading while scrolling (which must be reinitialized on every navigation).
   (function initTocLifecycle() {
-    var tocSidebar = document.getElementById("toc-sidebar");
+    var flagWrap = document.getElementById("toc-flag-wrap");
+    var flag = document.getElementById("toc-flag");
+    var flagHit = document.getElementById("toc-flag-hit");
+    var drawer = document.getElementById("toc-drawer");
     var tocBody = document.getElementById("toc-body");
-    var tocHead = document.getElementById("toc-head");
-    if (!tocSidebar || !tocBody) return;
+    if (!flagWrap || !flag || !drawer || !tocBody) return;
 
     var _scrollHandler = null;
     var _headingElements = [];
     var _linkMap = {};
     var _currentActive = null;
+    var _drawerOpen = false;
 
-    // --- Compact card show/hide + collapse ---
-    function showCard() {
-      tocSidebar.classList.add("visible");
-      // Default to condensed each time a doc's TOC appears — expand on click.
-      tocSidebar.classList.add("collapsed");
-      tocSidebar.setAttribute("aria-hidden", "false");
+    // --- Flag show/hide ---
+    var _entranceTimer = null;
+    function clearEntering() {
+      flagWrap.classList.remove("entering");
+      if (flagHit) flagHit.classList.remove("entering");
     }
-    function hideCard() {
-      tocSidebar.classList.remove("visible");
-      tocSidebar.setAttribute("aria-hidden", "true");
+    function playEntrance() {
+      // Retrigger the CSS entrance on every navigation: remove the class, force
+      // a reflow so the browser drops the running animation, then re-add it.
+      clearEntering();
+      // Force reflow to reset the animation.
+      void flagWrap.offsetWidth;
+      flagWrap.classList.add("entering");
+      if (flagHit) flagHit.classList.add("entering");
+      // Fallback: animationend won't fire under reduced-motion (animation:none),
+      // so a hidden catcher would stay unclickable. Clear after the expected
+      // total (delay 0.55s + motion-slow ~0.4s, padded) regardless.
+      if (_entranceTimer) clearTimeout(_entranceTimer);
+      _entranceTimer = setTimeout(clearEntering, 1200);
     }
-    // Header click collapses/expands the body (chevron rotates via CSS).
-    // Uses the shared HvCollapsible primitive; the header + panel markup is
-    // owned here, the primitive attaches only the toggle behavior.
-    if (tocHead && window.HvCollapsible) {
-      window.HvCollapsible.register({ header: tocHead, panel: tocSidebar, collapsed: true });
-    } else if (tocHead) {
-      // Fallback if the primitive is unavailable (defensive; should not happen).
-      tocHead.addEventListener("click", function () {
-        tocSidebar.classList.toggle("collapsed");
+    // Once the rise finishes, drop .entering so the catcher becomes clickable
+    // and the wrap returns to its plain resting state.
+    flagWrap.addEventListener("animationend", function (e) {
+      if (e.animationName === "tocFlagRise") {
+        if (_entranceTimer) { clearTimeout(_entranceTimer); _entranceTimer = null; }
+        clearEntering();
+      }
+    });
+
+    function showFlag() {
+      flagWrap.classList.add("visible");
+      if (flagHit) flagHit.classList.add("visible");
+      playEntrance();
+    }
+    function hideFlag() {
+      flagWrap.classList.remove("visible");
+      flagWrap.classList.remove("entering");
+      if (_entranceTimer) { clearTimeout(_entranceTimer); _entranceTimer = null; }
+      if (flagHit) {
+        flagHit.classList.remove("visible");
+        flagHit.classList.remove("entering");
+      }
+      closeDrawer();
+    }
+
+    // --- Drawer open/close ---
+    function openDrawer() {
+      _drawerOpen = true;
+      drawer.classList.add("open");
+      drawer.setAttribute("aria-hidden", "false");
+      flag.classList.add("active");
+      flag.setAttribute("aria-expanded", "true");
+    }
+    function closeDrawer() {
+      _drawerOpen = false;
+      drawer.classList.remove("open");
+      drawer.setAttribute("aria-hidden", "true");
+      flag.classList.remove("active");
+      flag.setAttribute("aria-expanded", "false");
+    }
+    function toggleDrawer() {
+      if (_drawerOpen) closeDrawer(); else openDrawer();
+    }
+
+    // Bind flag/dismiss handlers once (the elements are shell-persistent).
+    flag.addEventListener("click", function (e) {
+      e.stopPropagation();
+      toggleDrawer();
+    });
+    // The flag sits behind the surface; its transparent on-top hit-catcher is
+    // what actually receives pointer events. Forward its clicks to the toggle.
+    if (flagHit) {
+      flagHit.addEventListener("click", function (e) {
+        e.stopPropagation();
+        toggleDrawer();
       });
+      // The visible flag is behind the surface, so :hover never fires on it via
+      // the pointer (the catcher is on top). Bridge hover from the catcher to a
+      // class on the flag so the lift/brighten still reads on hover.
+      flagHit.addEventListener("mouseenter", function () { flag.classList.add("hover"); });
+      flagHit.addEventListener("mouseleave", function () { flag.classList.remove("hover"); });
     }
+    // Click outside closes the drawer (but not clicks on the flag, its
+    // hit-catcher, or the drawer itself).
+    document.addEventListener("click", function (e) {
+      if (!_drawerOpen) return;
+      var onFlag = e.target === flag || flag.contains(e.target);
+      var onHit = flagHit && (e.target === flagHit || flagHit.contains(e.target));
+      if (!drawer.contains(e.target) && !onFlag && !onHit) {
+        closeDrawer();
+      }
+    });
+    // Escape closes the drawer and returns focus to the flag.
+    document.addEventListener("keydown", function (e) {
+      if (_drawerOpen && e.key === "Escape") {
+        closeDrawer();
+        flag.focus();
+      }
+    });
+    // A TOC link click navigates within the doc; close the drawer after.
+    tocBody.addEventListener("click", function (e) {
+      var link = e.target.closest ? e.target.closest("a[href^='#']") : null;
+      if (link) closeDrawer();
+    });
 
     function teardown() {
       if (_scrollHandler) {
@@ -45,23 +133,23 @@
       _headingElements = [];
       _linkMap = {};
       _currentActive = null;
-      // Hide the card on navigation; init re-shows it when the next doc has a TOC.
-      hideCard();
+      // Hide the flag on navigation; init re-shows it when the next doc has a TOC.
+      hideFlag();
     }
 
     function init(fragment) {
       // The router already updated the TOC body innerHTML.
-      // Show the card only when the doc actually has a TOC, then set up
-      // active-heading tracking (highlights the current section in the card).
+      // Show the flag only when the doc actually has a TOC, then set up
+      // active-heading tracking (highlights the current section in the drawer).
       var article = document.getElementById("content-target");
       if (!article) return;
 
       var tocLinks = tocBody.querySelectorAll("a[href]");
       if (!tocLinks.length) {
-        hideCard();
+        hideFlag();
         return;
       }
-      showCard();
+      showFlag();
 
       // Build id → link map
       _linkMap = {};

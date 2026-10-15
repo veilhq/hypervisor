@@ -1,1 +1,56 @@
-/* Relocated to .hyperkit/css/features.css — loaded via build.py Hyperkit cascade. */
+/* Drop-import primitive styles (.drop-zone, delete buttons) live in
+   .hyperkit/css/features.css - shared, loaded via the Hyperkit cascade.
+
+   What stays here is Hypervisor-specific layout composition: how the
+   non-previewable external file page centers the shared .hv-empty-state
+   primitive within Hypervisor's own shell (topbar + #content-target article +
+   fixed footer). This references Hypervisor shell structure, so it is app-local
+   and must not live in shared Hyperkit. */
+
+/* Non-previewable binary files center the shared .hv-empty-state primitive in
+   the content area, outside the recessed doc surface. The content article
+   (#content-target) becomes the centering flex container; the card itself is
+   the hv-empty-state primitive (.hyperkit/css/primitives.css). The page type
+   (external-empty) is applied by the router to #page-main. */
+.page-external-empty {
+  /* Reset the base .page padding (5rem 5rem 3rem) that would otherwise push
+     the card down and right. The topbar is sticky (in-flow), so it already
+     occupies its height at the top - no extra top offset is needed here. */
+  padding: 0;
+  padding-left: var(--site-nav-width, 0px);
+}
+.page-external-empty #content-target {
+  /* Center the card in the VISIBLE gap between the sticky topbar (in-flow at
+     the top) and the fixed footer (overlay at the bottom). Sizing the box to
+     exactly that gap height - viewport minus both bars - makes flex-centering
+     land the card in the true visible middle. */
+  height: calc(100vh - var(--topbar-height) - var(--footer-height, 2.4rem));
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* The card renders inside the .markdown-body article, whose `.markdown-body p`
+   rule (prose paragraph sizing) would otherwise outrank the primitive's own
+   single-class text rules. Re-assert the primitive sizing in this context so
+   the title/message keep their empty-state scale, not prose-paragraph scale. */
+.page-external-empty .hv-empty-state-title {
+  margin: 0;
+  font-size: calc(var(--fs-sm) * var(--font-body-scale));
+  line-height: 1.3;
+}
+.page-external-empty .hv-empty-state-msg {
+  margin: 0;
+  font-size: calc(var(--fs-micro) * var(--font-body-scale));
+  line-height: 1.4;
+}
+
+/* Previewable external files (txt/sql/images) render their .external-doc card
+   directly on the content area - no recessed doc surface well behind a single
+   preview card. The base .page padding (5rem 5rem 3rem) over-indents a
+   full-width card, so tighten it to a normal content inset. The card itself
+   (border, header, body) is the only container. */
+.page-external-doc {
+  padding: var(--space-5) var(--space-5) 3rem;
+  padding-left: calc(var(--space-5) + var(--site-nav-width, 0px));
+}

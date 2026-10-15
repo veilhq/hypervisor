@@ -93,6 +93,14 @@ def set_range_token(token, base="dev"):
 
 def clear_range_token():
     """Drop the in-memory session (e.g. on auth_expired or explicit disconnect)."""
+    session = _state.get("session")
+    if session is not None:
+        # Close the Session so its urllib3 connection pool releases pooled TCP
+        # connections now, rather than leaving them for GC on each reconnect cycle.
+        try:
+            session.close()
+        except Exception:
+            pass
     _state["session"] = None
     logger.info("range_bridge: session cleared")
     return {"ok": True}

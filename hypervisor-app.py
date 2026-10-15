@@ -575,49 +575,110 @@ class HypervisorAPI:
             field: Metadata field name (e.g. "Status")
             value: New value for the field
         """
-        full_path = HYPERSPACE_ROOT / file_path
-        if not full_path.exists():
-            return {"ok": False, "error": f"File not found: {file_path}"}
-
         with self._writeback_lock:
-            # Tell the watcher to ignore events for this file
-            self._watcher.ignore_path(str(full_path), grace_seconds=2.0)
+            result = self._write_metadata_field(file_path, field, value, grace_seconds=2.0)
+        if not result["ok"]:
+            return result
 
-            text = read_md(full_path)
-            lines = text.splitlines()
-
-            # Find the metadata line matching "- Field: value" pattern
-            pattern = re.compile(r'^(\s*-\s*' + re.escape(field) + r'\s*:\s*)(.+)$', re.IGNORECASE)
-            found = False
-            for i, line in enumerate(lines):
-                m = pattern.match(line)
-                if m:
-                    lines[i] = m.group(1) + value
-                    found = True
-                    break
-
-            if not found:
-                # Try to insert the field in the metadata block (after Assignee or Project)
-                insert_after = None
-                for i, line in enumerate(lines):
-                    if re.match(r'^\s*-\s*(Assignee|Project|Status)\s*:', line, re.IGNORECASE):
-                        insert_after = i
-                    if line.strip() == '---' and insert_after is not None:
-                        break
-                if insert_after is not None:
-                    lines.insert(insert_after + 1, f"- {field}: {value}")
-                    found = True
-
-            if not found:
-                return {"ok": False, "error": f"Field '{field}' not found in {file_path}"}
-
-            full_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
-
-        # Rebuild in the background — no page reload.
+        # Rebuild in the background - no page reload.
         # The JS side already updated the status text optimistically.
         threading.Thread(target=build_single_file, args=(file_path,), daemon=True).start()
 
         return {"ok": True}
+
+    def _write_metadata_field(self, file_path, field, value, grace_seconds):
+        """Rewrite (or insert) one "- Field: value" line in a document header.
+
+        Caller must hold self._writeback_lock. Does not rebuild. Returns an
+        ok/error dict so batch callers can collect per-file outcomes.
+        """
+        full_path = HYPERSPACE_ROOT / file_path
+        if not full_path.exists():
+            return {"ok": False, "error": f"File not found: {file_path}"}
+
+        # Tell the watcher to ignore events for this file
+        self._watcher.ignore_path(str(full_path), grace_seconds=grace_seconds)
+
+        text = read_md(full_path)
+        lines = text.splitlines()
+
+        # Find the metadata line matching "- Field: value" pattern. The value may
+        # be empty (a cleared Assignee), which must still match so a later set
+        # rewrites the line instead of inserting a duplicate.
+        pattern = re.compile(r'^(\s*-\s*' + re.escape(field) + r'\s*:\s*)(.*)$', re.IGNORECASE)
+        found = False
+        for i, line in enumerate(lines):
+            m = pattern.match(line)
+            if m:
+                lines[i] = m.group(1) + value
+                found = True
+                break
+
+        if not found:
+            # Try to insert the field in the metadata block (after Assignee or Project)
+            insert_after = None
+            for i, line in enumerate(lines):
+                if re.match(r'^\s*-\s*(Assignee|Project|Status)\s*:', line, re.IGNORECASE):
+                    insert_after = i
+                if line.strip() == '---' and insert_after is not None:
+                    break
+            if insert_after is not None:
+                lines.insert(insert_after + 1, f"- {field}: {value}")
+                found = True
+
+        if not found:
+            return {"ok": False, "error": f"Field '{field}' not found in {file_path}"}
+
+        full_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        return {"ok": True}
+
+    def update_metadata_bulk(self, file_paths, field, value):
+        """Set one metadata field to the same value across many documents.
+
+        Takes the writeback lock once, suppresses the watcher for every path,
+        rewrites each file, then runs a single full rebuild instead of one
+        background rebuild per file (N racing rebuilds would each regenerate
+        the search/backlink indexes and parent list pages).
+
+        Args:
+            file_paths: List of paths relative to .hyperspace/
+            field: Metadata field name (e.g. "Horizon")
+            value: New value for the field
+
+        Returns:
+            {"ok": bool, "updated": int, "failed": int,
+             "results": [{"path", "ok", "error"?}, ...]}
+            "ok" is True only when every file succeeded.
+        """
+        if not file_paths:
+            return {"ok": False, "error": "No files selected", "updated": 0, "failed": 0, "results": []}
+        if "\n" in value or "\r" in value:
+            return {"ok": False, "error": "Value must be a single line", "updated": 0, "failed": 0, "results": []}
+
+        results = []
+        with self._writeback_lock:
+            for fp in file_paths:
+                try:
+                    res = self._write_metadata_field(fp, field, value, grace_seconds=5.0)
+                except Exception as e:
+                    logger.error("bulk metadata write failed for %s: %s", fp, e)
+                    res = {"ok": False, "error": str(e)}
+                entry = {"path": fp, "ok": res["ok"]}
+                if not res["ok"]:
+                    entry["error"] = res.get("error", "unknown error")
+                results.append(entry)
+
+        updated = sum(1 for r in results if r["ok"])
+        failed = len(results) - updated
+        logger.info("bulk metadata: %s=%s on %d files (%d failed)", field, value, updated, failed)
+
+        if updated:
+            try:
+                full_build(quiet=True)
+            except Exception as e:
+                logger.error("rebuild after bulk metadata update failed: %s", e)
+
+        return {"ok": failed == 0, "updated": updated, "failed": failed, "results": results}
 
     def rebuild(self):
         """Force a full site rebuild from the UI."""
@@ -777,6 +838,32 @@ class HypervisorAPI:
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
+    def launch_hypernote(self):
+        """Launch Hypernote as a detached subprocess via its shortcut.
+
+        Launching via the .lnk ensures Windows groups the window with the
+        pinned taskbar shortcut (same AppUserModelID) and shows the correct icon.
+        Falls back to direct pythonw invocation if the shortcut doesn't exist.
+        """
+        import os
+        shortcut = HYPERSPACE_ROOT / ".hypernote" / "Hypernote.lnk"
+        script = HYPERSPACE_ROOT / ".hypernote" / "hypernote.py"
+        try:
+            if shortcut.exists():
+                os.startfile(str(shortcut))
+                return {"ok": True}
+            elif script.exists():
+                subprocess.Popen(
+                    ["pythonw", str(script)],
+                    cwd=str(script.parent),
+                    creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NO_WINDOW,
+                )
+                return {"ok": True}
+            else:
+                return {"ok": False, "error": "hypernote.py not found"}
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+
     def launch_hypercycle(self):
         """Launch Hypercycle as a detached subprocess via its shortcut.
 
@@ -861,18 +948,19 @@ class HypervisorAPI:
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
-    def import_external_file(self, filename, content):
-        """Import a dropped markdown file into .external/ directory.
+    def import_external_file(self, filename, content, encoding="text"):
+        """Import a dropped file into .external/ directory.
 
         Args:
-            filename: Original filename (e.g., "meeting-notes.md")
-            content: Plain text content of the markdown file
+            filename: Original filename (e.g., "meeting-notes.md", "chart.png")
+            content: Text content, or base64 string when encoding="base64"
+            encoding: "text" (default) or "base64" for images/binaries
 
         Returns:
             dict with ok/error status and path of imported file
         """
         try:
-            result = _import_external(filename, content)
+            result = _import_external(filename, content, encoding=encoding)
             if result["ok"]:
                 full_build(quiet=True)
                 self._broadcast_js("window.__hypervisorReload()")
@@ -1251,6 +1339,53 @@ class HypervisorAPI:
 
         except Exception as e:
             return {"ok": False, "error": str(e)}
+
+    def mark_done_bulk(self, file_paths):
+        """Move many work items from work/to-do/ to work/done/ in one pass.
+
+        Suppresses the watcher for every source/dest pair up front, moves each
+        file, then runs one full rebuild. Ineligible items (missing, not in
+        work/to-do/, or already present in done/) are skipped and reported
+        rather than aborting the batch. Navigation is left to the caller so
+        the frontend can reload the list it is showing.
+
+        Returns:
+            {"ok": bool, "moved": int, "failed": int,
+             "results": [{"path", "ok", "new_path"?, "error"?}, ...]}
+        """
+        if not file_paths:
+            return {"ok": False, "error": "No files selected", "moved": 0, "failed": 0, "results": []}
+
+        done_dir = HYPERSPACE_ROOT / "work" / "done"
+        for fp in file_paths:
+            self._watcher.ignore_path(str(HYPERSPACE_ROOT / fp), grace_seconds=5.0)
+            self._watcher.ignore_path(str(done_dir / Path(fp).name), grace_seconds=5.0)
+
+        results = []
+        for fp in file_paths:
+            try:
+                res = _mark_done(fp)
+            except Exception as e:
+                logger.error("bulk mark done failed for %s: %s", fp, e)
+                res = {"ok": False, "error": str(e)}
+            entry = {"path": fp, "ok": res["ok"]}
+            if res["ok"]:
+                entry["new_path"] = res["new_path"]
+            else:
+                entry["error"] = res.get("error", "unknown error")
+            results.append(entry)
+
+        moved = sum(1 for r in results if r["ok"])
+        failed = len(results) - moved
+        logger.info("bulk mark done: %d moved, %d skipped", moved, failed)
+
+        if moved:
+            try:
+                full_build(quiet=True)
+            except Exception as e:
+                logger.error("rebuild after bulk mark done failed: %s", e)
+
+        return {"ok": failed == 0, "moved": moved, "failed": failed, "results": results}
 
     def open_in_explorer(self, file_path):
         """Open Windows File Explorer with the source file selected.

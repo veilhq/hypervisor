@@ -146,7 +146,7 @@
   color: var(--text-bright);
   margin-bottom: var(--space-1);
   font-family: var(--font);
-  font-weight: 700;
+  font-weight: var(--fw-bold);
 }
 .health-affected-violation {
   display: flex;
@@ -156,7 +156,7 @@
 }
 .health-affected-rule {
   color: var(--error);
-  font-weight: 700;
+  font-weight: var(--fw-bold);
   white-space: nowrap;
 }
 .health-affected-msg { color: var(--text-muted); }
@@ -222,7 +222,7 @@
 .health-tag-meta { color: var(--text-dim); font-size: var(--fs-micro); white-space: nowrap; }
 .health-tag-pct { color: var(--text-muted); }
 .health-tag-name { color: var(--cool); }
-.health-merge-tags { color: var(--warm); font-weight: 700; }
+.health-merge-tags { color: var(--warm); font-weight: var(--fw-bold); }
 
 /* ===== Empty State ===== */
 .health-empty {
@@ -296,7 +296,7 @@
   border-top: var(--border-hair) solid var(--border);
 }
 .health-fix-type { color: var(--text-muted); }
-.health-fix-count { color: var(--warm); font-weight: 700; }
+.health-fix-count { color: var(--warm); font-weight: var(--fw-bold); }
 .health-fix-files { margin-top: var(--space-3); }
 .health-fix-file {
   display: flex;
@@ -338,7 +338,7 @@
 .health-fix-manual-list { list-style: none; padding: 0; margin: 0; }
 .health-fix-manual-list li { padding: var(--space-1) 0; color: var(--text-muted); }
 .health-fix-manual-list li + li { border-top: var(--border-hair) solid var(--border); }
-.health-fix-manual-rule { color: var(--comp); font-weight: 700; margin-right: var(--space-2); }
+.health-fix-manual-rule { color: var(--comp); font-weight: var(--fw-bold); margin-right: var(--space-2); }
 .health-fix-manual-msg { color: var(--text-muted); }
 
 /* ===== Responsive ===== */

@@ -5,8 +5,7 @@
   // for file I/O. No external dependencies. SPA-aware via router lifecycle.
 
   (function initInlineEditor() {
-    var editBtn = document.getElementById("edit-btn");
-    if (!editBtn) return;
+    var A = (window.__hvActions = window.__hvActions || {});
 
     var isEditing = false;
     var editorWrap = null;
@@ -129,15 +128,6 @@
       if (article) article.style.display = "";
       isEditing = false;
 
-      editBtn.setAttribute("data-tooltip", "Edit markdown");
-      var label = editBtn.querySelector(".edit-btn-label");
-      if (label) label.textContent = "edit";
-      var icon = editBtn.querySelector("[data-lucide]");
-      if (icon) {
-        icon.setAttribute("data-lucide", "pencil");
-        if (window.lucide) lucide.createIcons({ attrs: { "stroke-width": 2 } });
-      }
-
       // If a save happened, reload the fragment to show updated content
       if (savedDuringSession && window.__router) {
         savedDuringSession = false;
@@ -171,15 +161,6 @@
           if (article) article.style.display = "none";
           isEditing = true;
 
-          editBtn.setAttribute("data-tooltip", "View rendered");
-          var label = editBtn.querySelector(".edit-btn-label");
-          if (label) label.textContent = "view";
-          var icon = editBtn.querySelector("[data-lucide]");
-          if (icon) {
-            icon.setAttribute("data-lucide", "eye");
-            if (window.lucide) lucide.createIcons({ attrs: { "stroke-width": 2 } });
-          }
-
           showIndicator("");
           saveIndicator.classList.remove("visible");
           textarea.focus();
@@ -200,23 +181,14 @@
       if (article) article.style.display = "";
       isEditing = false;
 
-      editBtn.setAttribute("data-tooltip", "Edit markdown");
-      var label = editBtn.querySelector(".edit-btn-label");
-      if (label) label.textContent = "edit";
-      var icon = editBtn.querySelector("[data-lucide]");
-      if (icon) {
-        icon.setAttribute("data-lucide", "pencil");
-        if (window.lucide) lucide.createIcons({ attrs: { "stroke-width": 2 } });
-      }
-
       // Reload fragment to show rebuilt content
       if (window.__router) {
         window.__router.reload();
       }
     }
 
-    // --- Button click handler ---
-    editBtn.addEventListener("click", function () {
+    // --- Toggle handler (invoked from context menu / command palette) ---
+    function toggleEdit() {
       if (!(window.pywebview && window.pywebview.api)) return;
       if (!filePath) return;
       if (isEditing) {
@@ -224,7 +196,16 @@
       } else {
         enterEditMode();
       }
-    });
+    }
+
+    // Register with the action registry so callers invoke edit directly.
+    A.register("edit", toggleEdit);
+    // Whether edit is available for the current page (desktop + .md doc).
+    A.canEdit = function () {
+      return !!(window.pywebview && window.pywebview.api) && !!filePath;
+    };
+    // Current editor mode, so callers can label the action edit vs. view.
+    A.isEditing = function () { return isEditing; };
 
     // --- Lifecycle: teardown on navigation ---
     function teardown() {
@@ -246,16 +227,6 @@
       dirty = false;
       savedDuringSession = false;
       filePath = null;
-
-      // Reset button state
-      editBtn.style.display = "none";
-      var label = editBtn.querySelector(".edit-btn-label");
-      if (label) label.textContent = "edit";
-      var icon = editBtn.querySelector("[data-lucide]");
-      if (icon) {
-        icon.setAttribute("data-lucide", "pencil");
-        if (window.lucide) lucide.createIcons({ attrs: { "stroke-width": 2 } });
-      }
     }
 
     // --- Lifecycle: init on navigation ---
@@ -264,16 +235,9 @@
       var srcPath = fragment.sourcePath || "";
       if (!srcPath || !srcPath.endsWith(".md")) {
         filePath = null;
-        editBtn.style.display = "none";
         return;
       }
-
       filePath = srcPath;
-
-      // Show edit button only if desktop bridge is available
-      if (isDesktopApp) {
-        editBtn.style.display = "";
-      }
     }
 
     // Register with router

@@ -231,24 +231,58 @@
       // Then filter by text query
       if (query) {
         var q = query.toLowerCase();
+
+        // WI-id fast-path: a query shaped like "wi-282" / "WI282" / "282" (when
+        // prefixed) resolves straight to the work item by its exact work_id,
+        // surfaced ahead of the fuzzy text matches. Works in a plain static
+        // build too, since work_id already lives on the client search index.
+        var widMatch = /^wi-?(\d+)$/i.exec(query.trim());
+        var exactWorkItems = [];
+        if (widMatch) {
+          var targetId = "wi-" + widMatch[1];
+          exactWorkItems = matches.filter(function (entry) {
+            return entry.work_id && entry.work_id.toLowerCase() === targetId;
+          });
+        }
+
         matches = matches.filter(function (entry) {
           return entry.title.toLowerCase().indexOf(q) !== -1 ||
                  entry.path.toLowerCase().indexOf(q) !== -1 ||
                  (entry.snippet && entry.snippet.toLowerCase().indexOf(q) !== -1) ||
-                 (entry.tags && entry.tags.some(function (t) { return t.toLowerCase().indexOf(q) !== -1; }));
+                 (entry.tags && entry.tags.some(function (t) { return t.toLowerCase().indexOf(q) !== -1; })) ||
+                 (entry.work_id && entry.work_id.toLowerCase().indexOf(q) !== -1);
         });
+
+        // Hoist the exact WI-id hit(s) to the front, de-duplicated against the
+        // text matches so a single item never renders twice.
+        if (exactWorkItems.length) {
+          var exactPaths = {};
+          exactWorkItems.forEach(function (entry) { exactPaths[entry.path] = true; });
+          matches = exactWorkItems.concat(matches.filter(function (entry) {
+            return !exactPaths[entry.path];
+          }));
+        }
       }
 
       matches = matches.slice(0, 15);
 
-      if (matches.length === 0) {
+      // Utility + directory matches from the shared source. Only text queries
+      // produce these (a bare tag filter is a document concept); they render as
+      // a labelled group ABOVE the document cards, mirroring the command
+      // palette ordering so directories/utilities surface first.
+      var utilDirMatches = query ? _matchUtilDir(query) : [];
+
+      if (matches.length === 0 && utilDirMatches.length === 0) {
         var emptyMsg = activeTagFilter
           ? 'no results for tag: ' + activeTagFilter + (query ? ' + "' + query + '"' : '')
           : 'no results';
         resultsBox.innerHTML = '<div class="sr-empty">' + emptyMsg + '</div>';
         window.selectedIdx = -1;
       } else {
+        // Docs render first (they own the innerHTML wipe), then the util/dir
+        // group is prepended above them so it lands at the top of the list.
         _renderClientResults(matches);
+        _prependUtilDirResults(utilDirMatches, matches.length > 0);
       }
 
       // Semantic mode: trigger bridge call for question-shaped queries (>=2 words)
@@ -259,6 +293,65 @@
       }
     }
 
+    // Fuzzy-ish name/path match for the non-document categories. Mirrors the
+    // substring semantics the document filter uses (indexOf), scoring an
+    // earlier match higher so exact prefixes float up.
+    function _udScore(query, text) {
+      if (!text) return -1;
+      var idx = text.toLowerCase().indexOf(query.toLowerCase());
+      if (idx === -1) return -1;
+      return idx === 0 ? 100 : Math.max(1, 50 - idx);
+    }
+
+    function _matchUtilDir(query) {
+      var out = [];
+      var utils = (window.HvSearchSources && window.HvSearchSources.utilities()) || [];
+      var dirs = (window.HvSearchSources && window.HvSearchSources.directories()) || [];
+      utils.forEach(function (u) {
+        var s = _udScore(query, u.name);
+        if (s > 0) out.push({ kind: "utility", label: u.name, href: u.href, score: s });
+      });
+      dirs.forEach(function (d) {
+        var s = Math.max(_udScore(query, d.name), _udScore(query, d.path));
+        if (s > 0) out.push({ kind: "directory", label: d.path, href: d.href, score: s });
+      });
+      out.sort(function (a, b) { return b.score - a.score; });
+      return out.slice(0, 8);
+    }
+
+    // Prepend utility/directory cards ABOVE the document results. No section
+    // header - each card's leading type glyph (folder for a directory, the
+    // utility's own icon for a utility) is the kind readout, matching the
+    // document cards' icon treatment so the whole list reads as one surface.
+    // Reuses the .sr-card vocabulary so keyboard nav (which selects .sr-card
+    // nodes) and the delegated click handler cover these for free.
+    function _prependUtilDirResults(items, hasFilesBelow) {
+      if (!items || !items.length) return;
+      var frag = document.createDocumentFragment();
+      items.forEach(function (item, i) {
+        var card = document.createElement("a");
+        card.href = item.href;
+        card.className = "sr-card sr-card-compact";
+        card.style.animationDelay = (i * 0.04) + "s";
+        var tIcon = (window.HvSearchSources && window.HvSearchSources.iconForKind(item.kind)) || "folder";
+        card.innerHTML =
+          '<i data-lucide="' + tIcon + '" class="sr-card-icon"></i>' +
+          '<div class="sr-card-title">' + HvUtils.escapeHtml(item.label) + '</div>' +
+          '<span class="sr-card-kind">' + item.kind + '</span>';
+        frag.appendChild(card);
+      });
+      // Hairline rule between the non-file group above and the file results
+      // below. Only when both sides exist - a trailing divider with nothing
+      // under it would dangle.
+      if (hasFilesBelow) {
+        var rule = document.createElement("div");
+        rule.className = "sr-group-divider";
+        frag.appendChild(rule);
+      }
+      resultsBox.insertBefore(frag, resultsBox.firstChild);
+      _renderResultIcons();
+    }
+
     function _isSemanticCandidate(query) {
       var words = query.trim().split(/\s+/);
       return words.length >= 2;
@@ -267,7 +360,7 @@
     function _cancelSemantic() {
       if (_semanticTimer) { clearTimeout(_semanticTimer); _semanticTimer = null; }
       _lastSemanticQuery = "";
-      var existing = resultsBox.querySelector(".sr-semantic-divider");
+      var existing = resultsBox.querySelector(".sr-related-divider");
       if (existing) {
         // Remove divider and all cards after it
         while (existing.nextSibling) existing.nextSibling.remove();
@@ -313,14 +406,14 @@
         if (!results || !results.length) return;
         if (searchInput.value.trim() !== query) return; // stale response
         // Remove existing semantic results
-        var existing = resultsBox.querySelector(".sr-semantic-divider");
+        var existing = resultsBox.querySelector(".sr-related-divider");
         if (existing) {
           while (existing.nextSibling) existing.nextSibling.remove();
           existing.remove();
         }
         // Add divider
         var divider = document.createElement("div");
-        divider.className = "sr-semantic-divider";
+        divider.className = "sr-semantic-divider sr-related-divider";
         divider.textContent = "related";
         resultsBox.appendChild(divider);
         // Add result cards
@@ -334,18 +427,23 @@
           card.className = "sr-card";
           card.style.animationDelay = (i * 0.04) + "s";
           card.setAttribute("data-section", r.section || "");
+          var sIcon = (window.HvSearchSources && window.HvSearchSources.iconForKind("file")) || "file-text";
           card.innerHTML =
             '<span class="status-chip status-chip-outlined-muted sr-partial-badge">\u2248 partial</span>' +
-            '<div class="sr-card-header">' +
-              (category ? '<span class="sr-card-category">' + category + '</span>' : '') +
-            '</div>' +
-            '<div class="sr-card-title">' + r.title + (r.section ? ' \u00A7 ' + r.section : '') + '</div>' +
-            (snippet ? '<div class="sr-card-snippet">' + snippet + '</div>' : '') +
-            '<div class="sr-card-footer">' +
-              '<span class="sr-card-path">' + r.path.replace(/\.md$/, "") + '</span>' +
+            '<i data-lucide="' + sIcon + '" class="sr-card-icon"></i>' +
+            '<div class="sr-card-body">' +
+              '<div class="sr-card-header">' +
+                (category ? '<span class="sr-card-category">' + category + '</span>' : '') +
+              '</div>' +
+              '<div class="sr-card-title">' + r.title + (r.section ? ' \u00A7 ' + r.section : '') + '</div>' +
+              (snippet ? '<div class="sr-card-snippet">' + snippet + '</div>' : '') +
+              '<div class="sr-card-footer">' +
+                '<span class="sr-card-path">' + r.path.replace(/\.md$/, "") + '</span>' +
+              '</div>' +
             '</div>';
           resultsBox.appendChild(card);
         });
+        _renderResultIcons();
       }).catch(function () {
         var skel = resultsBox.querySelector(".sr-semantic-skeleton");
         if (skel) skel.remove();
@@ -384,15 +482,31 @@
         footerHtml += '<span class="sr-card-path">' + m.path.replace(/\.md$/, "") + '</span>';
         if (dateStr) footerHtml += '<span class="sr-card-date">' + dateStr + '</span>';
         footerHtml += '</div>';
+        // Leading type glyph - all documents use the single file icon.
+        var icon = (window.HvSearchSources && window.HvSearchSources.iconForKind("file")) || "file-text";
+        var iconHtml = '<i data-lucide="' + icon + '" class="sr-card-icon"></i>';
         return '<a href="' + m.href + '" class="sr-card" style="animation-delay:' + (i * 0.04) + 's">' +
-               headerHtml +
-               '<div class="sr-card-title">' + m.title + '</div>' +
-               snippetHtml +
-               footerHtml +
-               tagsHtml +
+               iconHtml +
+               '<div class="sr-card-body">' +
+                 headerHtml +
+                 '<div class="sr-card-title">' + m.title + '</div>' +
+                 snippetHtml +
+                 footerHtml +
+                 tagsHtml +
+               '</div>' +
                '</a>';
       }).join("");
+      _renderResultIcons();
       window.selectedIdx = -1;
+    }
+
+    // Activate Lucide glyphs in the results box. Cards carry data-lucide
+    // placeholders; this swaps them for SVGs. Safe to call repeatedly - already
+    // rendered icons are skipped by Lucide.
+    function _renderResultIcons() {
+      if (window.lucide) {
+        try { window.lucide.createIcons({ nodes: resultsBox.querySelectorAll(".sr-card-icon[data-lucide]"), attrs: { "stroke-width": 2 } }); } catch (ex) {}
+      }
     }
 
     // Tag click handler in search results
@@ -543,7 +657,15 @@
           !document.activeElement.closest("input, textarea, [contenteditable]") &&
           !document.querySelector(".shortcuts-overlay.visible")) {
         e.preventDefault();
-        openSearch();
+        // In zen mode the search input is inline in the stage, not in the
+        // overlay — focus it directly rather than opening the (now shell-only)
+        // overlay. Gated on zen-staged (stage actually mounted), since that is
+        // when the input lives inline; off-home the overlay path is correct.
+        if (document.body.classList.contains("zen-staged") && searchInput) {
+          searchInput.focus();
+        } else {
+          openSearch();
+        }
         return;
       }
 

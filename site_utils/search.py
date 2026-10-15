@@ -67,10 +67,47 @@ def _extract_work_id(md_text):
 
 
 def build_search_index(files):
-    """Return a list of {title, path, href, snippet, tags, date} for every doc."""
+    """Return a list of {title, path, href, snippet, tags, date} for every doc.
+
+    Markdown docs contribute their header title, body snippet, and tags.
+    Non-md external files have no markdown header, so they contribute a
+    filename title and - for text-like types (.txt/.sql) - a raw-text snippet;
+    images and binaries contribute title plus a type tag only. All of them are
+    searchable so a dropped-in file can be found by name or content.
+    """
+    from .external_render import (
+        is_supported_external, external_title, external_date,
+        TEXT_LIKE_EXTS, read_text_fallback,
+    )
+    from pathlib import PurePosixPath
+
     entries = []
     for rel in files:
         md_path = HYPERSPACE_ROOT / rel
+        rel_posix = str(rel).replace("\\", "/")
+
+        if is_supported_external(rel_posix):
+            ext = PurePosixPath(rel_posix).suffix.lower()
+            title = external_title(rel_posix)
+            if ext in TEXT_LIKE_EXTS:
+                raw = read_text_fallback(md_path)
+                snippet = " ".join(raw.split())[:200]
+            else:
+                snippet = ""
+            entry = {
+                "title": title,
+                "path": rel_posix,
+                "href": href_for(rel),
+                "snippet": snippet,
+            }
+            # A type tag makes the file filterable/visible as its kind.
+            entry["tags"] = [ext.lstrip(".")]
+            date_str = external_date(md_path)
+            if date_str != "0000-00-00T00:00":
+                entry["date"] = date_str
+            entries.append(entry)
+            continue
+
         md_text = read_md(md_path)
         title = get_title(md_text, nice_name(rel.name))
         snippet = _extract_snippet(md_text)
@@ -79,7 +116,7 @@ def build_search_index(files):
         date_str, _ = sort_date(dates)
         entry = {
             "title": title,
-            "path": str(rel).replace("\\", "/"),
+            "path": rel_posix,
             "href": href_for(rel),
             "snippet": snippet,
         }

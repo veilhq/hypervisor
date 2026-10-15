@@ -16,7 +16,7 @@
 
   var contentTarget = document.getElementById("content-target");
   var tocBody = document.getElementById("toc-body");
-  var tocSidebar = document.getElementById("toc-sidebar");
+  var tocSidebar = document.getElementById("toc-flag-wrap");
   var pageMain = document.getElementById("page-main");
   var sourcePath = document.getElementById("source-path");
   var breadcrumbsNav = document.querySelector(".breadcrumbs");
@@ -91,9 +91,9 @@
   // --- TOC update ---
   function updateToc(tocHtml) {
     if (!tocSidebar || !tocBody) return;
-    // The TOC is now a floating overlay: the router only injects the content;
-    // toc.js reveals the toggle (FAB) when a TOC exists and owns open/close.
-    // Do NOT force the panel visible here.
+    // The TOC is a flag + slide-in drawer: the router only injects the heading
+    // list; toc.js reveals the flag when a TOC exists and owns open/close.
+    // Do NOT force the drawer open here.
     tocBody.innerHTML = tocHtml || "";
   }
 
@@ -228,6 +228,18 @@
       // Immediate swap (reload or a11y)
       doSwap(fragment);
       doPostSwap(fragment);
+    } else if (fragment.pageType === "doc") {
+      // Doc pages: the surface's own dirSurfaceIn entrance (driven by .animate-in
+      // in doSwap) is the sole animation. Running the rt-fade content transition
+      // on the same #content-target element fought that animation for opacity,
+      // which showed the content briefly before the surface slid in (the flash).
+      // Fade out first for a clean exit, then swap + let the surface animate in.
+      contentTarget.classList.add("rt-fade-out");
+      setTimeout(function () {
+        contentTarget.classList.remove("rt-fade-out");
+        doSwap(fragment);
+        doPostSwap(fragment);
+      }, TRANSITION_OUT);
     } else {
       // Animated swap
       contentTarget.classList.add("rt-fade-out");
@@ -262,6 +274,29 @@
       pageMain.classList.toggle("page-dir-index", isDrawer);
       pageMain.classList.toggle("page-doc-surface", fragment.pageType === "doc");
       pageMain.classList.toggle("page-utility", fragment.pageType === "utility");
+      pageMain.classList.toggle("page-home", fragment.pageType === "home");
+      // Non-previewable external files render as a standalone centered card,
+      // outside the recessed doc surface. Previewable external files (txt/sql/
+      // images) render their .external-doc card on the plain content area, also
+      // outside the doc surface.
+      pageMain.classList.toggle("page-external-empty", fragment.pageType === "external-empty");
+      pageMain.classList.toggle("page-external-doc", fragment.pageType === "external-doc");
+    }
+
+    // Restart the doc surface entrance so it plays AFTER the content swap rather
+    // than the swapped content painting in its final state first (which flashed
+    // as "already loaded, then animates"). The surface element is persistent, so
+    // a CSS animation gated on a class won't replay on its own -- remove the
+    // trigger, force a reflow to drop any running animation, then re-add it so
+    // the reset to the pre-animation state happens before the browser paints.
+    if (contentTarget) {
+      var reducedMotionSwap = document.documentElement.classList.contains("a11y-reduce-motion") ||
+        (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+      contentTarget.classList.remove("animate-in");
+      if (fragment.pageType === "doc" && !reducedMotionSwap) {
+        void contentTarget.offsetWidth; // force reflow
+        contentTarget.classList.add("animate-in");
+      }
     }
 
     // Scroll to top (unless navigating with a hash)
@@ -395,6 +430,13 @@
     // Skip links with target="_blank" or download attribute
     if (link.hasAttribute("download") || link.getAttribute("target") === "_blank") return;
 
+    // Modified clicks on selectable rows build a multi-selection instead of
+    // opening a tab; the selection module handles them.
+    if ((e.ctrlKey || e.metaKey || e.shiftKey) && link.closest("[data-selectable]")) {
+      e.preventDefault();
+      return;
+    }
+
     // Ctrl+click / Meta+click / Shift+click → open in new tab
     if (e.ctrlKey || e.metaKey || e.shiftKey) {
       // Handled by mousedown listener below
@@ -434,6 +476,12 @@
 
     var link = e.target.closest("a[href]");
     if (!link) return;
+    // Modified left-click on a selectable row is a selection gesture, not a
+    // tab open. Middle-click still opens a tab.
+    if (isModifiedLeft && link.closest("[data-selectable]")) {
+      e.preventDefault();
+      return;
+    }
     var href = link.getAttribute("href");
     if (!href) return;
     if (href.startsWith("http://") || href.startsWith("https://") || href.startsWith("#") || href.startsWith("mailto:") || href.startsWith("tel:")) return;

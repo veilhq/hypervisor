@@ -14,7 +14,7 @@
 }
 .pg-section-label {
   font-size: var(--fs-caption);
-  font-weight: 700;
+  font-weight: var(--fw-bold);
   color: var(--text-dim);
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -33,7 +33,7 @@
 .pg-grid-separator {
   grid-column: 1 / -1;
   font-size: var(--fs-micro);
-  font-weight: 700;
+  font-weight: var(--fw-bold);
   color: var(--text-dim);
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -90,7 +90,7 @@
 }
 .pg-card-name {
   font-size: var(--fs-label);
-  font-weight: 700;
+  font-weight: var(--fw-bold);
   color: var(--text-bright);
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -247,7 +247,7 @@
 .pg-preview-header {
   padding: var(--space-2) var(--space-3);
   font-size: var(--fs-micro);
-  font-weight: 700;
+  font-weight: var(--fw-bold);
   color: var(--text-dim);
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -272,7 +272,7 @@
 }
 .pg-pv-heading {
   font-size: var(--fs-body);
-  font-weight: 700;
+  font-weight: var(--fw-bold);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--accent);
@@ -293,7 +293,7 @@
 .pg-pv-badge {
   padding: 0.15rem var(--space-2);
   font-size: var(--fs-micro);
-  font-weight: 700;
+  font-weight: var(--fw-bold);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   border: var(--border-hair) solid;
@@ -315,7 +315,7 @@
   padding: var(--space-1) var(--space-3);
   font-family: var(--font);
   font-size: var(--fs-label);
-  font-weight: 700;
+  font-weight: var(--fw-bold);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   border: var(--border-hair) solid;
@@ -337,7 +337,7 @@
 .pg-pv-sem {
   padding: 0.15rem var(--space-2);
   font-size: var(--fs-micro);
-  font-weight: 700;
+  font-weight: var(--fw-bold);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   border: var(--border-hair) solid;

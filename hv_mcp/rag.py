@@ -18,6 +18,7 @@ import sqlite3
 import struct
 import sys
 import threading
+from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
 
@@ -42,6 +43,18 @@ logger = setup_logger("rag")
 
 MODEL_NAME = "BAAI/bge-small-en-v1.5"
 EMBEDDING_DIM = 384
+
+# Documents are embedded one chunk per ONNX call. ONNX Runtime's CPU memory
+# arena keeps its peak allocation for the life of the session, and that peak is
+# set by the largest single inference: fastembed's default batch (256) pads
+# every chunk of a document to the longest one and runs them together, so one
+# large document permanently pins ~1.4 GB of arena. With one chunk per call the
+# peak is bounded by a single 512-token sequence. Measured over a full-corpus
+# pass: ~1.6 GB -> ~340 MB resident, throughput unchanged (~70 ms/chunk - the
+# session already parallelizes inside each call), vectors identical (cosine
+# >= 0.9999996). Disabling the arena instead bounds memory slightly lower but
+# doubles embed time.
+EMBED_BATCH_SIZE = 1
 
 # The model's tokenizer reports max_length=512 with right-truncation. Text past
 # that boundary is silently discarded from the embedding, so 512 is a hard
@@ -76,6 +89,21 @@ OVERLAP_TOKENS = 75
 
 DB_PATH = STATE_DIR / "rag.db"
 
+# VACUUM is a full-file rewrite, so it runs on a cadence rather than every
+# reindex: the cheap FTS merge + WAL checkpoint handle routine churn, and
+# VACUUM only fires once accumulated row deletions since the last VACUUM cross
+# this threshold. Keyed off deletions because tombstones from re-saved and
+# removed documents are what actually bloat the main file. Tunable - set from
+# the measured reclaim-per-VACUUM during verification.
+VACUUM_DELETE_THRESHOLD = 500
+
+# Per-save writes go through index_document/remove_document directly, never
+# through reindex_changed, so a long-lived service would otherwise never
+# compact between restarts. Standalone saves trigger the cheap compaction once
+# this many chunk rows have been written or deleted since the last one - a few
+# saves of a typical document. Measured cost of the cheap path is ~1 ms.
+COMPACT_ROW_THRESHOLD = 50
+
 # ---------------------------------------------------------------------------
 # Corpus inclusion policy
 # ---------------------------------------------------------------------------
@@ -90,6 +118,7 @@ INCLUDE_PREFIXES = (
     "ideas/",
     "patterns/",
     "analysis/",
+    "notes/",
     "reference/",
     ".external/",
     ".kb/",
@@ -189,6 +218,8 @@ def _infer_doc_type(rel_path: str) -> str:
         return "pattern"
     if head == "analysis":
         return "analysis"
+    if head == "notes":
+        return "note"
     if head == "reference":
         return "reference"
     if head == ".external":
@@ -300,6 +331,13 @@ class HyperspaceRAG:
         self._lock = threading.Lock()
         self._write_lock = threading.Lock()
         self._indexing = False
+        # Running count of chunk-row deletions since the last VACUUM. Seeded
+        # from rag_meta on first DB access and flushed back during compaction;
+        # drives the VACUUM cadence (see VACUUM_DELETE_THRESHOLD).
+        self._deletes_since_vacuum = 0
+        # Chunk rows written or deleted since the last compaction. In-memory
+        # only: losing it on restart just delays one cheap compaction.
+        self._rows_since_compact = 0
 
     # -- lifecycle ---------------------------------------------------------
 
@@ -363,10 +401,18 @@ class HyperspaceRAG:
             # MCP server and the Hypervisor desktop app access rag.db
             # simultaneously.  busy_timeout gives the loser of a write race
             # up to 5 seconds to retry before raising OperationalError.
-            db.execute("PRAGMA journal_mode=WAL")
+            # busy_timeout is set first, before any statement, so schema setup
+            # on open waits for the other process instead of failing.
             db.execute("PRAGMA busy_timeout=5000")
+            # WAL mode is persistent in the database file, so only switch when
+            # it is not already set - changing the journal mode needs an
+            # exclusive lock, which a routine open should not contend for.
+            mode = db.execute("PRAGMA journal_mode").fetchone()[0]
+            if mode.lower() != "wal":
+                db.execute("PRAGMA journal_mode=WAL")
             self._db = db
             self._init_schema()
+            self._deletes_since_vacuum = self._read_meta_int("deletes_since_vacuum", 0)
         return self._db
 
     def _init_schema(self):
@@ -394,6 +440,14 @@ class HyperspaceRAG:
                 path          TEXT PRIMARY KEY,
                 content_hash  TEXT NOT NULL,
                 indexed_at    TEXT
+            );
+
+            -- Small key/value store for maintenance state that must survive a
+            -- process restart - currently the running count of row deletions
+            -- since the last VACUUM, which drives the compaction cadence.
+            CREATE TABLE IF NOT EXISTS rag_meta (
+                key    TEXT PRIMARY KEY,
+                value  TEXT
             );
 
             CREATE VIRTUAL TABLE IF NOT EXISTS vec_chunks USING vec0(
@@ -439,6 +493,166 @@ class HyperspaceRAG:
         if self._db is not None:
             self._db.close()
             self._db = None
+
+    @contextmanager
+    def _write_txn(self, commit: bool = True, begin: bool = True):
+        """Run a write section atomically under SQLite's write lock.
+
+        The MCP service and the desktop app each hold a connection to this
+        database and both index every save, so two writers routinely touch the
+        same document. BEGIN IMMEDIATE takes the write lock before the section
+        reads anything: without it, the chunk ids read by _delete_document can
+        go stale under the other writer, the delete misses a row, and the next
+        INSERT reuses that rowid and fails on the vec0 primary key.
+
+        Any exception rolls back. A transaction left open after a failure keeps
+        holding the write lock - every other connection then fails with
+        "database is locked" - and pins the WAL so checkpoints cannot truncate
+        it. With commit=False the caller commits (batched writes), but a failure
+        still rolls back rather than leaving the transaction open. begin=False
+        is for maintenance that manages its own transactions (VACUUM cannot run
+        inside one) but still needs the lock and the rollback guarantee.
+        """
+        with self._write_lock:
+            db = self.db
+            if begin and not db.in_transaction:
+                db.execute("BEGIN IMMEDIATE")
+            try:
+                yield db
+            except BaseException:
+                if db.in_transaction:
+                    db.rollback()
+                raise
+            if commit:
+                db.commit()
+
+    # -- maintenance -------------------------------------------------------
+
+    def _read_meta_int(self, key: str, default: int) -> int:
+        """Read an integer value from rag_meta, falling back to default."""
+        row = self._db.execute(
+            "SELECT value FROM rag_meta WHERE key = ?", (key,)
+        ).fetchone()
+        if row is None:
+            return default
+        try:
+            return int(row[0])
+        except (TypeError, ValueError):
+            return default
+
+    def _write_meta(self, key: str, value) -> None:
+        """Upsert a value into rag_meta (stored as text)."""
+        self._db.execute(
+            """
+            INSERT INTO rag_meta (key, value) VALUES (?, ?)
+            ON CONFLICT(key) DO UPDATE SET value = excluded.value
+            """,
+            (key, str(value)),
+        )
+
+    def _compact(self, churn_rows: int) -> dict:
+        """Reclaim index and file space after a reindex that changed rows.
+
+        Three operations with very different costs, so they run on different
+        cadences:
+
+        - FTS5 'optimize' merges the full-text index segments left behind by
+          per-save delete+reinsert churn. Cost is proportional to the churn
+          just written, so it runs on every changed reindex.
+        - wal_checkpoint(TRUNCATE) folds the WAL back into the main database and
+          truncates it, keeping the -wal file from growing without bound. Also
+          cheap and run every changed reindex. In WAL mode this MUST come after
+          VACUUM (not before): VACUUM writes the entire rebuilt database into
+          the WAL, so without a trailing TRUNCATE checkpoint the bloat simply
+          moves from the db file to the WAL for no net reclaim.
+        - VACUUM is a full-file rewrite that actually releases tombstoned pages
+          from vec0/FTS5 deletes. Expensive, so it is gated on accumulated
+          deletions crossing VACUUM_DELETE_THRESHOLD rather than running every
+          time.
+
+        VACUUM cannot run inside a transaction, so each DML step is committed
+        before it is issued.
+        """
+        db = self.db
+        did_vacuum = False
+        with self._write_txn(commit=False, begin=False):
+            # Each DML step takes the write lock up front (BEGIN IMMEDIATE). In
+            # a deferred transaction the statement reads first and upgrades to
+            # a write later; if the other process committed in between, SQLite
+            # fails immediately with "database is locked" instead of waiting on
+            # busy_timeout. The commits also close each transaction so VACUUM,
+            # which cannot run inside one, is free to run.
+            # FTS segment merge - cheap, proportional to churn.
+            db.execute("BEGIN IMMEDIATE")
+            db.execute("INSERT INTO fts_chunks(fts_chunks) VALUES('optimize')")
+            db.commit()
+
+            if self._deletes_since_vacuum >= VACUUM_DELETE_THRESHOLD:
+                logger.info(
+                    "VACUUM: %d deletions since last run (threshold %d)",
+                    self._deletes_since_vacuum,
+                    VACUUM_DELETE_THRESHOLD,
+                )
+                # Rebuilds the file in compacted form, writing the result into
+                # the WAL.
+                db.execute("VACUUM")
+                self._deletes_since_vacuum = 0
+                did_vacuum = True
+
+            # Persist the running counter so the cadence survives restarts.
+            db.execute("BEGIN IMMEDIATE")
+            self._write_meta("deletes_since_vacuum", self._deletes_since_vacuum)
+            db.commit()
+
+            # Fold the WAL (including anything VACUUM just wrote) back into the
+            # main file and truncate it. Must follow VACUUM to realize reclaim.
+            # Returns (busy, wal_frames, checkpointed_frames). busy=1 means
+            # another connection (e.g. the desktop app) held an open read
+            # transaction, so the WAL could not be fully folded and truncated.
+            # That is non-fatal - the next compaction retries - but it is logged
+            # so a persistently blocked checkpoint is visible.
+            busy, wal_frames, checkpointed = db.execute(
+                "PRAGMA wal_checkpoint(TRUNCATE)"
+            ).fetchone()
+            # Reset only once every step succeeded, so a failed compaction is
+            # retried on the next save rather than silently forgotten.
+            self._rows_since_compact = 0
+
+        if busy:
+            logger.warning(
+                "WAL checkpoint blocked by a concurrent reader - "
+                "%d of %d frames checkpointed",
+                checkpointed,
+                wal_frames,
+            )
+        logger.info(
+            "compaction done - churn=%d rows, vacuum=%s, deletes_since_vacuum=%d",
+            churn_rows,
+            did_vacuum,
+            self._deletes_since_vacuum,
+        )
+        return {
+            "vacuumed": did_vacuum,
+            "checkpoint_busy": bool(busy),
+            "deletes_since_vacuum": self._deletes_since_vacuum,
+        }
+
+    def _maybe_compact(self) -> dict | None:
+        """Compact after a standalone save once enough rows have churned.
+
+        Skipped while reindex_changed is running: it shares this connection,
+        holds an uncommitted batch across documents, and compacts once at the
+        end anyway - and VACUUM raises if statements are in flight. Failures are
+        logged rather than raised so maintenance can never break a save; the
+        counters are left intact, so the next save retries.
+        """
+        if self._indexing or self._rows_since_compact < COMPACT_ROW_THRESHOLD:
+            return None
+        try:
+            return self._compact(churn_rows=self._rows_since_compact)
+        except sqlite3.Error as exc:
+            logger.warning("compaction after save failed: %s", exc)
+            return None
 
     # -- tokenization ------------------------------------------------------
 
@@ -617,16 +831,32 @@ class HyperspaceRAG:
             "updated": dates.get("updated") or dates.get("created"),
         }
 
-    def _delete_document(self, rel_path: str):
+    def _delete_document(self, rel_path: str) -> int:
+        """Delete all chunks for a path. Returns the number of chunk rows removed.
+
+        The returned count feeds the VACUUM cadence: vec0 and FTS5 deletes leave
+        tombstones that do not shrink the file, so accumulated deletions are the
+        signal for when a full-file VACUUM is worth its cost.
+        """
         db = self.db
         rows = db.execute("SELECT id FROM chunks WHERE path = ?", (rel_path,)).fetchall()
         for (chunk_id,) in rows:
             db.execute("DELETE FROM vec_chunks WHERE rowid = ?", (chunk_id,))
             db.execute("DELETE FROM fts_chunks WHERE rowid = ?", (chunk_id,))
         db.execute("DELETE FROM chunks WHERE path = ?", (rel_path,))
+        self._deletes_since_vacuum += len(rows)
+        self._rows_since_compact += len(rows)
+        return len(rows)
 
-    def index_document(self, rel_path: str, commit: bool = True) -> int:
-        """Index (or re-index) a single document. Returns chunks written."""
+    def index_document(self, rel_path: str, commit: bool = True, force: bool = False) -> int:
+        """Index (or re-index) a single document. Returns chunks written.
+
+        Unchanged content is skipped unless force=True. The file watcher fires
+        on events that do not change content - on Windows, watchdog subscribes
+        to last-access updates, so merely reading a file reports it as
+        modified - and re-embedding on each of those turns any bulk read of the
+        corpus into a full re-embed of it.
+        """
         full_path = HYPERSPACE_ROOT / rel_path
         if not full_path.exists():
             self.remove_document(rel_path)
@@ -638,23 +868,29 @@ class HyperspaceRAG:
             logger.warning("unreadable file skipped: %s", rel_path)
             return 0
 
+        if not force:
+            stored = self.db.execute(
+                "SELECT content_hash FROM doc_hashes WHERE path = ?", (rel_path,)
+            ).fetchone()
+            if stored is not None and stored[0] == _content_hash(md_text):
+                return 0
+
         meta = self._document_metadata(rel_path, md_text)
         pieces = self.chunk_document(md_text)
         if not pieces:
-            with self._write_lock:
+            with self._write_txn(commit):
                 self._delete_document(rel_path)
-                if commit:
-                    self.db.commit()
+            if commit:
+                self._maybe_compact()
             return 0
 
         embed_texts = [
             self._build_embed_text(meta["title"], section, body, meta["work_id"])
             for section, body in pieces
         ]
-        vectors = list(self.model.embed(embed_texts))
+        vectors = list(self.model.embed(embed_texts, batch_size=EMBED_BATCH_SIZE))
 
-        with self._write_lock:
-            db = self.db
+        with self._write_txn(commit) as db:
             self._delete_document(rel_path)
 
             tags_json = json.dumps(meta["tags"])
@@ -702,16 +938,16 @@ class HyperspaceRAG:
                 """,
                 (rel_path, _content_hash(md_text), datetime.now().strftime("%Y-%m-%dT%H:%M")),
             )
-            if commit:
-                db.commit()
+            self._rows_since_compact += len(pieces)
+        if commit:
+            self._maybe_compact()
         return len(pieces)
 
     def remove_document(self, rel_path: str):
-        with self._write_lock:
-            db = self.db
+        with self._write_txn() as db:
             self._delete_document(rel_path)
             db.execute("DELETE FROM doc_hashes WHERE path = ?", (rel_path,))
-            db.commit()
+        self._maybe_compact()
 
     def reindex_changed(self, force: bool = False) -> dict:
         """Index new/changed documents and drop deleted ones.
@@ -758,7 +994,7 @@ class HyperspaceRAG:
 
             report_every = max(1, len(to_index) // 10)
             for position, rel_path in enumerate(to_index, start=1):
-                chunks_written += self.index_document(rel_path, commit=False)
+                chunks_written += self.index_document(rel_path, commit=False, force=True)
                 indexed += 1
                 if position % report_every == 0 or position == len(to_index):
                     logger.info(
@@ -768,13 +1004,20 @@ class HyperspaceRAG:
                         chunks_written,
                     )
 
-            with self._write_lock:
+            with self._write_txn() as db:
                 for stale in set(known) - set(on_disk):
                     self._delete_document(stale)
                     db.execute("DELETE FROM doc_hashes WHERE path = ?", (stale,))
                     removed += 1
 
-                db.commit()
+            # Reclaim space proportional to what just changed. Gated on actual
+            # churn so a no-op reindex does no maintenance work; the VACUUM
+            # inside is itself cadenced on accumulated deletions.
+            if indexed + removed > 0:
+                try:
+                    self._compact(churn_rows=indexed + removed)
+                except sqlite3.Error as exc:
+                    logger.warning("compaction after reindex failed: %s", exc)
 
             result = {
                 "status": "ok",

@@ -38,22 +38,20 @@ def _initials(name: str) -> str:
     return parts[0][0].upper() if parts else "?"
 
 
-def _doc_type_badge(rel_path):
-    """Return an HTML badge indicating the document type based on filename.
-
-    Legacy function — with the flat-file work item format, document-type badges
-    are no longer needed. Returns empty string for all files.
-    """
-    return ''
-
-
 def collect_dir_contents(files, dir_prefix):
     """
     For a given directory prefix (e.g. "patterns" or "ideas/to-do/cms"),
     return (subdirs, doc_entries) where:
       subdirs = sorted list of immediate child directory names
       doc_entries = list of (rel_path, nice_name) for immediate .md documents
+
+    Special case - .external/: files in nested folders (e.g.
+    .external/scripts/*.sql) are flattened into doc_entries as individual rows
+    rather than recorded as a subdir, so the external directory presents as one
+    flat bucket. The nice_name keeps the subpath so nested files stay
+    distinguishable (e.g. "scripts/phase1-validate.sql").
     """
+    is_external = dir_prefix == ".external"
     subdirs = set()
     doc_entries = []
     prefix = PurePosixPath(dir_prefix) if dir_prefix else PurePosixPath(".")
@@ -71,20 +69,34 @@ def collect_dir_contents(files, dir_prefix):
             # Direct child document
             doc_entries.append((rel, nice_name(parts[0])))
         elif len(parts) > 1:
-            # In a subdirectory — record the immediate child dir
-            subdirs.add(parts[0])
+            if is_external:
+                # Flatten nested external files into the single index. Label
+                # with the subpath so nested files remain distinguishable.
+                doc_entries.append((rel, "/".join(parts)))
+            else:
+                # In a subdirectory - record the immediate child dir
+                subdirs.add(parts[0])
 
     return sorted(subdirs), doc_entries
 
 
 def collect_all_dirs(files):
-    """Return set of all directory prefixes that contain files (directly or nested)."""
+    """Return set of all directory prefixes that contain files (directly or nested).
+
+    Nested directories under .external/ are omitted: external files are
+    flattened into the single .external/ index (see collect_dir_contents), so a
+    .external/scripts index page would be an orphan nothing links to.
+    """
     dirs = set()
     for rel in files:
         p = PurePosixPath(str(rel).replace("\\", "/"))
         # Add every ancestor directory
         for i in range(1, len(p.parts)):
-            dirs.add(str(PurePosixPath(*p.parts[:i])))
+            ancestor = str(PurePosixPath(*p.parts[:i]))
+            # Skip directories nested below .external/ (flattened, not indexed).
+            if ancestor.startswith(".external/"):
+                continue
+            dirs.add(ancestor)
     return dirs
 
 
@@ -156,16 +168,6 @@ def generate_home_content(files, build_stats=None, recent_paths=None):
     """Generate the hub homepage HTML — dashboard layout."""
     if recent_paths is None:
         recent_paths = set()
-    # Top-level categories
-    top_dirs = set()
-    top_docs = []
-    for rel in files:
-        p = PurePosixPath(str(rel).replace("\\", "/"))
-        parts = p.parts
-        if len(parts) == 1:
-            top_docs.append(rel)
-        else:
-            top_dirs.add(parts[0])
 
     html = []
 
@@ -178,6 +180,7 @@ def generate_home_content(files, build_stats=None, recent_paths=None):
     launcher_apps = [
         ("hypervisor", "Hypervisor", None),
         ("hyperagent", "Hyperagent", "launch_hyperagent"),
+        ("hypernote", "Hypernote", "launch_hypernote"),
         ("hypereye", "HyperEye", "launch_hypereye"),
         ("hyperfield", "HyperField", "launch_dither_widget"),
         ("hyperline", "Hyperline", "launch_hyperline"),
@@ -279,53 +282,6 @@ def generate_home_content(files, build_stats=None, recent_paths=None):
                 "assignee": assignee,
             })
     active_items.sort(key=lambda x: x["date"], reverse=True)
-
-    # --- 2b. Research (recent from research/) ---
-    research_items = []
-    for rel in files:
-        rel_posix = str(rel).replace("\\", "/")
-        if not rel_posix.startswith("research/"):
-            continue
-        parts = PurePosixPath(rel_posix).parts
-        if parts[-1].startswith("_"):
-            continue
-        md_text = read_md(HYPERSPACE_ROOT / rel)
-        title = get_title(md_text, nice_name(rel.name))
-        dates = extract_dates(md_text)
-        date_str, _ = sort_date(dates)
-        # Extract snippet
-        desc = ""
-        past_meta = False
-        for ln in md_text.splitlines()[1:]:
-            stripped = ln.strip()
-            if not past_meta:
-                if re.match(r'^-?\s*\*{0,2}[A-Za-z][A-Za-z_ ]*\*{0,2}\s*:', stripped):
-                    continue
-                if stripped == "" or stripped == "---":
-                    continue
-                past_meta = True
-            if stripped.startswith("#") or stripped.startswith("```") or stripped.startswith("<"):
-                continue
-            if stripped == "":
-                continue
-            desc = stripped[:100] + ("…" if len(stripped) > 100 else "")
-            break
-        # Extract tags
-        doc_tags = []
-        for ln in md_text.splitlines()[:30]:
-            m = re.match(r'^-?\s*Tags\s*:\s*(.+)', ln.strip(), re.IGNORECASE)
-            if m:
-                doc_tags = [t.strip().strip('`') for t in m.group(1).split(",") if t.strip()]
-                break
-        research_items.append({
-            "rel": rel,
-            "title": title,
-            "desc": desc,
-            "date": date_str,
-            "tags": doc_tags[:3],
-        })
-    research_items.sort(key=lambda x: x["date"], reverse=True)
-    research_items = research_items[:10]
 
     # --- 3. Recent Activity (up to 10 items) ---
     from .file_utils import _extract_status_from_text as _status
@@ -469,31 +425,6 @@ def generate_home_content(files, build_stats=None, recent_paths=None):
         html.append('<div class="pulse-empty">no recent activity</div>')
     html.append('</div>')  # /.home-section-recent
 
-    # Research section — card grid
-    if research_items:
-        html.append('<div class="home-section home-section-research">')
-        html.append(
-            '<h2 class="home-section-header"><i data-lucide="flask-conical" class="section-icon"></i> Recent Research</h2>'
-        )
-        html.append('<div class="idea-card-grid">')
-        for item in research_items:
-            tags_html = ""
-            if item["tags"]:
-                tags_html = '<span class="idea-card-tags">' + ''.join(
-                    f'<span class="idea-card-tag">{t}</span>' for t in item["tags"]
-                ) + '</span>'
-            desc_html = f'<span class="idea-card-desc">{item["desc"]}</span>' if item["desc"] else ''
-            date_display = display_date(item["date"]) if item["date"] != "0000-00-00" else ""
-            html.append(
-                f'<a class="idea-card" href="{href_for(item["rel"])}">'
-                f'<span class="idea-card-title">{item["title"]}</span>'
-                f'{desc_html}'
-                f'<span class="idea-card-footer">{tags_html}<span class="idea-card-date">{date_display}</span></span>'
-                f'</a>'
-            )
-        html.append('</div>')
-        html.append('</div>')  # /.home-section-research
-
     # Pinned section (rendered client-side by pins.js)
     html.append('<div class="home-section home-section-pins" data-pins-home-mount>')
     html.append(
@@ -507,32 +438,6 @@ def generate_home_content(files, build_stats=None, recent_paths=None):
     )
     html.append('</div>')  # /.home-section-pins
     html.append('</div>')  # /.dashboard-wrap
-
-    # --- 5. Root-level documents (full width, bottom) ---
-    if top_docs:
-        html.append('<div class="home-section root-docs-section">')
-        html.append('<h2 class="home-section-header"><i data-lucide="files" class="section-icon"></i> Root Documents</h2>')
-        html.append('<ul class="doc-list">')
-
-        enriched = []
-        for rel in top_docs:
-            md_text = read_md(HYPERSPACE_ROOT / rel)
-            title = get_title(md_text, nice_name(rel.name))
-            dates = extract_dates(md_text)
-            date_str, date_label = sort_date(dates)
-            enriched.append((rel, title, date_str, date_label))
-        enriched.sort(key=lambda x: x[2], reverse=True)
-
-        for rel, title, date_str, date_label in enriched:
-            rel_posix = str(rel).replace("\\", "/")
-            date_content = display_date(date_str) if date_label else ""
-            badge = '<span class="label-badge label-badge-muted">root</span>'
-            type_badge = _doc_type_badge(rel)
-            html.append(f'<li><a href="{href_for(rel)}"><i data-lucide="file-text" class="doc-icon"></i> {title}</a>'
-                        f'<span class="doc-badges">{type_badge}{badge}</span>'
-                        f'<span class="doc-date">{date_content}</span></li>')
-        html.append('</ul>')
-        html.append('</div>')
 
     return "\n".join(html)
 
@@ -1123,8 +1028,9 @@ def _render_work_item_row(html, rel, doc_title, status, item_type, app_key, desc
     li_cls = " doc-recent" if rel_posix in recent_paths else ""
     status_badge = f'<span class="label-badge {status_cls}">{status_label}</span>' if not is_ideas else ''
     id_prefix = f'<span class="work-id-inline">{work_id} —</span> ' if work_id else ''
+    path_attr = rel_posix.replace('"', '&quot;')
     html.append(
-        f'<li class="{li_cls.strip()}" data-name="{doc_title.lower()}" data-type="{item_type.lower()}" data-status="{(status or "").lower()}" data-app="{app_key}">'
+        f'<li class="{li_cls.strip()}" data-path="{path_attr}" data-name="{doc_title.lower()}" data-type="{item_type.lower()}" data-status="{(status or "").lower()}" data-app="{app_key}">'
         f'<div class="todo-title"><a href="{fname_stem}/index.html"><i data-lucide="{"lightbulb" if is_ideas else "circle-dot"}" class="doc-icon"></i>{id_prefix}{doc_title}</a>'
         f'<span class="todo-desc">{desc}</span></div>'
         f'<div class="todo-badges">{badges_html}'
@@ -1143,9 +1049,23 @@ def _render_doc_list_standard(html, files, dir_prefix, doc_entries, recent_paths
     """
     html.append('<div class="dir-items">')
 
+    from .external_render import is_supported_external, icon_for_ext, external_date
+
     # Enrich entries with date metadata for sorting
     enriched = []
     for rel, name in doc_entries:
+        rel_posix = str(rel).replace("\\", "/")
+        # Non-md external files have no markdown header: use filename title,
+        # filesystem mtime for the date, a type icon, and no tags/snippet.
+        if is_supported_external(rel_posix):
+            ext = PurePosixPath(rel_posix).suffix.lower()
+            doc_title = name  # already the subpath label from collect_dir_contents
+            date_str = external_date(HYPERSPACE_ROOT / rel)
+            date_label = "updated" if not date_str.startswith("0000") else None
+            doc_icon = icon_for_ext(ext)
+            enriched.append((rel, doc_title, date_str, date_label, [], "", doc_icon))
+            continue
+
         md_text = read_md(HYPERSPACE_ROOT / rel)
         doc_title = get_title(md_text, name)
         dates = extract_dates(md_text)
@@ -1174,20 +1094,28 @@ def _render_doc_list_standard(html, files, dir_prefix, doc_entries, recent_paths
                 continue
             doc_snippet = stripped[:100] + ("…" if len(stripped) > 100 else "")
             break
-        enriched.append((rel, doc_title, date_str, date_label, doc_tags, doc_snippet))
+        enriched.append((rel, doc_title, date_str, date_label, doc_tags, doc_snippet, "file-text"))
 
     # Sort: dated docs first (newest to oldest), undated docs last (by title)
-    dated = [(r, t, d, l, tags, sn) for r, t, d, l, tags, sn in enriched if d != "0000-00-00"]
-    undated = [(r, t, d, l, tags, sn) for r, t, d, l, tags, sn in enriched if d == "0000-00-00"]
+    dated = [e for e in enriched if e[2] != "0000-00-00"]
+    undated = [e for e in enriched if e[2] == "0000-00-00"]
     dated.sort(key=lambda x: x[2], reverse=True)
     undated.sort(key=lambda x: x[1].lower())
     enriched = dated + undated
 
     is_external = dir_prefix == ".external"
 
-    for idx, (rel, doc_title, date_str, date_label, doc_tags, doc_snippet) in enumerate(enriched):
+    for idx, (rel, doc_title, date_str, date_label, doc_tags, doc_snippet, doc_icon) in enumerate(enriched):
         rel_posix = str(rel).replace("\\", "/")
-        fname_stem = PurePosixPath(rel_posix).stem
+        # Link relative to the current directory page. For flattened nested
+        # external files (e.g. scripts/phase1-validate.sql) this keeps the
+        # subpath so the href resolves to the right output page.
+        remainder = PurePosixPath(rel_posix)
+        try:
+            remainder = remainder.relative_to(dir_prefix)
+        except ValueError:
+            remainder = PurePosixPath(remainder.name)
+        href = str(remainder.with_suffix("")) + "/index.html"
         date_content = display_date(date_str) if date_label else ""
         recent_cls = " dir-item-recent" if rel_posix in recent_paths else ""
         # Tags as small chips
@@ -1198,11 +1126,15 @@ def _render_doc_list_standard(html, files, dir_prefix, doc_entries, recent_paths
             ) + '</span>'
         # Snippet
         snippet_html = f'<span class="doc-row-snippet">{doc_snippet}</span>' if doc_snippet else ''
-        # Hidden doc-path for external delete buttons (consumed by drop-import.js)
-        doc_path_html = f'<span class="doc-path">{PurePosixPath(rel_posix).name}</span>' if is_external else ''
+        # Hidden doc-path for external delete buttons (consumed by drop-import.js).
+        # Uses the subpath for nested external files so delete targets the right file.
+        doc_path_html = ''
+        if is_external:
+            ext_subpath = str(remainder)
+            doc_path_html = f'<span class="doc-path">{ext_subpath}</span>'
         html.append(
             f'<div class="dir-item{recent_cls}" style="--i:{idx}">'
-            f'<a href="{fname_stem}/index.html"><i data-lucide="file-text" class="doc-icon"></i><span class="txt">{doc_title}</span></a>'
+            f'<a href="{href}"><i data-lucide="{doc_icon}" class="doc-icon"></i><span class="txt">{doc_title}</span></a>'
             f'<span class="doc-date">{date_content}</span>'
             f'{snippet_html}{tags_html}{doc_path_html}'
             f'</div>'

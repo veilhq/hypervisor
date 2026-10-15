@@ -1,0 +1,31 @@
+/* ===== Hypervisor: Work item multi-select =====
+   Selected-row state for the to-do lists (see features/work-item-select.js).
+   Selection is state, so it earns the accent: the surface-active fill plus an
+   accent rail and hairline. The rail overrides the status color while
+   selected; it returns when the selection clears. */
+
+ul.todo-list li.work-item-selected,
+ul.todo-list li.work-item-selected:hover,
+ul.todo-list li.work-item-selected[data-status]:hover {
+  background: var(--surface-active);
+  border-color: var(--accent-border);
+  border-left-color: var(--accent);
+}
+
+/* Shift-click range selection should not also paint a text selection. */
+ul.todo-list li[data-selectable] {
+  user-select: none;
+}
+
+/* Visually-hidden live region announcing selection count changes. */
+.work-item-select-live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

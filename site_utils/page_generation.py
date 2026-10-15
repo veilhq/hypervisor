@@ -36,10 +36,10 @@ from .config import (
 def _render_module_script_tags():
     lines = []
     for name in list_hyperkit_js_modules():
-        lines.append(f'  <script src="/js/kit/{name}" defer></script>')
+        lines.append(f'  <script src="/js/kit/{name}?v={{{{BUILD_ID}}}}" defer></script>')
     modules = list_js_modules()
     for rel in modules:
-        lines.append(f'  <script src="/js/{rel}" defer></script>')
+        lines.append(f'  <script src="/js/{rel}?v={{{{BUILD_ID}}}}" defer></script>')
     return "\n".join(lines)
 
 
@@ -302,8 +302,8 @@ LEGACY_PAGE_TEMPLATE = """\
   <link rel="icon" href="{{FAVICON}}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
-  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Host+Grotesk:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&display=swap">
+  <link rel="stylesheet" href="/style.css?v={{BUILD_ID}}">
 </head>
 <body>
   <div class="splash-screen" id="splash-screen">
@@ -323,36 +323,7 @@ LEGACY_PAGE_TEMPLATE = """\
     <span class="source-path">{{REL_PATH}}</span>
     <span class="footer-sep">|</span>
     <span class="footer-label">hypervisor</span>
-    <button class="actions-trigger" id="actions-trigger" aria-label="Open actions drawer">actions</button>
   </footer>
-  <div class="actions-drawer" id="actions-drawer" aria-hidden="true">
-    <div class="actions-drawer-inner">
-      <button class="action-item" id="edit-btn" aria-label="Edit document" style="display:none">
-        <i data-lucide="pencil" class="action-icon"></i>
-        <span class="action-label edit-btn-label">edit</span>
-      </button>
-      <button class="action-item" id="explorer-btn" aria-label="Open in file explorer" style="display:none">
-        <i data-lucide="folder-open" class="action-icon"></i>
-        <span class="action-label">explorer</span>
-      </button>
-      <button class="action-item" id="export-btn" aria-label="Export page as standalone HTML">
-        <i data-lucide="package" class="action-icon"></i>
-        <span class="action-label export-btn-label">export</span>
-      </button>
-      <button class="action-item" id="end-sprint-btn" aria-label="End sprint — cascade horizon values" style="display:none">
-        <i data-lucide="skip-forward" class="action-icon"></i>
-        <span class="action-label">end sprint</span>
-      </button>
-      <button class="action-item" id="share-key-btn" aria-label="Set LAN sharing access key" style="display:none">
-        <i data-lucide="key-round" class="action-icon"></i>
-        <span class="action-label">share key</span>
-      </button>
-      <button class="action-item" id="new-window-btn" aria-label="Open in new window" style="display:none">
-        <i data-lucide="app-window" class="action-icon"></i>
-        <span class="action-label">new window</span>
-      </button>
-    </div>
-  </div>
   <div class="modal-overlay search-overlay" id="search-overlay">
     <div class="modal-panel search-modal" id="search-modal">
       <div class="search-input-row">
@@ -514,10 +485,10 @@ def build_page(content_html, title, rel_path_str, toc_html="", backlinks_html=""
         .replace("{{TOPBAR}}", topbar)
         .replace("{{SITE_NAV}}", site_nav_html)
         .replace("{{TOC_SIDEBAR}}", toc_sidebar)
-        .replace("{{BUILD_ID}}", build_id)
         .replace("{{REL_PATH}}", rel_path_str)
         .replace("{{CONTENT}}", full_content)
         .replace("{{MODULE_SCRIPTS}}", MODULE_SCRIPT_TAGS)
+        .replace("{{BUILD_ID}}", build_id)
     )
 
 
@@ -536,8 +507,8 @@ SHELL_TEMPLATE = """\
   <link rel="icon" href="{{FAVICON}}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
-  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Host+Grotesk:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&display=swap">
+  <link rel="stylesheet" href="/style.css?v={{BUILD_ID}}">
 </head>
 <body>
   <div class="splash-screen" id="splash-screen">
@@ -551,46 +522,20 @@ SHELL_TEMPLATE = """\
     <article class="markdown-body" id="content-target">
     </article>
   </main>
-  <aside class="toc-float" id="toc-sidebar" aria-hidden="true" aria-label="Table of contents">
-    <div class="toc-float-head" id="toc-head">
-      <span class="panel-header"><i data-lucide="list" class="toc-icon"></i> Table of Contents</span>
-    </div>
+  <div class="toc-flag-wrap" id="toc-flag-wrap">
+    <button class="toc-flag" id="toc-flag" aria-expanded="false" aria-controls="toc-drawer" aria-label="Open table of contents">
+      <i data-lucide="list" class="toc-icon"></i> Contents
+    </button>
+  </div>
+  <button class="toc-flag-hit" id="toc-flag-hit" tabindex="-1" aria-hidden="true"></button>
+  <aside class="toc-drawer" id="toc-drawer" aria-hidden="true" aria-label="Table of contents">
     <div class="toc-body" id="toc-body"></div>
   </aside>
   <footer class="page-footer">
     <span class="source-path" id="source-path"></span>
     <span class="footer-sep">|</span>
     <span class="footer-label">hypervisor</span>
-    <button class="actions-trigger" id="actions-trigger" aria-label="Open actions drawer">actions</button>
   </footer>
-  <div class="actions-drawer" id="actions-drawer" aria-hidden="true">
-    <div class="actions-drawer-inner">
-      <button class="action-item" id="edit-btn" aria-label="Edit document" style="display:none">
-        <i data-lucide="pencil" class="action-icon"></i>
-        <span class="action-label edit-btn-label">edit</span>
-      </button>
-      <button class="action-item" id="explorer-btn" aria-label="Open in file explorer" style="display:none">
-        <i data-lucide="folder-open" class="action-icon"></i>
-        <span class="action-label">explorer</span>
-      </button>
-      <button class="action-item" id="export-btn" aria-label="Export page as standalone HTML">
-        <i data-lucide="package" class="action-icon"></i>
-        <span class="action-label export-btn-label">export</span>
-      </button>
-      <button class="action-item" id="end-sprint-btn" aria-label="End sprint — cascade horizon values" style="display:none">
-        <i data-lucide="skip-forward" class="action-icon"></i>
-        <span class="action-label">end sprint</span>
-      </button>
-      <button class="action-item" id="share-key-btn" aria-label="Set LAN sharing access key" style="display:none">
-        <i data-lucide="key-round" class="action-icon"></i>
-        <span class="action-label">share key</span>
-      </button>
-      <button class="action-item" id="new-window-btn" aria-label="Open in new window" style="display:none">
-        <i data-lucide="app-window" class="action-icon"></i>
-        <span class="action-label">new window</span>
-      </button>
-    </div>
-  </div>
   <div class="modal-overlay search-overlay" id="search-overlay">
     <div class="modal-panel search-modal" id="search-modal">
       <div class="search-input-row">
@@ -660,6 +605,6 @@ def build_shell(build_id, site_nav_html=None):
         SHELL_TEMPLATE
         .replace("{{TOPBAR}}", topbar)
         .replace("{{SITE_NAV}}", site_nav_html)
-        .replace("{{BUILD_ID}}", build_id)
         .replace("{{MODULE_SCRIPTS}}", MODULE_SCRIPT_TAGS)
+        .replace("{{BUILD_ID}}", build_id)
     )

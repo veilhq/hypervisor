@@ -28,8 +28,8 @@
   left: var(--space-3);
   top: 50%;
   transform: translateY(-50%);
-  width: 13px;
-  height: 13px;
+  width: var(--icon-sm);
+  height: var(--icon-sm);
   color: var(--text-dim);
   pointer-events: none;
 }

@@ -123,7 +123,7 @@
 .dash-meta-strip-item [data-lucide] { width: 11px; height: 11px; color: var(--text-dim); }
 .dash-meta-strip-value {
   color: var(--accent);
-  font-weight: 700;
+  font-weight: var(--fw-bold);
 }
 .dash-meta-strip-sep {
   color: var(--border);
@@ -282,7 +282,7 @@
 .dash-commit-author { color: var(--text-bright); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .dash-commit-msg { color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .dash-commit-branch { color: var(--warm); font-size: var(--fs-label); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.dash-commit-repo { color: var(--comp); font-size: var(--fs-label); font-weight: 700; font-style: italic; }
+.dash-commit-repo { color: var(--comp); font-size: var(--fs-label); font-weight: var(--fw-bold); font-style: italic; }
 .dash-commit-age { text-align: right; }
 
 /* Branch list — composes .flex-stack (local: tighter gap). */
@@ -299,7 +299,7 @@
   font-size: var(--fs-body);
 }
 .dash-branch-name { color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.dash-branch-repo { color: var(--comp); font-size: var(--fs-label); font-weight: 700; font-style: italic; }
+.dash-branch-repo { color: var(--comp); font-size: var(--fs-label); font-weight: var(--fw-bold); font-style: italic; }
 .dash-branch-hash { color: var(--warm); font-size: var(--fs-label); }
 .dash-branch-msg { color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .dash-branch-author { color: var(--text-muted); font-size: var(--fs-label); text-align: right; }
@@ -323,12 +323,12 @@
 .dash-conflict-item:hover { border-color: var(--accent); }
 .dash-conflict-branch { color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .dash-conflict-arrow { color: var(--text-dim); font-size: var(--fs-label); text-align: center; }
-.dash-conflict-repo { color: var(--comp); font-size: var(--fs-label); font-weight: 700; font-style: italic; text-align: right; }
+.dash-conflict-repo { color: var(--comp); font-size: var(--fs-label); font-weight: var(--fw-bold); font-style: italic; text-align: right; }
 /* Severity badge composes .status-chip + an outlined variant; the per-severity
    color is applied by the -low/-high modifiers below. Local: bold weight +
    compact padding for the dense row. */
 .dash-conflict-badge {
-  font-weight: 700;
+  font-weight: var(--fw-bold);
   padding: var(--space-0-1) var(--space-0-4);
   text-align: center;
 }
@@ -770,7 +770,7 @@
     if (opts.title) {
       var t = document.createElement('div');
       t.textContent = opts.title;
-      t.style.cssText = 'font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#fff;margin-bottom:0.15rem;';
+      t.style.cssText = 'font-weight: var(--fw-bold);letter-spacing:0.06em;text-transform:uppercase;color:#fff;margin-bottom:0.15rem;';
       el.appendChild(t);
     }
     var m = document.createElement('div');
@@ -1827,7 +1827,7 @@
         + '.report-header { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #222; margin-bottom: 0.5rem; }\n'
         + '.report-header h1 { font-size: 1.1rem; color: #fff; text-transform: uppercase; letter-spacing: 0.08em; }\n'
         + '.report-meta { grid-column: 1 / -1; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.4rem 1.2rem; padding: 0.4rem 0 0.8rem; font-size: var(--fs-detail); color: #909090; }\n'
-        + '.report-meta-val { color: ' + accent + '; font-weight: 700; }\n'
+        + '.report-meta-val { color: ' + accent + '; font-weight: var(--fw-bold); }\n'
         + '.report-meta-sep { color: #222; }\n'
         + '</style>\n</head><body>\n'
         + '<div class="report-grid">\n'

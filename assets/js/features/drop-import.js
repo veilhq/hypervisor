@@ -37,7 +37,7 @@
     _dropZone.className = "dir-item drop-zone";
     _dropZone.innerHTML =
       '<i data-lucide="file-down"></i>' +
-      "<span>drop .md files here to import</span>";
+      "<span>drop files here to import</span>";
 
     var docList = document.querySelector(".dir-items");
     if (docList) {
@@ -60,6 +60,12 @@
       _dropZone.classList.remove("drag-over");
     });
 
+    // Supported non-md types mirror site_utils/external_render.SUPPORTED_EXTS.
+    // Text types are read as text; images/binaries are read as base64 so their
+    // bytes survive the bridge intact.
+    var TEXT_EXT = /\.(md|markdown|txt|log|sql)$/i;
+    var BINARY_EXT = /\.(png|jpg|jpeg|gif|webp|svg|xlsx|docx|zip)$/i;
+
     _dropZone.addEventListener("drop", function (e) {
       e.preventDefault();
       _dropZone.classList.remove("drag-over");
@@ -67,25 +73,25 @@
       var files = e.dataTransfer.files;
       if (!files || files.length === 0) return;
 
-      var mdFiles = Array.from(files).filter(function (f) {
-        return /\.(md|markdown)$/i.test(f.name);
+      var accepted = Array.from(files).filter(function (f) {
+        return TEXT_EXT.test(f.name) || BINARY_EXT.test(f.name);
       });
 
-      var skipped = files.length - mdFiles.length;
+      var skipped = files.length - accepted.length;
       if (skipped > 0 && window.__hypervisorToast) {
         window.__hypervisorToast({
           variant: "warn",
-          message: "skipped " + skipped + " non-markdown file" + (skipped > 1 ? "s" : "")
+          message: "skipped " + skipped + " unsupported file" + (skipped > 1 ? "s" : "")
         });
       }
-      if (mdFiles.length === 0) return;
+      if (accepted.length === 0) return;
 
       // Show importing state: insert skeleton rows after the drop zone
       _dropZone.classList.add("importing");
       var docList = document.querySelector(".dir-items");
       var skeletonItems = [];
       var insertRef = _dropZone.nextSibling;
-      for (var i = 0; i < mdFiles.length; i++) {
+      for (var i = 0; i < accepted.length; i++) {
         var skeletonLi = document.createElement("div");
         skeletonLi.className = "dir-item loading-skeleton-row doc-skeleton";
         skeletonLi.innerHTML =
@@ -99,37 +105,56 @@
 
       var imported = 0;
       var failed = 0;
-      var total = mdFiles.length;
+      var total = accepted.length;
 
-      mdFiles.forEach(function (file) {
+      function finish() {
+        if (imported + failed !== total) return;
+        if (window.__hypervisorToast) {
+          var msg = "imported " + imported + " file" + (imported !== 1 ? "s" : "");
+          if (failed > 0) msg += " (" + failed + " failed)";
+          window.__hypervisorToast({
+            variant: failed > 0 ? "warn" : "success",
+            message: msg
+          });
+        }
+        // If all failed, remove skeletons and revert drop zone
+        if (failed === total) {
+          skeletonItems.forEach(function (el) { if (el.parentNode) el.parentNode.removeChild(el); });
+          if (_dropZone) _dropZone.classList.remove("importing");
+        }
+      }
+
+      function sendImport(filename, content, encoding) {
+        window.pywebview.api
+          .import_external_file(filename, content, encoding)
+          .then(function (result) {
+            if (result && result.ok) imported++;
+            else failed++;
+          })
+          .catch(function () { failed++; })
+          .finally(finish);
+      }
+
+      accepted.forEach(function (file) {
         var reader = new FileReader();
-        reader.onload = function (ev) {
-          window.pywebview.api
-            .import_external_file(file.name, ev.target.result)
-            .then(function (result) {
-              if (result && result.ok) imported++;
-              else failed++;
-            })
-            .catch(function () { failed++; })
-            .finally(function () {
-              if (imported + failed === total) {
-                if (window.__hypervisorToast) {
-                  var msg = "imported " + imported + " file" + (imported !== 1 ? "s" : "");
-                  if (failed > 0) msg += " (" + failed + " failed)";
-                  window.__hypervisorToast({
-                    variant: failed > 0 ? "warn" : "success",
-                    message: msg
-                  });
-                }
-                // If all failed, remove skeletons and revert drop zone
-                if (failed === total) {
-                  skeletonItems.forEach(function (el) { if (el.parentNode) el.parentNode.removeChild(el); });
-                  if (_dropZone) _dropZone.classList.remove("importing");
-                }
-              }
-            });
-        };
-        reader.readAsText(file);
+        if (TEXT_EXT.test(file.name)) {
+          reader.onload = function (ev) {
+            sendImport(file.name, ev.target.result, "text");
+          };
+          reader.onerror = function () { failed++; finish(); };
+          reader.readAsText(file);
+        } else {
+          // Images and binaries: readAsDataURL yields "data:...;base64,XXXX";
+          // strip the prefix and send the raw base64 payload.
+          reader.onload = function (ev) {
+            var dataUrl = ev.target.result || "";
+            var comma = dataUrl.indexOf(",");
+            var b64 = comma >= 0 ? dataUrl.slice(comma + 1) : dataUrl;
+            sendImport(file.name, b64, "base64");
+          };
+          reader.onerror = function () { failed++; finish(); };
+          reader.readAsDataURL(file);
+        }
       });
     });
   }

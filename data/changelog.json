@@ -1,6 +1,1147 @@
 {
-  "captured": "2026-09-14T11:40:39",
+  "captured": "2026-10-14T16:22:41",
   "versions": [
+    {
+      "version": "2.31.1",
+      "date": "2026-10-14",
+      "entries": [
+        {
+          "type": "Added",
+          "tag": null,
+          "text": "Mermaid flowchart, sequence, state and ER diagrams are drawn as terminal art in chat"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "Non-interactive runs apply saved compaction and `toolSearch` settings like interactive sessions"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Prompts with `chat.disableWrap` on or in lite session panes no longer copy with two leading spaces"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "Herdr shows a session as blocked while a permission or question prompt is waiting"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Model fallback now handles refusals that return no response text"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Compaction no longer saves the model's refusal as the conversation summary"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "`/sandbox` setup on Windows no longer fails where policy blocks running programs from the temp folder"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "`/changelog` shows each entry on its own line"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "IAM Identity Center sign-in now works in isolated AWS partitions"
+        }
+      ]
+    },
+    {
+      "version": "2.31.0",
+      "date": "2026-10-13",
+      "entries": [
+        {
+          "type": "Added",
+          "tag": "V3",
+          "text": "`/sandbox` and local `/autonomous` mode are now available to all users, off by default"
+        },
+        {
+          "type": "Changed",
+          "tag": "V3",
+          "text": "MCP tools now load on demand for every user, keeping unused tool schemas out of requests"
+        },
+        {
+          "type": "Changed",
+          "tag": "V3",
+          "text": "`KIRO_HOME` now also relocates MCP config, permissions, sessions, powers and agent state"
+        },
+        {
+          "type": "Changed",
+          "tag": "V3",
+          "text": "A saved `sandbox.json` with `enabled: true` now applies to headless runs"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "`--no-interactive` chat on the V1 engine now exits non-zero with the error that ended the turn instead of a misleading tool-approval error"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "MCP sign-ins are saved under `KIRO_HOME` when set; existing ones are copied over once"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "Animated WebP images are now sent to the model as PNG"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "Cloud config and other Kiro service requests fail after 15 seconds instead of hanging"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "MCP tools on streamable-HTTP servers keep working after the server drops its session"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "A relative, root, or home-folder `KIRO_HOME` is ignored and `~/.kiro` is used instead"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "In cloud sessions, the code intelligence indicator and `/code` panel now reflect the cloud workspace"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "GitHub and Google sign-ins are no longer signed out when the auth service returns a temporary error during token refresh"
+        }
+      ]
+    },
+    {
+      "version": "2.30.0",
+      "date": "2026-10-12",
+      "entries": [
+        {
+          "type": "Added",
+          "tag": "V3",
+          "text": "Notices in the transcript when a model refuses or is unavailable and the turn moves to another model"
+        },
+        {
+          "type": "Changed",
+          "tag": "V3",
+          "text": "Agent upgrades refresh permissions after V2 setting changes until you edit them"
+        },
+        {
+          "type": "Changed",
+          "tag": null,
+          "text": "Kiro CLI may now offer to switch you to V3 when you start a chat"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Screen readers now follow streaming replies in the full TUI via the Screen reader option in `/settings display`"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "Agent upgrades preserve V2 workspace read access and `fs_read` skill trust"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Scrolling back in `tmux` no longer shows a screen of blank rows after long replies"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Launching after output without a trailing newline no longer draws the UI at an offset"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Knowledge search no longer silently drops a chunk from a small knowledge base"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Garbled text and stray characters around icons in chat on some Linux terminals and remote desktops"
+        }
+      ]
+    },
+    {
+      "version": "2.29.1",
+      "date": "2026-10-10",
+      "entries": [
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "MCP OAuth sign-in in classic and Rust V2 now works with servers that require an issuer"
+        }
+      ]
+    },
+    {
+      "version": "2.28.0",
+      "date": "2026-10-05",
+      "entries": [
+        {
+          "type": "Added",
+          "tag": null,
+          "text": "`/settings` Display > Full Screen lets you turn off Copy on select for terminal or tmux copying"
+        },
+        {
+          "type": "Added",
+          "tag": null,
+          "text": "Classic sessions offer to switch you to 3.0 and upgrade your agent configs"
+        },
+        {
+          "type": "Added",
+          "tag": "V3",
+          "text": "Hook matchers accept tool tags such as `shell`, `read`, `@builtin` and `@mcp`"
+        },
+        {
+          "type": "Changed",
+          "tag": null,
+          "text": "`/model` and `/effort` pickers open mid-turn, with selections applied after the turn ends"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Conversations no longer stop responding after a sub-agent finishes in V2 TUI sessions"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Expanded activity trays no longer limit task lists to six rows, with a screen-sized limit in fullscreen"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Windows V2 stdio MCP servers preserve `|`, `&`, `%`, and spaces in arguments when resolved to `.exe`, `.com`, `.bat`, or `.cmd` without a configured `PATHEXT`"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Voice recording hints point to `kiro-cli settings voice.*` instead of the nonexistent `/settings voice`"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Returning from the agent monitor or session dashboard no longer misplaces the chat view on some terminals"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "Interrupted tool calls report accurate outcomes, live and after reload"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "Reduced memory growth during very long agent sessions"
+        }
+      ]
+    },
+    {
+      "version": "2.27.1",
+      "date": "2026-10-02",
+      "entries": [
+        {
+          "type": "Added",
+          "tag": "V3",
+          "text": "`/tangent merge [dest]` to fold a tangent's findings into its parent or a named session"
+        },
+        {
+          "type": "Added",
+          "tag": "V3",
+          "text": "Non-interactive runs support hooks, knowledge, code intelligence"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "`/chat save -f <path>` now overwrites an existing file like `--force` instead of failing"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "`/chat save` now works when Kiro is launched from a different directory than the one the session was started in"
+        },
+        {
+          "type": "Changed",
+          "tag": null,
+          "text": "Non-interactive runs now exit 4 when the named agent (`--agent`, or the v3 `chat.defaultAgent`) is unavailable, instead of answering on the default agent"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "Reopening a tangent after `/tangent merge` shows its summarization line, not the full prompt"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Remote MCP servers that answer the path-based OAuth discovery URL with their root issuer (such as self-managed GitLab) no longer fail sign-in with an issuer mismatch on the V2 engine"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V2",
+          "text": "Batched `Directory` operations in the `read` tool no longer run into each other"
+        },
+        {
+          "type": "Changed",
+          "tag": null,
+          "text": "Non-interactive runs exit 1, instead of warning and answering, when `--agent` fails to apply for a reason other than the agent being unavailable"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "`/upgrade-agent diagnostics` no longer blanks the screen and freezes input a few seconds after opening"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "New and resumed sessions, once the model list is known, tell you when their model is unavailable or was changed and point to `/model`; an unavailable saved default falls back to the default model"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "Resuming a session with many workflow runs no longer waits to load every finished step's credits"
+        },
+        {
+          "type": "Added",
+          "tag": "V3",
+          "text": "Workflows in `--no-interactive` runs now stay attached through completion wakes and late `--trust-all-tools` approvals; set `KIRO_HEADLESS_WORKFLOW_TIMEOUT_SECS` to lower the six-hour drain bound"
+        },
+        {
+          "type": "Added",
+          "tag": "V3",
+          "text": "Workflow progress and complete wake-turn usage accounting in `--no-interactive` runs"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "Make `--no-interactive` workflows honor feature settings, isolate child output, and report incomplete outcomes"
+        },
+        {
+          "type": "Added",
+          "tag": null,
+          "text": "Model fallback: a refused or over-capacity turn now retries on another model by default; `/model fallback` picks the target"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Pasting text that contains terminal escape sequences, such as colored output or hyperlinks, no longer leaves sequence debris in the prompt"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Failed shell commands show both stdout and stderr alongside their exit status, and shell output no longer ends with a blank row"
+        }
+      ]
+    },
+    {
+      "version": "2.27.0",
+      "date": "2026-10-01",
+      "entries": [
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "A failed shell command shows its output and the failure together under one `output:` label"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Long text in an indented row keeps every wrapped line; the row below no longer paints over it"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Transcript spacing no longer shifts up by a row when an entry is committed to scrollback"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Pass `--effort` to the engine in non-interactive runs"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Subagent spawned with an unknown agent role now returns a visible error instead of silently using the default agent's tools"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Selective mode in web_fetch no longer returns unbounded output that caused every subsequent turn to fail with \"Improperly formed request\" on large documents"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Prevent a CLI shutdown stall during slow telemetry exports handled by a native flush worker"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "`/context` no longer lists global steering files twice when run from the home directory"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "Steering files now expand `#[[file:...]]` and `#[[folder:...]]` references"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "Workflow steps now retry through network outages for up to 24 hours instead of pausing"
+        },
+        {
+          "type": "Changed",
+          "tag": "V3",
+          "text": "Output style now lives under `/settings display` instead of the top-level `/settings` menu"
+        },
+        {
+          "type": "Added",
+          "tag": "V3",
+          "text": "Herdr can restore existing cloud conversations after a server restart"
+        },
+        {
+          "type": "Added",
+          "tag": "V3",
+          "text": "Workflows sub-agent tool toggle in `/settings` features to limit chat delegation to workflows"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Agent configs saved by renaming a file into an agents directory now hot-reload without a restart"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "`--resume` now picks the most recent session matching the launch environment, local or cloud"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "`agent list` now includes agents that use the v3 config format instead of hiding them"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Write cards in the full TUI show only a diff's changed lines with context, not the whole file"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Copy works in `/fullscreen`: dragging over a message copies what was said, not where it wrapped"
+        },
+        {
+          "type": "Changed",
+          "tag": null,
+          "text": "Write cards in the full TUI cap a diff at 40 rows; `ctrl+o` or `chat.autoExpandToolOutput` shows the rest while the card is live"
+        },
+        {
+          "type": "Added",
+          "tag": "V3",
+          "text": "Saved prompt files and MCP server prompts now appear as slash commands with argument hints"
+        },
+        {
+          "type": "Changed",
+          "tag": "V3",
+          "text": "Sessions start up to ~0.5s faster with large `permissions.yaml` files"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "A workflow step answered after the agent restarts now reports its progress and completion"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "Recovering from a stalled model response keeps completed tool results instead of rerunning them"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "The context-gatherer subagent no longer finishes without returning its findings"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "Trust-all no longer repeats tool approval requests when the agent engine omits a persistable capability"
+        }
+      ]
+    },
+    {
+      "version": "2.26.1",
+      "date": "2026-09-30",
+      "entries": [
+        {
+          "type": "Added",
+          "tag": "V3",
+          "text": "Herdr can restore existing local conversations after a server restart"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Enter starts authentication for the selected OAuth server in `/mcp`"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "ACP clients on the V2 engine now get `stopReason: refusal` for content-filtered responses, not `end_turn`"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Sessions no longer become unrecoverable when a preToolUse hook blocks one of multiple requested tools"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "`--model` is honored in `--no-interactive` runs on the V2 engine instead of the default model"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "Trusts the OS certificate store, so corporate TLS-inspecting proxies no longer cause \"No model available\""
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "TUI reports invalid or locally missing `--resume-id` values instead of starting a new conversation"
+        }
+      ]
+    },
+    {
+      "version": "2.26.0",
+      "date": "2026-09-28",
+      "entries": [
+        {
+          "type": "Added",
+          "tag": "V3",
+          "text": "Enables multi-step asynchronous workflows with reusable recipes. `/settings` \u00e2\u2020\u2019 features to enable"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "Approved path grants now apply when the same file is reached through a symlink or alias"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "Tool-returned images survive session reload"
+        }
+      ]
+    },
+    {
+      "version": "2.25.0",
+      "date": "2026-09-28",
+      "entries": [
+        {
+          "type": "Added",
+          "tag": null,
+          "text": "Install and uninstall powers from chat with `/powers install` and `/powers uninstall`"
+        },
+        {
+          "type": "Added",
+          "tag": "V3",
+          "text": "Output styles in `/settings`, including new styles supplied by upgraded agents"
+        },
+        {
+          "type": "Added",
+          "tag": null,
+          "text": "`/settings display` \u00e2\u2020\u2019 Full Screen \u00e2\u2020\u2019 Scroll speed moves the fullscreen transcript 1, 2 or 3 rows per mouse wheel event (default 2; previously always 1)"
+        },
+        {
+          "type": "Added",
+          "tag": "V3",
+          "text": "`SessionEnd` hook trigger fires on session teardown"
+        },
+        {
+          "type": "Changed",
+          "tag": null,
+          "text": "Capacity errors on the V2 (Rust) engine name the affected model and count down the retry wait"
+        },
+        {
+          "type": "Changed",
+          "tag": null,
+          "text": "Retry notices on the V2 (Rust) engine name a model capacity drop instead of rate limiting, and count the original send as attempt 1"
+        },
+        {
+          "type": "Changed",
+          "tag": null,
+          "text": "Model refusals name the model that declined the request"
+        },
+        {
+          "type": "Changed",
+          "tag": null,
+          "text": "Transcript indicators use agent ghosts, synchronized tool dim sweeps, and neutral reasoning dots"
+        },
+        {
+          "type": "Changed",
+          "tag": "V3",
+          "text": "`/sessions` opens faster in workspaces with large session histories"
+        },
+        {
+          "type": "Changed",
+          "tag": null,
+          "text": "`/settings display` groups Start fullscreen under a new Full Screen screen"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "A model list that cannot be fetched no longer stops a session from starting"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "`fs_read` now reports `(empty)` when listing an empty directory instead of returning no output"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Loading a v2 or classic session over ACP on the v3 engine now replays its history instead of starting an empty session"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Markdown table rows with escaped backticks or even backslash runs now split into the correct columns, while rows still streaming inline code stay stable"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "Workspace `.kiroignore` now blocks the agent from reading and searching matching files"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "Identity changes re-pin auth routing atomically"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "MCP OAuth honors every documented `redirectUri` format"
+        }
+      ]
+    },
+    {
+      "version": "2.24.1",
+      "date": "2026-09-24",
+      "entries": [
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "V2 user agent configs shadowing built-in agent names"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "`/clear` keeps the model and effort you are currently using"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "`/chat new` keeps the current model and returns to its saved effort"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "`--model` and `--effort` no longer carry over to later sessions"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "`--cloud` and `--repo` now work without the `chat` subcommand on Windows, matching macOS and Linux"
+        },
+        {
+          "type": "Changed",
+          "tag": null,
+          "text": "Status line shows `thinking` only when thinking is on, instead of a chip for the off and default states"
+        },
+        {
+          "type": "Changed",
+          "tag": "V3",
+          "text": "`/effort` with no level opens the `/model` picker focused on the active model's Effort row"
+        },
+        {
+          "type": "Changed",
+          "tag": "V3",
+          "text": "`/sessions` opens faster by listing this directory's sessions by default; toggle to see all"
+        },
+        {
+          "type": "Changed",
+          "tag": null,
+          "text": "Completed reasoning rows are marked with the agent response dot instead of the tool status dot in the chat transcript"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Agent response marker now degrades to an ASCII character in ASCII mode"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Fullscreen scrolling no longer drops wheel notches while a response is streaming"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Back-to-back steering messages reach the agent right away instead of waiting on the previous one"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Messages typed while a conversation is compacting are queued and sent once compaction finishes"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Link underline styling no longer bleeds into surrounding text and table borders"
+        }
+      ]
+    },
+    {
+      "version": "2.24.0",
+      "date": "2026-09-23",
+      "entries": [
+        {
+          "type": "Added",
+          "tag": "V3",
+          "text": "`/tools trust-all` to auto-approve every tool request for the rest of the session"
+        },
+        {
+          "type": "Changed",
+          "tag": "V3",
+          "text": "`/sessions` filter, sort, and group now list their options, and filters can be combined"
+        },
+        {
+          "type": "Changed",
+          "tag": null,
+          "text": "Render terminal frames with less repeated layout and text work, and paint a resize once at its new width"
+        },
+        {
+          "type": "Changed",
+          "tag": null,
+          "text": "Fullscreen wheel scrolling moves one transcript row per notch instead of three"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Show no model instead of a stale one when the account's model list can't be determined"
+        },
+        {
+          "type": "Changed",
+          "tag": null,
+          "text": "User agent configs with reserved built-in names (`kiro_default`, `kiro_planner`, `kiro_guide`) are now rejected with a clear error instead of silently shadowing the built-in agent"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Tool details use available space with one shared expansion hint"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "Honor `chat.defaultModel` in new non-interactive sessions"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Downscale oversized images and recover sessions broken by image dimension errors"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "`kiro-cli settings` now recognizes settings configured through the interactive `/settings` menu"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Project `.env` files no longer override the environment of chat sessions, MCP servers, and tools"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Ctrl+L now clears the screen without erasing scrollback history"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "`/effort` marks the effort saved in `chat.modelDefaults` as `[default]` instead of the engine default"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "The packaged chat updater now defers Homebrew-managed installs to Homebrew"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Queued steering messages stay visible in the activity tray while the agent is working"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Long conversations no longer show a misleading archived-turns row while full history remains available through `/transcript` and `/rewind`"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "Agent config upgrade keeps permission rules when a sibling setting in the same tool section is malformed"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "`/upgrade-agent` finds agents in legacy `.amazonq/cli-agents` and custom agent directories"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "Upgrading a symlinked agent config rewrites the linked file instead of replacing the symlink"
+        }
+      ]
+    },
+    {
+      "version": "2.23.1",
+      "date": "2026-09-23",
+      "entries": [
+        {
+          "type": "Added",
+          "tag": null,
+          "text": "`/sessions` can filter the list to main sessions"
+        },
+        {
+          "type": "Changed",
+          "tag": null,
+          "text": "Allowed commands prefixed with an environment variable no longer prompt on every run, reverting a 2.23.0 change"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Chats on extended-thinking models no longer fail every turn after Tool Search loads a tool mid-conversation"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Chats on extended-thinking models no longer fail every turn after a reply that thinks more than once"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Classic `--resume-id` now reports missing, unreadable, empty, or V2-only sessions instead of starting fresh"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Stale extracted V3 engine versions are now cleaned up regardless of which engine a session starts with"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "The classic chat path also stops replaying a thinking block bound to a different tool list"
+        }
+      ]
+    },
+    {
+      "version": "2.23.0",
+      "date": "2026-09-21",
+      "entries": [
+        {
+          "type": "Added",
+          "tag": null,
+          "text": "Reasoning settings (thinking and effort) in the `/model` surface"
+        },
+        {
+          "type": "Added",
+          "tag": null,
+          "text": "Live duration in the TUI prompt showing how long Kiro has been working, excluding approval waits"
+        },
+        {
+          "type": "Added",
+          "tag": null,
+          "text": "Animated spinner in the terminal title while Kiro is working when `chat.terminalTitle` is on"
+        },
+        {
+          "type": "Added",
+          "tag": null,
+          "text": "Progress indicators in ConEmu terminals with ANSI processing enabled"
+        },
+        {
+          "type": "Changed",
+          "tag": null,
+          "text": "Upgraded `/kiro` Easter egg with an animated roaming ghost overlay"
+        },
+        {
+          "type": "Changed",
+          "tag": null,
+          "text": "Smaller CLI installation size"
+        },
+        {
+          "type": "Changed",
+          "tag": "V3",
+          "text": "Cloud sessions no longer require a connected source provider to start; `/repo` opens the connect screen when none is connected, and the startup checklist notes a repository can be attached"
+        },
+        {
+          "type": "Changed",
+          "tag": "V3",
+          "text": "`/sessions` opens faster, especially with large session histories"
+        },
+        {
+          "type": "Changed",
+          "tag": null,
+          "text": "Improved message streaming performance"
+        },
+        {
+          "type": "Changed",
+          "tag": null,
+          "text": "Improved fullscreen scrolling performance"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "The CLI no longer crashes at startup on hosts without a system CA bundle"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "`settings open` now correctly handles `$VISUAL`/`$EDITOR` values that include arguments (e.g. `emacs -nw`)"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "`/chat load` with an extension-less name now loads the `.json` file `/chat save` wrote"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Tool calls in a legacy V1 conversation loaded on the V2 engine no longer replay as cancelled"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "Honor the `api.krs.service` and `api.cps.service` endpoint overrides"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "A turn that ends silently after successful tool use now completes instead of erroring"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Non-interactive runs show the failure reason and error code instead of a bare \"Internal error\""
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "`/model` lists models even when the service names no default, using the first available one"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "Resuming a session keeps the status shown by `/config` and `/hooks`, including disabled hooks"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "`str_replace` now matches text in files with mixed line endings"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "Custom agents are preserved when a session's mode is reapplied"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "A session card recorded just before a load now replays correctly"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "The response sanitizer no longer presents fabricated turns as the model's own speech"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "`chat.defaultAgent` is now honored in non-interactive runs, including a stale default agent's errors"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "Feedback typed when denying a tool call now reaches the model so it can adjust its next action"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Progress indicator stays visible while Kiro keeps working after automatic compaction"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Terminal progress indicator now goes idle while a turn is being cancelled instead of continuing to spin"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "Agent switching by display name without stale fallback warnings"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Fullscreen scrolling ignores the horizontal component of a diagonal trackpad gesture instead of scrolling down for it"
+        }
+      ]
+    },
+    {
+      "version": "2.22.1",
+      "date": "2026-09-17",
+      "entries": [
+        {
+          "type": "Added",
+          "tag": null,
+          "text": "Notices in the transcript when a turn moves to a different model"
+        },
+        {
+          "type": "Changed",
+          "tag": "V3",
+          "text": "Capacity errors identify the affected model"
+        },
+        {
+          "type": "Changed",
+          "tag": "V3",
+          "text": "Shell tool cards show plain-language command descriptions"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "Honor `--require-mcp-startup` so non-interactive runs wait for MCP servers to connect before prompting"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "Background process output appears in `get_process_output` tool cards"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "Cloud sessions recover from mid-turn connection resets"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "Compaction retries truncated summaries instead of keeping incomplete context"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "MCP connections work with authorization servers that reject `offline_access`"
+        }
+      ]
+    },
+    {
+      "version": "2.22.0",
+      "date": "2026-09-16",
+      "entries": [
+        {
+          "type": "Added",
+          "tag": null,
+          "text": "Type `/fullscreen` to expand the chat to the whole terminal with mouse scrolling; run it again to return."
+        },
+        {
+          "type": "Added",
+          "tag": null,
+          "text": "Support `KIRO_SKIP_BINARY_PINNING=1` to disable session binary pinning for environments with fixed install paths"
+        },
+        {
+          "type": "Changed",
+          "tag": "V3",
+          "text": "Refreshed `/sessions` with simpler controls and a streamlined session view"
+        },
+        {
+          "type": "Changed",
+          "tag": null,
+          "text": "Backing out of a `/settings` screen returns the cursor to the row you left instead of the top"
+        },
+        {
+          "type": "Changed",
+          "tag": null,
+          "text": "Replayed and resumed transcripts no longer leave a blank line above a turn's divider, matching live turns"
+        },
+        {
+          "type": "Changed",
+          "tag": "V3",
+          "text": "Large tool results are now always saved to a session file with a short preview for the model"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "`--require-mcp-startup` now works in non-interactive runs: they wait for MCP servers to connect and fail closed on startup failure, instead of running without MCP tools"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "A turn that stalls after a complete tool call now runs the tool and continues instead of failing"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "Prompts behind a proxy that requires credentials report a proxy authentication error instead of \"Internal error\""
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "The cloud-config pull card appears only when sync is enabled, not on every session start"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Esc out of the status line settings panel returns to Display instead of jumping to `/settings`"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Stopped thinking-only message boundaries from rendering an empty assistant response marker before tool calls"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "A symlinked agent config that uses a `file://` prompt now loads the prompt from the config file location"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "`/context` lists global steering files and workspace steering files without frontmatter"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "Custom agents are told their working directory, so command-tool `cwd` guesses no longer fail in worktrees"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Automatic compaction now keeps the active response and Thinking indicator visible, then continues queued prompts without requiring Esc"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Long shell commands and metadata now share one Ctrl+O expansion hint"
+        },
+        {
+          "type": "Fixed",
+          "tag": "V3",
+          "text": "Resuming a session now separates the session-start cloud config card from the previous turn instead of rendering it flush under that turn's usage summary"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Mislabeled image files now attach using their actual format instead of breaking the chat"
+        },
+        {
+          "type": "Fixed",
+          "tag": null,
+          "text": "Reduced memory growth in long-running TUI sessions with heavy subagent use"
+        }
+      ]
+    },
     {
       "version": "2.21.4",
       "date": "2026-09-11",

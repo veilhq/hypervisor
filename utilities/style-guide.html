@@ -51,6 +51,42 @@
   </div>
 
   <div class="sg-card" data-cat="tokens">
+    <div class="sg-card-head"><span class="sg-card-title">Weight Scale</span><span class="sg-card-note">--fw-normal → --fw-bold</span></div>
+    <div class="sg-card-body">
+      <table>
+        <thead><tr><th>Token</th><th>Value</th><th>Sample</th></tr></thead>
+        <tbody>
+          <tr><td><code>--fw-normal</code></td><td>400</td><td><span style="font-weight:var(--fw-normal)">Body copy, resting text</span></td></tr>
+          <tr><td><code>--fw-medium</code></td><td>500</td><td><span style="font-weight:var(--fw-medium)">Mild emphasis</span></td></tr>
+          <tr><td><code>--fw-semibold</code></td><td>600</td><td><span style="font-weight:var(--fw-semibold)">Display-prose headings</span></td></tr>
+          <tr><td><code>--fw-bold</code></td><td>700</td><td><span style="font-weight:var(--fw-bold)">Instrument chrome: chips, labels, data</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="sg-card" data-cat="tokens">
+    <div class="sg-card-head"><span class="sg-card-title">Icon Scale</span><span class="sg-card-note">--icon-2xs → --icon-5xl</span></div>
+    <div class="sg-card-body">
+      <table>
+        <thead><tr><th>Token</th><th>Size</th><th>Glyph</th></tr></thead>
+        <tbody>
+          <tr><td><code>--icon-2xs</code></td><td>0.6875rem (11px)</td><td><i data-lucide="star" style="width:var(--icon-2xs);height:var(--icon-2xs)"></i></td></tr>
+          <tr><td><code>--icon-xs</code></td><td>0.75rem (12px)</td><td><i data-lucide="star" style="width:var(--icon-xs);height:var(--icon-xs)"></i></td></tr>
+          <tr><td><code>--icon-sm</code></td><td>0.8125rem (13px)</td><td><i data-lucide="star" style="width:var(--icon-sm);height:var(--icon-sm)"></i></td></tr>
+          <tr><td><code>--icon-md</code></td><td>0.875rem (14px)</td><td><i data-lucide="star" style="width:var(--icon-md);height:var(--icon-md)"></i></td></tr>
+          <tr><td><code>--icon-lg</code></td><td>1rem (16px)</td><td><i data-lucide="star" style="width:var(--icon-lg);height:var(--icon-lg)"></i></td></tr>
+          <tr><td><code>--icon-xl</code></td><td>1.125rem (18px)</td><td><i data-lucide="star" style="width:var(--icon-xl);height:var(--icon-xl)"></i></td></tr>
+          <tr><td><code>--icon-2xl</code></td><td>1.25rem (20px)</td><td><i data-lucide="star" style="width:var(--icon-2xl);height:var(--icon-2xl)"></i></td></tr>
+          <tr><td><code>--icon-3xl</code></td><td>1.5rem (24px)</td><td><i data-lucide="star" style="width:var(--icon-3xl);height:var(--icon-3xl)"></i></td></tr>
+          <tr><td><code>--icon-4xl</code></td><td>2rem (32px)</td><td><i data-lucide="star" style="width:var(--icon-4xl);height:var(--icon-4xl)"></i></td></tr>
+          <tr><td><code>--icon-5xl</code></td><td>3rem (48px)</td><td><i data-lucide="star" style="width:var(--icon-5xl);height:var(--icon-5xl)"></i></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="sg-card" data-cat="tokens">
     <div class="sg-card-head"><span class="sg-card-title">Text Colors</span><span class="sg-card-note">hierarchy</span></div>
     <div class="sg-card-body" style="font-size:var(--fs-body);">
       <span style="color:var(--text-bright);">--text-bright: primary emphasis</span>
@@ -195,6 +231,14 @@
         <i data-lucide="search" style="width:14px; height:14px; color:var(--text-dim);"></i>
         <input class="form-input-inline" type="text" placeholder="Inline input..." />
       </div>
+    </div>
+  </div>
+
+  <div class="sg-card" data-cat="controls">
+    <div class="sg-card-head"><span class="sg-card-title">Pill Toggle</span><span class="sg-card-note">.pill-toggle</span></div>
+    <div class="sg-card-body">
+      <button class="pill-toggle" type="button" aria-label="Cycle view"></button>
+      <p style="font-size:var(--fs-sm); color:var(--text-dim); margin-top:var(--space-2);">Wordless --comp cycle button. Each click advances the surface it drives to the next view; the control is stateless, the revealed content shows which view is active. For low-ink binary/cycle switches where a labelled control is too heavy.</p>
     </div>
   </div>
 
@@ -353,6 +397,47 @@
   </div>
 
   <div class="sg-card" data-cat="containers">
+    <div class="sg-card-head"><span class="sg-card-title">Release Card</span><span class="sg-card-note">.release-card</span></div>
+    <div class="sg-card-body">
+      <div class="release-card-grid">
+        <div class="release-card content-card release-card-story">
+          <div class="release-card-meta"><span class="label-badge label-badge-cool">Story</span><span class="release-card-author">Matt Kinmon</span></div>
+          <div class="release-card-title">Tie classroom roster export to a license permission</div>
+          <div class="release-card-chips"><a class="label-badge label-badge-accent" href="#" onclick="return false">PR 1164</a><a class="label-badge label-badge-muted" href="#" onclick="return false">#5554</a></div>
+        </div>
+        <div class="release-card content-card release-card-bug">
+          <div class="release-card-meta"><span class="label-badge label-badge-comp">Bug</span><span class="release-card-author">Josh Wooten</span></div>
+          <div class="release-card-title">Anonymous user deletion fails for users who had logged in</div>
+          <div class="release-card-chips"><a class="label-badge label-badge-accent" href="#" onclick="return false">PR 1163</a><span class="label-badge label-badge-muted">no linked item</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sg-card" data-cat="containers">
+    <div class="sg-card-head"><span class="sg-card-title">Ref Card</span><span class="sg-card-note">.ref-card</span></div>
+    <div class="sg-card-body">
+      <div class="ref-card">
+        <div class="ref-card-ref">
+          <code class="ref-card-key">cyber-portal/app/portal-api/client.js</code>
+          <span class="ref-card-desc">response interceptor — <code>stale_info</code> 403 branch ordered before CSRF-retry</span>
+        </div>
+      </div>
+      <div class="ref-card" style="margin-top: var(--space-3)">
+        <div class="ref-card-ref">
+          <code class="ref-card-key">cyber-portal/api/approvals/models.py</code>
+          <span class="ref-card-desc"><code>OrganizationChangeRequest</code>, unique constraint</span>
+        </div>
+        <div class="ref-card-ref">
+          <code class="ref-card-key">cyber-portal/api/autho/models.py</code>
+          <span class="ref-card-desc"><code>Background</code> — confirms the snapshot columns</span>
+        </div>
+        <div class="ref-card-ref ref-card-ref-prose">Azure DevOps PR 1162 metadata — <code>status: 1</code> (Active)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sg-card" data-cat="containers">
     <div class="sg-card-head"><span class="sg-card-title">Sticky Note</span><span class="sg-card-note">.scratch-card</span></div>
     <div class="sg-card-body">
       <div class="scratch-card scratch-card-c1">
@@ -385,7 +470,7 @@
     <div class="sg-card-body">
       <div style="position:relative; background:rgba(0,0,0,0.5); border-radius:var(--radius); padding:var(--space-4);">
         <div class="modal-panel" style="position:static; animation:none; max-width:100%;">
-          <div style="font-size:var(--fs-heading); font-weight:700; color:var(--text-bright); margin-bottom:var(--space-3);">Modal Title</div>
+          <div style="font-size:var(--fs-heading); font-weight:var(--fw-bold); color:var(--text-bright); margin-bottom:var(--space-3);">Modal Title</div>
           <p style="font-size:var(--fs-body); color:var(--text); margin-bottom:var(--space-4);">Confirm dialogs, command palette, and overlay UI.</p>
           <div style="display:flex; justify-content:flex-end; gap:var(--space-3);">
             <button class="action-button">Cancel</button>
@@ -491,24 +576,21 @@
   <div class="sg-card" data-cat="feedback">
     <div class="sg-card-head"><span class="sg-card-title">Toasts</span><span class="sg-card-note">.notification-toast</span></div>
     <div class="sg-card-body">
-      <div class="notification-toast notification-toast-success notification-toast-visible" style="position:static; opacity:1; transform:none;">
-        <span class="notification-toast-icon"><i data-lucide="check-circle" style="width:16px; height:16px;"></i></span>
-        <div class="notification-toast-body"><div class="notification-toast-title">Success</div><div class="notification-toast-message">Document saved.</div></div>
-        <button class="notification-toast-close">&times;</button>
+      <div class="notification-toast notification-toast-success notification-toast-unfurled" style="position:static;">
+        <span class="notification-toast-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="square" stroke-linejoin="miter"><path d="M4 12l5 5L20 6"/></svg></span>
+        <div class="notification-toast-body"><div class="notification-toast-message">Document saved.</div></div>
       </div>
-      <div class="notification-toast notification-toast-info notification-toast-visible" style="position:static; opacity:1; transform:none;">
-        <span class="notification-toast-icon"><i data-lucide="info" style="width:16px; height:16px;"></i></span>
-        <div class="notification-toast-body"><div class="notification-toast-title">Info</div><div class="notification-toast-message">Build completed in 2.3s.</div></div>
-        <button class="notification-toast-close">&times;</button>
+      <div class="notification-toast notification-toast-info notification-toast-unfurled" style="position:static;">
+        <span class="notification-toast-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="square"><line x1="12" y1="10" x2="12" y2="17"/><line x1="12" y1="6.4" x2="12" y2="6.5"/></svg></span>
+        <div class="notification-toast-body"><div class="notification-toast-message">Build completed in 2.3s.</div></div>
       </div>
-      <div class="notification-toast notification-toast-warn notification-toast-visible" style="position:static; opacity:1; transform:none;">
-        <span class="notification-toast-icon"><i data-lucide="alert-triangle" style="width:16px; height:16px;"></i></span>
-        <div class="notification-toast-body"><div class="notification-toast-title">Warning</div><div class="notification-toast-message">3 validation errors.</div></div>
-        <button class="notification-toast-close">&times;</button>
+      <div class="notification-toast notification-toast-warn notification-toast-unfurled" style="position:static;">
+        <span class="notification-toast-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 3 L22 20 L2 20 Z"/></svg></span>
+        <div class="notification-toast-body"><div class="notification-toast-message">3 validation errors.</div></div>
       </div>
-      <div class="notification-toast notification-toast-error notification-toast-visible" style="position:static; opacity:1; transform:none;">
-        <span class="notification-toast-icon"><i data-lucide="x-circle" style="width:16px; height:16px;"></i></span>
-        <div class="notification-toast-body"><div class="notification-toast-title">Error</div><div class="notification-toast-message">Permission denied.</div></div>
+      <div class="notification-toast notification-toast-error notification-toast-unfurled" style="position:static;">
+        <span class="notification-toast-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="square"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></span>
+        <div class="notification-toast-body"><div class="notification-toast-message">Permission denied.</div></div>
         <button class="notification-toast-close">&times;</button>
       </div>
     </div>
@@ -550,6 +632,17 @@
     </div>
   </div>
 
+  <div class="sg-card" data-cat="feedback">
+    <div class="sg-card-head"><span class="sg-card-title">Empty State</span><span class="sg-card-note">.hv-empty-state</span></div>
+    <div class="sg-card-body">
+      <div class="hv-empty-state">
+        <i data-lucide="file-x" class="hv-empty-state-icon"></i>
+        <p class="hv-empty-state-title">No preview available</p>
+        <p class="hv-empty-state-msg">This XLSX file is stored in <code>.external/</code>. Open it from your filesystem.</p>
+      </div>
+    </div>
+  </div>
+
   <!-- ══════════════════ CONTENT ══════════════════ -->
 
   <div class="sg-card" data-cat="content">
@@ -579,6 +672,18 @@
   </div>
 
   <div class="sg-card" data-cat="content">
+    <div class="sg-card-head"><span class="sg-card-title">Inline Citations</span><span class="sg-card-note">.citation / .sources-list</span></div>
+    <div class="sg-card-body">
+      <p>The endpoint reads the header unverified<sup class="citation-group"><a href="#sg-source-1" class="citation" data-citation="1">1</a></sup>. Two sources back this claim<sup class="citation-group"><a href="#sg-source-2" class="citation" data-citation="2">2</a><a href="#sg-source-3" class="citation" data-citation="3">3</a></sup>.</p>
+      <ol class="sources-list">
+        <li id="sg-source-1" class="source-item"><code>api/apps/views.py:42</code> — header parsed without validation</li>
+        <li id="sg-source-2" class="source-item">https://docs.example.com/auth — token lifecycle</li>
+        <li id="sg-source-3" class="source-item"><code>api/apps/models.py:88</code> — Session model</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="sg-card" data-cat="content">
     <div class="sg-card-head"><span class="sg-card-title">Lists</span><span class="sg-card-note">ul / ol</span></div>
     <div class="sg-card-body">
       <h4>Unordered</h4>
@@ -600,10 +705,10 @@
     <div class="sg-card-head"><span class="sg-card-title">Task List</span><span class="sg-card-note">.task</span></div>
     <div class="sg-card-body">
       <ul>
-        <li class="task task-done"><span class="task-box">&#x2713;</span> Extract tokens to hyperkit</li>
-        <li class="task task-done"><span class="task-box">&#x2713;</span> Move primitives to shared layer</li>
-        <li class="task"><span class="task-box">&#x25CB;</span> Build style guide page</li>
-        <li class="task"><span class="task-box">&#x25CB;</span> Add skeleton states</li>
+        <li class="task task-done"><span class="task-box">&#9745;</span> Extract tokens to hyperkit</li>
+        <li class="task task-done"><span class="task-box">&#9745;</span> Move primitives to shared layer</li>
+        <li class="task task-open"><span class="task-box">&#9744;</span> Build style guide page</li>
+        <li class="task task-open"><span class="task-box">&#9744;</span> Add skeleton states</li>
       </ul>
     </div>
   </div>
@@ -634,21 +739,26 @@
   </div>
 
   <div class="sg-card" data-cat="content">
-    <div class="sg-card-head"><span class="sg-card-title">Doc Header Strip</span><span class="sg-card-note">.doc-header-strip</span></div>
+    <div class="sg-card-head"><span class="sg-card-title">Doc Header Strip</span><span class="sg-card-note">.doc-title-row + .doc-header-strip</span></div>
     <div class="sg-card-body">
+      <div class="doc-title-row">
+        <h1 style="margin:0;"><span class="doc-header-wi-label">(WI-142)</span> Example Document Title</h1>
+        <div class="doc-title-tags">
+          <span class="doc-title-tag">hypervisor</span>
+          <span class="doc-title-tag">css</span>
+          <span class="doc-title-tag">python</span>
+        </div>
+      </div>
       <div class="doc-header-strip" style="animation:none;">
         <div class="doc-header-chips">
           <span class="status-chip status-chip-filled doc-header-chip doc-header-chip-wi">WI-142</span>
-          <span class="status-chip status-chip-outlined-accent doc-header-chip doc-header-chip-status-active">In Progress</span>
-          <span class="status-chip status-chip-outlined-muted doc-header-chip doc-header-chip-assignee" style="color:var(--comp); border-color:var(--comp);">JW</span>
-        </div>
-        <div class="doc-header-tags">
-          <span class="doc-header-tag">hypervisor</span>
-          <span class="doc-header-tag">css</span>
+          <span class="status-chip status-chip-filled doc-header-chip doc-header-chip-status doc-header-chip-status-active" data-writeback-key="status">In Progress</span>
+          <span class="status-chip status-chip-outlined-muted doc-header-chip doc-header-chip-assignee" data-writeback-key="assignee" data-full-value="Josh Wooten">JW</span>
+          <span class="status-chip status-chip-filled doc-header-chip doc-header-chip-horizon">Sprint</span>
         </div>
         <div class="doc-header-dates">
-          <span class="doc-header-date"><span class="doc-header-date-label">Created</span><span class="doc-header-date-value">2026-08-20</span></span>
           <span class="doc-header-date"><span class="doc-header-date-label">Updated</span><span class="doc-header-date-value">2026-08-27</span></span>
+          <span class="doc-header-date"><span class="doc-header-date-label">Created</span><span class="doc-header-date-value">2026-08-20</span></span>
         </div>
       </div>
     </div>

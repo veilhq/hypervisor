@@ -176,6 +176,7 @@ _ECO_APP_SVGS = {}
 _ECO_APP_PATHS = {
     "hypervisor": ASSETS_DIR / "hypervisor.svg",
     "hyperagent": HYPERSPACE_ROOT / ".hyperagent" / "assets" / "hyperagent.svg",
+    "hypernote": HYPERSPACE_ROOT / ".hypernote" / "assets" / "hypernote.svg",
     "hypereye": HYPERSPACE_ROOT / ".hypereye" / "assets" / "hypereye.svg",
     "hyperfield": HYPERSPACE_ROOT / ".hyperfield" / "assets" / "hyperfield.svg",
     "hyperline": ASSETS_DIR / "SVG" / "hyperline.svg",
@@ -205,16 +206,27 @@ def eco_app_icon_svg(app_name: str, css_class: str = "launcher-icon") -> str:
 SKIP_DIRS = {
     "__pycache__", "site", "learn", ".scratch", ".kb",
     ".hyperagent", ".hyperkit", ".hypereye", ".hypercycle",
-    ".hyperfield", ".hyperline", ".events",
+    ".hyperfield", ".hyperline", ".hypernote", ".events",
 }
 SKIP_FILES = {".gitkeep"}
 
 # --- Markdown engine ---
 MD = markdown.Markdown(
-    extensions=["fenced_code", "codehilite", "tables", "toc", "meta", "sane_lists"],
+    extensions=[
+        "fenced_code", "codehilite", "tables", "toc", "meta", "sane_lists",
+        # Syntax used across the corpus that core Markdown does not handle:
+        "pymdownx.tilde",   # ~~strikethrough~~  (44 docs)
+        "pymdownx.mark",    # ==highlight==      (29 docs)
+        "footnotes",        # [^1] references    (3 docs)
+    ],
     extension_configs={
         "codehilite": {"css_class": "highlight", "guess_lang": False},
-        "toc": {"permalink": False},
+        "toc": {"permalink": False, "toc_depth": "2-3"},
+        # Strikethrough only - disable subscript so a lone ~ in prose/paths is
+        # not misread as subscript markup.
+        "pymdownx.tilde": {"subscript": False},
+        # Highlight only - disable the smart-insert (^^...^^) half.
+        "pymdownx.mark": {"smart_mark": False},
     },
 )
 
@@ -223,6 +235,7 @@ CATEGORY_LABELS = {
     "context": "Context", "diagrams": "Diagrams", "work": "Work",
     "ideas": "Ideas", "patterns": "Patterns", "reference": "Reference",
     "research": "Research", "templates": "Templates", "analysis": "Analysis",
+    "notes": "Notes", "releases": "Releases",
     "done": "Done", "to-do": "To-Do", ".hypervisor": "Metadata",
     ".external": "External", "prototypes": "Prototypes",
 }
@@ -237,6 +250,8 @@ CATEGORY_DESCRIPTIONS = {
     "research": "Technical investigations, comparisons, and ADRs",
     "templates": "Boilerplate starting points for new documents",
     "analysis": "Progress analysis, PR reviews, and milestone assessments",
+    "notes": "Structured meeting and session notes authored in Hypernote",
+    "releases": "Release changelogs - manual deploy actions and test scope for each QA to PROD push",
     ".hypervisor": "Build scripts, assets, and configuration for the Hypervisor site generator",
     ".external": "External documents, vendor investigations, and third-party references",
 }
@@ -245,6 +260,7 @@ CATEGORY_ICONS = {
     "context": "book-open", "diagrams": "git-branch", "work": "briefcase",
     "ideas": "lightbulb", "patterns": "puzzle", "reference": "text-search",
     "research": "microscope", "templates": "file-text", "analysis": "bar-chart-3",
+    "notes": "notebook-pen", "releases": "rocket",
     "done": "check-circle", "to-do": "circle-dot", ".hypervisor": "settings",
     ".external": "external-link", "prototypes": "layout",
 }

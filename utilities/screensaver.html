@@ -90,11 +90,15 @@
         card.setAttribute("tabindex", "0");
         card.setAttribute("aria-label", "Select " + mode.name + " screensaver");
 
+        var media = document.createElement("span");
+        media.className = "ss-card-media";
+        var frame = document.createElement("span");
+        frame.className = "ss-card-frame";
         var preview = document.createElement("canvas");
         preview.className = "ss-card-preview";
-        preview.width = 320;
-        preview.height = 180;
-        card.appendChild(preview);
+        frame.appendChild(preview);
+        media.appendChild(frame);
+        card.appendChild(media);
 
         var body = document.createElement("div");
         body.className = "ss-card-body";
@@ -114,12 +118,20 @@
         card.appendChild(body);
         cardsContainer.appendChild(card);
 
-        // Render static preview
+        // Render static preview at the frame's real pixel size so the aspect
+        // matches the box (no stretch). Backing store scaled by DPR for crisp
+        // output; api.preview() reads canvas.width/height as its draw extent.
+        var rect = frame.getBoundingClientRect();
+        var dpr = window.devicePixelRatio || 1;
+        var pw = Math.max(1, Math.round(rect.width * dpr));
+        var ph = Math.max(1, Math.round(rect.height * dpr));
+        preview.width = pw;
+        preview.height = ph;
         var pCtx = preview.getContext("2d");
         pCtx.fillStyle = "#000000";
-        pCtx.fillRect(0, 0, 320, 180);
+        pCtx.fillRect(0, 0, pw, ph);
         try {
-          api.preview(mode.key, pCtx, 320, 180);
+          api.preview(mode.key, pCtx, pw, ph);
         } catch (e) {}
 
         // Selection handler

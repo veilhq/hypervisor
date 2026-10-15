@@ -6,7 +6,8 @@
     <div class="log-toolbar flex-center">
       <div class="log-toolbar-left flex-center">
         <!-- Source toggles — "All" is static; per-source buttons are generated
-             from the SOURCES array in JS so this list has one source of truth. -->
+             in JS from the log files discovered on disk (list_log_files), so a
+             new app's log appears automatically with no edit here. -->
         <button class="log-filter-btn status-chip log-filter-active" data-source="all" id="log-src-all">All</button>
       </div>
       <div class="log-toolbar-center flex-center">
@@ -254,7 +255,7 @@
 }
 
 .log-level {
-  font-weight: 700;
+  font-weight: var(--fw-bold);
 }
 
 .log-source {
@@ -304,24 +305,57 @@
   // --- State ---
   var logLines = [];          // All parsed log entries
   var totalLinesByFile = {};  // Track total lines per file for polling
-  // Single source of truth for log sources. Each entry's `key` matches the
-  // {key}.log filename stem written by setup_logger("{key}"); `label` is the
-  // toolbar button text. Buttons, filter state, and toggle logic are all
-  // derived from this — add a new logger here and nowhere else.
-  var SOURCES = [
-    { key: "hypervisor", label: "Hypervisor" },
-    { key: "hyperagent", label: "Hyperagent" },
-    { key: "bridge",     label: "Bridge" },
-    { key: "rag",        label: "RAG" },
-    { key: "lan",        label: "LAN" },
-    { key: "webview",    label: "WebView" }
-  ];
-  var SOURCE_KEYS = SOURCES.map(function (s) { return s.key; });
+  // Log sources are DISCOVERED at runtime from the .log files actually present
+  // in .hyperspace/.logs/ (via list_log_files), so a new ecosystem app that
+  // uses setup_logger("{key}") shows up automatically with no edit here. The
+  // map below only supplies friendly labels for keys whose title-cased form
+  // isn't right (acronyms, camelCase); unknown keys fall back to Title Case.
+  var SOURCE_LABELS = {
+    "rag": "RAG",
+    "lan": "LAN",
+    "webview": "WebView",
+    "webview2": "WebView2",
+    "mcp-server": "MCP Server",
+  };
+  // Rotation backups (foo.log.1) and non-app logs are excluded from discovery.
+  var SOURCE_EXCLUDE = { "webview2": true, "dither-widget": true };
 
-  // Filter state derived from SOURCES — every source starts active.
-  var activeSources = {};
-  SOURCE_KEYS.forEach(function (k) { activeSources[k] = true; });
+  function labelForKey(key) {
+    if (SOURCE_LABELS[key]) return SOURCE_LABELS[key];
+    return key.split(/[-_]/).map(function (p) {
+      return p.charAt(0).toUpperCase() + p.slice(1);
+    }).join(" ");
+  }
+
+  // Populated by discoverSources() before the first render. Everything
+  // downstream (buttons, filter state, poll list) derives from these.
+  var SOURCES = [];
+  var SOURCE_KEYS = [];
+  var LOG_FILES = [];
+  var SOURCE_MAP = {};
+
+  function discoverSources(files) {
+    // files: [{name, size_bytes, modified}] from list_log_files. Keep only
+    // "{key}.log" (drop rotation backups like ".log.1"), sort by key.
+    var keys = [];
+    (files || []).forEach(function (f) {
+      var m = /^(.+)\.log$/.exec(f.name);
+      if (!m) return;               // skips foo.log.1, foo.log.2, etc.
+      var key = m[1];
+      if (SOURCE_EXCLUDE[key]) return;
+      if (keys.indexOf(key) === -1) keys.push(key);
+    });
+    keys.sort();
+    SOURCES = keys.map(function (k) { return { key: k, label: labelForKey(k) }; });
+    SOURCE_KEYS = keys.slice();
+    LOG_FILES = keys.map(function (k) { return k + ".log"; });
+    SOURCE_MAP = {};
+    keys.forEach(function (k) { SOURCE_MAP[k + ".log"] = k; });
+    activeSources = {};
+    SOURCE_KEYS.forEach(function (k) { activeSources[k] = true; });
+  }
   var activeSeverities = { error: true, warn: true, info: true, debug: true, trace: true };
+  var activeSources = {};   // populated by discoverSources()
   var searchText = "";
   var isPaused = false;
   var autoScroll = true;
@@ -684,11 +718,9 @@
   }
 
   // --- Polling ---
-  // Both derived from SOURCES: a source's log file is "{key}.log", and the
-  // filename maps back to its source key. No separate hardcoded lists.
-  var LOG_FILES = SOURCE_KEYS.map(function (k) { return k + ".log"; });
-  var SOURCE_MAP = {};
-  SOURCE_KEYS.forEach(function (k) { SOURCE_MAP[k + ".log"] = k; });
+  // LOG_FILES and SOURCE_MAP are populated by discoverSources() from the log
+  // files present on disk — a source's log file is "{key}.log", and the
+  // filename maps back to its source key.
 
   function readTail(filename, afterLine) {
     var source = SOURCE_MAP[filename];
@@ -782,8 +814,31 @@
   };
 
   syncRefs();
-  buildSourceButtons();
-  updateSourceButtons();
-  initialLoad();
+
+  // Discover sources from the log files on disk, THEN build buttons + load.
+  // Falls back to a minimal core set if the bridge or discovery ever fails, so
+  // the viewer is never empty.
+  function bootstrap() {
+    if (!isCurrent()) return;
+    if (!window.pywebview || !window.pywebview.api || !window.pywebview.api.list_log_files) {
+      setTimeout(bootstrap, 300);
+      return;
+    }
+    window.pywebview.api.list_log_files().then(function (res) {
+      var files = (res && res.files) || [];
+      discoverSources(files);
+      if (!SOURCES.length) discoverSources([{ name: "hypervisor.log" }, { name: "hyperagent.log" }]);
+      buildSourceButtons();
+      updateSourceButtons();
+      initialLoad();
+    }, function () {
+      discoverSources([{ name: "hypervisor.log" }, { name: "hyperagent.log" }]);
+      buildSourceButtons();
+      updateSourceButtons();
+      initialLoad();
+    });
+  }
+
+  bootstrap();
 })();
 </script>

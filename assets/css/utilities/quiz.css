@@ -8,7 +8,7 @@
 .quiz-dataset-title {
   color: var(--text-dim);
   font-size: 0.65em;
-  font-weight: 400;
+  font-weight: var(--fw-normal);
 }
 
 /* ---- Quiz meta bar ---- */
@@ -66,7 +66,7 @@
 /* .quiz-multi-tag composes .status-chip.status-chip-outlined-accent (accent
    color + border from the variant); the heavier weight is the local part. */
 .quiz-multi-tag {
-  font-weight: 700;
+  font-weight: var(--fw-bold);
 }
 .quiz-question {
   font-size: var(--fs-body);
@@ -125,7 +125,7 @@
   align-items: center;
   justify-content: center;
   font-size: var(--fs-micro);
-  font-weight: 700;
+  font-weight: var(--fw-bold);
   color: var(--text-dim);
   border: var(--border-hair) solid var(--border);
   border-radius: var(--radius);
@@ -211,7 +211,7 @@
 .quiz-sidebar-header {
   padding: var(--space-2) var(--space-3);
   font-size: var(--fs-caption);
-  font-weight: 700;
+  font-weight: var(--fw-bold);
   color: var(--text-dim);
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -273,7 +273,7 @@
 .quiz-final-pct {
   display: block;
   font-size: 2.5rem;
-  font-weight: 700;
+  font-weight: var(--fw-bold);
   line-height: 1;
   margin-bottom: var(--space-0-3);
 }
@@ -399,7 +399,7 @@
   border-color: var(--accent);
 }
 .guide-nav-num {
-  font-weight: 700;
+  font-weight: var(--fw-bold);
   margin-right: var(--space-0-4);
 }
 .guide-nav-num::after { content: ':'; }
@@ -427,7 +427,7 @@
 }
 .guide-domain-title {
   font-size: var(--fs-body);
-  font-weight: 700;
+  font-weight: var(--fw-bold);
   color: var(--accent);
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -463,5 +463,5 @@
 }
 .guide-term {
   color: var(--text-bright);
-  font-weight: 700;
+  font-weight: var(--fw-bold);
 }

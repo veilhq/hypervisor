@@ -193,27 +193,19 @@
     });
   })();
 
-  // --- Open in File Explorer (shell-level button, content-aware) ---
+  // --- Open in File Explorer (registry action, content-aware) ---
   (function initOpenInExplorer() {
-    var btn = document.getElementById("explorer-btn");
-    if (!btn) return;
+    var A = (window.__hvActions = window.__hvActions || {});
 
-    function updateVisibility() {
+    function canOpen() {
+      if (!(window.pywebview && window.pywebview.api)) return false;
       var sourcePathEl = document.getElementById("source-path");
       var filePath = sourcePathEl ? sourcePathEl.textContent.trim() : "";
-      var show = filePath && filePath.endsWith(".md") && isDesktopApp;
-      btn.style.display = show ? "" : "none";
+      return !!(filePath && filePath.endsWith(".md"));
     }
 
-    // Update on navigation
-    if (window.__router) {
-      window.__router.onNavigate(null, updateVisibility);
-    }
-
-    // Show on pywebview ready
-    window.addEventListener("pywebviewready", updateVisibility);
-
-    btn.addEventListener("click", function () {
+    A.canOpenInExplorer = canOpen;
+    A.register("openInExplorer", function () {
       if (!(window.pywebview && window.pywebview.api)) return;
       var sourcePathEl = document.getElementById("source-path");
       if (!sourcePathEl) return;
@@ -223,100 +215,51 @@
     });
   })();
 
-  // --- Edit button visibility is handled by editor.js lifecycle ---
+  // --- Edit availability is handled by editor.js lifecycle ---
 
   // --- Mark Done button (desktop app only, SPA-aware) ---
   (function initMarkDone() {
-    var _markDoneBtn = null;
+    var A = (window.__hvActions = window.__hvActions || {});
 
-    function teardown() {
-      if (_markDoneBtn && _markDoneBtn.parentNode) {
-        _markDoneBtn.parentNode.removeChild(_markDoneBtn);
-      }
-      _markDoneBtn = null;
-    }
+    // True when the current page is a work/to-do item in the desktop app.
+    A.canMarkDone = function () {
+      if (!(window.pywebview && window.pywebview.api)) return false;
+      var el = document.getElementById("source-path");
+      var filePath = el ? (el.textContent || "").trim() : "";
+      if (!filePath || !filePath.endsWith(".md")) return false;
+      return filePath.replace(/\\/g, "/").indexOf("work/to-do/") !== -1;
+    };
 
-    function init(fragment) {
-      if (!fragment) return;
-      var filePath = fragment.sourcePath || "";
-      if (!filePath || !filePath.endsWith(".md")) return;
+    A.register("markDone", function () {
+      if (!(window.pywebview && window.pywebview.api)) return;
+      if (!window.__hypervisorConfirm) return;
+      var el = document.getElementById("source-path");
+      var filePath = el ? (el.textContent || "").trim() : "";
+      if (!filePath) return;
 
-      var normalized = filePath.replace(/\\/g, "/");
-      if (normalized.indexOf("work/to-do/") === -1) return;
-
-      var btn = document.createElement("button");
-      btn.className = "action-item mark-done-btn";
-      btn.id = "mark-done-btn";
-      btn.setAttribute("aria-label", "Mark work item as done");
-      btn.innerHTML = '<i data-lucide="check-circle" class="action-icon"></i><span class="action-label mark-done-label">done</span>';
-
-      // Only show if desktop bridge available
-      if (!isDesktopApp) btn.style.display = "none";
-
-      var drawer = document.querySelector(".actions-drawer-inner");
-      if (!drawer) return;
-      drawer.appendChild(btn);
-      _markDoneBtn = btn;
-
-      if (window.lucide) lucide.createIcons({ nodes: [btn], attrs: { "stroke-width": 2 } });
-
-      // Show when bridge becomes available
-      if (!isDesktopApp) {
-        window.addEventListener("pywebviewready", function onReady() {
-          btn.style.display = "";
-          window.removeEventListener("pywebviewready", onReady);
-        });
-      }
-
-      btn.addEventListener("click", function () {
-        if (!(window.pywebview && window.pywebview.api)) return;
-        if (!window.__hypervisorConfirm) return;
-
-        window.__hypervisorConfirm("Move this work item to done?", {
-          confirmLabel: "mark done", cancelLabel: "cancel"
-        }).then(function (confirmed) {
-          if (!confirmed) return;
-          btn.disabled = true;
-          btn.classList.add("mark-done-pending");
-
-          window.pywebview.api.mark_done(filePath).then(function (result) {
-            if (result && result.ok) {
-              if (window.__hypervisorToast) window.__hypervisorToast({ variant: "success", message: "moved to done" });
-            } else {
-              btn.disabled = false;
-              btn.classList.remove("mark-done-pending");
-              if (window.__hypervisorToast) window.__hypervisorToast({ variant: "error", title: "mark done failed", message: result.error || "unknown error" });
-            }
-          }).catch(function () {
-            btn.disabled = false;
-            btn.classList.remove("mark-done-pending");
-            if (window.__hypervisorToast) window.__hypervisorToast({ variant: "error", message: "mark done failed" });
-          });
+      window.__hypervisorConfirm("Move this work item to done?", {
+        confirmLabel: "mark done", cancelLabel: "cancel"
+      }).then(function (confirmed) {
+        if (!confirmed) return;
+        window.pywebview.api.mark_done(filePath).then(function (result) {
+          if (result && result.ok) {
+            if (window.__hypervisorToast) window.__hypervisorToast({ variant: "success", message: "moved to done" });
+          } else {
+            if (window.__hypervisorToast) window.__hypervisorToast({ variant: "error", title: "mark done failed", message: (result && result.error) || "unknown error" });
+          }
+        }).catch(function () {
+          if (window.__hypervisorToast) window.__hypervisorToast({ variant: "error", message: "mark done failed" });
         });
       });
-    }
-
-    if (window.__router) {
-      window.__router.onNavigate(teardown, init);
-    }
+    });
   })();
 
   // --- Delete Document button (desktop app only, SPA-aware) ---
-  // --- End Sprint button (desktop app only, global action) ---
+  // --- End Sprint (global action, desktop app only) ---
   (function initEndSprint() {
-    var isDesktop = !!(window.pywebview && window.pywebview.api);
-    var btn = document.getElementById("end-sprint-btn");
+    var A = (window.__hvActions = window.__hvActions || {});
 
-    function setup() {
-      btn = document.getElementById("end-sprint-btn");
-      if (!btn) return;
-      var hasBridge = !!(window.pywebview && window.pywebview.api);
-      if (hasBridge) btn.style.display = "";
-
-      btn.addEventListener("click", handleClick);
-    }
-
-    function handleClick() {
+    A.register("endSprint", function () {
       if (!(window.pywebview && window.pywebview.api)) return;
       if (!window.__hypervisorConfirm) return;
 
@@ -324,38 +267,16 @@
         confirmLabel: "end sprint", cancelLabel: "cancel"
       }).then(function (confirmed) {
         if (!confirmed) return;
-        btn.disabled = true;
-
         window.pywebview.api.end_sprint().then(function (result) {
-          btn.disabled = false;
           if (result && result.success) {
             var count = result.files_updated || 0;
             if (window.__hypervisorToast) window.__hypervisorToast({ variant: "success", message: count + " item(s) cascaded" });
-            if (window.__closeActionsDrawer) window.__closeActionsDrawer();
           } else {
             if (window.__hypervisorToast) window.__hypervisorToast({ variant: "error", title: "end sprint failed", message: (result && result.error) || "unknown error" });
           }
         }).catch(function () {
-          btn.disabled = false;
           if (window.__hypervisorToast) window.__hypervisorToast({ variant: "error", message: "end sprint failed" });
         });
       });
-    }
-
-    // Show button when bridge is ready
-    if (isDesktop) {
-      setup();
-    } else {
-      window.addEventListener("pywebviewready", function onReady() {
-        window.removeEventListener("pywebviewready", onReady);
-        setup();
-      });
-    }
-
-    // Re-attach after navigation (button re-renders from page template)
-    if (window.__router) {
-      window.__router.onNavigate(null, function () {
-        setup();
-      });
-    }
+    });
   })();

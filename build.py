@@ -183,25 +183,73 @@ def copy_assets():
 
 
 def build_doc_pages(files, backlink_index, build_id, cache=None):
-    """Render each markdown file into a content fragment JSON.
+    """Render each file into a content fragment JSON.
 
-    If a BuildCache is provided, unchanged docs are skipped.
+    Markdown files render via render_markdown. Supported non-md files under
+    .external/ render via render_external_file into the shared .external-doc
+    frame; image bytes are copied into site/.external/ so the <img> can display
+    them. Non-md external files are not cached (copy/render-every-build - the
+    external file count is tiny and this avoids teaching the md-text cache about
+    binary content).
+
+    If a BuildCache is provided, unchanged markdown docs are skipped.
     Returns the number of fragments that were actually rendered (cache misses).
     """
+    from site_utils.external_render import (
+        is_supported_external, external_title, COPY_EXTS, BINARY_EXTS,
+        render_external_file,
+    )
+
     rendered = 0
     for rel in files:
-        md_path = HYPERSPACE_ROOT / rel
-        md_text = read_md(md_path)
+        rel_posix = str(rel).replace("\\", "/")
+        src_path = HYPERSPACE_ROOT / rel
+        hdir = html_dir_for(rel)
+        fragment_path = OUTPUT_DIR / "content" / (str(PurePosixPath(hdir)) + ".json")
+
+        # --- Non-md external files: shared-frame render, no md pipeline ---
+        if is_supported_external(rel_posix):
+            ext = PurePosixPath(rel_posix).suffix.lower()
+            asset_href = None
+            if ext in COPY_EXTS:
+                # Copy the asset into site/ at the same relative path so the
+                # <img> can fetch it; href is the site-root-relative path.
+                dest = OUTPUT_DIR / rel
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(src_path, dest)
+                asset_href = "/" + rel_posix
+
+            content_html = render_external_file(src_path, rel_posix, asset_href=asset_href)
+            title = external_title(rel_posix)
+
+            # Non-md external files render outside the recessed markdown doc
+            # surface - that surface is for long-form prose, and a well behind a
+            # single preview card is a redundant container. Binaries center a
+            # standalone empty-state card (external-empty); previewable types
+            # (txt/sql/images) render their .external-doc card on the plain
+            # content area (external-doc). Both use their own page type so the
+            # router skips the .page-doc-surface reading well.
+            ext_page_type = "external-empty" if ext in BINARY_EXTS else "external-doc"
+
+            fragment = build_fragment(
+                content_html, title, rel_posix,
+                toc_html="", backlinks_html="",
+                page_type=ext_page_type, source_path=rel_posix,
+            )
+            write_fragment(fragment, fragment_path)
+            rendered += 1
+            continue
+
+        # --- Markdown files: standard pipeline with caching ---
+        md_text = read_md(src_path)
 
         # Check cache — skip rendering if content unchanged and output exists
         if cache and cache.is_unchanged(rel, md_text):
             continue
 
         title = get_title(md_text, nice_name(rel.name))
-        content_html, toc_html = render_markdown(md_text, source_path=str(rel).replace("\\", "/"))
-        hdir = html_dir_for(rel)
+        content_html, toc_html = render_markdown(md_text, source_path=rel_posix)
 
-        rel_posix = str(rel).replace("\\", "/")
         doc_backlinks = backlink_index.get(rel_posix, [])
         backlinks_html = render_backlinks_html(doc_backlinks)
 
@@ -212,7 +260,6 @@ def build_doc_pages(files, backlink_index, build_id, cache=None):
         )
 
         # Write fragment to site/content/{hdir}.json
-        fragment_path = OUTPUT_DIR / "content" / (str(PurePosixPath(hdir)) + ".json")
         write_fragment(fragment, fragment_path)
 
         # Update cache with new hash
@@ -228,10 +275,16 @@ def compute_recent_paths(files):
     """Return the set of recently updated file paths (top 10 by datetime)."""
     recent_paths = set()
     candidates = []
+    from site_utils.external_render import is_supported_external, external_date
     for rel in files:
-        md_text = read_md(HYPERSPACE_ROOT / rel)
-        dates = extract_dates(md_text)
-        date_str, _ = sort_date(dates)
+        rel_posix = str(rel).replace("\\", "/")
+        if is_supported_external(rel_posix):
+            # Non-md external files carry no header date - use filesystem mtime.
+            date_str = external_date(HYPERSPACE_ROOT / rel)
+        else:
+            md_text = read_md(HYPERSPACE_ROOT / rel)
+            dates = extract_dates(md_text)
+            date_str, _ = sort_date(dates)
         if date_str != "0000-00-00T00:00":
             candidates.append((rel, date_str))
     candidates.sort(key=lambda x: x[1], reverse=True)
@@ -261,6 +314,28 @@ def build_indexes(files, build_id, recent_paths=None):
 
         fragment_path = OUTPUT_DIR / "content" / (d + ".json")
         write_fragment(fragment, fragment_path)
+
+    # Emit the directory manifest - the single source of truth for directory
+    # results in the command palette and the zen-stage search. One entry per
+    # indexed directory (top-level and nested), mirroring the _utils manifest
+    # shape so the shared client loader treats both the same way. The name is
+    # the directory's last path segment, humanized the same way the index page
+    # titles are; the href targets the generated directory index fragment. No
+    # per-entry icon - the client assigns one fixed type glyph per result kind.
+    dir_manifest = []
+    for d in sorted(all_dirs):
+        last_segment = PurePosixPath(d).name
+        dir_manifest.append({
+            "name": nice_name(last_segment),
+            "path": d,
+            "href": f"/{d}/index.html",
+        })
+    dir_manifest_path = OUTPUT_DIR / "content" / "_dirs" / "_manifest.json"
+    dir_manifest_path.parent.mkdir(parents=True, exist_ok=True)
+    dir_manifest_path.write_text(
+        json.dumps(dir_manifest, ensure_ascii=False, separators=(",", ":")),
+        encoding="utf-8",
+    )
 
     # Prune orphaned doc output files (source .md was deleted)
     _prune_orphaned_outputs(files)
@@ -301,7 +376,7 @@ def _prune_orphaned_outputs(files):
         expected_fragments.add(str(PurePosixPath(rel.parent / html_file.stem)) + ".json")
 
     # Special fragments (never pruned)
-    skip_prefixes = ("_utils", "learn", "_pins", "_about", "home", "404")
+    skip_prefixes = ("_utils", "_dirs", "learn", "_pins", "_about", "home", "404")
 
     # Walk content directory and find orphaned fragment files
     for root_dir, dirs, dir_files in os.walk(str(content_dir)):

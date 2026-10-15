@@ -18,21 +18,33 @@ def has_metadata_header(text):
     return False
 
 
-def import_external_file(filename, content):
-    """Import a markdown file into .external/ directory.
+def import_external_file(filename, content, encoding="text"):
+    """Import a dropped file into the .external/ directory.
 
-    Handles filename collisions and injects metadata header if missing.
+    Markdown files get a metadata header injected if missing (so they render
+    with a title and dates). Other supported types are written as-is: text
+    types from their text content, binary/image types decoded from base64.
 
     Args:
-        filename: Original filename (e.g., "meeting-notes.md")
-        content: Plain text content of the markdown file
+        filename: Original filename (e.g. "meeting-notes.md", "chart.png").
+        content: File content - plain text when encoding="text", base64 string
+                 when encoding="base64".
+        encoding: "text" (default) or "base64". The frontend sends base64 for
+                  images and binaries, which cannot survive a text read.
 
     Returns:
         dict with ok/error status and relative path of imported file.
     """
-    # Only accept markdown
-    if not filename.lower().endswith((".md", ".markdown")):
-        return {"ok": False, "error": "Only .md files are accepted"}
+    import base64
+
+    from site_utils.external_render import SUPPORTED_EXTS
+
+    lower = filename.lower()
+    is_markdown = lower.endswith((".md", ".markdown"))
+    ext = Path(filename).suffix.lower()
+
+    if not is_markdown and ext not in SUPPORTED_EXTS:
+        return {"ok": False, "error": f"Unsupported file type: {ext or filename}"}
 
     external_dir = HYPERSPACE_ROOT / ".external"
     external_dir.mkdir(parents=True, exist_ok=True)
@@ -47,6 +59,21 @@ def import_external_file(filename, content):
             target = external_dir / f"{stem}-{counter}{suffix}"
             counter += 1
 
+    # Binary / image types: decode base64 and write bytes, no header injection.
+    if encoding == "base64":
+        try:
+            raw = base64.b64decode(content)
+        except (ValueError, TypeError) as e:
+            return {"ok": False, "error": f"Invalid base64 content: {e}"}
+        target.write_bytes(raw)
+        return {"ok": True, "path": str(target.relative_to(HYPERSPACE_ROOT))}
+
+    # Non-markdown text types (.txt/.sql): write as-is, no header injection.
+    if not is_markdown:
+        target.write_text(content, encoding="utf-8")
+        return {"ok": True, "path": str(target.relative_to(HYPERSPACE_ROOT))}
+
+    # Markdown: inject a metadata header if missing.
     text_content = content
     if not has_metadata_header(text_content):
         now = datetime.now().strftime("%Y-%m-%dT%H:%M")

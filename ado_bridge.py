@@ -20,24 +20,6 @@ logger = setup_logger("hypervisor")
 TOOLS_DIR = Path(__file__).parent / "tools"
 
 
-def _get_client():
-    """Import ADO modules and return (config, client) or raise."""
-    sys.path.insert(0, str(TOOLS_DIR))
-    try:
-        from ado_collector import load_config, ADOClient, ADOConfigError
-    finally:
-        if str(TOOLS_DIR) in sys.path:
-            sys.path.remove(str(TOOLS_DIR))
-
-    config = load_config()
-    client = ADOClient(
-        config["org"],
-        pat=config.get("pat"),
-        use_entra=config.get("use_entra", False),
-    )
-    return config, client
-
-
 def refresh_ado_sprint():
     """Fetch core sprint data: iteration, work items, PRs, work requests, burndown.
 

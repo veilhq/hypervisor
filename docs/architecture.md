@@ -322,9 +322,10 @@ JS lives in `assets/js/` organized into four subdirectories. During build, `buil
 
 | Module | Scope |
 |--------|-------|
-| `actions-drawer.js` | Footer actions drawer toggle (shell-level, persists) |
+| `00-actions.js` | Action registry (`window.__hvActions`) — action functions + state helpers consumed by the context menu and command palette |
 | `command-palette.js` | Unified command palette (Ctrl+K) — fuzzy search across docs, actions, utilities, tags |
 | `content.js` | Todo filters, section copy (HTML→markdown), table cell copy, zoom controls, width toggle (lifecycle-aware) |
+| `doc-tag-overflow.js` | Title-row tag overflow — measures available space and collapses topic tags title-first to a +N chip, or an 'N TAGS' count blurb when none fit (lifecycle-aware, resize-aware) |
 | `drop-import.js` | Drag-and-drop .md import on .external page (lifecycle-aware) |
 | `editor.js` | Inline markdown editor with read/write bridge (lifecycle-aware) |
 | `effects.js` | Terminal glitch effect, footer clock, cursor companion box |

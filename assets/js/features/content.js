@@ -438,15 +438,15 @@
 
   // --- Export page as standalone HTML (shell-level action, content-aware) ---
   (function initExport() {
-    var btn = document.getElementById("export-btn");
-    if (!btn) return;
+    var A = (window.__hvActions = window.__hvActions || {});
+    var exporting = false;
 
-    btn.addEventListener("click", function () {
-      btn.classList.add("exporting");
-      var label = btn.querySelector(".export-btn-label");
-      if (label) label.textContent = "packing...";
+    function runExport() {
+      if (exporting) return;
+      exporting = true;
 
       setTimeout(function () {
+        function done() { exporting = false; }
         try {
           var html = buildStandalonePage();
           var sourceRelPath = getSourceRelPath();
@@ -456,33 +456,29 @@
             var zipFilename = baseFilename + ".zip";
             window.pywebview.api.save_export_zip(html, zipFilename, sourceRelPath).then(function (result) {
               if (result && result.ok) {
-                if (label) label.textContent = "done!";
                 if (window.__hypervisorToast) window.__hypervisorToast({ variant: "success", message: "exported: " + zipFilename });
               } else if (result && result.error === "cancelled") {
-                if (label) label.textContent = "export";
+                // no-op
               } else {
-                if (label) label.textContent = "error";
                 if (window.__hypervisorToast) window.__hypervisorToast({ variant: "error", message: "export failed: " + (result && result.error || "unknown") });
               }
-              setTimeout(function () {
-                btn.classList.remove("exporting");
-                if (label) label.textContent = "export";
-              }, 1500);
+              done();
             }).catch(function () {
-              if (label) label.textContent = "error";
-              setTimeout(function () { btn.classList.remove("exporting"); if (label) label.textContent = "export"; }, 2000);
+              if (window.__hypervisorToast) window.__hypervisorToast({ variant: "error", message: "export failed" });
+              done();
             });
           } else {
             downloadFile(html, baseFilename + ".html", "text/html");
-            if (label) label.textContent = "done!";
-            setTimeout(function () { btn.classList.remove("exporting"); if (label) label.textContent = "export"; }, 1500);
+            done();
           }
         } catch (e) {
-          if (label) label.textContent = "error";
-          setTimeout(function () { btn.classList.remove("exporting"); if (label) label.textContent = "export"; }, 2000);
+          if (window.__hypervisorToast) window.__hypervisorToast({ variant: "error", message: "export failed" });
+          done();
         }
       }, 50);
-    });
+    }
+
+    A.register("export", runExport);
 
     function getSourceRelPath() {
       var srcEl = document.getElementById("source-path");
@@ -546,8 +542,7 @@
       overrides += "body.export-mode, body.export-mode * { cursor: auto !important; }\n";
       overrides += "body.export-mode .topbar::before { backdrop-filter: none; -webkit-backdrop-filter: none; background: #050505; }\n";
       overrides += "body.export-mode .page-footer { position: relative; backdrop-filter: none; -webkit-backdrop-filter: none; background: #050505; }\n";
-      overrides += "body.export-mode .scroll-top, body.export-mode .export-btn, body.export-mode .explorer-btn { display: none !important; }\n";
-      overrides += "body.export-mode .actions-drawer, body.export-mode .actions-trigger { display: none !important; }\n";
+      overrides += "body.export-mode .scroll-top { display: none !important; }\n";
       overrides += "body.export-mode .search-wrap { display: none; }\n";
       overrides += "body.export-mode .topbar-inner { grid-template-columns: 1fr; }\n";
       overrides += "body.export-mode .code-copy { display: none; }\n";
@@ -555,7 +550,7 @@
       overrides += "body.export-mode { animation: none; }\n";
       overrides += "body.export-mode, body.export-mode * { user-select: auto !important; -webkit-user-select: auto !important; }\n";
       overrides += "body.export-mode .page { animation: none; max-width: 1280px; }\n";
-      overrides += "body.export-mode .toc-sidebar { display: none; }\n";
+      overrides += "body.export-mode .toc-flag-wrap, body.export-mode .toc-flag-hit, body.export-mode .toc-drawer { display: none; }\n";
       return overrides + "\n" + css;
     }
 
