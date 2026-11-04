@@ -1,5 +1,5 @@
 /* === Hypervisor: SPA Router === */
-/* Fragment-based navigation — loads content JSON and swaps <main> innerHTML */
+/* Fragment-based navigation - loads content JSON and swaps <main> innerHTML */
 
 (function () {
   "use strict";
@@ -106,7 +106,7 @@
     var category = (breadcrumbs && breadcrumbs.length) ? breadcrumbs[0] : "";
     var subCategory = (breadcrumbs && breadcrumbs.length > 1) ? breadcrumbs[0] + "/" + breadcrumbs[1] : null;
 
-    // Collapse/expand children panels — must run even when navigating home
+    // Collapse/expand children panels - must run even when navigating home
     var childPanels = document.querySelectorAll(".site-nav-children");
     childPanels.forEach(function (panel) {
       var parent = panel.getAttribute("data-parent");
@@ -264,9 +264,9 @@
     // Directory-index pages render as an edge-to-edge recessed drawer; the
     // page shell drops its content padding and becomes a flex column so the
     // surface can fill to the bottom. The pinboard adopts the same drawer.
-    // Document pages get a sibling surface (page-doc-surface) — the reading
+    // Document pages get a sibling surface (page-doc-surface) - the reading
     // content sits inside a recessed, grows-with-content surface.
-    // Utility pages get page-utility — the raised utility-surface spans the
+    // Utility pages get page-utility - the raised utility-surface spans the
     // content area edge-to-edge and fills to the bottom, same as the drawer.
     // Other page types keep standard padding.
     if (pageMain) {
@@ -367,7 +367,7 @@
     var hash = a.hash;
 
     // Check if this is a prototype link (raw HTML, not a fragment)
-    // Skip the prototypes index itself — only redirect actual prototype sub-pages
+    // Skip the prototypes index itself - only redirect actual prototype sub-pages
     if (pathname.indexOf("/prototypes/") === 0 && pathname !== "/prototypes/index.html") {
       window.location.href = url;
       return;
@@ -418,7 +418,7 @@
     // Skip external links, anchors-only, and non-http(s)
     if (href.startsWith("http://") || href.startsWith("https://")) return;
     if (href.startsWith("#")) {
-      // Same-page anchor — scroll to it
+      // Same-page anchor - scroll to it
       e.preventDefault();
       var target = document.getElementById(href.slice(1));
       if (target) target.scrollIntoView({ behavior: "smooth" });
@@ -444,7 +444,7 @@
       return;
     }
 
-    // This is an internal navigation — intercept it
+    // This is an internal navigation - intercept it
     e.preventDefault();
     navigate(href, true);
   });

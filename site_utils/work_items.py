@@ -1,4 +1,4 @@
-"""Work item operations — mark done, move files, update _index.md.
+"""Work item operations - mark done, move files, update _index.md.
 
 Pure file-manipulation functions with no PyWebView or window dependencies.
 Called by HypervisorAPI methods that handle watcher/rebuild/UI concerns.
@@ -68,7 +68,7 @@ def mark_done(file_path):
     #    which would trigger the watcher and cause a file-lock race on Windows)
     done_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
-    # 3. Delete source — retry on Windows file-locking from concurrent builds/watcher
+    # 3. Delete source - retry on Windows file-locking from concurrent builds/watcher
     deleted = False
     for attempt in range(5):
         try:
@@ -113,5 +113,5 @@ def _regenerate_index():
         rebuild_index()
         regenerate_index_file()
     except Exception:
-        # Best effort — don't crash the app if module import fails
+        # Best effort - don't crash the app if module import fails
         pass

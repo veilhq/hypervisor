@@ -92,12 +92,12 @@
         // Re-apply accent when B&W theme toggles (forces blue override)
         if (key === "bw-theme") {
           if (this.checked) {
-            // Toggling ON — applyAccent will force blue palette
+            // Toggling ON - applyAccent will force blue palette
             var colorPicker = document.getElementById("accent-color");
             var hex = colorPicker ? colorPicker.value : "#00ff41";
             if (typeof applyAccent === "function") applyAccent(hex);
           } else {
-            // Toggling OFF — restore correct theme state
+            // Toggling OFF - restore correct theme state
             var mode = typeof getThemeMode === "function" ? getThemeMode() : "custom";
             var gradientMap = typeof getActiveGradientMap === "function" ? getActiveGradientMap() : null;
             if (mode === "preset" && gradientMap && typeof applyGradientMap === "function") {

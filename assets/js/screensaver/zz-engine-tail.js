@@ -1,14 +1,14 @@
 /* === Screensaver Engine: Registry, Activation & Event Handling === */
 
-// Self-contained IIFE (WI-118 rework). Reads shared state from window.__ss
+// Self-contained IIFE. Reads shared state from window.__ss
 // (mutable primitives) and window.ss* (stable refs). No dependency on head's
-// closure — all cross-file state flows through window.
+// closure - all cross-file state flows through window.
 (function () {
   "use strict";
 
   var $ = window.__ss;
   if (!$) {
-    console.error("[screensaver] window.__ss missing — engine head failed to init.");
+    console.error("[screensaver] window.__ss missing - engine head failed to init.");
     return;
   }
 
@@ -33,11 +33,22 @@
       if (window.savePreference) window.savePreference($.IDLE_KEY, String(ms));
       resetIdleTimer();
     },
-    getShowClock: function () { return $.showClock; },
-    setShowClock: function (v) {
-      $.showClock = !!v;
-      try { localStorage.setItem($.CLOCK_KEY, $.showClock ? "1" : "0"); } catch (e) {}
-      if (window.savePreference) window.savePreference($.CLOCK_KEY, $.showClock ? "1" : "0");
+    getClockFace: function () { return $.clockFace; },
+    setClockFace: function (face) {
+      if (face !== "none" && !window.ssClockFaces[face]) return;
+      $.clockFace = face;
+      try { localStorage.setItem($.CLOCK_FACE_KEY, face); } catch (e) {}
+      if (window.savePreference) window.savePreference($.CLOCK_FACE_KEY, face);
+      // If the screensaver is live, swap the rendered face immediately and
+      // keep the tick interval in sync with whether a face is shown.
+      if ($.isActive) {
+        applyClockFace();
+        if ($.clockFace === "none") {
+          if (clockInterval) { clearInterval(clockInterval); clockInterval = null; }
+        } else if (!clockInterval) {
+          clockInterval = setInterval(updateClock, 1000);
+        }
+      }
     },
     getUsePalette: function () { return $.usePalette; },
     setUsePalette: function (v) {
@@ -106,12 +117,40 @@
     animFrame = requestAnimationFrame(drawFrame);
   }
 
+  // Tear down whatever face is currently mounted into clockEl, if any.
+  function unmountClockFace() {
+    var mounted = $.mountedClockFace;
+    if (mounted && window.ssClockFaces[mounted] && window.ssClockFaces[mounted].unmount) {
+      window.ssClockFaces[mounted].unmount($.clockEl);
+    }
+    $.mountedClockFace = null;
+  }
+
+  // Bring clockEl in sync with $.clockFace: "none" hides it; any other face is
+  // (re)mounted and shown. Safe to call repeatedly - only remounts on a change.
+  function applyClockFace() {
+    var face = $.clockFace;
+    if (face === "none" || !window.ssClockFaces[face]) {
+      unmountClockFace();
+      $.clockEl.style.display = "none";
+      return;
+    }
+    if ($.mountedClockFace !== face) {
+      unmountClockFace();
+      $.clockEl.textContent = "";
+      if (window.ssClockFaces[face].mount) window.ssClockFaces[face].mount($.clockEl);
+      $.mountedClockFace = face;
+    }
+    $.clockEl.style.display = "";
+    updateClock();
+  }
+
+  // Tick the active face. No-op when the clock is off.
   function updateClock() {
-    var now = new Date();
-    var h = String(now.getHours()).padStart(2, "0");
-    var mm = String(now.getMinutes()).padStart(2, "0");
-    var s = String(now.getSeconds()).padStart(2, "0");
-    $.clockEl.textContent = h + ":" + mm + ":" + s;
+    var face = $.clockFace;
+    if (face === "none" || !window.ssClockFaces[face]) return;
+    if ($.mountedClockFace !== face) return; // not mounted yet; applyClockFace will tick
+    window.ssClockFaces[face].update($.clockEl, new Date());
   }
 
   function activate() {
@@ -139,9 +178,8 @@
     $.overlay.classList.add("active");
     document.body.style.overflow = "hidden";
     document.documentElement.style.overflow = "hidden";
-    $.clockEl.style.display = $.showClock ? "" : "none";
-    if ($.showClock) {
-      updateClock();
+    applyClockFace();
+    if ($.clockFace !== "none") {
       clockInterval = setInterval(updateClock, 1000);
     }
     animFrame = requestAnimationFrame(drawFrame);
@@ -157,6 +195,7 @@
     document.documentElement.style.overflow = "";
     if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
     if (clockInterval) { clearInterval(clockInterval); clockInterval = null; }
+    unmountClockFace();
     if (window.ssGLCanvas) window.ssGLCanvas.style.display = "none";
     $.canvas.style.display = "";
     resetIdleTimer();

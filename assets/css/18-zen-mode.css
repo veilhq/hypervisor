@@ -35,7 +35,7 @@ body.zen-mode {
    zen-scoped. Nothing to add here. */
 
 /* ---- Home stage (home page only, stage mounted) ---- */
-/* The composed stage replaces the dashboard view entirely — hide the whole
+/* The composed stage replaces the dashboard view entirely - hide the whole
    server-rendered dashboard (the launcher row and work grid are moved/cloned
    out of it into the stage before this takes visual effect). */
 body.zen-staged .dashboard-wrap {
@@ -61,6 +61,16 @@ body.zen-staged .topbar {
 body.zen-staged .topbar::before { display: none; }        /* blur backdrop */
 body.zen-staged .topbar-left { display: none; }            /* brand + breadcrumbs */
 body.zen-staged .nav-menu-btn { display: none; }           /* the bar's menu button */
+/* Collapse the inner bar to true zero height. min-height:0 on .topbar alone
+   left .topbar-inner's vertical padding (--space-3 top+bottom) contributing
+   flow height ABOVE the min-height:100vh page - that sum pushed total content
+   past the viewport and the zen dash scrolled even though nothing overflowed.
+   Zeroing the inner padding removes that contribution; the right-side controls
+   are either hidden (.nav-menu-btn) or fixed-position (.nav-panel/.nav-backdrop
+   for the 'm' menu), so they add no flow height and the 'm' menu still works.
+   Net: the topbar contributes no height and the 100vh page is exactly the
+   viewport. */
+body.zen-staged .topbar-inner { padding: 0; }
 body.zen-staged .page {
   min-height: 100vh;
   display: flex;
@@ -72,21 +82,57 @@ body.zen-staged .page {
 
 /* ---- The stage ---- */
 /* Centered vertical column: greeting, search, launcher, minimal work. Quiet
-   and ambient — generous negative space, no decorative ink. */
+   and ambient - generous negative space, no decorative ink. */
 .zen-stage {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: var(--space-6);
-  width: 100%;
-  max-width: 42rem;
+  /* Stable 42rem width regardless of what the lower section holds. .page is a
+     column flex with align-items:center, and .page itself shrink-wraps to its
+     content on spawn - so a percentage width resolved against a narrow parent.
+     Keying width off the viewport (100vw) rather than a percentage of the
+     shrink-wrapped parent breaks that dependency: 52rem on any normal screen,
+     less the .page --space-6 padding on each edge for narrow viewports. Stable
+     in every section state because it never consults parent/content width. */
+  width: min(52rem, calc(100vw - 2 * var(--space-6)));
+  max-width: 52rem;
+  min-width: 0;
   /* Default-visible resting state. The entrance uses `forwards` (holds only the
      end state), not `both`, so if the animation is deferred or interrupted by a
      content swap (e.g. the 'r' rebuild-reload) the stage stays visible rather
      than being stranded at the keyframe's opacity:0 start. */
   opacity: 1;
   animation: zen-stage-in var(--motion-slow) var(--ease) forwards;
+}
+
+/* ---- Brand logo (zen stage only) ---- */
+/* The source logo node lives in the dashboard home-anchor purely as a clone
+   source; keep it hidden there so the normal dashboard is unchanged. */
+.home-anchor-logo { display: none; }
+/* The cloned logo shown above the greeting in the zen stage. Centered by the
+   stage's align-items; accent-colored via currentColor (the SVG uses
+   fill:currentColor). Sized large enough to read as a brand mark - the
+   showcase ask - without dominating the greeting below it. */
+.zen-logo {
+  display: flex;
+  justify-content: center;
+  color: var(--brand);
+  /* Tuck the logo toward the greeting: the stage's uniform --space-6 gap reads
+     too loose for a mark meant to sit just above its heading. Pull the pair
+     closer with a negative bottom margin (nets the gap down without affecting
+     the greeting's other spacing). */
+  margin-bottom: calc(-1 * var(--space-4));
+}
+.zen-logo .home-anchor-logo-svg {
+  /* Hero brand-mark size. The icon tokens (--icon-lg is 1.125rem) are for
+     inline chrome glyphs and the type scale tops at 1rem, so neither has a
+     rung for a showcase logo - this is a deliberate, named display size for
+     the one hero mark, not an off-scale chrome value. Paired to read as a
+     proper mark above the (scaled) greeting. */
+  width: 3.5rem;
+  height: 3.5rem;
 }
 
 /* ---- Greeting (prose face) ---- */
@@ -96,15 +142,27 @@ body.zen-staged .page {
    chrome (chips, counts, the search affordances) stays mono. */
 .zen-greeting {
   font-family: var(--font-body);
-  font-size: calc(var(--fs-h1) * var(--font-body-scale));
+  font-size: var(--fs-prose-xl);
   font-weight: var(--fw-semibold);
   color: var(--text-bright);
   text-align: center;
-  letter-spacing: 0.01em;
+  letter-spacing: var(--track-tight);
+  /* Scale cue tied to the hidden state: as the section collapses to the most
+     minimal stage, the greeting grows to fill the emptier space. A transform
+     transition animates both directions - up when .section-hidden is added,
+     back down when it is removed - matching the section collapse timing
+     (--motion-medium). transform (not font-size) so it composites without
+     reflowing the centered column. transform-origin:center keeps it anchored
+     under the launcher. */
+  transform-origin: center;
+  transition: transform var(--motion-medium) var(--ease);
+}
+.zen-stage.section-hidden .zen-greeting {
+  transform: scale(2);
 }
 
 /* Kaomoji greetings keep the shared emote-glow treatment (the .emote class is
-   applied by HvGreeting). No zen-specific override needed — the keyframe lives
+   applied by HvGreeting). No zen-specific override needed - the keyframe lives
    in hyperkit. */
 
 /* ---- Search (relocated live input + results) ---- */
@@ -131,7 +189,12 @@ body.zen-staged .page {
   left: 0;
   right: 0;
   flex: none;
-  max-height: 50vh;
+  /* The input sits near the viewport center (the stage is vertically
+     centered), so the dropdown opens into the lower portion of the screen.
+     Cap below half-height so a full result list stays clear of the bottom
+     edge and never forces the page to scroll; the internal overflow scrolls
+     a longer list within the panel. */
+  max-height: 38vh;
   overflow-y: auto;
   z-index: var(--z-dropdown);
   background: var(--bg-raised);
@@ -142,23 +205,103 @@ body.zen-staged .page {
    so the stage reads as greeting / launcher / search / work with no gap when
    nothing is typed. */
 
-/* ---- Launcher row ---- */
-/* The live .launcher-row is moved in; it carries its own tile styling. Center
-   it in the stage. */
-.zen-stage .launcher-row {
+/* ---- Launcher dropdown (top-left corner) ---- */
+/* One dim glyph at rest; the panel floats beneath it and holds the moved
+   .launcher-row, laid out as one vertical column of the standard launcher tiles. */
+
+.zen-launcher {
+  position: fixed;
+  top: var(--space-5);
+  left: var(--space-5);
+  z-index: var(--z-dropdown);
+}
+.zen-launcher-trigger {
+  display: flex;
+  align-items: center;
   justify-content: center;
-  /* Tighten the greeting -> launcher gap specifically. The stage uses a uniform
-     --space-6 gap between all children; pulling the launcher up by --space-4
-     nets that pair to --space-2 effective (both real rungs), drawing the
-     launcher closer to the greeting without affecting the other gaps. */
-  margin-top: calc(-1 * var(--space-4));
+  padding: var(--space-2);
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: color var(--motion-fast) var(--ease);
+}
+.zen-launcher-trigger:hover { color: var(--text-bright); }
+.zen-launcher.open .zen-launcher-trigger { color: var(--selected); }
+.zen-launcher-trigger svg {
+  width: var(--icon-md);
+  height: var(--icon-md);
 }
 
-/* ---- Lower section: Work / Activity view + wordless pill toggle ---- */
+.zen-launcher-panel {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  left: 0;
+  width: max-content;
+  max-width: calc(100vw - 2 * var(--space-5));
+  padding: var(--space-3);
+  background: var(--bg-raised);
+  border: var(--border-hair) solid var(--border);
+  border-radius: var(--radius);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(calc(-1 * var(--space-1)));
+  transition: opacity var(--motion-medium) var(--ease),
+              transform var(--motion-medium) var(--ease),
+              visibility var(--motion-medium) var(--ease);
+}
+.zen-launcher.open .zen-launcher-panel {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.zen-launcher .launcher-row {
+  display: flex;
+  flex-direction: column;
+}
+/* Tiles keep the base launcher look. On open they drop out of the trigger one
+   after another with the bounce ease; on close they retract bottom-first, then
+   the panel fades once the last tile is gone. --launcher-i is the tile index and
+   --launcher-n the tile count (set in zen-mode.js). */
+.zen-launcher-panel {
+  --launcher-exit: calc(var(--launcher-n, 8) * var(--motion-stagger));
+  transition: opacity var(--motion-base) var(--ease) var(--launcher-exit),
+              transform var(--motion-base) var(--ease) var(--launcher-exit),
+              visibility 0s linear calc(var(--launcher-exit) + var(--motion-base));
+}
+.zen-launcher.open .zen-launcher-panel {
+  transition: opacity var(--motion-fast) var(--ease),
+              transform var(--motion-fast) var(--ease),
+              visibility 0s;
+}
+.zen-launcher .launcher-box {
+  opacity: 0;
+  transform: translateY(calc(-1 * var(--space-4))) scale(0.5);
+  animation: none;
+  transition: opacity var(--motion-base) var(--ease)
+                calc((var(--launcher-n, 8) - 1 - var(--launcher-i, 0)) * var(--motion-stagger)),
+              transform var(--motion-base) var(--ease)
+                calc((var(--launcher-n, 8) - 1 - var(--launcher-i, 0)) * var(--motion-stagger)),
+              translate var(--motion-fast) var(--ease);
+}
+.zen-launcher.open .launcher-box {
+  opacity: 1;
+  transform: none;
+  transition: opacity var(--motion-enter) var(--ease)
+                calc(var(--motion-stagger) * (1 + var(--launcher-i, 0))),
+              transform var(--motion-enter) var(--ease-bounce)
+                calc(var(--motion-stagger) * (1 + var(--launcher-i, 0))),
+              translate var(--motion-fast) var(--ease);
+}
+
+/* ---- Lower section: Work / Activity / Hidden view + wordless pill toggle ---- */
 /* A single wordless --comp pill (the .pill-toggle primitive) cycles the lower
-   section between the active-work grid and the recent-activity list. Both are
-   cloned from the hidden dashboard; the pill carries no state, the visible view
-   shows which is active. */
+   section through the active-work grid, the recent-activity list, and a hidden
+   state (neither view .active, so both collapse to the display:none default -
+   only the pill remains). Both grids are cloned from the hidden dashboard; the
+   pill carries no state, the visible view (or its absence) shows which is
+   active. */
 .zen-section {
   width: 100%;
   display: flex;
@@ -171,6 +314,28 @@ body.zen-staged .page {
    look; this only centers it in the stage column. */
 .zen-section-toggle {
   align-self: center;
+  /* Wider than the base .pill-toggle (--space-6) for more presence in the
+     stage; override width here only so the shared primitive is unchanged
+     ecosystem-wide. Composed from scale tokens rather than a raw literal. */
+  width: calc(var(--space-6) * 2);
+}
+
+/* Collapsible body: wraps both views and is the element that height-animates
+   on the hidden state. Open, its max-height matches the active view box
+   (min(44rem, 50vh)); .collapsed drops max-height and opacity to zero. The
+   gradual height change is what lets the greeting/launcher/search glide into
+   their recentered position instead of teleporting when the section empties.
+   --motion-medium matches the view fade; --ease is the shared curve. */
+.zen-section-body {
+  width: 100%;
+  max-height: min(44rem, 50vh);
+  overflow: hidden;
+  transition: max-height var(--motion-medium) var(--ease),
+              opacity var(--motion-medium) var(--ease);
+}
+.zen-section-body.collapsed {
+  max-height: 0;
+  opacity: 0;
 }
 
 /* Only the active view shows; both are mounted so the toggle is instant.
@@ -185,28 +350,38 @@ body.zen-staged .page {
      still fits without the whole dashboard scrolling. The internal overflow
      handles a long list. */
   height: min(44rem, 50vh);
-  overflow-y: auto;
+  overflow: hidden auto;
+  /* Incoming view eases in on each pill advance, matching the stage's own
+     entrance (shared fadeSlideIn). --motion-medium is the panel-swap rung
+     (same as dropdown expand/collapse); the hidden state has no view to
+     animate, so it simply collapses. */
+  animation: fadeSlideIn var(--motion-medium) var(--ease);
 }
 /* The activity view is a flex column when active (see note below); preserve
    that while sharing the fixed-height box. */
 .zen-activity.active { display: flex; }
 
-/* Work view — fixed two-column grid at the stage column width. */
+/* Work view - fixed two-column grid at the stage column width. */
 .zen-work { width: 100%; }
 .zen-work-grid {
-  grid-template-columns: repeat(2, 1fr);
+  /* minmax(0, 1fr) rather than a bare 1fr: the implicit minimum of 1fr is
+     min-content, so with wide-enough cards two columns + gap overran the 42rem
+     stage and the grid spilled past the search bar, realigning only when the
+     narrow activity view took over. The 0 minimum lets columns shrink to fit
+     the container, keeping the grid within the stage width. */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-2);
   opacity: 0.85;
 }
 
-/* Activity view — the cloned recent-activity rows, quieted to match. The flex
+/* Activity view - the cloned recent-activity rows, quieted to match. The flex
    column + display:flex-when-active is set above alongside the shared
    fixed-height box; here only the quiet styling. */
 .zen-activity { flex-direction: column; gap: var(--space-1); opacity: 0.85; }
 
 /* Empty state for either view. */
 .zen-section-empty {
-  font-size: var(--fs-sm);
+  font-size: var(--fs-mono);
   color: var(--text-dim);
   text-align: center;
   padding: var(--space-4);
@@ -219,6 +394,18 @@ body.zen-staged .page {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .zen-stage { animation: none; }
+  .zen-stage,
+  .zen-section-view.active { animation: none; }
+  .zen-section-body,
+  .zen-greeting,
+  .zen-launcher-panel,
+  .zen-launcher .launcher-box,
+  .zen-launcher.open .launcher-box { transition: none; }
 }
-html.a11y-reduce-motion .zen-stage { animation: none; }
+html.a11y-reduce-motion .zen-stage,
+html.a11y-reduce-motion .zen-section-view.active { animation: none; }
+html.a11y-reduce-motion .zen-section-body,
+html.a11y-reduce-motion .zen-greeting,
+html.a11y-reduce-motion .zen-launcher-panel,
+html.a11y-reduce-motion .zen-launcher .launcher-box,
+html.a11y-reduce-motion .zen-launcher.open .launcher-box { transition: none; }

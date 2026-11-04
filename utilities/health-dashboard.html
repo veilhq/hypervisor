@@ -33,15 +33,15 @@
     <div class="health-cards kpi-grid">
       <div class="health-card kpi-tile" id="hd-total">
         <div class="health-card-label kpi-tile-label">Documents</div>
-        <div class="health-card-value kpi-tile-value" id="hd-total-val">—</div>
+        <div class="health-card-value kpi-tile-value" id="hd-total-val">&mdash;</div>
       </div>
       <div class="health-card kpi-tile health-card-good" id="hd-valid">
         <div class="health-card-label kpi-tile-label">Valid</div>
-        <div class="health-card-value kpi-tile-value" id="hd-valid-val">—</div>
+        <div class="health-card-value kpi-tile-value" id="hd-valid-val">&mdash;</div>
       </div>
       <div class="health-card kpi-tile health-card-warn" id="hd-violations">
         <div class="health-card-label kpi-tile-label">With Issues</div>
-        <div class="health-card-value kpi-tile-value" id="hd-violations-val">—</div>
+        <div class="health-card-value kpi-tile-value" id="hd-violations-val">&mdash;</div>
       </div>
     </div>
 
@@ -233,7 +233,7 @@
     fetchData();
   });
 
-  // Fix violations button — preview (dry run)
+  // Fix violations button - preview (dry run)
   document.getElementById('hd-fix').addEventListener('click', function() {
     var btn = document.getElementById('hd-fix');
     btn.disabled = true;

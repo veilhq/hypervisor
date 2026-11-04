@@ -1,10 +1,10 @@
 /* ===== Palette Generator ===== */
 
 .pg-subtitle {
-  font-size: var(--fs-sm);
+  font-size: var(--fs-mono);
   color: var(--text-muted);
-  margin: var(--space-1) 0 var(--space-1-25);
-  line-height: 1.6;
+  margin: var(--space-1) 0 var(--space-5);
+  line-height: var(--lh-prose);
 }
 
 /* ---- Section headers ---- */
@@ -13,12 +13,11 @@
   margin-bottom: var(--space-3);
 }
 .pg-section-label {
-  font-size: var(--fs-caption);
-  font-weight: var(--fw-bold);
-  color: var(--text-dim);
+  font-size: var(--fs-mono);
+  color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  padding-bottom: var(--space-0-3);
+  letter-spacing: var(--track-label);
+  padding-bottom: var(--space-1);
   border-bottom: var(--border-hair) solid var(--border);
   flex: 1;
 }
@@ -32,11 +31,10 @@
 }
 .pg-grid-separator {
   grid-column: 1 / -1;
-  font-size: var(--fs-micro);
-  font-weight: var(--fw-bold);
-  color: var(--text-dim);
+  font-size: var(--fs-mono);
+  color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--track-label);
   padding: var(--space-3) 0 var(--space-1);
   border-top: var(--border-hair) solid var(--border);
   margin-top: var(--space-2);
@@ -49,22 +47,15 @@
   overflow: hidden;
 }
 
-/* Gradient hero — the palette rendered as a smooth blend, the tile's focal
+/* Gradient hero - the palette rendered as a smooth blend, the tile's focal
    point. Tall band across the card top; a subtle sheen adds depth. */
 .pg-card-hero {
   height: 120px;
   width: 100%;
   position: relative;
 }
-.pg-card-hero::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(255,255,255,0.08), transparent 40%, rgba(0,0,0,0.25));
-  pointer-events: none;
-}
 
-/* Swatch strip — thin row of discrete colors under the hero, click to copy. */
+/* Swatch strip - thin row of discrete colors under the hero, click to copy. */
 .pg-card-bar {
   display: flex;
   height: 20px;
@@ -77,46 +68,45 @@
 }
 .pg-card-swatch:hover {
   opacity: 0.85;
-  transform: scaleY(1.3);
+  transform: scaleY(1.3); /* design-lint: allow - palette swatch preview */
   z-index: 1;
 }
 
 /* Card info */
 .pg-card-info {
-  padding: var(--space-2) var(--space-0-6) var(--space-0-3);
+  padding: var(--space-2) var(--space-3) var(--space-1);
   display: flex;
   flex-direction: column;
-  gap: var(--space-0-1);
+  gap: var(--space-1);
 }
 .pg-card-name {
-  font-size: var(--fs-label);
-  font-weight: var(--fw-bold);
+  font-size: var(--fs-mono);
   color: var(--text-bright);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: var(--track-body);
 }
 .pg-card-desc {
-  font-size: var(--fs-micro);
+  font-size: var(--fs-mono);
   color: var(--text-dim);
-  line-height: 1.4;
+  line-height: var(--lh-ui);
 }
 
 /* Card actions */
 /* .pg-card-actions composes .flex-center; local tightens the gap + adds padding. */
 .pg-card-actions {
-  gap: var(--space-0-3);
-  padding: var(--space-0-3) var(--space-0-6) var(--space-2);
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-3) var(--space-2);
 }
 /* .pg-card-btn composes .action-button; local keeps the compact micro size.
    :disabled shows the active accent (not the primitive's faded state). */
 .pg-card-btn {
-  padding: var(--space-0-2) var(--space-0-6);
-  font-size: var(--fs-micro);
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--fs-mono);
 }
 .pg-card-btn:disabled {
   opacity: 1;
-  color: var(--accent);
-  border-color: var(--accent);
+  color: var(--selected);
+  border-color: var(--selected);
   cursor: default;
 }
 /* .pg-card-btn-del composes .action-button-danger for its hover fill. */
@@ -141,17 +131,17 @@
 .pg-control-group {
   display: flex;
   flex-direction: column;
-  gap: var(--space-0-4);
+  gap: var(--space-2);
 }
 .pg-label {
-  font-size: var(--fs-caption);
+  font-size: var(--fs-mono);
   color: var(--text-dim);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--track-label);
 }
 /* .pg-base-row composes .flex-center; local tightens the gap. */
 .pg-base-row {
-  gap: var(--space-0-6);
+  gap: var(--space-3);
 }
 .pg-color-input {
   width: 36px;
@@ -162,11 +152,11 @@
   background: var(--bg);
   cursor: pointer;
 }
-.pg-color-input::-webkit-color-swatch-wrapper { padding: 2px; }
+.pg-color-input::-webkit-color-swatch-wrapper { padding: var(--border-rail); }
 .pg-color-input::-webkit-color-swatch { border: none; }
 .pg-hex-display {
-  font-size: var(--fs-label);
-  color: var(--accent);
+  font-size: var(--fs-mono);
+  color: var(--identifier);
   font-family: var(--font);
   min-width: 4.5rem;
 }
@@ -192,10 +182,10 @@
   gap: var(--space-1);
 }
 .pg-swatch-label {
-  font-size: var(--fs-micro);
+  font-size: var(--fs-mono);
   color: var(--text-dim);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--track-label);
 }
 .pg-swatch-input {
   width: 100%;
@@ -206,10 +196,10 @@
   background: var(--bg);
   cursor: pointer;
 }
-.pg-swatch-input::-webkit-color-swatch-wrapper { padding: 2px; }
+.pg-swatch-input::-webkit-color-swatch-wrapper { padding: var(--border-rail); }
 .pg-swatch-input::-webkit-color-swatch { border: none; }
 .pg-swatch-hex {
-  font-size: var(--fs-micro);
+  font-size: var(--fs-mono);
   color: var(--text-muted);
   font-family: var(--font);
 }
@@ -219,11 +209,11 @@
   margin-top: var(--space-1);
 }
 .pg-semantics-toggle label {
-  font-size: var(--fs-caption);
+  font-size: var(--fs-mono);
   color: var(--text-muted);
   display: flex;
   align-items: center;
-  gap: var(--space-0-4);
+  gap: var(--space-2);
   cursor: pointer;
 }
 /* checkbox accent normalized to the shared .form-check primitive (see markup). */
@@ -246,11 +236,10 @@
 }
 .pg-preview-header {
   padding: var(--space-2) var(--space-3);
-  font-size: var(--fs-micro);
-  font-weight: var(--fw-bold);
-  color: var(--text-dim);
+  font-size: var(--fs-mono);
+  color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--track-label);
   border-bottom: var(--border-hair) solid var(--border);
 }
 .pg-preview-body {
@@ -268,44 +257,42 @@
 .pg-preview-samples {
   display: flex;
   flex-direction: column;
-  gap: var(--space-0-6);
+  gap: var(--space-3);
 }
 .pg-pv-heading {
-  font-size: var(--fs-body);
-  font-weight: var(--fw-bold);
+  font-size: var(--fs-mono);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--accent);
+  letter-spacing: var(--track-label);
+  color: var(--accent); /* design-lint: allow - the preview displays the generated palette itself */
 }
 .pg-pv-text {
-  font-size: var(--fs-label);
+  font-size: var(--fs-mono);
   color: var(--text);
-  line-height: 1.6;
+  line-height: var(--lh-prose);
 }
 .pg-pv-link {
-  color: var(--accent);
+  color: var(--interactive);
   text-decoration: underline;
 }
 .pg-pv-badges {
   display: flex;
-  gap: var(--space-0-4);
+  gap: var(--space-2);
 }
 .pg-pv-badge {
-  padding: 0.15rem var(--space-2);
-  font-size: var(--fs-micro);
-  font-weight: var(--fw-bold);
+  padding: var(--border-rail) var(--space-2);
+  font-size: var(--fs-mono);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: var(--track-body);
   border: var(--border-hair) solid;
   border-radius: var(--radius);
 }
-/* Gradient band — the palette as a smooth blend, matching the preset cards. */
+/* Gradient band - the palette as a smooth blend, matching the preset cards. */
 .pg-pv-gradient {
   height: 40px;
   border-radius: var(--radius);
   margin-bottom: var(--space-3);
 }
-/* Button samples — primary (filled) + ghost (bordered), colored live in JS. */
+/* Button samples - primary (filled) + ghost (bordered), colored live in JS. */
 .pg-pv-buttons {
   display: flex;
   gap: var(--space-2);
@@ -314,10 +301,9 @@
 .pg-pv-btn-ghost {
   padding: var(--space-1) var(--space-3);
   font-family: var(--font);
-  font-size: var(--fs-label);
-  font-weight: var(--fw-bold);
+  font-size: var(--fs-mono);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--track-label);
   border: var(--border-hair) solid;
   border-radius: var(--radius);
   cursor: default;
@@ -328,35 +314,34 @@
 .pg-pv-btn-ghost {
   background: transparent;
 }
-/* Semantic chips — success/warning/error/info, shown when semantics enabled. */
+/* Semantic chips - success/warning/error/info, shown when semantics enabled. */
 .pg-pv-semantics {
   display: flex;
-  gap: var(--space-0-4);
+  gap: var(--space-2);
   flex-wrap: wrap;
 }
 .pg-pv-sem {
-  padding: 0.15rem var(--space-2);
-  font-size: var(--fs-micro);
-  font-weight: var(--fw-bold);
+  padding: var(--border-rail) var(--space-2);
+  font-size: var(--fs-mono);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: var(--track-body);
   border: var(--border-hair) solid;
   border-radius: var(--radius);
 }
 .pg-pv-code {
-  padding: var(--space-2) var(--space-0-6);
+  padding: var(--space-2) var(--space-3);
   background: var(--bg);
   border: var(--border-hair) solid var(--border);
   border-radius: var(--radius);
-  font-size: var(--fs-label);
+  font-size: var(--fs-mono);
   font-family: var(--font);
   color: var(--text);
 }
 .pg-pv-kw {
-  color: var(--warm);
+  color: var(--warm); /* design-lint: allow - palette preview */
 }
 .pg-pv-str {
-  color: var(--accent);
+  color: var(--syntax-accent);
 }
 
 /* ---- Save row ---- */
@@ -373,31 +358,31 @@
    padding + caption size and the per-button accent / cool color scheme. */
 .pg-save-btn,
 .pg-apply-btn {
-  padding: 0.45rem var(--space-4);
-  font-size: var(--fs-caption);
-  letter-spacing: 0.08em;
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--fs-mono);
+  letter-spacing: var(--track-label);
 }
 .pg-save-btn {
-  border-color: var(--accent);
-  color: var(--accent);
+  border-color: var(--interactive);
+  color: var(--interactive);
 }
 .pg-save-btn:hover {
-  background: var(--accent);
+  background: var(--interactive);
   color: var(--bg);
 }
 .pg-apply-btn {
-  border-color: var(--cool);
-  color: var(--cool);
+  border-color: var(--interactive);
+  color: var(--interactive);
 }
 .pg-apply-btn:hover {
-  background: var(--cool);
+  background: var(--interactive);
   color: var(--bg);
 }
 
 /* ---- Toast ---- */
 .pg-toast {
-  font-size: var(--fs-caption);
-  color: var(--accent);
+  font-size: var(--fs-mono);
+  color: var(--success);
   margin-top: var(--space-2);
   opacity: 0;
   transition: opacity var(--motion-base) var(--ease);
@@ -407,5 +392,5 @@
   opacity: 1;
 }
 .pg-toast-error {
-  color: var(--comp);
+  color: var(--error);
 }

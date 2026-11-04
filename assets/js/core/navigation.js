@@ -64,92 +64,12 @@
   var searchOverlay = document.getElementById("search-overlay");
   var searchModal = document.getElementById("search-modal");
   var searchTrigger = document.getElementById("search-trigger");
-  var _searchNoise = null; // independent noise field for search (avoids clobbering home-anchor's HvNoiseField)
-
-  // Lightweight standalone noise field — mirrors HvNoiseField's shader but runs independently
-  function _createSearchNoise(host) {
-    var canvas = document.createElement("canvas");
-    canvas.className = "noise-field-canvas";
-    host.insertBefore(canvas, host.firstChild);
-    canvas.width = host.clientWidth || 1;
-    canvas.height = host.clientHeight || 1;
-    var gl = canvas.getContext("webgl2", { alpha: false, antialias: false });
-    if (!gl) { canvas.remove(); return null; }
-
-    var VERT = "#version 300 es\nvoid main(){float x=float(gl_VertexID%2)*4.0-1.0;float y=float(gl_VertexID/2)*4.0-1.0;gl_Position=vec4(x,y,0,1);}";
-    var FRAG = [
-      "#version 300 es", "precision highp float;",
-      "uniform vec2 u_resolution;", "uniform float u_time;", "uniform vec3 u_tint;", "uniform vec3 u_bg;", "uniform float u_cellDivisor;",
-      "out vec4 fragColor;",
-      "float bayer8(vec2 pos){ivec2 p=ivec2(mod(pos,8.0));float m[64]=float[64](0.0,32.0,8.0,40.0,2.0,34.0,10.0,42.0,48.0,16.0,56.0,24.0,50.0,18.0,58.0,26.0,12.0,44.0,4.0,36.0,14.0,46.0,6.0,38.0,60.0,28.0,52.0,20.0,62.0,30.0,54.0,22.0,3.0,35.0,11.0,43.0,1.0,33.0,9.0,41.0,51.0,19.0,59.0,27.0,49.0,17.0,57.0,25.0,15.0,47.0,7.0,39.0,13.0,45.0,5.0,37.0,63.0,31.0,55.0,23.0,61.0,29.0,53.0,21.0);return m[p.x+p.y*8]/64.0;}",
-      "void main(){float t=u_time;float cellSize=max(2.0,floor(min(u_resolution.x,u_resolution.y)/u_cellDivisor));vec2 cellUv=floor(gl_FragCoord.xy/cellSize)*cellSize;vec2 cellPos=cellUv/u_resolution;float cx=0.5+sin(t*0.4)*0.3;float cy=0.5+cos(t*0.3)*0.3;vec2 d=cellPos-vec2(cx,cy);float dist=length(d);float g1=0.5+0.5*sin(dist*6.0-t*0.8);float g2=0.5+0.5*sin((cellUv.x+cellUv.y)*0.0032+t*0.5);float g3=0.5+0.5*cos((cellUv.y-cellUv.x)*0.0041-t*0.3);float val=g1*0.5+g2*0.25+g3*0.25;val=val*val;float threshold=bayer8(gl_FragCoord.xy/cellSize);if(val<threshold){fragColor=vec4(u_bg,1.0);return;}fragColor=vec4(u_tint,1.0);}"
-    ].join("\n");
-
-    var vs = gl.createShader(gl.VERTEX_SHADER);
-    gl.shaderSource(vs, VERT); gl.compileShader(vs);
-    var fs = gl.createShader(gl.FRAGMENT_SHADER);
-    gl.shaderSource(fs, FRAG); gl.compileShader(fs);
-    if (!gl.getShaderParameter(fs, gl.COMPILE_STATUS)) { canvas.remove(); return null; }
-    var prog = gl.createProgram();
-    gl.attachShader(prog, vs); gl.attachShader(prog, fs); gl.linkProgram(prog);
-    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { canvas.remove(); return null; }
-    var vao = gl.createVertexArray();
-    var t = Math.random() * 1000;
-    var raf = null;
-
-    function readTint() {
-      try {
-        var raw = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim();
-        var m = /^#?([0-9a-f]{6})$/i.exec(raw);
-        if (m) { var h = m[1]; return [parseInt(h.substr(0,2),16)/255*0.15, parseInt(h.substr(2,2),16)/255*0.15, parseInt(h.substr(4,2),16)/255*0.15]; }
-      } catch(e){}
-      return [0.09,0.09,0.09];
-    }
-    function readBg() {
-      try {
-        var raw = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim();
-        var m = /^#?([0-9a-f]{6})$/i.exec(raw);
-        if (m) { var h = m[1]; return [parseInt(h.substr(0,2),16)/255, parseInt(h.substr(2,2),16)/255, parseInt(h.substr(4,2),16)/255]; }
-      } catch(e){}
-      return [0,0,0];
-    }
-
-    function frame() {
-      var w = host.clientWidth || 1, h2 = host.clientHeight || 1;
-      if (canvas.width !== w || canvas.height !== h2) { canvas.width = w; canvas.height = h2; }
-      gl.viewport(0, 0, w, h2);
-      gl.useProgram(prog); gl.bindVertexArray(vao);
-      gl.uniform2f(gl.getUniformLocation(prog, "u_resolution"), w, h2);
-      gl.uniform1f(gl.getUniformLocation(prog, "u_time"), t);
-      gl.uniform1f(gl.getUniformLocation(prog, "u_cellDivisor"), 300);
-      var tint = readTint(); gl.uniform3f(gl.getUniformLocation(prog, "u_tint"), tint[0], tint[1], tint[2]);
-      var bg = readBg(); gl.uniform3f(gl.getUniformLocation(prog, "u_bg"), bg[0], bg[1], bg[2]);
-      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-      t += 1/60;
-      raf = requestAnimationFrame(frame);
-    }
-
-    raf = requestAnimationFrame(frame);
-    return { canvas: canvas, stop: function (fadeMs) {
-      if (raf) { cancelAnimationFrame(raf); raf = null; }
-      if (prog) gl.deleteProgram(prog);
-      if (!fadeMs) { canvas.remove(); } else {
-        canvas.style.transition = "opacity " + fadeMs + "ms";
-        canvas.style.opacity = "0";
-        setTimeout(function () { canvas.remove(); }, fadeMs);
-      }
-    }};
-  }
 
   function openSearch() {
     if (!searchOverlay) return;
     searchOverlay.classList.add("visible");
     document.body.style.overflow = "hidden";
     document.documentElement.style.overflow = "hidden";
-    // Mount independent noise field behind the modal
-    if (!_searchNoise) {
-      _searchNoise = _createSearchNoise(searchOverlay);
-    }
     setTimeout(function () {
       if (searchInput) searchInput.focus();
     }, 50);
@@ -170,11 +90,6 @@
     updateTagIndicator();
     window.selectedIdx = -1;
     _cancelSemantic();
-    // Tear down noise field
-    if (_searchNoise) {
-      _searchNoise.stop(300);
-      _searchNoise = null;
-    }
   }
 
   // Trigger button in topbar
@@ -397,6 +312,39 @@
       }, 400);
     }
 
+    // Query words worth highlighting: 3+ characters, de-duplicated, lower-cased.
+    function _queryTerms(query) {
+      var seen = {};
+      return (query.toLowerCase().match(/[a-z0-9][a-z0-9_-]{2,}/g) || []).filter(function (t) {
+        if (seen[t]) return false;
+        seen[t] = true;
+        return true;
+      });
+    }
+
+    // Escaped ~140-char snippet centered on the first matched term, with every
+    // matched term wrapped in <mark class="sr-hit">.
+    function _highlightSnippet(content, terms) {
+      if (!content) return "";
+      var text = content.replace(/\s+/g, " ").trim();
+      var lower = text.toLowerCase();
+      var first = -1;
+      terms.forEach(function (t) {
+        var idx = lower.indexOf(t);
+        if (idx !== -1 && (first === -1 || idx < first)) first = idx;
+      });
+      var start = first > 40 ? first - 40 : 0;
+      var slice = text.substring(start, start + 140);
+      var html = HvUtils.escapeHtml(slice);
+      if (terms.length) {
+        var pattern = terms.map(function (t) {
+          return HvUtils.escapeHtml(t).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        }).join("|");
+        html = html.replace(new RegExp("(" + pattern + ")", "gi"), '<mark class="sr-hit">$1</mark>');
+      }
+      return (start > 0 ? "..." : "") + html + (start + 140 < text.length ? "..." : "");
+    }
+
     function _doSemanticSearch(query) {
       if (!window.pywebview || !window.pywebview.api || !window.pywebview.api.semantic_search) return;
       window.pywebview.api.semantic_search(query, 5, null, null, null, null).then(function (results) {
@@ -411,34 +359,51 @@
           while (existing.nextSibling) existing.nextSibling.remove();
           existing.remove();
         }
-        // Add divider
+        // Add divider; says so when nothing cleared the confidence floor
+        var esc = HvUtils.escapeHtml;
+        var anyConfident = results.some(function (r) { return r.confidence !== "low"; });
         var divider = document.createElement("div");
         divider.className = "sr-semantic-divider sr-related-divider";
-        divider.textContent = "related";
+        divider.textContent = anyConfident ? "related" : "related - no strong match";
         resultsBox.appendChild(divider);
+        var terms = _queryTerms(query);
         // Add result cards
         results.forEach(function (r, i) {
           var href = "/" + r.path.replace(/\.md$/, "") + "/index.html";
           var pathParts = r.path.replace(/\.md$/, "").split("/");
           var category = pathParts[0] ? pathParts[0].replace(/-/g, " ").replace(/_/g, " ") : "";
-          var snippet = r.content ? r.content.substring(0, 140) + (r.content.length > 140 ? "..." : "") : "";
+          var low = r.confidence === "low";
           var card = document.createElement("a");
           card.href = href;
-          card.className = "sr-card";
+          card.className = "sr-card" + (low ? " sr-card-low" : "");
           card.style.animationDelay = (i * 0.04) + "s";
           card.setAttribute("data-section", r.section || "");
           var sIcon = (window.HvSearchSources && window.HvSearchSources.iconForKind("file")) || "file-text";
+          // Confidence is an icon (solid check = strong, dashed circle = weak)
+          // with the word on hover; then the item status, and "exact id" only
+          // when the query was a work item ID.
+          var confidence = low
+            ? '<span class="sr-card-confidence sr-conf-weak" title="weak match" aria-label="weak match"><i data-lucide="circle-dashed"></i></span>'
+            : '<span class="sr-card-confidence sr-conf-strong" title="strong match" aria-label="strong match"><i data-lucide="circle-check"></i></span>';
+          var badges = '';
+          if (r.matched_by === "id") badges += '<span class="label-badge label-badge-muted">exact id</span>';
+          if (r.status) badges += '<span class="label-badge label-badge-muted">' + esc(r.status) + '</span>';
+          var snippet = _highlightSnippet(r.content, terms);
+          var dateStr = r.updated ? esc(String(r.updated).substring(0, 10)) : "";
           card.innerHTML =
-            '<span class="status-chip status-chip-outlined-muted sr-partial-badge">\u2248 partial</span>' +
             '<i data-lucide="' + sIcon + '" class="sr-card-icon"></i>' +
             '<div class="sr-card-body">' +
               '<div class="sr-card-header">' +
-                (category ? '<span class="sr-card-category">' + category + '</span>' : '') +
+                (category ? '<span class="sr-card-category">' + esc(category) + '</span>' : '') +
+                badges +
+                confidence +
               '</div>' +
-              '<div class="sr-card-title">' + r.title + (r.section ? ' \u00A7 ' + r.section : '') + '</div>' +
+              '<div class="sr-card-title">' + esc(r.title || r.path) + '</div>' +
               (snippet ? '<div class="sr-card-snippet">' + snippet + '</div>' : '') +
               '<div class="sr-card-footer">' +
-                '<span class="sr-card-path">' + r.path.replace(/\.md$/, "") + '</span>' +
+                '<span class="sr-card-path">' + esc(r.path.replace(/\.md$/, "")) +
+                  (r.section ? '<span class="sr-card-path-sep">/</span>' + esc(r.section) : '') + '</span>' +
+                (dateStr ? '<span class="sr-card-date">' + dateStr + '</span>' : '') +
               '</div>' +
             '</div>';
           resultsBox.appendChild(card);
@@ -466,7 +431,7 @@
         var tagsHtml = '';
         if (m.tags && m.tags.length) {
           tagsHtml = '<div class="sr-card-tags">' + m.tags.map(function (t) {
-            return '<span class="sr-tag" data-tag="' + t + '">' + t + '</span>';
+            return '<span class="label-badge sr-tag" data-tag="' + t + '">' + t + '</span>';
           }).join('') + '</div>';
         }
         // Header: category from first path segment + optional work ID
@@ -505,7 +470,7 @@
     // rendered icons are skipped by Lucide.
     function _renderResultIcons() {
       if (window.lucide) {
-        try { window.lucide.createIcons({ nodes: resultsBox.querySelectorAll(".sr-card-icon[data-lucide]"), attrs: { "stroke-width": 2 } }); } catch (ex) {}
+        try { window.lucide.createIcons({ nodes: resultsBox.querySelectorAll(".sr-card-icon[data-lucide], .sr-card-confidence [data-lucide]"), attrs: { "stroke-width": 2 } }); } catch (ex) {}
       }
     }
 
@@ -528,7 +493,7 @@
         return;
       }
 
-      // Regular result click — close overlay and navigate
+      // Regular result click - close overlay and navigate
       var resultCard = e.target.closest(".sr-card");
       if (resultCard && !e.target.closest(".sr-tag")) {
         e.preventDefault();
@@ -594,7 +559,7 @@
           if (headings[i].textContent.trim() === sectionTitle) {
             headings[i].scrollIntoView({ behavior: "smooth", block: "start" });
             headings[i].style.transition = "background 0.3s";
-            headings[i].style.background = "var(--accent-glow)";
+            headings[i].style.background = "var(--selected-wash)";
             setTimeout(function () { headings[i].style.background = ""; }, 1500);
             return;
           }
@@ -641,7 +606,7 @@
     // Close on backdrop click (but not on modal click)
     if (searchOverlay) {
       searchOverlay.addEventListener("click", function (e) {
-        if (e.target === searchOverlay || e.target.classList.contains("noise-field-canvas")) {
+        if (e.target === searchOverlay) {
           closeSearch();
         }
       });
@@ -658,7 +623,7 @@
           !document.querySelector(".shortcuts-overlay.visible")) {
         e.preventDefault();
         // In zen mode the search input is inline in the stage, not in the
-        // overlay — focus it directly rather than opening the (now shell-only)
+        // overlay - focus it directly rather than opening the (now shell-only)
         // overlay. Gated on zen-staged (stage actually mounted), since that is
         // when the input lives inline; off-home the overlay path is correct.
         if (document.body.classList.contains("zen-staged") && searchInput) {
@@ -773,7 +738,7 @@
                  '</a>';
         }).join('');
       } else {
-        refList.innerHTML = '<div style="padding:0.4rem 0.5rem;color:var(--text-dim);font-size:0.65rem;">no reference docs yet</div>';
+        refList.innerHTML = '<div style="padding:0.4rem 0.5rem;color:var(--text-dim);font-size: var(--fs-mono);">no reference docs yet</div>';
       }
 
       refBtn.addEventListener("click", function () {
@@ -797,7 +762,7 @@
           }).join('');
           if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
         })
-        .catch(function () { /* manifest missing — leave nav utils empty */ });
+        .catch(function () { /* manifest missing - leave nav utils empty */ });
     }
   })();
 

@@ -1,13 +1,13 @@
 /* === Hypervisor: Screensaver Engine === */
 
-// Self-contained IIFE (WI-118 rework). All shared state promoted to window:
-//   window.__ss           — mutable config/state (currentMode, ditherPattern, ...)
-//   window.ssCanvas/ssCtx — stable refs to the 2D canvas + context
-//   window.ssModes        — mode registry (mode files push into it)
-//   window.ssMouseState   — shared mouse state
-//   window.ssGetAccent, ssHexToRgba, ssHexToRgb, ssGetPalette, ssUsePalette — helpers
-//   window.ssGetGLCanvas / window.ssGLCanvas — lazy WebGL canvas
-//   window.ssParticleState — set by particles.js when it initializes
+// Self-contained IIFE. All shared state promoted to window:
+//   window.__ss - mutable config/state (currentMode, ditherPattern, ...)
+//   window.ssCanvas/ssCtx - stable refs to the 2D canvas + context
+//   window.ssModes - mode registry (mode files push into it)
+//   window.ssMouseState - shared mouse state
+//   window.ssGetAccent, ssHexToRgba, ssHexToRgb, ssGetPalette, ssUsePalette - helpers
+//   window.ssGetGLCanvas / window.ssGLCanvas - lazy WebGL canvas
+//   window.ssParticleState - set by particles.js when it initializes
 //
 // Mode files and zz-engine-tail.js live in their own IIFEs and reference the
 // above via bare identifiers (globals resolve through window) or explicit
@@ -17,14 +17,17 @@
 
   var IDLE_KEY = "hypervisor-screensaver-idle";
   var MODE_KEY = "hypervisor-screensaver-mode";
-  var CLOCK_KEY = "hypervisor-screensaver-clock";
+  var CLOCK_KEY = "hypervisor-screensaver-clock"; // legacy on/off; read once for migration
+  var CLOCK_FACE_KEY = "hypervisor-screensaver-clock-face";
   var PALETTE_KEY = "hypervisor-screensaver-palette";
   var DITHER_PATTERN_KEY = "hypervisor-screensaver-dither-pattern";
   var IDLE_DEFAULT = 300000; // 5 minutes
 
   var idleTimeout = IDLE_DEFAULT;
   var currentMode = "particles";
-  var showClock = true;
+  // Single source of truth for the clock. "none" is the off state (no clock
+  // drawn); any other value names a face in window.ssClockFaces.
+  var clockFace = "digital-24";
   var usePalette = false;
   var ditherPattern = "trig";
   try {
@@ -32,8 +35,15 @@
     if (savedIdle) idleTimeout = parseInt(savedIdle, 10) || IDLE_DEFAULT;
     var savedMode = localStorage.getItem(MODE_KEY);
     if (savedMode) currentMode = savedMode;
-    var savedClock = localStorage.getItem(CLOCK_KEY);
-    if (savedClock === "0") showClock = false;
+    var savedFace = localStorage.getItem(CLOCK_FACE_KEY);
+    if (savedFace) {
+      clockFace = savedFace;
+    } else if (localStorage.getItem(CLOCK_KEY) === "0") {
+      // One-time migration: a user who had the clock turned off under the old
+      // boolean key maps to the "none" face so it is not silently re-enabled.
+      clockFace = "none";
+      localStorage.setItem(CLOCK_FACE_KEY, "none");
+    }
     var savedPalette = localStorage.getItem(PALETTE_KEY);
     if (savedPalette === "1") usePalette = true;
     var savedDitherPattern = localStorage.getItem(DITHER_PATTERN_KEY);
@@ -88,6 +98,7 @@
   }
 
   var modes = {};
+  var clockFaces = {};
   var ssMouseState = { x: -1, y: -1, prevX: -1, prevY: -1 };
 
   // WebGL canvas (created lazily, shown only for GL modes)
@@ -118,20 +129,24 @@
   window.ssGetPalette = getPaletteColors;
   window.ssUsePalette = function () { return window.__ss.usePalette; };
   window.ssModes = modes;
+  window.ssClockFaces = clockFaces;
   window.ssMouseState = ssMouseState;
   window.ssParticleState = null;
 
-  // Mutable config namespace — tail may update; modes read.
+  // Mutable config namespace - tail may update; modes read.
   window.__ss = {
     IDLE_KEY: IDLE_KEY,
     MODE_KEY: MODE_KEY,
-    CLOCK_KEY: CLOCK_KEY,
+    CLOCK_FACE_KEY: CLOCK_FACE_KEY,
     PALETTE_KEY: PALETTE_KEY,
     DITHER_PATTERN_KEY: DITHER_PATTERN_KEY,
     IDLE_DEFAULT: IDLE_DEFAULT,
     idleTimeout: idleTimeout,
     currentMode: currentMode,
-    showClock: showClock,
+    clockFace: clockFace,
+    // Face currently mounted into clockEl (so the tail knows when to unmount
+    // the previous face on a switch). Null when nothing is mounted.
+    mountedClockFace: null,
     usePalette: usePalette,
     ditherPattern: ditherPattern,
     isActive: false,

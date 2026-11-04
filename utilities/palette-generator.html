@@ -216,14 +216,14 @@
 
       var colors = [preset.accent, preset.warm, preset.cool, preset.comp];
 
-      // Gradient hero — the actual gradient the preset produces, so the tile
+      // Gradient hero - the actual gradient the preset produces, so the tile
       // previews the palette as a smooth blend rather than only hard stripes.
       var hero = document.createElement("div");
       hero.className = "pg-card-hero";
       hero.style.background = "linear-gradient(90deg, " + colors.join(", ") + ")";
       card.appendChild(hero);
 
-      // Swatch bar — discrete colors below the hero, click to copy the hex.
+      // Swatch bar - discrete colors below the hero, click to copy the hex.
       var bar = document.createElement("div");
       bar.className = "pg-card-bar";
       colors.forEach(function (c) {
@@ -341,7 +341,7 @@
           break;
 
         case "double-comp":
-          // Two complementary pairs at 30° offset
+          // Two complementary pairs at 30-degree offset
           accent = hex;
           warm = api.oklchToHex(Math.min(l + 0.04, 0.85), c, (h + 30) % 360);
           cool = api.oklchToHex(l, c, (h + 180) % 360);
@@ -349,7 +349,7 @@
           break;
 
         case "clash":
-          // Accent + colors at 90° and 270° (tension)
+          // Accent + colors at 90 and 270 degrees (tension)
           accent = hex;
           warm = api.oklchToHex(Math.min(l + 0.06, 0.85), c * 1.1, (h + 90) % 360);
           cool = api.oklchToHex(l, c, (h + 270) % 360);
@@ -357,7 +357,7 @@
           break;
 
         case "warm-shift":
-          // Cluster in the warm direction (+20°, +40°, +60°)
+          // Cluster in the warm direction (+20 deg, +40 deg, +60 deg)
           accent = hex;
           warm = api.oklchToHex(Math.min(l + 0.04, 0.85), c, (h + 20) % 360);
           cool = api.oklchToHex(l, c * 0.95, (h + 40) % 360);
@@ -365,7 +365,7 @@
           break;
 
         case "cool-shift":
-          // Cluster in the cool direction (-20°, -40°, -60°)
+          // Cluster in the cool direction (-20 deg, -40 deg, -60 deg)
           accent = hex;
           warm = api.oklchToHex(Math.min(l + 0.04, 0.85), c, (h + 340) % 360);
           cool = api.oklchToHex(l, c * 0.95, (h + 320) % 360);
@@ -397,7 +397,7 @@
           break;
 
         case "neon":
-          // Max lightness + max chroma — vivid and electric
+          // Max lightness + max chroma - vivid and electric
           accent = api.oklchToHex(Math.min(l + 0.08, 0.85), Math.min(c * 1.6, 0.37), h);
           warm = api.oklchToHex(Math.min(l + 0.06, 0.84), Math.min(c * 1.5, 0.37), (h + 90) % 360);
           cool = api.oklchToHex(Math.min(l + 0.04, 0.83), Math.min(c * 1.5, 0.37), (h + 200) % 360);
@@ -470,12 +470,12 @@
       document.getElementById("pg-pv-code").querySelector(".pg-pv-kw").style.color = w;
       document.getElementById("pg-pv-code").querySelector(".pg-pv-str").style.color = a;
 
-      // Gradient band — the palette rendered as a smooth blend (matches the
+      // Gradient band - the palette rendered as a smooth blend (matches the
       // preset cards' hero), updated live.
       document.getElementById("pg-pv-gradient").style.background =
         "linear-gradient(90deg, " + a + ", " + w + ", " + c + ", " + comp + ")";
 
-      // Buttons — primary is accent-filled, ghost is accent-bordered.
+      // Buttons - primary is accent-filled, ghost is accent-bordered.
       var btnP = document.getElementById("pg-pv-btn-primary");
       btnP.style.background = a;
       btnP.style.borderColor = a;
@@ -483,7 +483,7 @@
       btnG.style.borderColor = a;
       btnG.style.color = a;
 
-      // Semantic chips — only meaningful when semantics are enabled.
+      // Semantic chips - only meaningful when semantics are enabled.
       var semWrap = document.getElementById("pg-pv-semantics");
       if (showSemantics.checked) {
         semWrap.style.display = "";
@@ -507,7 +507,7 @@
     baseColor.addEventListener("input", function () {
       isManual = false;
       if (harmonyMode.value === "manual") harmonyMode.value = "split";
-      // Random mode ignores base color — but still re-derive for other modes
+      // Random mode ignores base color - but still re-derive for other modes
       derive();
     });
     harmonyMode.addEventListener("change", function () {

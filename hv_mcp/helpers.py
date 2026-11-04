@@ -35,7 +35,7 @@ def trigger_site_build(changed_path: str | None = None):
     runs synchronously to guarantee the fragment exists before the watcher fires
     a reload. Without this, the watcher's debounce can settle on _index.md,
     trigger a reload showing the new index card, but the document fragment
-    hasn't been written yet — causing navigation to fail.
+    hasn't been written yet - causing navigation to fail.
 
     When the app is NOT running (MCP-only mode), builds run in a background
     thread to avoid blocking the tool response.
@@ -44,7 +44,7 @@ def trigger_site_build(changed_path: str | None = None):
     app_is_running = app_lock.exists()
 
     if app_is_running and not changed_path:
-        # No specific file — let the watcher handle it to avoid duplicates.
+        # No specific file - let the watcher handle it to avoid duplicates.
         return
 
     def _build():

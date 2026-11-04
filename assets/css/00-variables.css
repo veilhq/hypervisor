@@ -2,7 +2,7 @@
    Shared globals (keyframes, scrollbar, focus ring, tooltips, selection)
    and shared components (label-badge, icon-button, text-button, panel-header,
    menu-dropdown, content-section, hv-confirm) relocated to .hyperkit/css/globals.css
-   and .hyperkit/css/components.css — loaded before this file.
+   and .hyperkit/css/components.css - loaded before this file.
 
    This file retains only Hypervisor-specific rules:
    - html/body reset (font-size, overflow, font-smoothing)
@@ -10,12 +10,13 @@
    - App-specific cursor selector lists (targeting Hypervisor-only elements)
    ====================================================================== */
 
+/*  design-lint: allow - the one root size every app shares; rem scales from it  */
 html { font-size: 14px; scroll-behavior: smooth; overflow-x: hidden; overscroll-behavior: none; }
 
 /* ---- Viewport scrollbar suppressed ----
    The fixed 2px .scroll-progress indicator at the top of the window already
    communicates position within the page, so the document scrollbar is redundant
-   chrome. Scrolling itself stays fully intact — only the visual track is hidden.
+   chrome. Scrolling itself stays fully intact - only the visual track is hidden.
    Nested scroll containers (TOC, dropdowns, panels, code blocks) keep their thin
    scrollbars, since they have no equivalent progress affordance. */
 html { scrollbar-width: none; -ms-overflow-style: none; }
@@ -26,18 +27,18 @@ body {
   font-family: var(--font);
   background: var(--bg);
   color: var(--text);
-  line-height: 1.7;
+  line-height: var(--lh-prose);
   -webkit-font-smoothing: none;
   -moz-osx-font-smoothing: unset;
 }
 
 /* ---- Responsive ---- */
 @media (max-width: 600px) {
-  .topbar-inner { padding: 0.5rem 0.75rem; flex-wrap: wrap; }
+  .topbar-inner { padding: var(--space-2) var(--space-3); flex-wrap: wrap; }
   .search-wrap { width: 100%; order: 10; }
   #search:focus { width: 100%; }
   .search-results { width: 100%; }
-  .page { padding: 1.5rem 0.75rem 3rem; }
+  .page { padding: var(--space-5) var(--space-3) var(--surface-inset); }
   .card-grid { grid-template-columns: 1fr; }
 }
 
@@ -45,19 +46,19 @@ body {
    The base cursor rules (body, a, button, input) live in hyperkit/css/globals.css.
    These extend the pointer list with Hypervisor-specific interactive elements
    that don't exist in the shared vocabulary. The .a11y-cursors-active class
-   is Hypervisor's accessibility mode — the filled-pointer cursor is applied
+   is Hypervisor's accessibility mode - the filled-pointer cursor is applied
    blanket-style with !important to override component-level cursors. */
 
 body.a11y-cursors-active, body.a11y-cursors-active:active {
   cursor: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2300ff41' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M4.037 4.688a.495.495 0 0 1 .651-.651l16 6.5a.5.5 0 0 1-.063.947l-6.124 1.58a2 2 0 0 0-1.438 1.435l-1.579 6.126a.5.5 0 0 1-.947.063z'/></svg>") 2 2, auto;
   cursor: var(--cursor-default, url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2300ff41' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M4.037 4.688a.495.495 0 0 1 .651-.651l16 6.5a.5.5 0 0 1-.063.947l-6.124 1.58a2 2 0 0 0-1.438 1.435l-1.579 6.126a.5.5 0 0 1-.947.063z'/></svg>") 2 2, auto);
 }
-/* Blanket native-cursor suppression — forces custom cursor on all elements */
+/* Blanket native-cursor suppression - forces custom cursor on all elements */
 body.a11y-cursors-active * {
   cursor: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2300ff41' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M4.037 4.688a.495.495 0 0 1 .651-.651l16 6.5a.5.5 0 0 1-.063.947l-6.124 1.58a2 2 0 0 0-1.438 1.435l-1.579 6.126a.5.5 0 0 1-.947.063z'/></svg>") 2 2, auto !important;
   cursor: var(--cursor-default, url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2300ff41' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M4.037 4.688a.495.495 0 0 1 .651-.651l16 6.5a.5.5 0 0 1-.063.947l-6.124 1.58a2 2 0 0 0-1.438 1.435l-1.579 6.126a.5.5 0 0 1-.947.063z'/></svg>") 2 2, auto) !important;
 }
-/* Interactive elements — filled pointer (app-specific selector list) */
+/* Interactive elements - filled pointer (app-specific selector list) */
 body.a11y-cursors-active a,
 body.a11y-cursors-active button,
 body.a11y-cursors-active [role="button"],
@@ -98,7 +99,7 @@ body.a11y-cursors-active [style*="cursor:pointer"] {
   cursor: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='%2300ff41' stroke='%2300ff41' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><path d='M4.037 4.688a.495.495 0 0 1 .651-.651l16 6.5a.5.5 0 0 1-.063.947l-6.124 1.58a2 2 0 0 0-1.438 1.435l-1.579 6.126a.5.5 0 0 1-.947.063z'/></svg>") 2 2, pointer !important;
   cursor: var(--cursor-pointer, url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='%2300ff41' stroke='%2300ff41' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><path d='M4.037 4.688a.495.495 0 0 1 .651-.651l16 6.5a.5.5 0 0 1-.063.947l-6.124 1.58a2 2 0 0 0-1.438 1.435l-1.579 6.126a.5.5 0 0 1-.947.063z'/></svg>") 2 2, pointer) !important;
 }
-/* Text inputs — custom I-beam */
+/* Text inputs - custom I-beam */
 body.a11y-cursors-active input[type="text"],
 body.a11y-cursors-active input[type="search"],
 body.a11y-cursors-active input[type="email"],

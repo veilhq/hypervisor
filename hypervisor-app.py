@@ -1,6 +1,6 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
-Hypervisor Desktop Application — PyWebView wrapper for the Hypervisor static site.
+Hypervisor Desktop Application - PyWebView wrapper for the Hypervisor static site.
 
 Provides a native OS window with:
 - Live file watching and auto-rebuild on .md changes
@@ -14,6 +14,7 @@ Usage:
 
 import json
 import logging
+import mimetypes
 import os
 import re
 import subprocess
@@ -34,15 +35,15 @@ from hyper_logging import setup_logger  # noqa: E402
 
 logger = setup_logger("hypervisor")
 
-# Dedicated LAN-sharing access log → .hyperspace/.logs/lan.log. Every request
+# Dedicated LAN-sharing access log -> .hyperspace/.logs/lan.log. Every request
 # from a non-local (LAN) client is recorded here with its address, path, and
 # outcome, so the operator can see who connected, what they reached, and any
 # denied/blocked attempts. Surfaces automatically in the log viewer.
 lan_logger = setup_logger("lan")
 
-# Dedicated WebView (renderer/Chromium) diagnostics log → .hyperspace/.logs/
+# Dedicated WebView (renderer/Chromium) diagnostics log -> .hyperspace/.logs/
 # webview.log. Renderer-side errors forwarded from client-diagnostics.js via the
-# log_client_error bridge, plus crash-reporter setup, land here — isolated from
+# log_client_error bridge, plus crash-reporter setup, land here - isolated from
 # hypervisor.log build noise. Surfaces automatically in the Log Viewer utility
 # (it globs *.log). "WebView" becomes a source filter there.
 webview_logger = setup_logger("webview")
@@ -50,7 +51,7 @@ webview_logger = setup_logger("webview")
 import webview.http
 
 from site_utils.config import HYPERSPACE_ROOT, OUTPUT_DIR, ASSETS_DIR, CHANGELOG_CACHE_FILE
-from site_utils.file_utils import read_md
+from site_utils.file_utils import read_md, _extract_assignee_from_text
 from site_utils.work_items import mark_done as _mark_done
 from site_utils.external_files import import_external_file as _import_external, delete_external_file as _delete_external
 from site_utils.ideas import delete_idea as _delete_idea
@@ -63,11 +64,14 @@ from watcher import FileWatcher
 # ---------------------------------------------------------------------------
 # When the site is reached from another machine on the LAN (not the operator's
 # own webview on localhost), only document content under these top-level
-# directories is served. Everything else — work items, ideas, research, etc. —
+# directories is served. Everything else - work items, ideas, research, etc. -
 # is 404'd at the request layer so a guessed URL cannot expose it. Shared
 # infrastructure (the SPA shell, JS, CSS, fonts, search index) always serves,
 # since without it the allowlisted pages cannot render.
-SHARE_DIRS = {"context"}
+from site_utils.lan_access import (  # noqa: E402
+    SHARE_DIRS, ALLOW, FORBIDDEN, INVALID_PAGE, NOT_FOUND, OFFLINE_PAGE, SEARCH,
+    decide_lan_access,
+)
 
 
 def _lan_access_key() -> str:
@@ -86,34 +90,12 @@ def _lan_access_key() -> str:
         return ""
 
 
-def _lan_blocks_path(url_path: str) -> bool:
-    """Return True if a LAN request for this path must be blocked.
-
-    Only document-content fragments are gated. Content lives at
-    `content/<doc-path>.json`; a fragment is blocked when its doc-path's first
-    segment is not in SHARE_DIRS. All non-content paths (shell, assets, search
-    index) are allowed so shared pages render.
-    """
-    p = url_path.lstrip("/").replace("\\", "/")
-    prefix = "content/"
-    if not p.startswith(prefix):
-        return False  # not a content fragment — shared infrastructure, allow
-    rest = p[len(prefix):]
-    if not rest.endswith(".json"):
-        return False  # not a doc fragment
-    top = rest.split("/", 1)[0]
-    # `content/context.json` (the category index) and `content/context/...`
-    # both have top segment "context" once the .json is considered part of it.
-    top = top[:-5] if top.endswith(".json") else top  # strip .json on a bare top file
-    return top not in SHARE_DIRS
-
-
 def _own_ip_addresses() -> set:
     """Return this machine's own IP addresses (loopback + LAN interfaces).
 
     Cached after first computation. Used to recognize the operator's own
     requests as local even when the webview loads via the LAN IP rather than
-    127.0.0.1 — a request whose source IP is one of THIS machine's addresses
+    127.0.0.1 - a request whose source IP is one of THIS machine's addresses
     came from this machine. Coworkers connect with their own (different) source
     IPs and remain gated.
     """
@@ -208,6 +190,31 @@ def _request_is_local(remote_addr: str) -> bool:
     return remote_addr in _own_ip_addresses()
 
 
+def _launch_app(folder: str, shortcut_name: str, script_name: str) -> dict:
+    """Launch a sibling hyper app detached, via its .lnk when present.
+
+    The shortcut groups the window with the pinned taskbar entry (same
+    AppUserModelID); otherwise falls back to pythonw on the script.
+    """
+    shortcut = HYPERSPACE_ROOT / folder / shortcut_name
+    script = HYPERSPACE_ROOT / folder / script_name
+    try:
+        if shortcut.exists():
+            os.startfile(str(shortcut))
+            return {"ok": True}
+        elif script.exists():
+            subprocess.Popen(
+                ["pythonw", str(script)],
+                cwd=str(script.parent),
+                creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NO_WINDOW,
+            )
+            return {"ok": True}
+        else:
+            return {"ok": False, "error": "%s not found" % script_name}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
 def _filtered_search_index_json(root_path: str) -> str:
     """Return the search index JSON containing only allowlisted entries.
 
@@ -231,8 +238,109 @@ def _filtered_search_index_json(root_path: str) -> str:
     return json.dumps(kept)
 
 
+_GZIP_EXTS = {'.js', '.css', '.json', '.html'}
+_GZIP_CACHE = {}
+_GZIP_CACHE_LOCK = threading.Lock()
+
+
+def _gzip_cached(full_path: str, st) -> bytes:
+    """Return gzip bytes for a file, cached on path + mtime + size."""
+    import gzip
+    key = (full_path, st.st_mtime_ns, st.st_size)
+    with _GZIP_CACHE_LOCK:
+        data = _GZIP_CACHE.get(key)
+    if data is None:
+        with open(full_path, 'rb') as f:
+            data = gzip.compress(f.read(), compresslevel=6, mtime=0)
+        with _GZIP_CACHE_LOCK:
+            for old in [k for k in _GZIP_CACHE if k[0] == full_path]:
+                del _GZIP_CACHE[old]
+            _GZIP_CACHE[key] = data
+    return data
+
+
+def _accepts_gzip(header: str) -> bool:
+    """True when Accept-Encoding allows gzip (explicitly or via '*') with q > 0."""
+    q_by_coding = {}
+    for part in header.lower().split(','):
+        coding, _, params = part.strip().partition(';')
+        coding = coding.strip()
+        if not coding:
+            continue
+        q = 1.0
+        for param in params.split(';'):
+            key, _, val = param.strip().partition('=')
+            if key.strip() == 'q':
+                try:
+                    q = float(val.strip())
+                except ValueError:
+                    q = 0.0
+        q_by_coding[coding] = q
+    if 'gzip' in q_by_coding:
+        return q_by_coding['gzip'] > 0
+    return q_by_coding.get('*', 0.0) > 0
+
+
+def _etag_matches(header: str, etag: str) -> bool:
+    if header.strip() == '*':
+        return True
+    bare = etag[2:] if etag.startswith('W/') else etag
+    for tok in header.split(','):
+        tok = tok.strip()
+        if (tok[2:] if tok.startswith('W/') else tok) == bare:
+            return True
+    return False
+
+
+def _static_response(file: str, root: str):
+    """Serve a site file with ETag/Last-Modified revalidation (304) and
+    cached gzip for text assets. Cache-Control: no-cache keeps content fresh."""
+    import email.utils
+    root_abs = os.path.join(os.path.abspath(root), '')
+    full_path = os.path.abspath(os.path.join(root_abs, file.strip('/\\')))
+    if not full_path.startswith(root_abs):
+        return bottle.HTTPError(403, "Access denied.")
+    st = os.stat(full_path)
+    gz = (
+        os.path.splitext(file)[1].lower() in _GZIP_EXTS
+        and _accepts_gzip(bottle.request.headers.get('Accept-Encoding', ''))
+        and not bottle.request.headers.get('Range')
+    )
+    etag = 'W/"%x-%x%s"' % (st.st_mtime_ns, st.st_size, '-gz' if gz else '')
+    last_mod = email.utils.formatdate(int(st.st_mtime), usegmt=True)
+
+    inm = bottle.request.headers.get('If-None-Match')
+    if inm is not None:
+        fresh = _etag_matches(inm, etag)
+    else:
+        ims = bottle.request.headers.get('If-Modified-Since')
+        try:
+            ims_dt = email.utils.parsedate_to_datetime(ims) if ims else None
+            fresh = ims_dt is not None and int(st.st_mtime) <= int(ims_dt.timestamp())
+        except (TypeError, ValueError, OverflowError):
+            fresh = False
+    if fresh:
+        resp = bottle.HTTPResponse(status=304)
+        if gz:
+            resp.set_header('Vary', 'Accept-Encoding')
+    elif gz:
+        body = _gzip_cached(full_path, st)
+        resp = bottle.HTTPResponse(body)
+        mime = mimetypes.guess_type(file)[0] or 'application/octet-stream'
+        resp.set_header('Content-Type', mime + '; charset=UTF-8')
+        resp.set_header('Content-Encoding', 'gzip')
+        resp.set_header('Content-Length', str(len(body)))
+        resp.set_header('Vary', 'Accept-Encoding')
+    else:
+        resp = bottle.static_file(file, root=root)
+    resp.set_header('ETag', etag)
+    resp.set_header('Last-Modified', last_mod)
+    resp.set_header('Cache-Control', 'no-cache')
+    return resp
+
+
 # ---------------------------------------------------------------------------
-# Custom BottleServer — adds a 404 handler that serves site/404.html
+# Custom BottleServer - adds a 404 handler that serves site/404.html
 # ---------------------------------------------------------------------------
 
 class _HypervisorBottleServer(webview.http.BottleServer):
@@ -248,7 +356,7 @@ class _HypervisorBottleServer(webview.http.BottleServer):
         server = cls()
 
         if len(apps) > 0:
-            # WSGI app mode — delegate to parent unchanged
+            # WSGI app mode - delegate to parent unchanged
             return super().start_server(urls, http_port, keyfile, certfile)
 
         # --- Static file mode: replicate parent logic + add 404 handler ---
@@ -264,7 +372,7 @@ class _HypervisorBottleServer(webview.http.BottleServer):
         def js_api():
             # The PyWebView bridge is for the operator's own local webview only.
             # It is never a legitimate call path for a LAN visitor, so reject
-            # any non-local origin outright — this keeps the bridge surface off
+            # any non-local origin outright - this keeps the bridge surface off
             # the network entirely rather than relying on the callback registry
             # being unreachable in practice.
             if not _request_is_local(bottle.request.remote_addr):
@@ -287,7 +395,7 @@ class _HypervisorBottleServer(webview.http.BottleServer):
             """Report whether the requester is a LAN (non-local) client.
 
             The client uses this to strip the full-workspace nav rail for LAN
-            visitors — they navigate the shared surface via the Project Context
+            visitors - they navigate the shared surface via the Project Context
             dashboard, not the whole-hyperspace nav. Localhost gets lan=false
             and keeps the full nav.
             """
@@ -302,114 +410,46 @@ class _HypervisorBottleServer(webview.http.BottleServer):
             if not server.root_path:
                 return ''
 
-            # LAN access control. The operator's own webview (localhost) is
-            # unaffected and sees the full site. LAN requests must (1) present
-            # the operator-chosen access key, then (2) stay within the shared
-            # allowlist. No key configured => no LAN access at all.
-            #
-            # The key may arrive as ?key= (initial link a coworker opens) or as
-            # a cookie. Because the SPA fetches fragments/assets via JS that
-            # won't carry the query string, an authorized ?key= request plants a
-            # cookie so all subsequent same-origin requests stay authorized.
+            # LAN access control. The decision is made by decide_lan_access; this
+            # route applies logging, cookies and responses. A valid ?key= plants
+            # the auth cookie on the served file response (static_file() returns a
+            # fresh HTTPResponse, so the cookie is applied there).
             _plant_cookie = None
-            if not _request_is_local(bottle.request.remote_addr):
+            _is_local = _request_is_local(bottle.request.remote_addr)
+            if not _is_local:
                 addr = bottle.request.remote_addr or "?"
-                _norm = file.lstrip('/').replace('\\', '/')
-
-                # Plant the auth cookie on ANY request that carries a valid
-                # ?key= — including the initial shell load (`/?key=...`), which
-                # is an asset request, not content. Recorded as a flag and
-                # applied to the actual response object below, because
-                # static_file() returns a fresh HTTPResponse that would drop a
-                # cookie set on the global bottle.response.
-                _cfg = _lan_access_key()
-                if _cfg and bottle.request.query.get('key', '') == _cfg:
-                    _plant_cookie = _cfg
+                _dec = decide_lan_access(
+                    _is_local, file,
+                    bottle.request.query.get('key', ''),
+                    bottle.request.get_cookie('lan_access_key', ''),
+                    _lan_access_key(),
+                )
+                _plant_cookie = _dec.plant_cookie
+                if _dec.key_accepted:
                     lan_logger.info("AUTH  %s  (key accepted, cookie set)", addr)
-
-                # For the initial HTML navigation (not an asset, not a content
-                # fragment), show a standalone black page when access is denied
-                # so the visitor sees a clear message instead of a half-loaded
-                # app. "visor is offline" when sharing is disabled; "invalid
-                # code" when a key is required but the supplied one is wrong.
-                _is_content = _norm.startswith('content/') and _norm.endswith('.json')
-                _is_search = _norm == 'search-index.json'
-                # The 404 fragment is generic chrome (no workspace data). Allow
-                # it so a LAN visitor clicking a backlink to non-shared content
-                # lands on the clean "not found" page instead of a broken state.
-                _is_404 = _norm == 'content/404.json'
-                # nav-state.json is the full category tree (every top-level dir
-                # + counts + subdirs) — a workspace-structure leak. LAN visitors
-                # have no nav rail (removed by lan-mode.js), so they never need
-                # it. Block it outright.
-                if _norm == 'nav-state.json':
-                    lan_logger.warning("BLOCK %s  nav-state.json  (structure)", addr)
+                if _dec.log_level:
+                    _args = (addr, file) if _dec.log_with_path else (addr,)
+                    getattr(lan_logger, _dec.log_level)(_dec.log_fmt, *_args)
+                if _dec.cookie_on_response:
+                    bottle.response.set_cookie('lan_access_key', _dec.plant_cookie, path='/', httponly=True)
+                if _dec.action in (OFFLINE_PAGE, INVALID_PAGE):
+                    bottle.response.content_type = 'text/html; charset=utf-8'
+                    return _denial_page("visor is offline" if _dec.action == OFFLINE_PAGE else "invalid code")
+                if _dec.action == FORBIDDEN:
+                    return bottle.HTTPError(403, "Forbidden")
+                if _dec.action == NOT_FOUND:
                     return bottle.HTTPError(404, "Not found")
-                _ext = os.path.splitext(_norm)[1].lower()
-                _static_exts = {'.js', '.css', '.json', '.ico', '.png', '.jpg',
-                                '.svg', '.woff', '.woff2', '.ttf', '.map'}
-                _is_html_nav = not _is_content and not _is_search and _ext not in _static_exts
+                if _dec.action == SEARCH:
+                    bottle.response.content_type = 'application/json'
+                    bottle.response.set_header('Cache-Control', 'no-cache, no-store, must-revalidate')
+                    return _filtered_search_index_json(server.root_path)
+                file = _dec.path
 
-                if _is_html_nav:
-                    _supplied = (bottle.request.query.get('key', '')
-                                 or bottle.request.get_cookie('lan_access_key', ''))
-                    if not _cfg:
-                        lan_logger.info("OFFLINE  %s  (sharing disabled)", addr)
-                        bottle.response.content_type = 'text/html; charset=utf-8'
-                        return _denial_page("visor is offline")
-                    if _supplied != _cfg:
-                        lan_logger.warning("INVALID  %s  (bad/no code on nav)", addr)
-                        bottle.response.content_type = 'text/html; charset=utf-8'
-                        return _denial_page("invalid code")
-
-                if (_is_content or _is_search) and not _is_404:
-                    configured = _lan_access_key()
-                    q_key = bottle.request.query.get('key', '')
-                    supplied = q_key or bottle.request.get_cookie('lan_access_key', '')
-                    if not configured:
-                        lan_logger.info("DENY  %s  %s  (sharing disabled — no key set)", addr, file)
-                        return bottle.HTTPError(403, "Forbidden")
-                    if supplied != configured:
-                        if supplied:
-                            # A wrong non-empty key is a probe/guess — security signal.
-                            lan_logger.warning("DENY  %s  %s  (invalid key)", addr, file)
-                        else:
-                            # No key on a content request is expected/benign.
-                            lan_logger.info("DENY  %s  %s  (no key)", addr, file)
-                        return bottle.HTTPError(403, "Forbidden")
-                    # Refresh the auth cookie on any authorized content request
-                    # that carried the key in the query (the initial link).
-                    if q_key == configured:
-                        bottle.response.set_cookie('lan_access_key', configured, path='/', httponly=True)
-
-                    # LAN visitors land on Project Context, not the operator's
-                    # workspace home. Rewrite home/boot fragments to context.
-                    if _norm in ('content/home.json', 'content/_index.json', 'content/_pins.json'):
-                        file = 'content/context.json'
-                        _norm = file
-
-                    if _is_search:
-                        lan_logger.debug("OK    %s  search-index.json (filtered)", addr)
-                        bottle.response.content_type = 'application/json'
-                        bottle.response.set_header('Cache-Control', 'no-cache, no-store, must-revalidate')
-                        return _filtered_search_index_json(server.root_path)
-
-                    if _lan_blocks_path(file):
-                        # A request outside the allowlist is a probe — security signal.
-                        lan_logger.warning("BLOCK %s  %s  (outside allowlist)", addr, file)
-                        return bottle.HTTPError(404, "Not found")
-                    # Routine served content — high volume, low signal.
-                    lan_logger.debug("OK    %s  %s", addr, file)
-                # Non-content (shell / JS / CSS / fonts) falls through and
-                # serves normally — no key required to render the page chrome.
 
             # Check if the file exists on disk
             full_path = os.path.join(server.root_path, file)
             if os.path.isfile(full_path):
-                resp = bottle.static_file(file, root=server.root_path)
-                resp.set_header('Cache-Control', 'no-cache, no-store, must-revalidate')
-                resp.set_header('Pragma', 'no-cache')
-                resp.set_header('Expires', '0')
+                resp = _static_response(file, server.root_path)
                 if _plant_cookie:
                     resp.set_cookie('lan_access_key', _plant_cookie, path='/', httponly=True)
                 return resp
@@ -420,14 +460,11 @@ class _HypervisorBottleServer(webview.http.BottleServer):
             ext = os.path.splitext(file)[1].lower()
             static_extensions = {'.js', '.css', '.json', '.ico', '.png', '.jpg', '.svg', '.woff', '.woff2', '.ttf'}
             if ext in static_extensions:
-                # Real static file not found — let Bottle return 404
+                # Real static file not found - let Bottle return 404
                 return bottle.static_file(file, root=server.root_path)
 
-            # HTML navigation request — serve the SPA shell
-            resp = bottle.static_file('index.html', root=server.root_path)
-            resp.set_header('Cache-Control', 'no-cache, no-store, must-revalidate')
-            resp.set_header('Pragma', 'no-cache')
-            resp.set_header('Expires', '0')
+            # HTML navigation request - serve the SPA shell
+            resp = _static_response('index.html', server.root_path)
             if _plant_cookie:
                 resp.set_cookie('lan_access_key', _plant_cookie, path='/', httponly=True)
             return resp
@@ -540,10 +577,10 @@ class HypervisorAPI:
         if not full_path.exists():
             return {"ok": False, "error": f"File not found: {file_path}"}
 
-        # Serialize all write operations on the same file — PyWebView dispatches
+        # Serialize all write operations on the same file - PyWebView dispatches
         # bridge calls on worker threads, so rapid checkbox clicks can race.
         with self._writeback_lock:
-            # Tell the watcher to ignore events for this file — covers both the
+            # Tell the watcher to ignore events for this file - covers both the
             # immediate write and any delayed filesystem notifications on Windows.
             self._watcher.ignore_path(str(full_path), grace_seconds=2.0)
 
@@ -560,7 +597,7 @@ class HypervisorAPI:
 
             full_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
-        # Rebuild the HTML on disk in the background — no page reload.
+        # Rebuild the HTML on disk in the background - no page reload.
         # The JS side already did an optimistic visual toggle, so reloading
         # would just cause a content blink for no benefit.
         threading.Thread(target=build_single_file, args=(file_path,), daemon=True).start()
@@ -632,6 +669,19 @@ class HypervisorAPI:
         full_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
         return {"ok": True}
 
+    def list_assignees(self):
+        """Return the distinct Assignee names used across work items, sorted."""
+        names = {}
+        for path in (HYPERSPACE_ROOT / "work").rglob("*.md"):
+            try:
+                name = _extract_assignee_from_text(read_md(path))
+            except Exception as e:
+                logger.debug("assignee scan skipped %s: %s", path, e)
+                continue
+            if name:
+                names.setdefault(name.casefold(), name)
+        return sorted(names.values(), key=str.casefold)
+
     def update_metadata_bulk(self, file_paths, field, value):
         """Set one metadata field to the same value across many documents.
 
@@ -695,7 +745,7 @@ class HypervisorAPI:
         return {"ok": True}
 
     def semantic_search(self, query, top_k=5, tags=None, doc_type=None, project=None, source_type=None):
-        """Search hyperspace by meaning — direct Python call, no MCP round-trip.
+        """Search hyperspace by meaning - direct Python call, no MCP round-trip.
 
         Called from the Hypervisor frontend (search bar, related sidebar) via
         window.pywebview.api.semantic_search(). Returns results directly since
@@ -761,160 +811,28 @@ class HypervisorAPI:
             return {"ok": False, "error": str(e)}
 
     def launch_hyperagent(self):
-        """Launch Hyperagent as a detached subprocess via its shortcut.
-
-        Launching via the .lnk ensures Windows groups the window with the
-        pinned taskbar shortcut (same AppUserModelID) and shows the correct icon.
-        Falls back to direct pythonw invocation if the shortcut doesn't exist.
-        """
-        import os
-        shortcut = HYPERSPACE_ROOT / ".hyperagent" / "Hyperagent.lnk"
-        script = HYPERSPACE_ROOT / ".hyperagent" / "hyperagent.py"
-        try:
-            if shortcut.exists():
-                os.startfile(str(shortcut))
-                return {"ok": True}
-            elif script.exists():
-                subprocess.Popen(
-                    ["pythonw", str(script)],
-                    cwd=str(script.parent),
-                    creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NO_WINDOW,
-                )
-                return {"ok": True}
-            else:
-                return {"ok": False, "error": "hyperagent.py not found"}
-        except Exception as e:
-            return {"ok": False, "error": str(e)}
+        """Launch Hyperagent as a detached subprocess (see _launch_app)."""
+        return _launch_app(".hyperagent", "Hyperagent.lnk", "hyperagent.py")
 
     def launch_dither_widget(self):
-        """Launch HyperField as a detached subprocess via its shortcut.
-
-        Launching via the .lnk ensures Windows groups the window with the
-        pinned taskbar shortcut (same AppUserModelID) and shows the correct icon.
-        Falls back to direct pythonw invocation if the shortcut doesn't exist.
-        """
-        import os
-        shortcut = HYPERSPACE_ROOT / ".hyperfield" / "HyperField.lnk"
-        script = HYPERSPACE_ROOT / ".hyperfield" / "hyperfield.py"
-        try:
-            if shortcut.exists():
-                os.startfile(str(shortcut))
-                return {"ok": True}
-            elif script.exists():
-                subprocess.Popen(
-                    ["pythonw", str(script)],
-                    cwd=str(script.parent),
-                    creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NO_WINDOW,
-                )
-                return {"ok": True}
-            else:
-                return {"ok": False, "error": "hyperfield.py not found"}
-        except Exception as e:
-            return {"ok": False, "error": str(e)}
+        """Launch HyperField as a detached subprocess (see _launch_app)."""
+        return _launch_app(".hyperfield", "HyperField.lnk", "hyperfield.py")
 
     def launch_hyperline(self):
-        """Launch Hyperline terminal as a detached subprocess via its shortcut.
-
-        Launching via the .lnk ensures Windows groups the window with the
-        pinned taskbar shortcut (same AppUserModelID) and shows the correct icon.
-        Falls back to direct pythonw invocation if the shortcut doesn't exist.
-        """
-        import os
-        shortcut = HYPERSPACE_ROOT / ".hyperline" / "Hyperline.lnk"
-        script = HYPERSPACE_ROOT / ".hyperline" / "hyperline.py"
-        try:
-            if shortcut.exists():
-                os.startfile(str(shortcut))
-                return {"ok": True}
-            elif script.exists():
-                subprocess.Popen(
-                    ["pythonw", str(script)],
-                    cwd=str(script.parent),
-                    creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NO_WINDOW,
-                )
-                return {"ok": True}
-            else:
-                return {"ok": False, "error": "hyperline.py not found"}
-        except Exception as e:
-            return {"ok": False, "error": str(e)}
+        """Launch Hyperline terminal as a detached subprocess (see _launch_app)."""
+        return _launch_app(".hyperline", "Hyperline.lnk", "hyperline.py")
 
     def launch_hypernote(self):
-        """Launch Hypernote as a detached subprocess via its shortcut.
-
-        Launching via the .lnk ensures Windows groups the window with the
-        pinned taskbar shortcut (same AppUserModelID) and shows the correct icon.
-        Falls back to direct pythonw invocation if the shortcut doesn't exist.
-        """
-        import os
-        shortcut = HYPERSPACE_ROOT / ".hypernote" / "Hypernote.lnk"
-        script = HYPERSPACE_ROOT / ".hypernote" / "hypernote.py"
-        try:
-            if shortcut.exists():
-                os.startfile(str(shortcut))
-                return {"ok": True}
-            elif script.exists():
-                subprocess.Popen(
-                    ["pythonw", str(script)],
-                    cwd=str(script.parent),
-                    creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NO_WINDOW,
-                )
-                return {"ok": True}
-            else:
-                return {"ok": False, "error": "hypernote.py not found"}
-        except Exception as e:
-            return {"ok": False, "error": str(e)}
+        """Launch Hypernote as a detached subprocess (see _launch_app)."""
+        return _launch_app(".hypernote", "Hypernote.lnk", "hypernote.py")
 
     def launch_hypercycle(self):
-        """Launch Hypercycle as a detached subprocess via its shortcut.
-
-        Launching via the .lnk ensures Windows groups the window with the
-        pinned taskbar shortcut (same AppUserModelID) and shows the correct icon.
-        Falls back to direct pythonw invocation if the shortcut doesn't exist.
-        """
-        import os
-        shortcut = HYPERSPACE_ROOT / ".hypercycle" / "Hypercycle.lnk"
-        script = HYPERSPACE_ROOT / ".hypercycle" / "hypercycle.py"
-        try:
-            if shortcut.exists():
-                os.startfile(str(shortcut))
-                return {"ok": True}
-            elif script.exists():
-                subprocess.Popen(
-                    ["pythonw", str(script)],
-                    cwd=str(script.parent),
-                    creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NO_WINDOW,
-                )
-                return {"ok": True}
-            else:
-                return {"ok": False, "error": "hypercycle.py not found"}
-        except Exception as e:
-            return {"ok": False, "error": str(e)}
+        """Launch Hypercycle as a detached subprocess (see _launch_app)."""
+        return _launch_app(".hypercycle", "Hypercycle.lnk", "hypercycle.py")
 
     def launch_hypereye(self):
-        """Launch HyperEye as a detached subprocess via its shortcut.
-
-        Launching via the .lnk ensures Windows groups the window with the
-        pinned taskbar shortcut (same AppUserModelID) and shows the correct icon.
-        Falls back to direct pythonw invocation if the shortcut doesn't exist.
-        """
-        import os
-        shortcut = HYPERSPACE_ROOT / ".hypereye" / "Hypereye.lnk"
-        script = HYPERSPACE_ROOT / ".hypereye" / "hypereye.py"
-        try:
-            if shortcut.exists():
-                os.startfile(str(shortcut))
-                return {"ok": True}
-            elif script.exists():
-                subprocess.Popen(
-                    ["pythonw", str(script)],
-                    cwd=str(script.parent),
-                    creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NO_WINDOW,
-                )
-                return {"ok": True}
-            else:
-                return {"ok": False, "error": "hypereye.py not found"}
-        except Exception as e:
-            return {"ok": False, "error": str(e)}
+        """Launch HyperEye as a detached subprocess (see _launch_app)."""
+        return _launch_app(".hypereye", "Hypereye.lnk", "hypereye.py")
 
     def launch_dev(self, preset=None):
         """Launch the local dev environment.
@@ -930,7 +848,7 @@ class HypervisorAPI:
             return {"ok": False, "error": ".launch/launch.js not found"}
         try:
             if preset:
-                # Direct launch with preset — no interactive console needed
+                # Direct launch with preset - no interactive console needed
                 subprocess.Popen(
                     ["node", str(launch_script), "--preset", preset],
                     cwd=str(HYPERSPACE_ROOT.parent),
@@ -1165,7 +1083,7 @@ class HypervisorAPI:
         """Persist a user preference to disk so it survives app restarts.
 
         Preferences are stored in .hypervisor/preferences.json.
-        Uses a lock + atomic write (temp file → rename) to prevent concurrent
+        Uses a lock + atomic write (temp file -> rename) to prevent concurrent
         bridge calls from reading a half-written file and nuking existing data.
         """
         prefs_path = OUTPUT_DIR.parent / "preferences.json"
@@ -1175,7 +1093,7 @@ class HypervisorAPI:
                 try:
                     prefs = json.loads(prefs_path.read_text(encoding="utf-8"))
                 except (json.JSONDecodeError, OSError):
-                    # File is corrupt or unreadable — DON'T overwrite blindly.
+                    # File is corrupt or unreadable - DON'T overwrite blindly.
                     # Try once more after a brief pause (write may be in-flight).
                     import time
                     time.sleep(0.05)
@@ -1237,7 +1155,7 @@ class HypervisorAPI:
                         prefs = json.loads(prefs_path.read_text(encoding="utf-8"))
                     except (json.JSONDecodeError, OSError):
                         prefs = {}
-            # Merge flat keys only — skip nested objects passed from JS
+            # Merge flat keys only - skip nested objects passed from JS
             for k, v in updates.items():
                 if isinstance(v, str) or isinstance(v, (int, float, bool)):
                     prefs[k] = v
@@ -1471,16 +1389,24 @@ class HypervisorAPI:
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
-    def save_export_zip(self, html_content, suggested_filename, source_rel_path):
-        """Save exported page as a zip containing both HTML and source markdown.
+    def save_export_zip(self, suggested_filename, source_rel_path):
+        """Save a document as a zip containing a self-contained HTML page and its source markdown.
+
+        The HTML is rendered server-side through the real site page template
+        (build_export_page), so the exported layout always matches the live
+        site. The CSS is inlined and the runtime stripped, producing a single
+        standalone file.
 
         Args:
-            html_content: The full standalone HTML string
             suggested_filename: Suggested zip filename for the save dialog
             source_rel_path: Relative path to the source .md file within .hyperspace/
         """
         import zipfile
         import io
+
+        from site_utils.markdown_processing import render_markdown
+        from site_utils.file_utils import get_title, nice_name
+        from site_utils.page_generation import build_export_page
 
         if not self._window:
             return {"ok": False, "error": "No window available"}
@@ -1494,6 +1420,15 @@ class HypervisorAPI:
             md_content = read_md(md_path)
         except Exception as e:
             return {"ok": False, "error": f"Failed to read source: {e}"}
+
+        # Render the self-contained page through the real site template.
+        try:
+            rel_posix = str(source_rel_path).replace("\\", "/")
+            title = get_title(md_content, nice_name(Path(rel_posix).name))
+            content_html, toc_html = render_markdown(md_content, source_path=rel_posix)
+            html_content = build_export_page(content_html, title, rel_posix, toc_html=toc_html)
+        except Exception as e:
+            return {"ok": False, "error": f"Failed to render export: {e}"}
 
         try:
             result = self._window.create_file_dialog(
@@ -1589,7 +1524,7 @@ class HypervisorAPI:
         files = []
         for f in sorted(scratch_dir.glob("*.md"), reverse=True):
             # Date is the filename stem (YYYY-MM-DD). Skip anything that isn't a
-            # daily scratch file — the history view formats the stem as a date.
+            # daily scratch file - the history view formats the stem as a date.
             date = f.stem
             if not date_stem.match(date):
                 logger.debug("list_scratch: skipping non-date file %s", f.name)
@@ -1653,7 +1588,7 @@ class HypervisorAPI:
 
         Reads the archive written by hyperagent (which owns capture, since it
         detects CLI updates and talks to the binary). If the archive is empty
-        or missing — e.g. no update has fired yet — falls back to a one-shot
+        or missing - e.g. no update has fired yet - falls back to a one-shot
         self-contained capture via `kiro-cli version --changelog=all` so the
         viewer isn't blank on first use.
 
@@ -1692,7 +1627,7 @@ class HypervisorAPI:
 
         Shells out to `kiro-cli version --changelog=all`, parses all version
         blocks, and writes them to the archive so subsequent reads hit cache.
-        Kept independent of hyperagent's helpers to preserve app decoupling —
+        Kept independent of hyperagent's helpers to preserve app decoupling -
         hyperagent remains the primary writer via the update pipeline.
         """
         kiro = shutil.which("kiro-cli")
@@ -1759,7 +1694,7 @@ class HypervisorAPI:
     def fix_violations(self, dry_run=True):
         """Run schema migration to auto-fix metadata violations.
 
-        Handles fixable issues: Date→Created rename, bold→dash-prefixed,
+        Handles fixable issues: Date->Created rename, bold->dash-prefixed,
         missing Created/Updated, date format normalization, metadata reordering.
 
         Does NOT fix: unknown tags, tag count issues, missing titles, unknown projects.
@@ -1848,7 +1783,7 @@ class HypervisorAPI:
     # -----------------------------------------------------------------------
 
     def end_sprint(self):
-        """End the current sprint — cascade Horizon values forward.
+        """End the current sprint - cascade Horizon values forward.
 
         Called by the End Sprint button in the actions drawer.
         Returns a summary dict with transition counts.
@@ -1899,7 +1834,7 @@ class HypervisorAPI:
         """Read the last N lines from a log file, or lines after a given index.
 
         Args:
-            filename: Log filename (e.g. "hypervisor.log") — must be in .logs/
+            filename: Log filename (e.g. "hypervisor.log") - must be in .logs/
             lines: Maximum number of lines to return (default 200)
             after_line: If > 0, return only lines after this index (for polling)
 
@@ -1953,10 +1888,10 @@ def on_file_changed(rel_path):
         print(f"  File changed: {rel_path}")
         build_single_file(rel_path)
     else:
-        print("  File deleted or moved — full rebuild")
+        print("  File deleted or moved - full rebuild")
         full_build(quiet=True)
 
-    # RAG incremental reindex (desktop-app path — fires alongside the MCP
+    # RAG incremental reindex (desktop-app path - fires alongside the MCP
     # server's watcher hook, but only one will do real work because the DB
     # uses content-hash dedup).
     rag_msg = _rag_index_file(rel_path)
@@ -1976,7 +1911,7 @@ def on_file_changed(rel_path):
                     "window.__hypervisorReload();"
                     "if(window.__hypervisorToast)window.__hypervisorToast({variant:'info',message:'full rebuild complete',dedupeKey:'live-reload'});"
                 )
-            # RAG toast (separate from the reload toast — uses its own dedupeKey)
+            # RAG toast (separate from the reload toast - uses its own dedupeKey)
             rag_toast = ""
             if rag_msg:
                 safe_rag = rag_msg.replace("'", "\\'")
@@ -1998,7 +1933,7 @@ def _rag_index_file(rel_path):
     """Index a single file into the RAG and return a toast message, or None.
 
     Returns None when the RAG hasn't been initialized yet (first semantic_search
-    call triggers the cold build — until then the desktop app doesn't load the
+    call triggers the cold build - until then the desktop app doesn't load the
     embedding model eagerly).
     """
     try:
@@ -2014,7 +1949,7 @@ def _rag_index_file(rel_path):
                 short = rel_path.rsplit("/", 1)[-1].replace(".md", "")
                 return f"RAG indexed {short} ({n} chunks)"
         else:
-            # Full rebuild — just reindex changed documents
+            # Full rebuild - just reindex changed documents
             result = rag.reindex_changed()
             indexed = result.get("documents_indexed", 0)
             if indexed > 0:
@@ -2027,7 +1962,7 @@ def _rag_index_file(rel_path):
 
 
 # ---------------------------------------------------------------------------
-# MCP Service Supervisor — launch the shared HTTP MCP server as a subprocess
+# MCP Service Supervisor - launch the shared HTTP MCP server as a subprocess
 # ---------------------------------------------------------------------------
 
 _MCP_SERVER_SCRIPT = Path(__file__).parent / "mcp-server.py"
@@ -2113,7 +2048,7 @@ def _start_mcp_service(replace: bool = True) -> dict:
 
     The service deliberately outlives the desktop app (see _stop_mcp_service),
     so on startup we replace whatever is already running. That guarantees the
-    live service reflects current code — without it, editing mcp-server.py and
+    live service reflects current code - without it, editing mcp-server.py and
     restarting Hypervisor would silently keep serving the old code, because the
     lock-file check would find the previous instance and skip launching.
 
@@ -2139,7 +2074,7 @@ def _start_mcp_service(replace: bool = True) -> dict:
             time.sleep(0.25)
         else:
             logger.error(
-                "port %d still held 5s after terminating PID %d — not launching",
+                "port %d still held 5s after terminating PID %d - not launching",
                 _MCP_PORT, existing,
             )
             return {"ok": False, "error": f"port {_MCP_PORT} still in use after terminate"}
@@ -2150,7 +2085,7 @@ def _start_mcp_service(replace: bool = True) -> dict:
     # anyway would just produce an immediate exit(1).
     if _mcp_port_open():
         logger.error(
-            "port %d is in use but no valid lock file exists — a stray MCP "
+            "port %d is in use but no valid lock file exists - a stray MCP "
             "instance may be running. Not launching.", _MCP_PORT,
         )
         return {"ok": False, "error": f"port {_MCP_PORT} in use by an unknown process"}
@@ -2183,7 +2118,7 @@ def _start_mcp_service(replace: bool = True) -> dict:
 
     logger.warning(
         "MCP service did not become ready within 10s. "
-        "It may still be loading — tools might be temporarily unavailable."
+        "It may still be loading - tools might be temporarily unavailable."
     )
     return {"ok": True, "pid": pid, "action": "launched", "warning": "not ready within 10s"}
 
@@ -2192,7 +2127,7 @@ def _stop_mcp_service() -> dict:
     """Stop the MCP service.
 
     Deliberately NOT called when Hypervisor's window closes. The MCP service is
-    shared — agent sessions depend on it — so tying its lifetime to a GUI window
+    shared - agent sessions depend on it - so tying its lifetime to a GUI window
     silently removes every hyperspace tool from every running session. It is
     stopped only on explicit request, or replaced on the next app start.
 
@@ -2246,11 +2181,11 @@ def _init_rag_background():
             indexed = result.get("documents_indexed", 0)
             total = result.get("total_chunks", 0)
             rag_logger.info(
-                "eager init complete — %d indexed, %d total chunks",
+                "eager init complete - %d indexed, %d total chunks",
                 indexed, total,
             )
             # Toast success
-            msg = f"RAG ready — {total} chunks"
+            msg = f"RAG ready - {total} chunks"
             if indexed > 0:
                 msg += f" ({indexed} docs updated)"
             for win in webview.windows:
@@ -2324,10 +2259,13 @@ def main():
 
     print("Hypervisor Desktop: starting ...")
 
-    # Signal that the desktop app is running — MCP tools check this to avoid
+    # Signal that the desktop app is running - MCP tools check this to avoid
     # triggering duplicate site builds (the desktop watcher handles rebuilds).
     app_lock = OUTPUT_DIR.parent / ".app_running"
     app_lock.write_text(str(os.getpid()), encoding="utf-8")
+
+    from launch_build import off_scale_notice, notice_js
+    lint_notice = off_scale_notice("Hypervisor", Path(__file__).parent)
 
     # Initial full build
     build_id = full_build()
@@ -2340,7 +2278,7 @@ def main():
     api = HypervisorAPI(watcher)
     _api = api
 
-    # Create the native window — pass the file path so pywebview treats it
+    # Create the native window - pass the file path so pywebview treats it
     # as a local URL and starts its HTTP server (needed for the js_api bridge).
     index_path = str((OUTPUT_DIR / "index.html").resolve())
     window = webview.create_window(
@@ -2358,7 +2296,7 @@ def main():
     def on_loaded():
         """Called when the webview finishes loading a page."""
         # The SPA shell defines __hypervisorReload in app.js (uses the router).
-        # No need to inject a reload helper — just ensure the bridge is ready.
+        # No need to inject a reload helper - just ensure the bridge is ready.
         pass
 
     window.events.loaded += on_loaded
@@ -2367,16 +2305,19 @@ def main():
     def background():
         import time
         time.sleep(1)
+        if lint_notice:
+            import threading
+            threading.Timer(2.0, lambda: window.evaluate_js(notice_js(lint_notice))).start()
         _apply_window_chrome("Hypervisor", str((ASSETS_DIR / "hypervisor.ico").resolve()))
         start_watcher_thread(watcher)
         # Launch the shared MCP HTTP service (if not already running)
         _start_mcp_service()
-        # RAG init is no longer eager — the shared MCP service owns the
+        # RAG init is no longer eager - the shared MCP service owns the
         # embedding model. The desktop app's search bar lazy-loads on first
         # use via get_rag().model @property, and the watcher's _rag_index_file
         # skips until RAG is initialized.
 
-    # Start PyWebView — pass our custom server class so the internal HTTP
+    # Start PyWebView - pass our custom server class so the internal HTTP
     # server uses our 404 handler instead of Bottle's default white page.
     # private_mode=False + storage_path pins localStorage to a fixed location
     # on disk so it persists across app restarts (regardless of port changes).
@@ -2389,7 +2330,7 @@ def main():
     # visible console window on Windows and emits only benign DPI/LLM noise.
     # The actionable renderer signal (JS errors, unhandled rejections, memory
     # climb) is already forwarded into hypervisor.log by client-diagnostics.js
-    # via the log_client_error bridge — no second file, no terminal. The one
+    # via the log_client_error bridge - no second file, no terminal. The one
     # thing the bridge can't catch is a hard process crash, so we keep the
     # silent crash reporter, which writes minidumps without a console.
     # No-op on non-WebView2 backends (the env var is ignored).
@@ -2413,7 +2354,7 @@ def main():
                   server=_HypervisorBottleServer, http_port=LAN_PORT)
 
     # Cleanup
-    print("  Window closed — shutting down")
+    print("  Window closed - shutting down")
     watcher.stop()
     # The MCP service is deliberately left running. It is a shared service that
     # agent sessions depend on, so stopping it here would silently remove every
@@ -2423,11 +2364,11 @@ def main():
     _mcp = _mcp_service_status()
     if _mcp["running"]:
         logger.info(
-            "window closed — leaving MCP service running (PID %s, port %d) for agent sessions",
+            "window closed - leaving MCP service running (PID %s, port %d) for agent sessions",
             _mcp["pid"], _mcp["port"],
         )
     else:
-        logger.info("window closed — no MCP service running")
+        logger.info("window closed - no MCP service running")
     try:
         app_lock.unlink()
     except OSError:

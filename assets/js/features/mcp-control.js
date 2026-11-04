@@ -5,7 +5,7 @@
  * an explicit way to inspect, bounce, and stop it.
  *
  * Bridge methods used: mcp_status, mcp_restart, mcp_stop, mcp_start.
- * Promotes nothing to window.* — fully self-contained.
+ * Promotes nothing to window.* - fully self-contained.
  */
 (function () {
   "use strict";
@@ -122,7 +122,7 @@
   function startPolling() {
     if (pollTimer) return;
     pollTimer = setInterval(function () {
-      // Only poll while the nav panel is actually open — no point querying
+      // Only poll while the nav panel is actually open - no point querying
       // process state for a control nobody is looking at.
       var panel = el("nav-panel");
       if (panel && panel.classList.contains("open")) refresh();

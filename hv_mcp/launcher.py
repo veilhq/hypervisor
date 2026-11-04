@@ -36,10 +36,10 @@ def launch_hypervisor() -> dict:
                     "status": "already_running",
                     "message": f"Hypervisor desktop app is already running (PID {pid}).",
                 }
-            # Lock file is stale — process no longer exists
+            # Lock file is stale - process no longer exists
             _APP_LOCK.unlink(missing_ok=True)
         except (ValueError, OSError):
-            # Corrupt lock file — remove it and proceed with launch
+            # Corrupt lock file - remove it and proceed with launch
             _APP_LOCK.unlink(missing_ok=True)
 
     # Launch the app as a detached subprocess
@@ -48,7 +48,7 @@ def launch_hypervisor() -> dict:
         proc = subprocess.Popen(
             [python, str(_APP_SCRIPT)],
             cwd=str(HYPERVISOR_DIR),
-            # Detach from parent — app runs independently
+            # Detach from parent - app runs independently
             creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,

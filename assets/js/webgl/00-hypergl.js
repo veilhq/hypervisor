@@ -1,4 +1,4 @@
-/* === HyperGL — WebGL2 Integration Layer === */
+/* === HyperGL - WebGL2 Integration Layer === */
 (function () {
   "use strict";
     // A thin, zero-dependency WebGL2 runtime layer for the hyper ecosystem.
@@ -173,7 +173,7 @@
             activeKey = '_primary';
             gl.useProgram(prog);
           } else {
-            // Inert instance — shader failed to compile
+            // Inert instance - shader failed to compile
             console.warn('[HyperGL] Primary shader failed. Instance is inert.');
           }
         }
@@ -185,7 +185,7 @@
                      { width: canvas.clientWidth, height: canvas.clientHeight };
           var w = Math.floor((rect.width || canvas.width) * pixelRatio);
           var h = Math.floor((rect.height || canvas.height) * pixelRatio);
-          // Don't resize to 0 — parent might be hidden
+          // Don't resize to 0 - parent might be hidden
           if (w <= 0 || h <= 0) return;
           if (canvas.width !== w || canvas.height !== h) {
             canvas.width = w;
@@ -509,6 +509,6 @@
       return { create: create };
     })();
 
-    // Cross-file export (WI-118 IIFE rework) — consumed by screensaver modes
+    // Cross-file export: consumed by screensaver modes
     window.HyperGL = HyperGL;
 })();

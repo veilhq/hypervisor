@@ -58,12 +58,13 @@
         // Build list items matching backlinks-section style
         var items = filtered.map(function (r) {
           var href = "/" + r.path.replace(/\.md$/, "") + "/index.html";
-          var displayPath = r.path;
-          var section = r.section ? " — §" + r.section : "";
+          var esc = window.HvUtils.escapeHtml;
+          var displayPath = esc(r.path);
+          var section = r.section ? " - §" + esc(r.section) : "";
           return (
-            '<li><a href="' + href + '">' +
+            '<li><a href="' + esc(href) + '">' +
               '<i data-lucide="sparkles" class="backlink-icon"></i> ' +
-              (r.title || r.path) + section +
+              esc(r.title || r.path) + section +
             '</a>' +
             '<span class="backlink-path">' + displayPath + '</span></li>'
           );

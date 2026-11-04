@@ -2,12 +2,13 @@
 
 // Zen mode is a focus view for the home page. It hides the persistent chrome
 // (topbar, site-nav, footer) and, instead of the full dashboard, composes an
-// ambient stage: a prose-face greeting, a live search input, the app-tile
-// launcher, and a minimal in-progress strip - centered, quiet, keyboard-first.
+// ambient stage: a prose-face greeting, a live search input, and a minimal
+// in-progress strip - centered, quiet, keyboard-first - plus a collapsed
+// app-launcher dropdown pinned to the top-left corner.
 //
-// Composition strategy — one source of truth, no duplicated wiring:
+// Composition strategy - one source of truth, no duplicated wiring:
 //   - The launcher row and the search input/results are MOVED (not cloned) into
-//     the stage. Their event listeners are bound to those exact nodes
+//     the launcher panel / stage. Their event listeners are bound to those exact nodes
 //     (launcher: per-node click in core; search: input listener in navigation),
 //     so moving carries the behavior intact. Cloning would copy the DOM but
 //     not the listeners (and would copy the __launcherWired expando, making the
@@ -29,7 +30,7 @@
   "use strict";
 
   var ZEN_KEY = "hypervisor-zen-mode";
-  var WORK_VIEW_KEY = "hypervisor-zen-work-view";  // 'work' | 'activity'
+  var WORK_VIEW_KEY = "hypervisor-zen-work-view";  // 'work' | 'activity' | 'hidden'
   var BODY_CLASS = "zen-mode";      // persisted preference flag
   var STAGED_CLASS = "zen-staged";  // active-on-home visual flag (stage mounted)
 
@@ -37,6 +38,7 @@
   // they can be returned exactly. Each: { node, parent, nextSibling }.
   var relocated = [];
   var stageEl = null;
+  var launcherEl = null;
 
   function isZen() {
     return document.body.classList.contains(BODY_CLASS);
@@ -50,6 +52,57 @@
     if (!node) return;
     relocated.push({ node: node, parent: node.parentNode, nextSibling: node.nextSibling });
     target.appendChild(node);
+  }
+
+  // The launcher row is MOVED into the panel so its per-node click handlers
+  // (wired in core) keep working; teardown returns it via restoreRelocated.
+  function buildLauncher(dashboard) {
+    var row = dashboard.querySelector(".launcher-row");
+    if (!row) return;
+
+    launcherEl = document.createElement("div");
+    launcherEl.className = "zen-launcher";
+
+    var trigger = document.createElement("button");
+    trigger.className = "zen-launcher-trigger";
+    trigger.setAttribute("type", "button");
+    trigger.setAttribute("aria-label", "Launch an app");
+    trigger.setAttribute("aria-expanded", "false");
+    trigger.setAttribute("data-tooltip", "Apps");
+    trigger.innerHTML = '<i data-lucide="layout-grid"></i>';
+    launcherEl.appendChild(trigger);
+
+    var panel = document.createElement("div");
+    panel.className = "zen-launcher-panel";
+    launcherEl.appendChild(panel);
+    moveInto(row, panel);
+    panel.style.setProperty("--launcher-n", row.children.length);
+
+    function setOpen(open) {
+      launcherEl.classList.toggle("open", open);
+      trigger.setAttribute("aria-expanded", open ? "true" : "false");
+    }
+    trigger.addEventListener("click", function () {
+      setOpen(!launcherEl.classList.contains("open"));
+    });
+    // Launching an app closes the panel; the tile's own handler does the launch.
+    panel.addEventListener("click", function (e) {
+      if (e.target.closest(".launcher-box[data-launch]")) setOpen(false);
+    });
+    launcherEl.__setOpen = setOpen;
+
+    document.body.appendChild(launcherEl);
+  }
+
+  function closeLauncher() {
+    if (launcherEl && launcherEl.__setOpen) launcherEl.__setOpen(false);
+  }
+
+  function removeLauncher() {
+    if (launcherEl && launcherEl.parentNode) {
+      launcherEl.parentNode.removeChild(launcherEl);
+    }
+    launcherEl = null;
   }
 
   function buildStage() {
@@ -67,6 +120,7 @@
       restoreRelocated();
       if (stageEl && stageEl.parentNode) stageEl.parentNode.removeChild(stageEl);
       stageEl = null;
+      removeLauncher();
       document.body.classList.remove(STAGED_CLASS);
     }
 
@@ -78,7 +132,17 @@
     stageEl = document.createElement("div");
     stageEl.className = "zen-stage";
 
-    // 1. Greeting — prose face. Zen uses a text-only greeting: the shared
+    // 1. Logo - clone the Hypervisor brand mark in above the greeting (plain
+    //    inline SVG, no listeners, safe to clone). Centered by the stage's
+    //    align-items. Hidden on the dashboard itself via CSS; shown only here.
+    var logoSrc = dashboard.querySelector("[data-zen-logo]");
+    if (logoSrc) {
+      var logo = logoSrc.cloneNode(true);
+      logo.classList.add("zen-logo");
+      stageEl.appendChild(logo);
+    }
+
+    // 2. Greeting - prose face. Zen uses a text-only greeting: the shared
     //    picker also returns kaomoji emotes (sanctioned character elsewhere),
     //    but the zen stage reads better with a plain prose line. Pick until a
     //    non-emote comes up (bounded so a degenerate picker can't loop), then
@@ -96,11 +160,12 @@
     }
     stageEl.appendChild(greeting);
 
-    // 2. Launcher — move the live tile row in (per-node click handlers intact).
-    var launcher = dashboard.querySelector(".launcher-row");
-    if (launcher) moveInto(launcher, stageEl);
+    // Launcher - a collapsed grid dropdown pinned to the top-left corner.
+    // Mounted on body (not in the stage): the stage's entrance animation holds
+    // a transform, which would turn position:fixed into stage-relative.
+    buildLauncher(dashboard);
 
-    // 3. Search — move the live input row + results box in, so the existing
+    // Search - move the live input row + results box in, so the existing
     //    input listener (text + WI-id fast-path + semantic) drives them inline.
     //    The results box floats (absolute) so a full result list overlays
     //    downward instead of pushing the launcher/work siblings off the page.
@@ -112,10 +177,11 @@
     if (resultsBox) moveInto(resultsBox, searchWrap);
     stageEl.appendChild(searchWrap);
 
-    // 4. Lower section — a toggle between the active-work grid and the recent
-    //    activity list. Both are server-rendered in the hidden dashboard; clone
-    //    each (plain anchors, safe to clone) and show one at a time. The choice
-    //    persists via savePreference, defaulting to the work view.
+    // 4. Lower section - a pill that cycles the lower area between the
+    //    active-work grid, the recent activity list, and a hidden state (no
+    //    section content at all). Both grids are server-rendered in the hidden
+    //    dashboard; clone each (plain anchors, safe to clone) and show one, or
+    //    neither. The choice persists via savePreference, defaulting to work.
     var workGrid = dashboard.querySelector(".work-card-grid");
     var activityRows = dashboard.querySelectorAll(".home-section-recent .pulse-row-recent");
     if (workGrid || activityRows.length) {
@@ -123,9 +189,9 @@
       section.className = "zen-section";
 
       // Wordless cycle button: a single --comp pill (the .pill-toggle
-      // primitive) advances the section between work and activity on each
-      // click. The control carries no state - the content below shows which
-      // view is active. Minimal, low-ink.
+      // primitive) advances the section through work, activity, and hidden on
+      // each click. The control carries no state - the content below (or its
+      // absence) shows which view is active. Minimal, low-ink.
       var toggle = document.createElement("button");
       toggle.className = "pill-toggle zen-section-toggle";
       toggle.setAttribute("type", "button");
@@ -133,7 +199,17 @@
       toggle.setAttribute("data-tooltip", "Switch work / activity");
       section.appendChild(toggle);
 
-      // Work view — the cloned work-card grid.
+      // Collapsible body: holds both views and is the element that
+      // height-animates. The pill stays outside it (always visible), so the
+      // hidden state can smoothly shrink the content while the control that
+      // cycles back out remains on screen. The gradual height change is what
+      // lets the greeting/launcher/search glide into their recentered position
+      // instead of teleporting when the section empties.
+      var sectionBody = document.createElement("div");
+      sectionBody.className = "zen-section-body";
+      section.appendChild(sectionBody);
+
+      // Work view - the cloned work-card grid.
       var workView = document.createElement("div");
       workView.className = "zen-work zen-section-view";
       workView.setAttribute("data-view", "work");
@@ -144,9 +220,9 @@
       } else {
         workView.innerHTML = '<div class="zen-section-empty">no items in progress</div>';
       }
-      section.appendChild(workView);
+      sectionBody.appendChild(workView);
 
-      // Activity view — the cloned recent-activity rows.
+      // Activity view - the cloned recent-activity rows.
       var activityView = document.createElement("div");
       activityView.className = "zen-activity zen-section-view";
       activityView.setAttribute("data-view", "activity");
@@ -157,15 +233,31 @@
       } else {
         activityView.innerHTML = '<div class="zen-section-empty">no recent activity</div>';
       }
-      section.appendChild(activityView);
+      sectionBody.appendChild(activityView);
 
       // --- View selection + persistence ---
-      // Only two views; the pill cycles between them. selectView just shows the
-      // chosen view (the pill itself carries no state).
+      // Three views cycled by the pill: work, activity, and hidden. For work
+      // and activity, show the chosen grid and keep the body open. For hidden,
+      // the body collapses via its own max-height transition (the task-panel
+      // collapse pattern) - crucially the outgoing grid KEEPS its .active
+      // display so it fills the body's height while max-height animates 44rem
+      // -> 0. Yanking display:none off the grid in the same frame would drop
+      // the content instantly and leave max-height nothing to shrink against,
+      // which read as an instant exit. Keeping it mounted lets the height
+      // glide, and the surrounding greeting/launcher/search glide with it.
+      var lastGrid = "work";
       function selectView(view) {
-        var isActivity = view === "activity";
-        workView.classList.toggle("active", !isActivity);
-        activityView.classList.toggle("active", isActivity);
+        // Stage-level flag so the greeting (which lives outside the section)
+        // can scale up when the stage reaches its most minimal hidden state.
+        stageEl.classList.toggle("section-hidden", view === "hidden");
+        if (view === "hidden") {
+          sectionBody.classList.add("collapsed");
+          return; // leave whichever grid is .active mounted under the clip
+        }
+        lastGrid = view;
+        sectionBody.classList.remove("collapsed");
+        workView.classList.toggle("active", view === "work");
+        activityView.classList.toggle("active", view === "activity");
       }
       function setView(view) {
         selectView(view);
@@ -174,13 +266,18 @@
         }
       }
       // Restore persisted choice (localStorage cache; defaults to work).
+      var VIEWS = ["work", "activity", "hidden"];
       var current = "work";
-      try { current = localStorage.getItem(WORK_VIEW_KEY) === "activity" ? "activity" : "work"; } catch (ex) {}
+      try {
+        var saved = localStorage.getItem(WORK_VIEW_KEY);
+        if (VIEWS.indexOf(saved) !== -1) current = saved;
+      } catch (ex) {}
       selectView(current);
 
-      // Each click advances to the next (and only other) view.
+      // Each click advances to the next view, wrapping work -> activity ->
+      // hidden -> work.
       toggle.addEventListener("click", function () {
-        current = current === "work" ? "activity" : "work";
+        current = VIEWS[(VIEWS.indexOf(current) + 1) % VIEWS.length];
         setView(current);
       });
 
@@ -229,12 +326,24 @@
     restoreRelocated();
     if (stageEl && stageEl.parentNode) stageEl.parentNode.removeChild(stageEl);
     stageEl = null;
+    removeLauncher();
   }
+
+  // Esc, an outside click, or focusing the search input closes the launcher.
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") closeLauncher();
+  });
+  document.addEventListener("mousedown", function (e) {
+    if (launcherEl && !launcherEl.contains(e.target)) closeLauncher();
+  });
+  document.addEventListener("focusin", function (e) {
+    if (e.target.closest && e.target.closest(".zen-search")) closeLauncher();
+  });
 
   // --- Apply / persist -----------------------------------------------------
 
   // Apply the mode class and (re)build or tear down the stage. Does not
-  // persist — restore paths call this so a restore never writes back.
+  // persist - restore paths call this so a restore never writes back.
   function applyZen(on) {
     document.body.classList.toggle(BODY_CLASS, !!on);
     if (on) buildStage();
@@ -274,7 +383,7 @@
 
   // --- z-key toggle --------------------------------------------------------
   document.addEventListener("keydown", function (e) {
-    // Bare "z" only — leave Ctrl+Z / Cmd+Z (undo) and modified combos alone.
+    // Bare "z" only - leave Ctrl+Z / Cmd+Z (undo) and modified combos alone.
     if (e.key !== "z" || e.ctrlKey || e.metaKey || e.altKey) return;
     if (typingInField()) return;
     e.preventDefault();
@@ -302,7 +411,7 @@
   // navigation lifecycle:
   //   - teardown (before content swap): return any relocated nodes to the
   //     dashboard first. The launcher and work-grid live inside #content-target,
-  //     which the router is about to replace — restoring them first keeps them
+  //     which the router is about to replace - restoring them first keeps them
   //     from being discarded with the old fragment.
   //   - init (after content swap): if zen is active and the new page is the
   //     home fragment, rebuild the stage against the freshly rendered dashboard.

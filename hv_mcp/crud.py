@@ -17,11 +17,12 @@ from .helpers import (
     validate_tags, validate_project, validate_status_transition,
     rewrite_backlinks, trigger_site_build,
 )
+from .blame import build_location_section
 from .index import refresh_single, remove_from_index
 from .index_file import regenerate_index_file
 from .templates import (
     apply_work_item_template, apply_idea_template,
-    apply_document_template, apply_adr_template, apply_bugfix_template,
+    apply_document_template, apply_adr_template, WORK_ITEM_KINDS,
 )
 from .validation import validate_single
 
@@ -49,8 +50,6 @@ def create_document(
     decision: str | None = None,
     rationale: str | None = None,
     consequences: str | None = None,
-    severity: str | None = None,
-    affected: str | None = None,
     problem: str | None = None,
     root_cause: str | None = None,
     fix: str | None = None,
@@ -58,10 +57,17 @@ def create_document(
     recommendations: str | None = None,
     assignee: str = "Josh Wooten",
     horizon: str = "Backlog",
+    kind: str = "story",
+    feature: str | None = None,
+    location_file: str | None = None,
+    location_lines: str | None = None,
+    question: str | None = None,
+    time_box: str | None = None,
+    findings: str | None = None,
 ) -> dict:
     """Create a new hyperspace document with full convention enforcement."""
     # Validate type
-    valid_types = {"work-item", "idea", "document", "adr", "bugfix"}
+    valid_types = {"work-item", "idea", "document", "adr"}
     if type not in valid_types:
         return {"error": f"Invalid document type '{type}'. Must be one of: {sorted(valid_types)}"}
 
@@ -86,10 +92,25 @@ def create_document(
     if type == "work-item" and horizon not in VALID_HORIZONS:
         return {"error": f"Invalid horizon '{horizon}'. Must be one of: {', '.join(VALID_HORIZONS)}"}
 
+    # Validate kind and feature (work-items only)
+    if type == "work-item":
+        kind = (kind or "story").lower()
+        if kind not in WORK_ITEM_KINDS:
+            return {"error": f"Invalid kind '{kind}'. Must be one of: {', '.join(WORK_ITEM_KINDS)}"}
+        feature = (feature or "").strip()
+        if not feature:
+            return {"error": "Feature is required for work-items: the name of the feature this work item belongs to."}
+        if kind == "bug" and not problem:
+            return {"error": "Problem is required for bug work-items."}
+        if kind == "spike" and not (question and time_box):
+            return {"error": "Question and time_box are required for spike work-items."}
+
     # Generate content based on type
     if type == "work-item":
         if not overview:
             return {"error": "Overview is required for work-items."}
+        if feature.lower() not in overview.lower():
+            return {"error": f"Overview must say how this work item contributes to the feature '{feature}' (mention it by name)."}
         if not description:
             description = overview[:120] + ("..." if len(overview) > 120 else "")
         work_id = next_work_id()
@@ -98,7 +119,11 @@ def create_document(
             project=project, doc_type=doc_type, overview=overview,
             design=design, acceptance_criteria=acceptance_criteria, tasks=tasks,
             work_id=work_id, open_questions=open_questions, assignee=assignee,
-            horizon=horizon,
+            horizon=horizon, kind=kind, feature=feature,
+            problem=problem, root_cause=root_cause, fix=fix, testing=testing,
+            location=build_location_section(location_file, location_lines) if kind == "bug" else None,
+            question=question, time_box=time_box, findings=findings,
+            recommendations=recommendations,
         )
         target_dir = HYPERSPACE_ROOT / "work" / "to-do"
 
@@ -138,16 +163,6 @@ def create_document(
         topic_dir = directory or "research"
         target_dir = HYPERSPACE_ROOT / topic_dir.replace("/", os.sep)
 
-    elif type == "bugfix":
-        if not all([severity, affected, problem, root_cause, fix]):
-            return {"error": "Bugfix requires: severity, affected, problem, root_cause, fix."}
-        md_content = apply_bugfix_template(
-            title=title, tags=valid_tags, severity=severity, affected=affected,
-            problem=problem, root_cause=root_cause, fix=fix,
-            testing=testing, recommendations=recommendations,
-        )
-        target_dir = HYPERSPACE_ROOT / "research" / "bugfixes"
-
     # Ensure target directory exists
     target_dir.mkdir(parents=True, exist_ok=True)
 
@@ -163,7 +178,7 @@ def create_document(
     except OSError as e:
         return {"error": f"File write failed: {e}"}
 
-    # Post-write validation — verify the generated document is well-formed
+    # Post-write validation - verify the generated document is well-formed
     rel_path = str(final_path.relative_to(HYPERSPACE_ROOT)).replace("\\", "/")
     validation_result = validate_single(rel_path)
     if validation_result.get("violations"):
@@ -214,7 +229,7 @@ def update_document(
         error = validate_status_transition(current_status, status)
         if error:
             return {"error": error}
-        # Block setting Complete via update_document for work items —
+        # Block setting Complete via update_document for work items - 
         # callers must use move_work_item() which also relocates the file.
         if status == "Complete" and "work/" in path:
             return {
@@ -320,7 +335,7 @@ def update_document(
         final_content += "\n"
     full_path.write_text(final_content, encoding="utf-8")
 
-    # Post-write validation — verify the updated document is still well-formed
+    # Post-write validation - verify the updated document is still well-formed
     validation_result = validate_single(path)
     if validation_result.get("violations"):
         # Non-fatal: update applied but document has issues. Include warnings.
@@ -344,15 +359,15 @@ def update_document(
 
 def move_work_item(slug: str) -> dict:
     """Move a work item from to-do to done (mark as complete)."""
-    # Support WI-N ID format (case/dash-insensitive) — resolve to slug
+    # Support WI-N ID format (case/dash-insensitive) - resolve to slug
     norm_id = normalize_work_id(slug)
     if norm_id:
         from .index import get_index_lock, _index
         with get_index_lock():
-            match = next((e for e in _index if e.get("work_id") and e["work_id"].upper() == norm_id.upper()), None)
+            match = _index.get_by_work_id(norm_id)
         if not match:
             return {"error": f"No work item found with ID '{slug}'."}
-        # Extract slug from path (e.g., "work/to-do/my-item.md" → "my-item")
+        # Extract slug from path (e.g., "work/to-do/my-item.md" -> "my-item")
         from pathlib import PurePosixPath
         slug = PurePosixPath(match["path"]).stem
 
@@ -395,7 +410,7 @@ def move_work_item(slug: str) -> dict:
     new_rel = f"work/done/{slug}.md"
     updated_backlinks = rewrite_backlinks(old_rel, new_rel)
 
-    # Delete source — retry on Windows file-locking errors from concurrent builds
+    # Delete source - retry on Windows file-locking errors from concurrent builds
     deleted = False
     for attempt in range(5):
         try:

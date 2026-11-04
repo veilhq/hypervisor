@@ -1,4 +1,4 @@
-"""Idea operations — delete implemented ideas.
+"""Idea operations - delete implemented ideas.
 
 Pure file-manipulation functions with no PyWebView or window dependencies.
 Called by HypervisorAPI methods that handle watcher/rebuild/UI concerns.

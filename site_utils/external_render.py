@@ -175,10 +175,10 @@ def _render_binary_body(ext: str) -> str:
     """
     kind = ext.lstrip(".").upper()
     return (
-        '<div class="hv-empty-state">'
-        '<i data-lucide="file-x" class="hv-empty-state-icon"></i>'
-        '<p class="hv-empty-state-title">No preview available</p>'
-        '<p class="hv-empty-state-msg">'
+        '<div class="empty-state">'
+        '<i data-lucide="file-x" class="empty-state-icon"></i>'
+        '<p class="empty-state-title">No preview available</p>'
+        '<p class="empty-state-msg">'
         f'This {kind} file is stored in <code>.external/</code>. '
         'Open it from your filesystem.'
         '</p>'

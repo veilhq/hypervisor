@@ -1,6 +1,6 @@
 /* === Screensaver Mode: GL Particles (GPU Fluid) === */
 
-    // Dense GPU particle fluid — same visual as the CPU SPH particles mode
+    // Dense GPU particle fluid - same visual as the CPU SPH particles mode
     // but running 10-20x more particles via transform feedback.
     // Uses simplified repulsion (no true neighbor search on GPU) but achieves
     // the fluid look through high particle count + viscous damping + mouse interaction.
@@ -466,6 +466,6 @@
         cleanup: cleanup,
         preview: preview,
         gl: true,
-        meta: { name: "GL Particles", icon: "zap", desc: "100K GPU particles — flow fields and mouse repulsion" }
+        meta: { name: "GL Particles", icon: "zap", desc: "100K GPU particles - flow fields and mouse repulsion" }
       };
     })();

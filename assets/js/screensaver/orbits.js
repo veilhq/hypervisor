@@ -6,7 +6,7 @@
     // ========== MODE: Orbiting Great-Circle Arcs ==========
     // A sphere woven from great-circle arcs. Each arc orbits its great circle
     // continuously, drawing a fading trail behind it. The sphere never
-    // dissolves — it remains intact and rotating.
+    // dissolves - it remains intact and rotating.
     //
     // Trails are parametric (continuous angle), not sample-snapped, so motion
     // is perfectly smooth regardless of frame rate.
@@ -15,7 +15,7 @@
     // Chromium, so WebGL cannot vary stroke weight, and depth-varying line
     // width is what reads as 3D here.
     //
-    // Animation is driven by an internal step counter, not wall-clock time —
+    // Animation is driven by an internal step counter, not wall-clock time - 
     // the engine generates card previews by calling draw() 60x in a tight loop.
 
     var ARC_COUNT = 34;
@@ -97,7 +97,7 @@
         var arc = orbitState.arcs[a];
         var col = palette ? palette[arc.colorIdx] : accent;
 
-        // Head angle — continuous, no snapping
+        // Head angle - continuous, no snapping
         var headAngle = arc.phase + step * arc.speed;
 
         // Build projected trail points from head backward

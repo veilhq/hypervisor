@@ -1,4 +1,4 @@
-"""Task progress from git evidence — proposes which work item tasks are satisfied.
+"""Task progress from git evidence - proposes which work item tasks are satisfied.
 
 Reads a work item's tasks, finds the branches its assignee has pushed, and
 matches changed files against the file references in each task. Reports findings
@@ -9,7 +9,7 @@ DESIGN NOTES (see WI-187)
 Match on basename and symbol, not the task's stated path. WI-180 task 1
 specified `api/permissions/migration_utils.py`; the file landed at
 `api/portal_api/migration_utils.py`. A literal path check reports it missing and
-the task gets marked incomplete — the exact error this exists to prevent.
+the task gets marked incomplete - the exact error this exists to prevent.
 
 Coverage is part of the contract. Only ~29% of tasks corpus-wide carry a
 resolvable file reference (1,927 tasks across 151 items: 22% explicit path, 7%
@@ -22,7 +22,7 @@ mapping, so attributing a row to a task requires guessing. The table is used
 solely to determine which repos a work item touches.
 
 Evidence unions across branches and repos. Asking "which branch is this work
-item's branch" forces a choice and discards the rest — WI-153's evidence spans
+item's branch" forces a choice and discards the rest - WI-153's evidence spans
 two repos and selection would lose half. Where one candidate's changed-file set
 strictly contains another's (sequential stacks like
 mk/api-restructure-wave-1..wave-5), the narrower branch is preferred and the
@@ -39,7 +39,7 @@ from site_utils.file_utils import read_md, _extract_assignee_from_text
 
 from .claims import WORKSPACE_ROOT, _extract_section, _resolve_work_item
 
-# tools/ is a sibling of hv_mcp/, not a package — add it to the path the same
+# tools/ is a sibling of hv_mcp/, not a package - add it to the path the same
 # way ado_bridge.py does for ado_collector.
 _TOOLS_DIR = Path(__file__).resolve().parent.parent / "tools"
 if str(_TOOLS_DIR) not in sys.path:
@@ -54,7 +54,7 @@ import git_evidence as ge  # noqa: E402
 
 _TASK_RE = re.compile(r'^\s*-\s*\[([ xX])\]\s*(.+)$')
 
-# Backticked path containing a slash — the repo-relative form work items use.
+# Backticked path containing a slash - the repo-relative form work items use.
 _PATH_RE = re.compile(r'`([\w\-.]+(?:/[\w\-.]+)+\.\w{1,6})`')
 
 _EXT = r'py|js|jsx|ts|tsx|css|json|tf|tfvars|md|yml|yaml|cjs|html|config|sh'
@@ -74,7 +74,7 @@ _REMOVAL_VERBS = (
 # Verbs implying the target already exists. An add record is then the wrong
 # shape of evidence: WI-182's "Rewrite `MessageBoard.js` as a pure consumer of
 # context state" matched WI-9's branch *creating* that file. Both branches belong
-# to the same author, so candidate selection cannot separate them — the verb can.
+# to the same author, so candidate selection cannot separate them - the verb can.
 _MODIFY_VERBS = (
     "rewrite", "convert", "replace", "refactor", "update", "extend",
     "migrate", "modify", "adjust", "rework", "wire", "rename",
@@ -84,7 +84,7 @@ _MODIFY_VERBS = (
 # file is the whole answer. Old side still there means not done; new side there
 # means done. Without this the two collapse into one "file contains a cited
 # symbol" signal, which reads as partial progress when it is actually evidence of
-# no progress — WI-181's "Rename `student_count` -> `participant_count`" is
+# no progress - WI-181's "Rename `student_count` -> `participant_count`" is
 # reported as `likely` while `student_count` is still in the file.
 _RENAME_ARROW_RE = re.compile(r'`([^`]+)`\s*(?:\u2192|->|=>)\s*`([^`]+)`')
 _RENAME_FROM_TO_RE = re.compile(r'\bfrom\s+`([^`]+)`\s+to\s+`([^`]+)`', re.I)
@@ -94,7 +94,7 @@ def _rename_pair(text: str) -> tuple[str, str] | None:
     """The (old, new) strings of an *identifier* rename, if the task states both.
 
     Raw backtick contents are used as needles rather than parsed identifiers,
-    because the values are often not bare symbols — WI-181 renames
+    because the values are often not bare symbols - WI-181 renames
     `data-testid="student-count-input"`, quotes included, which searches fine
     literally but would not survive identifier tokenisation.
 
@@ -125,7 +125,7 @@ def _looks_like_path(s: str) -> bool:
 def _leading_clause(text: str) -> str:
     """The task's opening clause, with any bold label stripped.
 
-    Tasks commonly read "**Range lambda — writes**: Add ...", so the label has to
+    Tasks commonly read "**Range lambda - writes**: Add ...", so the label has to
     come off before the verb is readable.
     """
     body = re.sub(r'^\s*\*\*[^*]+\*\*\s*:?\s*', '', text).strip()
@@ -151,8 +151,8 @@ def _is_modification(text: str) -> bool:
 
 
 # Repo hints from the bold-label convention this corpus uses: "**CMS**: ...",
-# "**Portal — proxy write endpoints**: ...", "**Range TF — table**: ...".
-# Without these, basename matching crosses repos — WI-180's "**CMS**: Create
+# "**Portal - proxy write endpoints**: ...", "**Range TF - table**: ...".
+# Without these, basename matching crosses repos - WI-180's "**CMS**: Create
 # permissions/migrations/..." matched a cyber-portal rename of the same
 # basename, which would have wrongly marked the task complete.
 _REPO_HINTS = (
@@ -182,7 +182,7 @@ def extract_task_refs(task_text: str) -> dict:
     """Pull the resolvable references out of one task line.
 
     Returns {paths, basenames, symbols, removal, assessable}. A task is
-    assessable when it names at least one path or filename — a symbol alone is
+    assessable when it names at least one path or filename - a symbol alone is
     not enough to locate a file without a tree-wide search per symbol.
     """
     paths = _PATH_RE.findall(task_text)
@@ -245,7 +245,7 @@ def referenced_repos(md_text: str, known_repos: set[str]) -> list[str]:
     table) because the table is the most reliable signal for repo scoping even
     though it cannot be attributed to individual tasks.
 
-    Returns [] when no path carries a repo prefix — many work items write
+    Returns [] when no path carries a repo prefix - many work items write
     repo-relative paths like `api/permissions/foo.py`. Callers should fall back
     to narrow_repos_by_content() rather than scanning every repo, which pulls in
     unrelated branches as candidates.
@@ -263,7 +263,7 @@ def narrow_repos_by_content(repos: dict[str, Path], paths: list[str],
     """Repos whose base tree actually contains any referenced file.
 
     Fallback for work items that write repo-relative paths with no prefix. One
-    `ls-tree` per repo, then set membership — cheaper than diffing candidate
+    `ls-tree` per repo, then set membership - cheaper than diffing candidate
     branches in repos the work item never touches.
     """
     want_paths = {p.lower() for p in paths}
@@ -295,8 +295,8 @@ def candidate_branches(repo_path: Path, assignee: str, max_age_days: int | None)
     Two independent signals, both cheap since list_branches already returns
     author and prefix:
 
-      commit author — always present, so this is primary
-      branch prefix — absent on branches like `qa`, `portal-terraform`,
+      commit author - always present, so this is primary
+      branch prefix - absent on branches like `qa`, `portal-terraform`,
                       `test/wave3-only`, `hotfix/copyright`, so corroborating only
 
     Disagreement between them (someone pushing to a colleague's branch) is
@@ -346,7 +346,7 @@ def gather_evidence(repo_name: str, repo_path: Path, branches: list[dict],
                     paths: list[str], basenames: list[str]) -> dict:
     """Collect diff and tree evidence for one repo.
 
-    Diffs only unmerged branches — a merged branch yields an empty three-dot
+    Diffs only unmerged branches - a merged branch yields an empty three-dot
     diff, so merged work is read from tree state instead.
     """
     base = ge.base_branch(repo_path)
@@ -362,7 +362,7 @@ def gather_evidence(repo_name: str, repo_path: Path, branches: list[dict],
 
     wider = _prefer_narrower(branches, diffs)
 
-    # Strip the repo prefix — git paths are repo-relative.
+    # Strip the repo prefix - git paths are repo-relative.
     rel_paths = []
     for p in paths:
         head, _, rest = p.partition("/")
@@ -526,7 +526,7 @@ def classify(task: dict, diff_hits: list[dict], tree_facts: list[dict]) -> dict:
                 "why": "no resolvable file reference in task text"}
 
     # Renames are decided by which side of the change is in the file. Skipped
-    # when a diff already shows the file added or renamed — a branch record is
+    # when a diff already shows the file added or renamed - a branch record is
     # stronger evidence than inspecting the base tree's content, and running
     # this first would discard it.
     if task.get("rename") and not any(
@@ -539,10 +539,10 @@ def classify(task: dict, diff_hits: list[dict], tree_facts: list[dict]) -> dict:
             if f["rename_new_present"] and f["rename_old_present"]:
                 return {"verdict": "likely", "confidence": "moderate",
                         "why": f"{f['path']} contains both {old} and {new}"
-                               " — rename appears partial"}
+                               " - rename appears partial"}
             if f["rename_old_present"]:
                 return {"verdict": "not_found", "confidence": "strong",
-                        "why": f"{f['path']} still contains {old} — rename not done"}
+                        "why": f"{f['path']} still contains {old} - rename not done"}
         # Neither side found: the file reference is probably pointing elsewhere.
         if tree_facts:
             return {"verdict": "not_found", "confidence": "weak",
@@ -551,7 +551,7 @@ def classify(task: dict, diff_hits: list[dict], tree_facts: list[dict]) -> dict:
     # Removal tasks are proven by absence, not presence.
     if task["removal"]:
         for f in tree_facts:
-            # Absence alone is not removal evidence — the path may never have
+            # Absence alone is not removal evidence - the path may never have
             # existed there. WI-180 cites `.ebextensions/02_db-migrate.config`
             # while the file lives at `api/.ebextensions/...`, so it reads as
             # absent on every ref. Require it to still exist on a later ref,
@@ -559,13 +559,13 @@ def classify(task: dict, diff_hits: list[dict], tree_facts: list[dict]) -> dict:
             if not f["on_base"] and f["tier_present"]:
                 return {"verdict": "satisfied", "confidence": "strong",
                         "why": f"{f['path']} is gone from {f['repo']}'s base branch but "
-                               f"still on {f['tier_present']} — removal landed"}
+                               f"still on {f['tier_present']} - removal landed"}
         for h in diff_hits:
             if h["change_type"] == "D":
                 return {"verdict": "satisfied", "confidence": "strong",
                         "why": f"{h['branch']} deletes {h['path']}"}
         # Symbol-level removal: the file survives but a cited identifier is gone
-        # from it. Evaluated per symbol, not across all of them — a task citing
+        # from it. Evaluated per symbol, not across all of them - a task citing
         # several identifiers (or carrying an annotation that adds incidental
         # ones) would otherwise fail the check because some unrelated token is
         # still present. Requires the symbol to have existed on an older ref,
@@ -576,12 +576,12 @@ def classify(task: dict, diff_hits: list[dict], tree_facts: list[dict]) -> dict:
                 return {"verdict": "satisfied", "confidence": "strong",
                         "why": f"{f['path']} contained {', '.join(removed[:3])} on "
                                f"{f['older_ref']} and no longer does on the base "
-                               "branch — removal landed"}
+                               "branch - removal landed"}
         # Absent everywhere means the reference does not resolve, not that the
         # work is done.
         if any(not f["on_base"] and not f["tier_present"] for f in tree_facts):
             return {"verdict": "not_found", "confidence": "weak",
-                    "why": "referenced path does not exist on any ref — "
+                    "why": "referenced path does not exist on any ref - "
                            "the task's path is probably stale or relative"}
         if tree_facts or diff_hits:
             return {"verdict": "not_found", "confidence": "moderate",
@@ -597,12 +597,12 @@ def classify(task: dict, diff_hits: list[dict], tree_facts: list[dict]) -> dict:
                   if h["change_type"] in ("R", "C")
                   else f"{h['branch']} adds {h['path']}")
         # A task that rewrites or replaces something presumes it already exists,
-        # so an add record probably belongs to whatever created the file — often
+        # so an add record probably belongs to whatever created the file - often
         # an earlier story on a sibling branch by the same author.
         if task.get("modification") and h["change_type"] == "A":
             return {"verdict": "likely", "confidence": "weak",
                     "why": f"{detail}, but this task describes modifying existing code"
-                           " — the add likely belongs to earlier work"}
+                           " - the add likely belongs to earlier work"}
         return {"verdict": "satisfied", "confidence": "strong", "why": detail}
 
     # Merged work: present on the integration branch but not yet on main means
@@ -611,10 +611,10 @@ def classify(task: dict, diff_hits: list[dict], tree_facts: list[dict]) -> dict:
         if f["on_base"] and f["tier_present"] and f["tier_present"] != "main":
             return {"verdict": "satisfied", "confidence": "strong",
                     "why": f"{f['path']} exists on {f['tier_present']} but not main"
-                           " — landed since the last release"}
+                           " - landed since the last release"}
 
     # Relocation: stated path is empty but the basename lives elsewhere. Only
-    # "likely" — a relocation is ambiguous on its own. It may mean the file
+    # "likely" - a relocation is ambiguous on its own. It may mean the file
     # moved (task done, different path) or that the stated path is simply wrong
     # and the file sits where it always did (task not done). WI-180's CMS task
     # cites `seed_data/permissions.json` while the file is at
@@ -625,14 +625,14 @@ def classify(task: dict, diff_hits: list[dict], tree_facts: list[dict]) -> dict:
         if f["relocated_to"]:
             return {"verdict": "likely", "confidence": "moderate",
                     "why": f"stated path {f['path']} is absent; a file of that name "
-                           f"exists at {', '.join(f['relocated_to'][:2])} — verify "
+                           f"exists at {', '.join(f['relocated_to'][:2])} - verify "
                            "whether this is a completed move or a stale path"}
 
     mods = [h for h in diff_hits if h["change_type"] == "M"]
     if mods:
         return {"verdict": "likely", "confidence": "moderate",
                 "why": f"{mods[0]['branch']} modifies {mods[0]['path']}"
-                       " — work happened here, completion not proven"}
+                       " - work happened here, completion not proven"}
 
     # Symbol confirmation in an existing file: weaker than a diff record, but it
     # shows the named identifier is actually there rather than only the file.
@@ -640,13 +640,13 @@ def classify(task: dict, diff_hits: list[dict], tree_facts: list[dict]) -> dict:
         if f["on_base"] and task["symbols"] and f["symbols_present"]:
             return {"verdict": "likely", "confidence": "moderate",
                     "why": f"{f['path']} contains {', '.join(f['symbols_present'][:3])}"
-                           " — cannot date the change from tree state alone"}
+                           " - cannot date the change from tree state alone"}
 
     for f in tree_facts:
         if f["on_base"] and f["tier_present"] == "main":
             return {"verdict": "likely", "confidence": "weak",
                     "why": f"{f['path']} exists everywhere including main"
-                           " — cannot attribute to this task"}
+                           " - cannot attribute to this task"}
 
     return {"verdict": "not_found", "confidence": "moderate",
             "why": "no candidate branch touched the referenced files"}
@@ -761,7 +761,7 @@ def check_task_progress(slug: str, fetch: bool = True,
         "actionable_lines": [f["line"] for f in actionable],
         "findings": findings,
         "note": (
-            "Only pushed work is visible to git — a teammate working locally "
+            "Only pushed work is visible to git - a teammate working locally "
             "produces no evidence. Findings are advisory; this tool never edits "
             "a document."
         ),

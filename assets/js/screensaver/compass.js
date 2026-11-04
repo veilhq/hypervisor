@@ -59,7 +59,7 @@
 
         var t = step * 0.015;
 
-        // Idle: inverted voronoi — cells near region boundaries activate
+        // Idle: inverted voronoi - cells near region boundaries activate
         if (step % 8 === 0) {
           var total = cols * rows;
           var NUM_SEEDS = 8;
@@ -143,5 +143,5 @@
         compassState.step++;
       }
 
-      ssModes['dot-matrix'] = { init: compassInit, draw: compassDraw, resize: compassResize, meta: { name: "Dot Matrix", icon: "grip", desc: "Flickering dot grid — mouse sends ripples through the field" } };
+      ssModes['dot-matrix'] = { init: compassInit, draw: compassDraw, resize: compassResize, meta: { name: "Dot Matrix", icon: "grip", desc: "Flickering dot grid - mouse sends ripples through the field" } };
     })();

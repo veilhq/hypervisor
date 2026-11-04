@@ -165,7 +165,7 @@ def _pulse_time_str(date_str):
 
 
 def generate_home_content(files, build_stats=None, recent_paths=None):
-    """Generate the hub homepage HTML — dashboard layout."""
+    """Generate the hub homepage HTML - dashboard layout."""
     if recent_paths is None:
         recent_paths = set()
 
@@ -174,8 +174,12 @@ def generate_home_content(files, build_stats=None, recent_paths=None):
     # --- 0. Orchestrator launcher (greeting + app icon row) ---
     html.append('<div class="dashboard-wrap">')
     html.append('<div class="home-anchor">')
+    # Hypervisor brand mark - rendered here (hidden on the dashboard) so the zen
+    # stage can clone it in above the greeting. Cloneable rather than live-moved
+    # since it is a plain inline SVG with no listeners.
+    html.append(f'<div class="home-anchor-logo" data-zen-logo>{hypervisor_logo_svg("home-anchor-logo-svg")}</div>')
     html.append('<span class="home-anchor-greeting" data-home-greeting></span>')
-    # App icon row — each icon in a bordered box
+    # App icon row - each icon in a bordered box
     html.append('<div class="launcher-row">')
     launcher_apps = [
         ("hypervisor", "Hypervisor", None),
@@ -321,7 +325,7 @@ def generate_home_content(files, build_stats=None, recent_paths=None):
 
     # --- 4. Single-column dashboard flow ---
 
-    # Active Work section — card grid
+    # Active Work section - card grid
     html.append('<div class="home-section home-section-work">')
     summary_parts = [f'{len(active_items)} in progress']
     if build_time:
@@ -382,7 +386,7 @@ def generate_home_content(files, build_stats=None, recent_paths=None):
         html.append('<div class="pulse-empty">no items in progress</div>')
     html.append('</div>')  # /.home-section-work
 
-    # Recent Activity section — action descriptions with relative time
+    # Recent Activity section - action descriptions with relative time
     html.append('<div class="home-section home-section-recent">')
     html.append(
         '<h2 class="home-section-header"><i data-lucide="arrow-down-circle" class="section-icon"></i> Activity</h2>'
@@ -577,7 +581,7 @@ def _render_subdirs_single(html, files, dir_prefix, sd, recent_paths):
     sd_label = dir_label(sd)
     child_subdirs, child_docs = collect_dir_contents(files, sd_path)
 
-    # Show a linked section header for the single child. Frameless wrapper —
+    # Show a linked section header for the single child. Frameless wrapper - 
     # this sits inside the .dir-surface drawer, so no bordered card of its own.
     html.append('<div class="dir-subsection">')
     sd_icon = CATEGORY_ICONS.get(sd, "folder")
@@ -648,7 +652,7 @@ def _render_subdirs_single(html, files, dir_prefix, sd, recent_paths):
             tags_html = ""
             if doc_tags:
                 tags_html = '<span class="doc-row-tags">' + ''.join(
-                    f'<span class="doc-row-tag">{t}</span>' for t in doc_tags[:4]
+                    f'<span class="label-badge doc-row-tag">{t}</span>' for t in doc_tags[:4]
                 ) + '</span>'
             # Snippet
             snippet_html = f'<span class="doc-row-snippet">{doc_snippet}</span>' if doc_snippet else ''
@@ -706,7 +710,7 @@ def _render_subdirs_grouped(html, files, dir_prefix, subdirs, dir_has_recent_fn)
     # Collect unique statuses across all items
     statuses = sorted(set((d[4] or "").strip() for d in subdir_data if d[4]))
 
-    # Frameless wrapper — sits inside the .dir-surface drawer, no bordered card.
+    # Frameless wrapper - sits inside the .dir-surface drawer, no bordered card.
     html.append('<div class="dir-subsection">')
     html.append(f'<h2><i data-lucide="folder" class="section-icon"></i> Items ({len(subdir_data)})</h2>')
     html.append('<div class="todo-filters" id="todo-filters">')
@@ -750,7 +754,7 @@ def _render_subdirs_grouped(html, files, dir_prefix, subdirs, dir_has_recent_fn)
             type_cls = "type-badge-personal" if item_type.lower() == "personal" else "type-badge-professional"
             type_label = item_type.lower()[:4]
             status_cls = "status-" + (status or "proposed").lower().replace(" ", "-")
-            status_label = status or "—"
+            status_label = status or "\u2014"
             desc_text = desc if desc else ""
             sd_full_path = f"{dir_prefix}/{sd}"
             li_cls = " doc-recent" if dir_has_recent_fn(sd_full_path) else ""
@@ -775,7 +779,7 @@ def _meta_description(dir_prefix):
 
     The _meta.md structure is: H1, a summary line, dash-prefixed metadata, a
     `---` separator, then the body. The card description is the first real
-    content line after that `---` separator — keying off the rule is more
+    content line after that `---` separator - keying off the rule is more
     robust than trying to detect the end of the metadata block heuristically.
     Falls back to the first non-empty body line if no `---` is present.
     """
@@ -890,7 +894,7 @@ def _render_work_items_list(html, files, dir_prefix, doc_entries, recent_paths, 
     """Render work items or ideas with filter controls and flat sorted list."""
     from .file_utils import _extract_status_from_text, _extract_type_from_text, _extract_tags_from_text, infer_app_group
 
-    # Sits inside the .dir-surface drawer opened by the caller — a plain
+    # Sits inside the .dir-surface drawer opened by the caller - a plain
     # grouping wrapper, not its own bordered card. Filter controls and horizon
     # shelves render inside the drawer; row structure (.todo-list li) is
     # preserved so the todo-filter and shelf JS keep working.
@@ -979,7 +983,7 @@ def _render_work_items_list(html, files, dir_prefix, doc_entries, recent_paths, 
         html.append('  </select>')
     html.append('</div>')
 
-    # Sort within each group by work item ID (descending — newest first)
+    # Sort within each group by work item ID (descending - newest first)
     def _wi_sort_key(e):
         wid = e[9]  # work_id field
         if wid and wid.startswith("WI-"):
@@ -1024,10 +1028,10 @@ def _render_work_item_row(html, rel, doc_title, status, item_type, app_key, desc
     type_cls = "type-badge-personal" if item_type.lower() == "personal" else "type-badge-professional"
     type_label = item_type.lower()[:4]
     status_cls = "status-" + (status or "planned").lower().replace(" ", "-")
-    status_label = status or "—"
+    status_label = status or "\u2014"
     li_cls = " doc-recent" if rel_posix in recent_paths else ""
     status_badge = f'<span class="label-badge {status_cls}">{status_label}</span>' if not is_ideas else ''
-    id_prefix = f'<span class="work-id-inline">{work_id} —</span> ' if work_id else ''
+    id_prefix = f'<span class="work-id-inline">{work_id} \u2014</span> ' if work_id else ''
     path_attr = rel_posix.replace('"', '&quot;')
     html.append(
         f'<li class="{li_cls.strip()}" data-path="{path_attr}" data-name="{doc_title.lower()}" data-type="{item_type.lower()}" data-status="{(status or "").lower()}" data-app="{app_key}">'
@@ -1122,7 +1126,7 @@ def _render_doc_list_standard(html, files, dir_prefix, doc_entries, recent_paths
         tags_html = ""
         if doc_tags:
             tags_html = '<span class="doc-row-tags">' + ''.join(
-                f'<span class="doc-row-tag">{t}</span>' for t in doc_tags[:4]
+                f'<span class="label-badge doc-row-tag">{t}</span>' for t in doc_tags[:4]
             ) + '</span>'
         # Snippet
         snippet_html = f'<span class="doc-row-snippet">{doc_snippet}</span>' if doc_snippet else ''
@@ -1147,7 +1151,7 @@ def _parse_prototypes_meta(dir_path):
 
     Returns a dict keyed by prototype stem (the .html filename without
     extension) with {'desc', 'idea_href', 'idea_label', 'status'}. Absent
-    file or table yields an empty dict — callers fall back to glob-only.
+    file or table yields an empty dict - callers fall back to glob-only.
 
     The table format is:
       | [stem](stem.html) | Description | [label](path) or -- | Status |
@@ -1183,7 +1187,7 @@ def _parse_prototypes_meta(dir_path):
             "desc": desc,
             "idea_href": idea_href,
             "idea_label": idea_label,
-            "status": "" if status in ("", "-", "--", "—") else status,
+            "status": "" if status in ("", "-", "--", "\u2014") else status,
         }
     return out
 

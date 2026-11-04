@@ -107,12 +107,16 @@
     if (!window.__hypervisorPrompt) return;
     var single = paths.length === 1;
     var label = single ? 'Assignee for this work item' : 'Assignee for ' + paths.length + ' work items';
-    window.__hypervisorPrompt(label, {
-      subject: single ? shortNameOf(paths[0]) : undefined,
-      placeholder: 'full name',
-      hint: 'leave empty to clear',
-      confirmLabel: 'set',
-      cancelLabel: 'cancel'
+    var known = api.list_assignees ? api.list_assignees().catch(function () { return []; }) : Promise.resolve([]);
+    known.then(function (names) {
+      return window.__hypervisorPrompt(label, {
+        subject: single ? shortNameOf(paths[0]) : undefined,
+        placeholder: 'pick a name or type a new one',
+        hint: 'leave empty to clear',
+        confirmLabel: 'set',
+        cancelLabel: 'cancel',
+        suggestions: names
+      });
     }).then(function (value) {
       if (value === null || value === undefined) return;
       var name = String(value).trim();
@@ -167,7 +171,7 @@
   }
 
   // --- Document list items (right-click on items in directory listings) ---
-  // Most specific — registered first so it wins over generic a[href] or .markdown-body.
+  // Most specific - registered first so it wins over generic a[href] or .markdown-body.
   HvContextMenu.register('.doc-list li', function (el, e) {
     var api = getApi();
     var link = el.querySelector('a');
@@ -335,7 +339,7 @@
     var A = window.__hvActions;
     var items = [];
 
-    // Edit (bridge-only, .md docs) — label reflects current editor mode.
+    // Edit (bridge-only, .md docs) - label reflects current editor mode.
     if (A && A.canEdit && A.canEdit()) {
       items.push({
         label: A.isEditing && A.isEditing() ? 'View rendered' : 'Edit',
@@ -470,7 +474,7 @@
       });
     }
 
-    // Workspace-level actions (share key, end sprint) — available everywhere.
+    // Workspace-level actions (share key, end sprint) - available everywhere.
     var g1 = getGlobalItems(true);
     for (var gi = 0; gi < g1.length; gi++) items.push(g1[gi]);
 

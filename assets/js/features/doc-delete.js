@@ -11,7 +11,7 @@
     items.forEach(function (li) {
       // Skip items that already have a delete/dismiss button
       if (li.querySelector(".doc-delete-btn") || li.querySelector(".idea-dismiss-btn") || li.querySelector(".external-delete-btn")) return;
-      // Skip items with .doc-path — those use a specialized delete handler (e.g. drop-import.js)
+      // Skip items with .doc-path - those use a specialized delete handler (e.g. drop-import.js)
       if (li.querySelector(".doc-path")) return;
       // Skip group headers and non-doc items
       if (li.classList.contains("group-header")) return;

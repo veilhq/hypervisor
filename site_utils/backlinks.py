@@ -1,5 +1,5 @@
 """
-Backlink index builder — scans markdown documents for .md links and builds a reverse map.
+Backlink index builder - scans markdown documents for .md links and builds a reverse map.
 """
 
 import re

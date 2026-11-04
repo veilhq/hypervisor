@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 
 # ---------------------------------------------------------------------------
-# Path setup — ensure site_utils is importable
+# Path setup - ensure site_utils is importable
 # ---------------------------------------------------------------------------
 _HYPERVISOR_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_HYPERVISOR_DIR))
@@ -58,7 +58,6 @@ VALIDATION_SKIP_PATHS = {
 TYPE_DIRECTORIES = {
     "work-item": "work/to-do",
     "idea": "ideas",
-    "bugfix": "research/bugfixes",
 }
 
 # ---------------------------------------------------------------------------

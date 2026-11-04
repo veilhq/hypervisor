@@ -1,4 +1,4 @@
-"""Git evidence layer — read-only branch and tree inspection across local clones.
+"""Git evidence layer - read-only branch and tree inspection across local clones.
 
 Supplies the raw material for task-progress matching: which branches exist, who
 authored them, what they changed, and what currently exists on the integration
@@ -43,8 +43,8 @@ PROMOTION_REFS = ("dev", "qa", "main")
 # Branches whose names are integration/release targets rather than work.
 _NON_WORK_BRANCHES = {"main", "master", "dev", "develop", "qa", "HEAD"}
 
-# Default relevance window for unmerged branches. Not a cost mitigation — the
-# merged/unmerged split already removes ~72% of branches from diffing — so this
+# Default relevance window for unmerged branches. Not a cost mitigation - the
+# merged/unmerged split already removes ~72% of branches from diffing - so this
 # can be widened freely at ~42 ms per additional branch.
 DEFAULT_MAX_AGE_DAYS = 30
 
@@ -155,7 +155,7 @@ def fetch_repos(repos: list[Path], timeout: int = _FETCH_TIMEOUT) -> dict[str, d
     of staleness added only ~670 ms over warm), so parallelism is nearly free.
 
     Credentials come from a git helper. If that cache ever expires, a fetch under
-    pythonw could block on an invisible prompt — hence the hard timeout and the
+    pythonw could block on an invisible prompt - hence the hard timeout and the
     explicit failure result rather than waiting.
     """
     results: dict[str, dict] = {}
@@ -173,7 +173,7 @@ def fetch_repos(repos: list[Path], timeout: int = _FETCH_TIMEOUT) -> dict[str, d
         except subprocess.TimeoutExpired:
             return repo.name, {
                 "ok": False,
-                "error": f"fetch timed out after {timeout}s — credentials may need refreshing",
+                "error": f"fetch timed out after {timeout}s - credentials may need refreshing",
             }
         except OSError as e:
             return repo.name, {"ok": False, "error": str(e)}
@@ -253,7 +253,7 @@ def list_branches(repo: Path, base: str | None = None,
 
 
 # ---------------------------------------------------------------------------
-# Evidence source A — unmerged branch diffs
+# Evidence source A - unmerged branch diffs
 # ---------------------------------------------------------------------------
 
 def diff_evidence(repo: Path, branch: str, base: str | None = None) -> list[dict]:
@@ -288,7 +288,7 @@ def diff_evidence(repo: Path, branch: str, base: str | None = None) -> list[dict
 
 
 # ---------------------------------------------------------------------------
-# Evidence source B — integration branch tree state
+# Evidence source B - integration branch tree state
 # ---------------------------------------------------------------------------
 
 def tree_evidence(repo: Path, paths: list[str],
@@ -309,9 +309,9 @@ def tree_evidence(repo: Path, paths: list[str],
     addition that would read "shipped to main"; in reality it is a *removal*
     that has only reached dev. So:
 
-      tier_present — furthest ref where the path exists. Meaningful for
+      tier_present - furthest ref where the path exists. Meaningful for
                      "add X" tasks: how far the addition has shipped.
-      tier_absent  — furthest ref where the path is gone. Meaningful for
+      tier_absent - furthest ref where the path is gone. Meaningful for
                      "remove X" tasks: how far the removal has shipped.
 
     The caller picks based on the task's verb; this layer does not guess intent.

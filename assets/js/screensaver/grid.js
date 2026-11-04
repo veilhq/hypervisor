@@ -4,7 +4,7 @@
   "use strict";
 
     // ========== MODE: Infinite Perspective Grid ==========
-    // Continuously scrolling perspective grid — lines move smoothly toward the viewer.
+    // Continuously scrolling perspective grid - lines move smoothly toward the viewer.
     var gridState = {
       zOffset: 0,
       speed: 0.015,
@@ -67,7 +67,7 @@
       var fov = gridState.fov;
       var spacing = gridState.gridSpacing;
 
-      // Clear (no transform — full canvas)
+      // Clear (no transform - full canvas)
       ssCtx.fillStyle = "rgba(0, 0, 0, 0.4)";
       ssCtx.fillRect(0, 0, w, h);
 

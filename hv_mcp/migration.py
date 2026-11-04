@@ -145,7 +145,7 @@ def _parse_metadata_block(lines: list[str]) -> tuple[int, int, list[dict]]:
             meta_end = i
             break
 
-        # Empty line — check if more metadata follows
+        # Empty line - check if more metadata follows
         if stripped == "":
             found_more = False
             for j in range(i + 1, min(len(lines), i + 3)):
@@ -182,7 +182,7 @@ def _parse_metadata_block(lines: list[str]) -> tuple[int, int, list[dict]]:
                     parsed = True
                     break
         if not parsed:
-            # Non-metadata line reached — end of metadata
+            # Non-metadata line reached - end of metadata
             meta_end = i
             break
 

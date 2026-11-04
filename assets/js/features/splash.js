@@ -1,4 +1,4 @@
-/* === Splash Screen — 5s minimum, dismiss after prefs applied === */
+/* === Splash Screen - 5s minimum, dismiss after prefs applied === */
 
 (function initSplash() {
   var splash = document.getElementById("splash-screen");

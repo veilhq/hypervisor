@@ -1,5 +1,5 @@
 """
-Sprint operations — end_sprint cascade for relative horizon management.
+Sprint operations - end_sprint cascade for relative horizon management.
 """
 
 import re
@@ -17,7 +17,7 @@ from .index_file import regenerate_index_file
 
 # Cascade map: current horizon -> new horizon after end_sprint
 _CASCADE = {
-    "Sprint": "Sprint",       # Rolled over — still active work
+    "Sprint": "Sprint",       # Rolled over - still active work
     "Sprint+1": "Sprint",
     "Sprint+2": "Sprint+1",
     "Sprint+3": "Sprint+2",
@@ -65,7 +65,7 @@ def end_sprint() -> dict:
         md_text = read_md(md_file)
         current_horizon = _extract_horizon(md_text)
 
-        # Items without a Horizon field are treated as Backlog — no change needed
+        # Items without a Horizon field are treated as Backlog - no change needed
         if current_horizon is None:
             moved["No horizon (unchanged)"] += 1
             continue
@@ -78,7 +78,7 @@ def end_sprint() -> dict:
                 break
 
         if canonical is None:
-            # Invalid horizon value — skip
+            # Invalid horizon value - skip
             continue
 
         new_horizon = _CASCADE.get(canonical, canonical)
@@ -91,7 +91,7 @@ def end_sprint() -> dict:
                 moved["Backlog (unchanged)"] += 1
             continue
 
-        # Apply the cascade — rewrite the file
+        # Apply the cascade - rewrite the file
         lines = md_text.splitlines()
         new_lines = []
         changed = False

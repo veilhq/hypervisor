@@ -11,15 +11,15 @@ from .config import HYPERSPACE_ROOT, SKIP_DIRS, SKIP_FILES, CATEGORY_LABELS
 logger = logging.getLogger("hypervisor")
 
 
-def read_md(path: Path) -> str:
+def read_md(path: Path, warn: bool = True) -> str:
     """Read a markdown file with encoding fault tolerance.
 
     Uses UTF-8 with replacement characters for undecodable bytes.
-    Logs a warning when replacement occurs so bad files are discoverable
-    without crashing the build.
+    Logs a warning when replacement occurs (unless warn is False) so bad
+    files are discoverable without crashing the build.
     """
     text = path.read_text(encoding="utf-8", errors="replace")
-    if "\ufffd" in text:
+    if warn and "\ufffd" in text:
         logger.warning("encoding issue (non-UTF-8 bytes replaced): %s", path)
     return text
 
@@ -61,7 +61,7 @@ def collect_files(root: Path) -> list[Path]:
 
 
 def html_dir_for(rel_path) -> str:
-    """_index.md → _index, context/foo.md → context/foo"""
+    """_index.md -> _index, context/foo.md -> context/foo"""
     return str(PurePosixPath(str(rel_path).replace("\\", "/")).with_suffix(""))
 
 
@@ -91,13 +91,13 @@ def extract_dates(md_text: str) -> dict[str, str | None]:
 
     Returns dict with 'created' and 'updated' keys (datetime strings or None).
     Supported formats:
-      Created: 2026-02-17              → 2026-02-17T00:00
-      Created: 2026-02-17T14:30       → 2026-02-17T14:30
-      - Created: 2026-02-17            → 2026-02-17T00:00
-      Date: 2026-02-26                 → 2026-02-26T00:00
-      Updated: 2026-02-18T09:15       → 2026-02-18T09:15
-      Last updated: 2026-04-20 (...)   → 2026-04-20T00:00
-      **Last Updated:** February 13, 2026 → 2026-02-13T00:00
+      Created: 2026-02-17              -> 2026-02-17T00:00
+      Created: 2026-02-17T14:30       -> 2026-02-17T14:30
+      - Created: 2026-02-17            -> 2026-02-17T00:00
+      Date: 2026-02-26                 -> 2026-02-26T00:00
+      Updated: 2026-02-18T09:15       -> 2026-02-18T09:15
+      Last updated: 2026-04-20 (...)   -> 2026-04-20T00:00
+      **Last Updated:** February 13, 2026 -> 2026-02-13T00:00
     """
     MONTHS = {
         "january": "01", "february": "02", "march": "03", "april": "04",
@@ -118,13 +118,13 @@ def extract_dates(md_text: str) -> dict[str, str | None]:
     for line in md_text.splitlines()[:30]:  # only scan top of document
         stripped = line.strip().lstrip("- *")
 
-        # Created / Date → created
+        # Created / Date -> created
         m = re.match(r"(?:Created|Date)\s*:\s*" + iso_pat, stripped, re.IGNORECASE)
         if m:
             dates["created"] = _normalize(m.group(1), m.group(2))
             continue
 
-        # Updated / Last updated → updated (ISO)
+        # Updated / Last updated -> updated (ISO)
         m = re.match(r"(?:Last\s+)?Updated\s*:\s*" + iso_pat, stripped, re.IGNORECASE)
         if m:
             dates["updated"] = _normalize(m.group(1), m.group(2))
@@ -149,7 +149,7 @@ def sort_date(dates_dict: dict[str, str | None]) -> tuple[str, str | None]:
     Undated docs get ('0000-00-00T00:00', None) so they sort last in descending order.
     """
     if dates_dict["updated"]:
-        # If created and updated are identical, the doc was just born — label as created
+        # If created and updated are identical, the doc was just born - label as created
         if dates_dict["created"] and dates_dict["updated"] == dates_dict["created"]:
             return (dates_dict["updated"], "created")
         return (dates_dict["updated"], "updated")
@@ -161,9 +161,9 @@ def sort_date(dates_dict: dict[str, str | None]) -> tuple[str, str | None]:
 def display_date(datetime_str: str) -> str:
     """Format a datetime string for HTML display.
 
-    '2026-04-29T15:30' → '2026-04-29 15:30'
-    '2026-04-29T00:00' → '2026-04-29 00:00'
-    '0000-00-00T00:00' → ''
+    '2026-04-29T15:30' -> '2026-04-29 15:30'
+    '2026-04-29T00:00' -> '2026-04-29 00:00'
+    '0000-00-00T00:00' -> ''
     """
     if not datetime_str or datetime_str.startswith("0000"):
         return ""
@@ -266,7 +266,7 @@ def _extract_tags_from_text(md_text):
 def get_dir_tags(root: Path, dir_prefix: str) -> list[str]:
     """Extract tags for a subdirectory from its primary doc.
 
-    Checks idea.md → story.md → first .md, returns lowercase tag list.
+    Checks idea.md -> story.md -> first .md, returns lowercase tag list.
     """
     candidates = ["idea.md", "story.md"]
     for candidate in candidates:
@@ -326,7 +326,7 @@ def _extract_horizon_from_text(md_text):
 def get_dir_status(root: Path, dir_prefix: str) -> str | None:
     """Extract status for a subdirectory from its primary doc.
 
-    Checks idea.md → story.md → first .md, returns status string or None.
+    Checks idea.md -> story.md -> first .md, returns status string or None.
     """
     candidates = ["idea.md", "story.md"]
     for candidate in candidates:
@@ -345,7 +345,7 @@ def get_dir_status(root: Path, dir_prefix: str) -> str | None:
 def get_dir_type(root: Path, dir_prefix: str) -> str | None:
     """Extract type (Personal/Professional) for a subdirectory from its primary doc.
 
-    Checks idea.md → story.md → first .md, returns type string or None.
+    Checks idea.md -> story.md -> first .md, returns type string or None.
     """
     candidates = ["idea.md", "story.md"]
     for candidate in candidates:

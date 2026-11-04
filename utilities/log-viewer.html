@@ -5,7 +5,7 @@
     <!-- Toolbar -->
     <div class="log-toolbar flex-center">
       <div class="log-toolbar-left flex-center">
-        <!-- Source toggles — "All" is static; per-source buttons are generated
+        <!-- Source toggles - "All" is static; per-source buttons are generated
              in JS from the log files discovered on disk (list_log_files), so a
              new app's log appears automatically with no edit here. -->
         <button class="log-filter-btn status-chip log-filter-active" data-source="all" id="log-src-all">All</button>
@@ -56,7 +56,7 @@
 </div>
 
 <style>
-/* ===== Log Viewer — Hyperkit Token Migration =====
+/* ===== Log Viewer - Hyperkit Token Migration =====
    Spacing: --space-*, fonts: --fs-*, borders: --border-hair,
    transitions: --motion-*, radius: --radius on interactive elements. */
 
@@ -87,7 +87,7 @@
 
 .log-toolbar {
   gap: var(--space-3);
-  padding: var(--space-0-4) 0;
+  padding: var(--space-2) 0;
   width: 100%;
   border-bottom: var(--border-hair) solid var(--border);
   flex-wrap: wrap;
@@ -96,36 +96,33 @@
 .log-toolbar-left,
 .log-toolbar-center,
 .log-toolbar-right {
-  gap: var(--space-0-3);
+  gap: var(--space-1);
 }
 
 .log-toolbar-right {
   margin-left: auto;
 }
 
-/* Compose .status-chip; keep the toggle silhouette (border/fill/cursor), the
-   caption size + tighter padding, and the toggle-state rules below. */
+/* Compose .status-chip (size, padding, tracking come from the chip); keep the
+   toggle silhouette (border/fill/cursor) and the toggle-state rules below. */
 .log-filter-btn,
 .log-severity-btn {
-  font-size: var(--fs-caption);
-  padding: var(--space-0-2) var(--space-0-6);
   border: var(--border-hair) solid var(--border);
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
-  letter-spacing: 0.04em;
 }
 
 .log-filter-btn:hover,
 .log-severity-btn:hover {
-  border-color: var(--accent);
+  border-color: var(--interactive);
   color: var(--text);
 }
 
 .log-filter-btn.log-filter-active {
-  border-color: var(--accent);
-  color: var(--accent);
-  background: var(--accent-glow);
+  border-color: var(--selected);
+  color: var(--selected);
+  background: var(--selected-wash);
 }
 
 .log-severity-btn.log-severity-active {
@@ -137,21 +134,22 @@
   display: inline-block;
   width: 6px;
   height: 6px;
-  margin-right: var(--space-0-2);
+  margin-right: var(--space-1);
   vertical-align: middle;
 }
 
 .log-sev-dot-error { background: var(--error); }
-.log-sev-dot-warn { background: var(--warm); }
-.log-sev-dot-info { background: var(--accent); }
+.log-sev-dot-warn { background: var(--warning); }
+.log-sev-dot-info { background: var(--info); }
 .log-sev-dot-debug { background: var(--text-dim); }
-.log-sev-dot-trace { background: var(--cool); }
+.log-sev-dot-trace { background: var(--text-muted); }
 
 /* Composes .form-input; keeps the caption size, tighter padding, and fixed width. */
 .log-search-input {
-  font-size: var(--fs-caption);
-  padding: var(--space-0-2) var(--space-0-6);
+  font-size: var(--fs-mono);
+  padding: var(--space-1) var(--space-3);
   color: var(--text);
+  letter-spacing: var(--track-body);
   width: 160px;
 }
 
@@ -167,13 +165,13 @@
 }
 
 .log-toolbar-action:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+  border-color: var(--interactive);
+  color: var(--interactive);
 }
 
 .log-toolbar-action-icon {
-  width: 14px;
-  height: 14px;
+  width: var(--icon-md);
+  height: var(--icon-md);
 }
 
 /* --- Log Panel --- */
@@ -189,8 +187,8 @@
   border-radius: var(--radius);
   padding: var(--space-3);
   font-family: var(--font);
-  font-size: var(--fs-label);
-  line-height: 1.6;
+  font-size: var(--fs-mono);
+  line-height: var(--lh-body);
 }
 
 .log-panel-inner {
@@ -202,7 +200,7 @@
 }
 
 .log-line-copied {
-  background: var(--accent-glow) !important;
+  background: var(--success-wash) !important;
   transition: background var(--motion-slow) var(--ease);
 }
 
@@ -214,13 +212,13 @@
 
 /* Log line styles */
 .log-line {
-  padding: 0 var(--space-0-2);
+  padding: 0 var(--space-1);
   border-left: 2px solid transparent;
   display: block;
 }
 
 .log-line:hover {
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--state-hover-bg);
 }
 
 .log-line-error {
@@ -229,12 +227,12 @@
 }
 
 .log-line-warn {
-  color: var(--warm);
-  border-left-color: var(--warm);
+  color: var(--warning);
+  border-left-color: var(--warning);
 }
 
 .log-line-info {
-  color: var(--accent);
+  color: var(--info);
   border-left-color: transparent;
 }
 
@@ -245,21 +243,15 @@
 
 .log-line-trace {
   color: var(--text-dim);
-  border-left-color: var(--cool);
-  font-style: italic;
-  opacity: 0.85;
+  border-left-color: var(--text-muted);
 }
 
 .log-ts {
   color: var(--text-muted);
 }
 
-.log-level {
-  font-weight: var(--fw-bold);
-}
-
 .log-source {
-  color: var(--cool);
+  color: var(--identifier);
 }
 
 .log-msg {
@@ -267,7 +259,7 @@
 }
 
 .log-highlight {
-  background: var(--accent);
+  background: var(--selected);
   color: var(--bg);
 }
 
@@ -277,24 +269,22 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: var(--fs-micro);
+  font-size: var(--fs-mono);
   color: var(--text-dim);
-  padding: var(--space-0-3) 0;
+  padding: var(--space-1) 0;
   border-top: var(--border-hair) solid var(--border);
 }
 
 .log-status-live {
-  color: var(--accent);
+  color: var(--live);
 }
 
 .log-status-hint {
   color: var(--text-dim);
-  opacity: 0.7;
-  font-style: italic;
 }
 
 .log-status-paused {
-  color: var(--warm);
+  color: var(--warning);
 }
 </style>
 
@@ -361,7 +351,7 @@
   var autoScroll = true;
   var pollTimer = null;
   var POLL_INTERVAL = 2000;
-  var MAX_LINES = 5000; // Ring-buffer cap — drop oldest entries beyond this
+  var MAX_LINES = 5000; // Ring-buffer cap - drop oldest entries beyond this
   var pendingRender = false; // Set when a render is skipped to preserve a selection
 
   // --- Instance registry ---
@@ -371,7 +361,7 @@
   // cleared by "beforeunload", which never fires on SPA navigation. Several
   // instances then poll the bridge in parallel and race to write
   // #log-panel-inner, and any instance whose captured nodes were replaced by an
-  // innerHTML swap writes into a detached element — a render that appears to do
+  // innerHTML swap writes into a detached element - a render that appears to do
   // nothing. Only the newest instance is allowed to poll and paint.
   var INSTANCE_ID = "lv-" + Date.now() + "-" + Math.random().toString(36).slice(2, 7);
 
@@ -429,7 +419,7 @@
         raw: raw,
       };
     }
-    // Unparseable — show as-is with info level
+    // Unparseable - show as-is with info level
     return {
       timestamp: "",
       level: "info",
@@ -492,7 +482,7 @@
   }
 
   // renderAll(userInitiated)
-  //   userInitiated — true when a filter toggle, search keystroke, or clear
+  //   userInitiated - true when a filter toggle, search keystroke, or clear
   //   triggered the render. Those must always paint; only the live tail defers.
   function renderAll(userInitiated) {
     // An orphaned instance from a previous navigation must never paint.
@@ -501,7 +491,7 @@
     if (!syncRefs()) return;
 
     // Preserve an in-progress drag-select from being wiped by the live tail.
-    // A filter change is an explicit user action, so it bypasses the guard —
+    // A filter change is an explicit user action, so it bypasses the guard - 
     // otherwise a lingering selection (a double-click-to-copy leaves one) makes
     // every toggle look like it did nothing.
     if (!userInitiated && selectionInsidePanel()) {
@@ -591,7 +581,7 @@
   }
 
   // Generate per-source toggle buttons from SOURCES, inserted after the static
-  // "All" button. Idempotent — clears any previously generated buttons first,
+  // "All" button. Idempotent - clears any previously generated buttons first,
   // so re-running on SPA re-entry never duplicates them.
   function buildSourceButtons() {
     var allBtn = document.getElementById("log-src-all");
@@ -719,7 +709,7 @@
 
   // --- Polling ---
   // LOG_FILES and SOURCE_MAP are populated by discoverSources() from the log
-  // files present on disk — a source's log file is "{key}.log", and the
+  // files present on disk - a source's log file is "{key}.log", and the
   // filename maps back to its source key.
 
   function readTail(filename, afterLine) {
@@ -730,7 +720,7 @@
         totalLinesByFile[filename] = result.total_lines;
         return { source: source, lines: result.lines || [] };
       },
-      // A rejected bridge call must not abort the whole batch — without this,
+      // A rejected bridge call must not abort the whole batch - without this,
       // one failing file leaves Promise.all rejected and nothing renders.
       function() { return { source: source, lines: [] }; }
     );

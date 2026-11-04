@@ -3,6 +3,7 @@ HTML page templates, breadcrumbs, and top bar builders.
 """
 
 import json
+import re
 from pathlib import Path, PurePosixPath
 
 from .config import (
@@ -17,7 +18,7 @@ from .config import (
 
 
 # ---------------------------------------------------------------------------
-# Per-module <script> tags — WI-118 (app-local), extended WI-142 (Hyperkit)
+# Per-module <script> tags (app-local and Hyperkit)
 # ---------------------------------------------------------------------------
 # We emit one <script src="/js/..."> tag per module (instead of a single
 # <script src="/app.js">) so that a parse error in one module does not
@@ -25,7 +26,7 @@ from .config import (
 # separate execution context; a SyntaxError or uncaught exception in one
 # only kills that tag.
 #
-# Hyperkit modules (noise-field, greeting, cursor-trail, toast) load first —
+# Hyperkit modules (noise-field, greeting, cursor-trail, toast) load first - 
 # app-local code (core/00-core.js onward) references window.HvNoiseField /
 # HvGreeting / HvCursorTrail / HvToast and must find them already defined.
 # They're copied to site/js/kit/ by copy_assets() in build.py.
@@ -43,21 +44,21 @@ def _render_module_script_tags():
     return "\n".join(lines)
 
 
-# Rendered at module import time — build.py runs before page_generation
+# Rendered at module import time - build.py runs before page_generation
 # is called for individual pages, so list_js_modules() reflects the
 # current on-disk source layout.
 MODULE_SCRIPT_TAGS = _render_module_script_tags()
 
 
 # ---------------------------------------------------------------------------
-# Theme defaults — loaded once at import time from theme-defaults.json
+# Theme defaults - loaded once at import time from theme-defaults.json
 # ---------------------------------------------------------------------------
 
 _THEME_DEFAULTS_PATH = OUTPUT_DIR.parent / "theme-defaults.json"
 
 
 # DEPRECATED: Theme state now lives in preferences.json, loaded via the JS bridge.
-# No inline script needed — the baked-in seeding was the source of palette loss bugs.
+# No inline script needed - the baked-in seeding was the source of palette loss bugs.
 # These remain as empty stubs so any import references don't break.
 def get_theme_defaults_script():
     return ""
@@ -67,7 +68,7 @@ THEME_DEFAULTS_SCRIPT = ""
 
 
 # ---------------------------------------------------------------------------
-# Site navigation rail — populated once per build by set_nav_categories()
+# Site navigation rail - populated once per build by set_nav_categories()
 # ---------------------------------------------------------------------------
 
 _NAV_CATEGORIES = []  # list of (dir_name, doc_count, children)
@@ -289,7 +290,7 @@ TOP_BAR = """\
   <div class="topbar-clock" id="footer-clock"></div>
 </header>"""
 
-# Legacy full-page template — used for standalone HTML exports and fallback
+# Legacy full-page template - used for standalone HTML exports and fallback
 # rendering. Content is baked directly into the page via {{CONTENT}}.
 LEGACY_PAGE_TEMPLATE = """\
 <!DOCTYPE html>
@@ -298,11 +299,8 @@ LEGACY_PAGE_TEMPLATE = """\
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="build-id" content="{{BUILD_ID}}">
-  <title>{{TITLE}} — Hypervisor</title>
+  <title>{{TITLE}} - Hypervisor</title>
   <link rel="icon" href="{{FAVICON}}">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Host+Grotesk:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&display=swap">
   <link rel="stylesheet" href="/style.css?v={{BUILD_ID}}">
 </head>
 <body>
@@ -325,13 +323,13 @@ LEGACY_PAGE_TEMPLATE = """\
     <span class="footer-label">hypervisor</span>
   </footer>
   <div class="modal-overlay search-overlay" id="search-overlay">
-    <div class="modal-panel search-modal" id="search-modal">
+    <div class="modal-panel search-modal" id="search-modal" role="dialog" aria-label="Search hyperspace">
       <div class="search-input-row">
         <i data-lucide="search" class="search-input-icon"></i>
-        <input type="text" id="search" placeholder="search hyperspace..." autocomplete="off" spellcheck="false">
+        <input type="text" id="search" aria-label="Search hyperspace" placeholder="search hyperspace..." autocomplete="off" spellcheck="false">
         <span class="search-input-shortcut">esc</span>
       </div>
-      <div class="search-results" id="search-results"></div>
+      <div class="search-results" id="search-results" aria-live="polite"></div>
     </div>
   </div>
   <button class="scroll-top" id="scroll-top" aria-label="Scroll to top"><i data-lucide="arrow-up"></i></button>
@@ -385,7 +383,7 @@ def build_site_nav(categories, recent_dirs=None, layout="cyberdeck"):
 
 
 def _build_cyberdeck_nav(categories, recent_dirs):
-    """Standard cyberdeck nav rail — compact items with border-bottom."""
+    """Standard cyberdeck nav rail - compact items with border-bottom."""
     html = ['<nav class="site-nav" id="site-nav" aria-label="Categories">']
     for item in categories:
         dir_name, count = item[0], item[1]
@@ -493,7 +491,165 @@ def build_page(content_html, title, rel_path_str, toc_html="", backlinks_html=""
 
 
 # ---------------------------------------------------------------------------
-# SPA Shell — single HTML file generated once per build
+# Standalone export - a single self-contained HTML file
+# ---------------------------------------------------------------------------
+# The export reuses the real page template (build_page / LEGACY_PAGE_TEMPLATE)
+# so the exported layout can never drift from the live site. It then makes the
+# page stand alone: the external /style.css link is replaced with an inline
+# <style> block, the module <script> tags are dropped (a static snapshot has no
+# router to fetch fragments), and an export-mode override sheet hides the
+# interactive chrome that only makes sense in the running app (nav menu, search,
+# scroll-top, TOC drawer). The Lucide + Mermaid CDN scripts in the template are
+# left in place so icons and diagrams still render when the file is opened with
+# a network connection.
+
+# Rules that neutralize the interactive chrome baked into the shared template.
+# Kept here (not in the site CSS) because they are export-only.
+_EXPORT_OVERRIDES = """
+/* Export overrides - static single-file snapshot */
+body.export-mode, body.export-mode * { cursor: auto !important; user-select: auto !important; -webkit-user-select: auto !important; }
+body.export-mode { animation: none; }
+body.export-mode .topbar::before { backdrop-filter: none; -webkit-backdrop-filter: none; background: #050505; }
+body.export-mode .page { animation: none; }
+body.export-mode .splash-screen { display: none !important; }
+body.export-mode .site-nav { display: none !important; }
+body.export-mode .nav-menu-wrap { display: none !important; }
+body.export-mode .topbar-clock { display: none !important; }
+body.export-mode .search-overlay, body.export-mode .search-wrap { display: none !important; }
+body.export-mode .scroll-top { display: none !important; }
+body.export-mode .toc-flag-wrap, body.export-mode .toc-flag-hit, body.export-mode .toc-drawer { display: none !important; }
+body.export-mode .toc-sidebar { display: none !important; }
+body.export-mode .code-copy, body.export-mode .section-copy { display: none !important; }
+body.export-mode .page-footer { display: none !important; }
+
+/* Scroll - the static file scrolls at the document level; the SPA's fixed
+   viewport assumptions and the pageIn transform don't apply without the router. */
+html, body { overflow-y: auto !important; height: auto !important; }
+
+/* No nav rail in the export, so the recessed surface runs edge-to-edge
+   symmetrically. The layout reserves a left inset for the rail (padding-left:
+   --site-nav-width) - zero it so the surface is flush on both sides. The inner
+   .markdown-body keeps its own reading padding. */
+body.export-mode .page { padding-left: 0 !important; --site-nav-width: 0px; }
+body.export-mode .page-doc-surface { padding-left: 0 !important; }
+
+/* The recessed reading surface's entrance (dirSurfaceIn) is driven by the
+   router adding .animate-in; a static file never gets that class, so force the
+   surface visible at rest instead of leaving it stuck at its opacity:0 base. */
+body.export-mode .page-doc-surface .markdown-body { opacity: 1 !important; animation: none !important; }
+
+/* Wider reading inset - the live surface uses --surface-inset (3rem) all round, which
+   reads tight against a full-width edge-to-edge surface. Give the content more
+   horizontal breathing room from the surface border in the standalone export. */
+body.export-mode .page-doc-surface .markdown-body { padding-left: 5rem !important; padding-right: 5rem !important; }
+
+/* Align section heading text flush-left with body content. The section-icon
+   (an <i data-lucide> that renders from the Lucide CDN) occupies width + a
+   right margin inside the summary, pushing the heading text right of the body
+   paragraphs and list items below it - the boxes align but the visible text
+   doesn't. Hiding the icon in the static export restores a single left edge. */
+body.export-mode .doc-section-summary .section-icon { display: none !important; }
+
+/* Neutral export palette - the live site's bright accent is pure identity
+   flourish, not state/category encoding, so a standalone snapshot reads better
+   in a restrained desaturated tone. Remapping the base accent family cascades
+   through the semantic roles (--success/--warning/etc.) that resolve via var().
+   The grey ink scale and surfaces are left untouched. */
+body.export-mode {
+  --accent:        #8a97a8;
+  --accent-dim:    #6b7686;
+  --accent-glow:   rgba(138, 151, 168, 0.06);
+  --accent-border: rgba(138, 151, 168, 0.18);
+  --warm:          #b0a890;
+  --cool:          #90a0a8;
+  --comp:          #b08a8a;
+}
+"""
+
+
+def build_export_page(content_html, title, rel_path_str, toc_html="", build_id="export"):
+    """Render a document into a self-contained standalone HTML page.
+
+    Reuses build_page so the layout matches the live site exactly, then inlines
+    the built CSS and strips the runtime so the result opens as a single static
+    file.
+
+    Args:
+        content_html: Rendered article HTML (inner content).
+        title: Document title.
+        rel_path_str: Source relative path (for breadcrumbs and footer).
+        toc_html: Table of contents HTML (optional).
+        build_id: Build id string for cache-busting (unused once CSS is inlined).
+
+    Returns:
+        Complete self-contained HTML string.
+    """
+    # Render through the real template with no nav rail and no backlinks - 
+    # a single-doc snapshot has nowhere for those links to go.
+    page = build_page(
+        content_html, title, rel_path_str,
+        toc_html=toc_html, backlinks_html="", build_id=build_id,
+        site_nav_html="",
+    )
+
+    # Tag the body so the export overrides apply.
+    page = page.replace('<body>', '<body class="export-mode">', 1)
+
+    # The template marks <html class="splash-screen-active">; the live app's JS
+    # removes it once the splash animation ends. A static export has no JS, so
+    # the class would persist - and its `overflow: hidden` rule locks the page
+    # from scrolling. Drop the class so the document scrolls normally.
+    page = page.replace('<html lang="en" class="splash-screen-active">', '<html lang="en">', 1)
+
+    # The recessed reading surface is applied at runtime by the router
+    # (page-doc-surface on <main>, animate-in on the article). A static export
+    # has no router, so bake both classes in - otherwise the surface never
+    # renders and the content stays at its opacity:0 pre-animation state.
+    page = page.replace(
+        '<main class="page">',
+        '<main class="page page-doc-surface">', 1,
+    )
+    page = page.replace(
+        '<article class="markdown-body">',
+        '<article class="markdown-body animate-in">', 1,
+    )
+
+    # Drop the site footer - not meaningful in a standalone single-page export.
+    page = re.sub(
+        r'\s*<footer class="page-footer">.*?</footer>',
+        '', page, count=1, flags=re.DOTALL,
+    )
+
+    # Inline the built stylesheet in place of the external link so the file is
+    # self-contained. The href carries a ?v=BUILD_ID query, so match by prefix.
+    css_text = ""
+    css_path = OUTPUT_DIR / "style.css"
+    try:
+        css_text = css_path.read_text(encoding="utf-8")
+    except OSError:
+        css_text = ""
+
+    style_block = "<style>\n" + css_text + "\n" + _EXPORT_OVERRIDES + "\n</style>"
+    link_re = re.compile(r'<link rel="stylesheet" href="/style\.css[^"]*">')
+    if link_re.search(page):
+        page = link_re.sub(style_block, page, count=1)
+    else:
+        # Fallback: inject before </head> if the link shape ever changes.
+        page = page.replace("</head>", style_block + "\n</head>", 1)
+
+    # Drop the per-module script tags - a static snapshot has no router and the
+    # /js/* paths would 404. MODULE_SCRIPT_TAGS is a known block; remove each tag.
+    for name in list_hyperkit_js_modules():
+        page = re.sub(r'\s*<script src="/js/kit/' + re.escape(name) + r'[^"]*"[^>]*></script>', '', page)
+    for rel in list_js_modules():
+        rel_str = str(rel).replace("\\", "/")
+        page = re.sub(r'\s*<script src="/js/' + re.escape(rel_str) + r'[^"]*"[^>]*></script>', '', page)
+
+    return page
+
+
+# ---------------------------------------------------------------------------
+# SPA Shell - single HTML file generated once per build
 # ---------------------------------------------------------------------------
 
 SHELL_TEMPLATE = """\
@@ -505,9 +661,6 @@ SHELL_TEMPLATE = """\
   <meta name="build-id" content="{{BUILD_ID}}">
   <title>Hypervisor</title>
   <link rel="icon" href="{{FAVICON}}">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Host+Grotesk:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&display=swap">
   <link rel="stylesheet" href="/style.css?v={{BUILD_ID}}">
 </head>
 <body>
@@ -537,13 +690,13 @@ SHELL_TEMPLATE = """\
     <span class="footer-label">hypervisor</span>
   </footer>
   <div class="modal-overlay search-overlay" id="search-overlay">
-    <div class="modal-panel search-modal" id="search-modal">
+    <div class="modal-panel search-modal" id="search-modal" role="dialog" aria-label="Search hyperspace">
       <div class="search-input-row">
         <i data-lucide="search" class="search-input-icon"></i>
-        <input type="text" id="search" placeholder="search hyperspace..." autocomplete="off" spellcheck="false">
+        <input type="text" id="search" aria-label="Search hyperspace" placeholder="search hyperspace..." autocomplete="off" spellcheck="false">
         <span class="search-input-shortcut">esc</span>
       </div>
-      <div class="search-results" id="search-results"></div>
+      <div class="search-results" id="search-results" aria-live="polite"></div>
     </div>
   </div>
   <button class="scroll-top" id="scroll-top" aria-label="Scroll to top"><i data-lucide="arrow-up"></i></button>
@@ -559,7 +712,7 @@ SHELL_TEMPLATE = """\
 # The topbar icon, splash-screen eye, and favicon all derive from a single
 # source file: assets/hypervisor.svg. Templates carry {{BRAND_ICON}},
 # {{SPLASH_EYE}}, and {{FAVICON}} placeholders which are resolved once here at
-# import time. To rebrand, replace assets/hypervisor.svg — no template edits.
+# import time. To rebrand, replace assets/hypervisor.svg - no template edits.
 def _inject_brand(template: str) -> str:
     """Resolve brand-mark placeholders in a page template."""
     return (
@@ -591,7 +744,7 @@ def build_shell(build_id, site_nav_html=None):
     Returns:
         Complete HTML string for the shell page.
     """
-    # Shell uses a minimal breadcrumb (just home) — the router updates it
+    # Shell uses a minimal breadcrumb (just home) - the router updates it
     home_bc = '<span class="crumb crumb-link" data-crumb-home>~</span>'
     topbar = build_topbar(home_bc)
 

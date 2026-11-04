@@ -8,10 +8,10 @@
       <input type="text" id="rx-pattern" class="rx-pattern form-input-inline" placeholder="enter pattern..." spellcheck="false" autocomplete="off">
       <span class="rx-delim">/</span>
       <div class="rx-flags flex-center" id="rx-flags">
-        <button class="rx-flag active" data-flag="g" data-tooltip="Global — match all occurrences">g</button>
+        <button class="rx-flag active" data-flag="g" data-tooltip="Global - match all occurrences">g</button>
         <button class="rx-flag" data-flag="i" data-tooltip="Case insensitive">i</button>
-        <button class="rx-flag" data-flag="m" data-tooltip="Multiline — ^ and $ match line boundaries">m</button>
-        <button class="rx-flag" data-flag="s" data-tooltip="Dotall — . matches newlines">s</button>
+        <button class="rx-flag" data-flag="m" data-tooltip="Multiline - ^ and $ match line boundaries">m</button>
+        <button class="rx-flag" data-flag="s" data-tooltip="Dotall - . matches newlines">s</button>
         <button class="rx-flag" data-flag="u" data-tooltip="Unicode-aware matching">u</button>
       </div>
     </div>
@@ -43,7 +43,7 @@ https://example.com/path?q=hello&lang=en#section
     <div class="rx-sub-output-wrap" id="rx-sub-output-wrap" style="display:none">
       <div class="rx-sub-output-label flex-between">
         <span>Result</span>
-        <button class="rx-sub-copy text-button" id="rx-sub-copy">copy</button>
+        <button class="rx-sub-copy link-button" id="rx-sub-copy">copy</button>
       </div>
       <pre class="rx-sub-output" id="rx-sub-output"></pre>
     </div>
@@ -130,7 +130,7 @@ https://example.com/path?q=hello&lang=en#section
     <div class="rx-ref-section">
       <div class="rx-ref-section-title">Flags</div>
       <div class="rx-ref-table">
-        <div class="rx-ref-row"><code>g</code><span>global — all matches</span></div>
+        <div class="rx-ref-row"><code>g</code><span>global - all matches</span></div>
         <div class="rx-ref-row"><code>i</code><span>case insensitive</span></div>
         <div class="rx-ref-row"><code>m</code><span>multiline (^/$ per line)</span></div>
         <div class="rx-ref-row"><code>s</code><span>dotall (. matches \n)</span></div>
@@ -359,7 +359,7 @@ https://example.com/path?q=hello&lang=en#section
     matchCountSpan.textContent = result.count + ' match' + (result.count !== 1 ? 'es' : '');
     renderMatches(result.matches);
 
-    // Substitution — show whenever the replace field has been touched
+    // Substitution - show whenever the replace field has been touched
     if (replaceActive) {
       try {
         var subResult = text.replace(re, replaceInput.value);

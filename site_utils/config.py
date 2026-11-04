@@ -1,5 +1,5 @@
 """
-Hypervisor configuration — paths, constants, and shared markdown instance.
+Hypervisor configuration - paths, constants, and shared markdown instance.
 """
 
 import markdown
@@ -20,10 +20,10 @@ JS_DIR = ASSETS_DIR / "js"
 DATA_DIR = _HYPERVISOR_DIR / "data"
 CHANGELOG_CACHE_FILE = DATA_DIR / "changelog.json"
 
-# Hyperkit — shared design system package (WI-142 Phase 1). Canonical source
+# Hyperkit - shared design system package. Canonical source
 # for tokens.css / primitives.css and the ecosystem JS modules (HvNoiseField,
 # HvGreeting, HvCursorTrail, HvToast). Lives one level up from .hypervisor/,
-# alongside .hyperagent/ — a sibling app dir, not owned by either consumer.
+# alongside .hyperagent/ - a sibling app dir, not owned by either consumer.
 HYPERKIT_DIR = HYPERSPACE_ROOT / ".hyperkit"
 HYPERKIT_CSS_DIR = HYPERKIT_DIR / "css"
 HYPERKIT_JS_DIR = HYPERKIT_DIR / "js"
@@ -51,9 +51,9 @@ def list_js_modules():
 
     Each entry is a PurePosixPath relative to JS_DIR, e.g. 'core/00-core.js'.
     This is used by build.py (to copy + concat) and by page_generation.py
-    (to emit per-module <script> tags for parse-error isolation — WI-118).
+    (to emit per-module <script> tags for parse-error isolation).
 
-    Note: Hyperkit JS modules are NOT included here — they live outside
+    Note: Hyperkit JS modules are NOT included here - they live outside
     JS_DIR and are emitted separately via list_hyperkit_js_modules() /
     copy_assets(), always ordered before this list's output.
     """
@@ -89,7 +89,7 @@ def list_js_modules():
 def list_hyperkit_js_modules():
     """Return the Hyperkit JS module filenames that exist on disk, in load order.
 
-    Missing files are skipped rather than raising — lets partial Hyperkit
+    Missing files are skipped rather than raising - lets partial Hyperkit
     checkouts still build (a warning is logged by the caller in build.py).
     """
     if not HYPERKIT_JS_DIR.exists():
@@ -102,7 +102,7 @@ def list_hyperkit_js_modules():
 # hypervisor_logo_svg(css_class) which returns an inline <svg> string with the
 # requested class and fill=currentColor (so it inherits accent/text color).
 #
-# Every surface that renders the brand mark — topbar, splash screen, favicon —
+# Every surface that renders the brand mark - topbar, splash screen, favicon - 
 # derives from this single file. Dropping a new logo into assets/hypervisor.svg
 # is the only step needed to rebrand; nothing downstream hardcodes path data.
 def _load_logo_svg():
@@ -243,7 +243,7 @@ CATEGORY_LABELS = {
 CATEGORY_DESCRIPTIONS = {
     "context": "Project overviews, architecture docs, and high-level references",
     "diagrams": "ERDs, system flows, and visual documentation",
-    "work": "Actionable work items — design, acceptance criteria, tasks, and PR notes in one document",
+    "work": "Actionable work items - design, acceptance criteria, tasks, and PR notes in one document",
     "ideas": "Lightweight concept capture for someday/maybe items",
     "patterns": "Reusable architectural patterns and proven solutions",
     "reference": "Quick-lookup cheatsheets, syntax tables, and code snippets",

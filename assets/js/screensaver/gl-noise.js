@@ -32,7 +32,7 @@
         '    return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);',
         '}',
         '',
-        '// Fractal Brownian Motion — 5 octaves',
+        '// Fractal Brownian Motion - 5 octaves',
         'float fbm(vec2 p) {',
         '    float val = 0.0;',
         '    float amp = 0.5;',
@@ -99,7 +99,7 @@
       }
 
       function glNoiseCleanup() {
-        // Don't destroy — keep the context alive for re-activation
+        // Don't destroy - keep the context alive for re-activation
         // The GL canvas persists across screensaver sessions
       }
 
@@ -133,6 +133,6 @@
         cleanup: glNoiseCleanup,
         preview: glNoisePreview,
         gl: true,
-        meta: { name: "GL Noise", icon: "waves", desc: "GPU-rendered fractal noise — domain warped and palette colored" }
+        meta: { name: "GL Noise", icon: "waves", desc: "GPU-rendered fractal noise - domain warped and palette colored" }
       };
     })();

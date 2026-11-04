@@ -1,15 +1,15 @@
 """
-Range Bridge — cyber-portal range monitoring data for the Hypervisor desktop app.
+Range Bridge - cyber-portal range monitoring data for the Hypervisor desktop app.
 
 Mirrors ado_bridge.py: standalone functions returning dicts suitable for pushing
 to the frontend via the PyWebView bridge. Consumes the existing staff-authenticated
-REST endpoint (GET /api/logs/analytics/range-monitoring/) — no new backend, no infra.
+REST endpoint (GET /api/logs/analytics/range-monitoring/) - no new backend, no infra.
 
 Auth model: the operator pastes their portal `access_token` (a JWT cookie the portal
 sets with httponly=False, so it is browser-copyable). We seed a module-level
 requests.Session cookie jar with it. The portal's auth middleware performs sliding
-refresh — an expired access_token with a still-valid session is re-issued via
-Set-Cookie — so a persistent Session stays authenticated across polls for up to the
+refresh - an expired access_token with a still-valid session is re-issued via
+Set-Cookie - so a persistent Session stays authenticated across polls for up to the
 refresh window without re-pasting.
 
 Token is held in memory only. It is never written to disk (it is a staff session
@@ -59,7 +59,7 @@ def set_range_token(token, base="dev"):
 
     Args:
         token: The portal `access_token` JWT cookie value (copied from the browser).
-        base: Environment key — one of BASE_URLS ('dev', 'qa', 'prod').
+        base: Environment key - one of BASE_URLS ('dev', 'qa', 'prod').
 
     Returns:
         dict: {"ok": True} on success, or {"ok": False, "error": ...}.
@@ -79,7 +79,7 @@ def set_range_token(token, base="dev"):
     # Seed the Session cookie jar with the access_token, scoped to the target
     # host. Using the jar (not a static header) matters: the portal's auth
     # middleware re-issues a fresh token via Set-Cookie on each response, and
-    # a Session jar captures that — keeping the session alive across the 30-min
+    # a Session jar captures that - keeping the session alive across the 30-min
     # access-token expiry up to the 10h refresh window.
     from urllib.parse import urlparse
     host = urlparse(BASE_URLS[base]).hostname
@@ -110,7 +110,7 @@ def range_session_status():
     """Report whether a live session exists, without exposing the token.
 
     Lets the frontend restore the connected view after a page navigation or
-    refresh — the session lives in this module for the life of the hypervisor
+    refresh - the session lives in this module for the life of the hypervisor
     process, so it survives page reloads (but not an app restart).
 
     Returns:
@@ -130,10 +130,10 @@ def _fetch(path):
     Returns:
         dict: {"ok": True, "content": {...}} on success, or an error dict with a
         `reason` the frontend maps to a message:
-          - no_token       — no session seeded yet (default/unauthenticated state)
-          - auth_expired    — HTTP 401 (session no longer valid; re-paste needed)
-          - network_error   — request failed to reach the host
-          - server_error    — non-200/401, invalid JSON, or success=false w/o reason
+          - no_token - no session seeded yet (default/unauthenticated state)
+          - auth_expired - HTTP 401 (session no longer valid; re-paste needed)
+          - network_error - request failed to reach the host
+          - server_error - non-200/401, invalid JSON, or success=false w/o reason
         Plus the endpoint's own reasons (e.g. not_configured) passed through.
     """
     session = _state.get("session")
@@ -156,7 +156,7 @@ def _fetch(path):
     body_snippet = (resp.text or "")[:300]
 
     if resp.status_code == 401:
-        logger.info("range_bridge: 401 on %s — session expired", path)
+        logger.info("range_bridge: 401 on %s - session expired", path)
         clear_range_token()
         return {"ok": False, "reason": "auth_expired"}
 

@@ -6,8 +6,8 @@
 
 .skills-intro {
   color: var(--text-muted);
-  font-size: var(--fs-body);
-  line-height: 1.6;
+  font-size: var(--fs-mono);
+  line-height: var(--lh-prose);
   max-width: 68ch;
   margin: 0 0 var(--space-5);
 }
@@ -28,23 +28,23 @@
   left: var(--space-3);
   top: 50%;
   transform: translateY(-50%);
-  width: var(--icon-sm);
-  height: var(--icon-sm);
+  width: var(--icon-md);
+  height: var(--icon-md);
   color: var(--text-dim);
   pointer-events: none;
 }
 /* Composes .form-input; keeps the card fill, body font, and icon-left padding. */
 .skills-search {
   background: var(--bg-card);
-  font-size: var(--fs-body);
-  padding: var(--space-2) var(--space-3) var(--space-2) calc(var(--space-3) * 2 + 13px);
+  font-size: var(--fs-mono);
+  padding: var(--space-2) var(--space-3) var(--space-2) calc(var(--space-3) * 2 + var(--icon-md));
 }
 .skills-stats {
   align-items: baseline;
   gap: var(--space-3);
-  font-size: var(--fs-detail);
+  font-size: var(--fs-mono);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--track-label);
   color: var(--text-dim);
   white-space: nowrap;
 }
@@ -60,7 +60,7 @@
   gap: var(--space-2);
   padding: var(--space-6) var(--space-4);
   color: var(--text-dim);
-  font-size: var(--fs-caption);
+  font-size: var(--fs-mono);
   border: var(--border-hair) dashed var(--border);
   border-radius: var(--radius);
 }

@@ -1,20 +1,20 @@
 /* ===== Screensaver Utility ===== */
 
 .ss-subtitle {
-  font-size: var(--fs-sm);
+  font-size: var(--fs-mono);
   color: var(--text-muted);
-  margin: var(--space-1) 0 var(--space-1-25);
-  line-height: 1.6;
+  margin: var(--space-1) 0 var(--space-5);
+  line-height: var(--lh-prose);
 }
 .ss-kbd {
   display: inline-block;
   font-family: var(--font);
-  font-size: var(--fs-micro);
+  font-size: var(--fs-mono);
   color: var(--text-bright);
-  background: var(--bg-elevated);
+  background: var(--bg-raised);
   border: var(--border-hair) solid var(--border-strong);
   border-radius: var(--radius);
-  padding: var(--space-0-1) 0.35rem;
+  padding: var(--space-1) var(--space-1);
   vertical-align: 1px;
 }
 
@@ -26,23 +26,22 @@
   align-content: start;
 }
 /* Composes .content-card; keeps the preview clip and the card's own faster
-   hover (lift + strong border) distinct from the primitive default. */
+   hover (strong border, no lift) distinct from the primitive default. */
 .ss-card {
-  transition: border-color var(--motion-base) var(--ease), background var(--motion-fast) var(--ease), transform var(--motion-fast) var(--ease);
+  transition: border-color var(--motion-base) var(--ease), background var(--motion-fast) var(--ease);
   overflow: hidden;
 }
 .ss-card:hover {
   border-color: var(--border-strong);
   background: var(--bg-card-hover);
-  transform: translateY(-2px);
 }
 /* Composes .content-card-active; keeps the solid-accent border + steady fill. */
 .ss-card.selected {
-  border-color: var(--accent);
+  border-color: var(--selected);
   background: var(--bg-card);
 }
 .ss-card.selected:hover {
-  border-color: var(--accent);
+  border-color: var(--selected);
 }
 
 /* ---- Preview media (framed "screen", mirrors .preview-card-media) ---- */
@@ -56,13 +55,13 @@
   height: clamp(150px, 18vw, 220px);
   background:
     radial-gradient(120% 100% at 0% 0%,
-      color-mix(in srgb, var(--accent) 14%, var(--bg-card)) 0%,
+      color-mix(in srgb, var(--text-muted) 14%, var(--bg-card)) 0%,
       var(--bg-card) 60%),
     var(--bg-card);
   padding: var(--space-3);
   overflow: hidden;
 }
-/* Bordered inner frame — the screen. In-flow block filling the padded media
+/* Bordered inner frame - the screen. In-flow block filling the padded media
    box, clipping the canvas so it can never overlap the card body. */
 .ss-card-frame {
   display: block;
@@ -79,15 +78,12 @@
 /* Hover "power-on": the screen frame lights up with an accent border + soft
    inner/outer glow, matching the prototype gallery card. */
 .ss-card:hover .ss-card-frame {
-  border-color: var(--accent);
-  box-shadow:
-    0 0 0 1px var(--accent-border),
-    0 0 12px -2px var(--accent-glow, var(--accent-border)),
-    inset 0 0 18px -6px var(--accent-glow, var(--accent-border));
+  border-color: var(--interactive);
+  box-shadow: 0 0 0 var(--border-hair) var(--interactive-border);
 }
 /* Selected: steady accent frame regardless of hover. */
 .ss-card.selected .ss-card-frame {
-  border-color: var(--accent);
+  border-color: var(--selected);
 }
 /* The canvas fills the frame; its backing store is sized to the frame's real
    pixels in JS, so api.preview() draws at the frame's aspect (no stretch). */
@@ -102,12 +98,12 @@
 
 /* ---- Card body ---- */
 .ss-card-body {
-  padding: var(--space-0-6) var(--space-3);
+  padding: var(--space-3) var(--space-3);
 }
 .ss-card-header {
   display: flex;
   align-items: center;
-  gap: var(--space-0-4);
+  gap: var(--space-2);
   margin-bottom: var(--space-1);
 }
 .ss-card-icon {
@@ -117,25 +113,24 @@
   flex-shrink: 0;
 }
 .ss-card.selected .ss-card-icon {
-  color: var(--accent);
+  color: var(--selected);
 }
 .ss-card-name {
-  font-size: var(--fs-sm);
-  font-weight: var(--fw-bold);
+  font-size: var(--fs-mono);
   color: var(--text-bright);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--track-label);
 }
 .ss-card.selected .ss-card-name {
-  color: var(--accent);
+  color: var(--selected);
 }
 .ss-card-active {
   margin-left: auto;
 }
 .ss-card-desc {
-  font-size: var(--fs-caption);
+  font-size: var(--fs-mono);
   color: var(--text-dim);
-  line-height: 1.5;
+  line-height: var(--lh-body);
 }
 
 /* ---- Settings rail (aside of the split) ---- */
@@ -155,17 +150,17 @@
   padding: var(--space-3);
   display: flex;
   flex-direction: column;
-  gap: var(--space-0-6);
+  gap: var(--space-3);
 }
 /* Composes .flex-between; keeps the wider inter-item gap. */
 .ss-setting-row {
   gap: var(--space-4);
 }
 .ss-setting-row label {
-  font-size: var(--fs-label);
+  font-size: var(--fs-mono);
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: var(--track-body);
 }
 /* ss select + checkbox normalized to shared .form-select / .form-check (see markup). */
 
@@ -177,7 +172,7 @@
    padding and the tighter tracking. Full-width in the rail. */
 .ss-launch {
   width: 100%;
-  padding: var(--space-2) var(--space-1-2);
-  letter-spacing: 0.08em;
+  padding: var(--space-2) var(--space-5);
+  letter-spacing: var(--track-label);
 }
 

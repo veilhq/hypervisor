@@ -1,9 +1,4 @@
 /* ===== Hypervisor: Local Primitive Overrides =====
    Shared primitives (status-chip, list-row, action-button, modal-overlay, tabs, etc.)
-   live in .hyperkit/css/primitives.css (loaded before this file).
-
-   The former bordered-tab-card divergence was removed once the notched-corner
-   tab shape became the shared ecosystem treatment (.nav-tab in hyperkit
-   primitives.css): a border under a clip-path notch gets sliced and reads as
-   broken, so Hypervisor no longer overrides the tab shape. No local overrides
-   remain at present. */
+   live in .hyperkit/css/primitives.css (loaded before this file). No local
+   overrides remain at present. */

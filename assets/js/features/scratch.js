@@ -97,7 +97,7 @@
       });
       for (var i = 0; i < entries.length; i++) {
         // An entry is "in place" if the entry occupying its slot in the sorted
-        // order shares its timestamp — that tolerates same-minute ties.
+        // order shares its timestamp - that tolerates same-minute ties.
         entries[i].moved = entries[i].time !== sorted[i].time;
       }
       return entries;
@@ -107,7 +107,7 @@
     // Cards go into two explicit column stacks. Array order is column-major:
     // indices 0..k fill column 1 top-to-bottom, k+1..n fill column 2. That
     // keeps visual position and array index in a fixed, deterministic
-    // correspondence — CSS multi-column rebalanced the split on every change,
+    // correspondence - CSS multi-column rebalanced the split on every change,
     // which made drop targeting unpredictable.
     //
     // `highlight` (optional) applies a one-shot animation class to a single
@@ -204,7 +204,7 @@
         var card = cards[i];
         // Clear any prior floor before measuring so width isn't affected by it.
         card.style.minHeight = '';
-        // clientWidth is the layout width — unaffected by the entrance scale()
+        // clientWidth is the layout width - unaffected by the entrance scale()
         // transform, unlike getBoundingClientRect().
         var width = card.clientWidth;
         if (width > 0) card.style.minHeight = width + 'px';
@@ -345,7 +345,7 @@
           freshEntries[index].lines = editor.value.split('\n');
           persist(freshEntries);
         } else {
-          // Emptying a note deletes it — consistent with "no empty cards".
+          // Emptying a note deletes it - consistent with "no empty cards".
           freshEntries.splice(index, 1);
           persist(freshEntries);
         }
@@ -378,7 +378,7 @@
     // --- Drag-to-reorder (native HTML5 DnD) ---
     // A skeleton placeholder card marks the exact drop slot. On dragover we
     // decide before/after the hovered card from the cursor's vertical position
-    // within it, and move the placeholder there — so the user drops *into a
+    // within it, and move the placeholder there - so the user drops *into a
     // gap*, not on top of a card.
     var dragSrcIndex = null;
     var placeholder = null;
@@ -415,7 +415,7 @@
       });
     }
 
-    // Container-level dragover/drop — attached once. Doing this on the
+    // Container-level dragover/drop - attached once. Doing this on the
     // container (not each card) means drop still fires when the cursor is
     // released over the placeholder gap or empty space, not just over a card.
     function attachContainerDragHandlers(container) {
@@ -452,7 +452,7 @@
             return;
           }
         }
-        // Past every card in this column — land at the bottom of it.
+        // Past every card in this column - land at the bottom of it.
         if (targetCol.lastChild !== ph) targetCol.appendChild(ph);
       });
 
@@ -481,7 +481,7 @@
 
     // Walk the columns in column-major order (all of column 1, then column 2),
     // counting real cards. The placeholder's rank in that walk is the intended
-    // insertion index in the entry array — the same order renderEntries uses to
+    // insertion index in the entry array - the same order renderEntries uses to
     // lay cards out, so visual position and array index agree exactly.
     function computeDropIndex() {
       if (!entriesContainer || !placeholder || !placeholder.parentNode) return -1;
@@ -523,7 +523,7 @@
         currentContent = buildContent(currentDate, entries);
         textarea.value = '';
         autoResize();
-        // Newest note sits at index 0 — animate its entrance.
+        // Newest note sits at index 0 - animate its entrance.
         renderEntries(currentContent, { index: 0, kind: 'enter' });
         updateTimeLabel();
         // Re-render tears down and rebuilds the entries subtree, which can

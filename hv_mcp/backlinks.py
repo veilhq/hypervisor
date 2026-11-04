@@ -1,5 +1,5 @@
 """
-Backlink graph — eagerly built at startup, incrementally updated via watcher.
+Backlink graph - eagerly built at startup, incrementally updated via watcher.
 
 Maps each document path to the set of other documents that link to it.
 Used by context_for_work_item to instantly retrieve all documents referencing a target.
@@ -132,39 +132,49 @@ def _index_single_file(rel_path: str) -> set[str]:
     if not full_path.exists():
         return set()
     try:
-        md_text = read_md(full_path)
+        md_text = read_md(full_path, warn=full_path.suffix.lower() == ".md")
     except (OSError, UnicodeDecodeError):
         return set()
     return _extract_links(md_text, rel_path)
 
 
-def rebuild_backlinks():
-    """Full rebuild of the backlink graph from disk."""
+def set_link_graph(outlinks: dict[str, set[str]]):
+    """Install a full link graph built from precomputed outlinks per source."""
     global _backlinks, _outlinks
 
-    files = collect_files(HYPERSPACE_ROOT)
     new_backlinks: dict[str, set[str]] = {}
-    new_outlinks: dict[str, set[str]] = {}
-
-    for rel in files:
-        rel_str = str(rel).replace("\\", "/")
-        targets = _index_single_file(rel_str)
-        new_outlinks[rel_str] = targets
+    for source, targets in outlinks.items():
         for target in targets:
-            new_backlinks.setdefault(target, set()).add(rel_str)
+            new_backlinks.setdefault(target, set()).add(source)
 
     with _backlinks_lock:
         _backlinks = new_backlinks
-        _outlinks = new_outlinks
+        _outlinks = dict(outlinks)
 
 
-def refresh_backlinks_for(rel_path: str):
+def rebuild_backlinks():
+    """Full rebuild of the backlink graph from disk."""
+    files = collect_files(HYPERSPACE_ROOT)
+    outlinks: dict[str, set[str]] = {}
+    for rel in files:
+        rel_str = str(rel).replace("\\", "/")
+        outlinks[rel_str] = _index_single_file(rel_str)
+    set_link_graph(outlinks)
+
+
+def refresh_backlinks_for(rel_path: str, md_text: str | None = None):
     """Incrementally update the backlink graph for a single changed file.
 
     Called when a file is created or modified. Removes old outlinks from this
-    file and adds new ones based on current content.
+    file and adds new ones based on current content (or md_text when the
+    caller already read the file).
     """
     global _backlinks, _outlinks
+
+    if md_text is None:
+        new_targets = _index_single_file(rel_path)
+    else:
+        new_targets = _extract_links(md_text, rel_path)
 
     with _backlinks_lock:
         # Remove old outlinks from this file
@@ -175,8 +185,6 @@ def refresh_backlinks_for(rel_path: str):
                 if not _backlinks[target]:
                     del _backlinks[target]
 
-        # Parse new outlinks
-        new_targets = _index_single_file(rel_path)
         _outlinks[rel_path] = new_targets
 
         # Register new backlinks

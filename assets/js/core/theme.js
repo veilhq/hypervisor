@@ -194,7 +194,7 @@
   // --- OKLCH palette builder ---
   // Works natively in OKLCH perceptual space. Key principles:
   // - Hue rotation does the heavy lifting (perceptually uniform in OKLCH)
-  // - Lightness stays in a tight band suitable for dark backgrounds (0.65–0.85)
+  // - Lightness stays in a tight band suitable for dark backgrounds (0.65-0.85)
   // - Chroma preserved near source level to maintain vibrancy
   // - No multiplicative darkening that produces muddy results
   function buildPaletteOKLCH(hex, mode) {
@@ -210,31 +210,31 @@
     var warm, cool, comp;
     switch (mode) {
       case "triadic":
-        // 120° intervals — classic triad with slight lightness variation
+        // 120° intervals - classic triad with slight lightness variation
         warm = oklchToHex(Math.min(l + 0.04, 0.85), c, (h + 120) % 360);
         cool = oklchToHex(Math.max(l - 0.03, 0.55), c, (h + 240) % 360);
         comp = oklchToHex(Math.max(l - 0.06, 0.55), c * 0.9, (h + 180) % 360);
         break;
       case "analogous":
-        // Tight hue cluster — harmony through proximity
+        // Tight hue cluster - harmony through proximity
         warm = oklchToHex(Math.min(l + 0.03, 0.85), c, (h + 35) % 360);
         cool = oklchToHex(Math.max(l - 0.02, 0.55), c, (h + 70) % 360);
         comp = oklchToHex(Math.max(l - 0.04, 0.55), c * 0.95, (h + 330) % 360);
         break;
       case "square":
-        // 90° intervals — maximum variety
+        // 90° intervals - maximum variety
         warm = oklchToHex(Math.min(l + 0.03, 0.85), c, (h + 90) % 360);
         cool = oklchToHex(Math.max(l - 0.02, 0.55), c, (h + 180) % 360);
         comp = oklchToHex(Math.max(l - 0.05, 0.55), c * 0.9, (h + 270) % 360);
         break;
       case "complement":
-        // 180° — two variations of the complement plus a muted accent
+        // 180° - two variations of the complement plus a muted accent
         warm = oklchToHex(Math.min(l + 0.05, 0.85), c, (h + 180) % 360);
         cool = oklchToHex(Math.max(l - 0.05, 0.55), c * 0.85, (h + 180) % 360);
         comp = oklchToHex(Math.max(l - 0.08, 0.55), c * 0.7, h);
         break;
       default: // split
-        // +150° and +210° — split-complement
+        // +150° and +210° - split-complement
         warm = oklchToHex(Math.min(l + 0.04, 0.85), c, (h + 150) % 360);
         cool = oklchToHex(Math.max(l - 0.02, 0.55), c, (h + 210) % 360);
         comp = oklchToHex(Math.max(l - 0.05, 0.55), c * 0.9, (h + 180) % 360);
@@ -261,7 +261,7 @@
     },
     "nordic": {
       name: "Nordic",
-      description: "Muted blue-grey base with a warm amber punch — ice and gold",
+      description: "Muted blue-grey base with a warm amber punch - ice and gold",
       accent: "#b8ccd8", warm: "#a8b8c8", cool: "#c0d0dc", comp: "#ffb000",
       semantics: { success: "#1dfd91", warning: "#fdb015", error: "#fc5c0d", info: "#0f9afc" }
     }
@@ -413,8 +413,7 @@
     root.style.setProperty("--warning", "#ffb000");
     root.style.setProperty("--error", "#ff3333");
     root.style.setProperty("--info", "#00cccc");
-    root.style.setProperty("--highlight", "var(--accent)");
-    root.style.setProperty("--surface-active", "var(--accent-glow)");
+    root.style.setProperty("--surface-active", "var(--selected-wash)");
   }
 
   function applyGradientMap(presetKey) {
@@ -456,8 +455,7 @@
       if (preset.semantics.error) root.style.setProperty("--error", preset.semantics.error);
       if (preset.semantics.info) root.style.setProperty("--info", preset.semantics.info);
     }
-    root.style.setProperty("--highlight", "var(--accent)");
-    root.style.setProperty("--surface-active", "var(--accent-glow)");
+    root.style.setProperty("--surface-active", "var(--selected-wash)");
 
     // Update cursors
     var encodedColor = encodeURIComponent(hex);
@@ -511,7 +509,7 @@
     try { saved = localStorage.getItem(STORAGE_KEY); } catch (e) {}
     if (saved) {
       colorPicker.value = saved;
-      // Only apply custom accent from cache — preset applies will come from
+      // Only apply custom accent from cache - preset applies will come from
       // applyAllPreferences once user maps are injected.
       var cachedMode = null;
       try { cachedMode = localStorage.getItem(THEME_MODE_KEY); } catch (e) {}
@@ -520,7 +518,7 @@
       }
     }
 
-    // Debounce disk writes — the input event fires on every drag tick of the
+    // Debounce disk writes - the input event fires on every drag tick of the
     // color picker, which floods the PyWebView bridge with rapid read/parse/write
     // cycles on preferences.json.  Only persist to localStorage during drag;
     // debounce the bridge call so it fires once after dragging stops.
@@ -546,7 +544,7 @@
       }, 300);
     });
 
-    // change fires once on final selection — guaranteed single bridge call
+    // change fires once on final selection - guaranteed single bridge call
     colorPicker.addEventListener("change", function () {
       clearTimeout(accentSaveTimer);
       savePreference(STORAGE_KEY, this.value);
@@ -560,7 +558,7 @@
     if (!modeToggle) return;
     modeToggle.textContent = PALETTE_LABELS[paletteMode] || "SPL";
     var nextIdx = (PALETTE_MODES.indexOf(paletteMode) + 1) % PALETTE_MODES.length;
-    modeToggle.setAttribute("data-tooltip", PALETTE_TITLES[paletteMode] + " — click for " + PALETTE_TITLES[PALETTE_MODES[nextIdx]].toLowerCase());
+    modeToggle.setAttribute("data-tooltip", PALETTE_TITLES[paletteMode] + " - click for " + PALETTE_TITLES[PALETTE_MODES[nextIdx]].toLowerCase());
   }
 
   if (modeToggle) {
@@ -749,7 +747,7 @@
     }
   };
 
-  // --- Cross-file exports (WI-118 IIFE rework) ---
+  // --- Cross-file exports ---
   // These are consumed by 00-core.js, zz-accessibility.js, and screensaver modes.
   // Promoted to window so they remain reachable after per-file IIFE split.
   window.applyAccent = applyAccent;

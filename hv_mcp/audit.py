@@ -1,14 +1,14 @@
 """
-Work item audit — comprehensive reality check against the codebase and
+Work item audit - comprehensive reality check against the codebase and
 steering conventions.
 
 Replaces validate_work_item_claims with a broader tool that runs:
-1. Claim verification (file/line references still valid) — delegated to claims.py
+1. Claim verification (file/line references still valid) - delegated to claims.py
 2. Pattern conformance (does the WI propose new infra when existing patterns serve?)
 3. Steering compliance (are design decisions justified per conventions?)
 4. Open questions resolution (searches codebase for evidence that answers unresolved questions)
 
-All findings are advisory — this tool never modifies work items or marks tasks.
+All findings are advisory - this tool never modifies work items or marks tasks.
 It surfaces open questions for human review.
 """
 
@@ -33,7 +33,7 @@ from .claims import (
 # Constants
 # ---------------------------------------------------------------------------
 
-# Steering directory — convention rules live here
+# Steering directory - convention rules live here
 STEERING_DIR = WORKSPACE_ROOT / ".kiro" / "steering"
 
 # Keywords that signal new infrastructure proposals in a Design section.
@@ -61,7 +61,7 @@ _APP_PATH_RE = re.compile(
     r'`(?:cyber-portal|portal-cms)/(?:api|app)/(\w+)/',
 )
 
-# Model class definition pattern — for checking what already exists in an app
+# Model class definition pattern - for checking what already exists in an app
 _MODEL_CLASS_RE = re.compile(r'^class\s+(\w+)\(.*models\.Model\)', re.MULTILINE)
 
 # Signal registration pattern
@@ -70,7 +70,7 @@ _SIGNAL_RE = re.compile(r'@receiver\(\w+,\s*sender=(\w+)\)')
 # Known audit/history patterns to check against
 _HISTORY_PATTERNS = {
     "historic_logs": "Full-snapshot signal-driven audit logs (post_save/pre_delete → *_Log table)",
-    "Organization_Log": "Organization snapshots including NCES fields — already captures all changes",
+    "Organization_Log": "Organization snapshots including NCES fields - already captures all changes",
 }
 
 
@@ -82,7 +82,7 @@ def _check_new_infrastructure(design_text: str, impl_notes: str) -> list[dict]:
     """Scan Design and Implementation Notes for new infrastructure proposals.
 
     Returns findings when new infra is proposed without evident justification.
-    Justification is checked across the ENTIRE Design section — it doesn't need
+    Justification is checked across the ENTIRE Design section - it doesn't need
     to be adjacent to the specific mention. Design sections commonly justify
     new infrastructure in a separate "Pivots" or "Decisions" subsection, not
     inline with the table row that names the new file.
@@ -101,7 +101,7 @@ def _check_new_infrastructure(design_text: str, impl_notes: str) -> list[dict]:
     ])
 
     if has_global_justification:
-        # The Design section contains justification language — new infra
+        # The Design section contains justification language - new infra
         # proposals are likely addressed. Skip flagging.
         return findings
 
@@ -154,7 +154,7 @@ def _check_existing_patterns(design_text: str, md_text: str) -> list[dict]:
         for repo in ("cyber-portal", "portal-cms"):
             signals_path = WORKSPACE_ROOT / repo / "api" / app_name / "signals.py"
             if signals_path.exists():
-                # The app uses signals — check if the design mentions inline writes
+                # The app uses signals - check if the design mentions inline writes
                 # for audit/history/logging
                 design_lower = design_text.lower()
                 inline_audit_signals = [
@@ -184,7 +184,7 @@ def _check_existing_patterns(design_text: str, md_text: str) -> list[dict]:
             # Check for existing *_Log models in historic_logs
             historic_logs_path = WORKSPACE_ROOT / repo / "api" / "historic_logs" / "models.py"
             if historic_logs_path.exists() and app_name in ("logs", "autho"):
-                # This repo has historic_logs — check if design proposes a new
+                # This repo has historic_logs - check if design proposes a new
                 # history/audit model in the main app instead
                 new_history_model = re.search(
                     r'class\s+\w*(?:History|Audit|Log)\w*\(.*Model',
@@ -264,7 +264,7 @@ def _check_design_justification(design_text: str) -> list[dict]:
                     "Design proposes new infrastructure but doesn't reference what "
                     "already exists in the codebase. Per steering ('Existing Patterns "
                     "First'), the Design section should document what was considered "
-                    "and why existing infra falls short — or confirm it's being used."
+                    "and why existing infra falls short - or confirm it's being used."
                 ),
                 "context": "No mention of 'existing', 'current', or known pattern names found in Design.",
             })
@@ -466,7 +466,7 @@ def _search_codebase_for_term(term: str) -> list[dict]:
                 f.strip() for f in result.stdout.splitlines() if f.strip()
             ]
         except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
-            # grep not available — fall back to Python scan
+            # grep not available - fall back to Python scan
             matching_files = _python_find_files(search_dir, term, skip_patterns)
 
         # Read the first few matching files for line-level evidence
@@ -525,8 +525,8 @@ def _resolve_open_questions(md_text: str) -> list[dict]:
     Returns a list of dicts: {question, terms_searched, evidence, resolution_hint}.
 
     `resolution_hint` is one of:
-    - "evidence_found" — codebase contains relevant code that may answer the question
-    - "no_evidence" — nothing found (question may require human judgment or external info)
+    - "evidence_found" - codebase contains relevant code that may answer the question
+    - "no_evidence" - nothing found (question may require human judgment or external info)
     """
     questions = _extract_open_questions(md_text)
     if not questions:
@@ -581,10 +581,10 @@ def audit_work_item(slug: str) -> dict:
     """Comprehensive reality check for a work item.
 
     Runs four layers of checks:
-    1. Claim verification — file/line references against the actual codebase
-    2. Pattern conformance — does the design align with established codebase patterns?
-    3. Steering compliance — are conventions being followed (justification, existing patterns)?
-    4. Open questions resolution — searches the codebase for evidence that may answer
+    1. Claim verification - file/line references against the actual codebase
+    2. Pattern conformance - does the design align with established codebase patterns?
+    3. Steering compliance - are conventions being followed (justification, existing patterns)?
+    4. Open questions resolution - searches the codebase for evidence that may answer
        unresolved questions in the ## Open Questions section
 
     All findings are advisory. This tool never modifies documents.
@@ -722,7 +722,7 @@ def audit_work_item(slug: str) -> dict:
         )
     else:
         result["note"] = (
-            "All findings are advisory — heuristic pattern matching, not proof. "
+            "All findings are advisory - heuristic pattern matching, not proof. "
             "Review each finding and confirm or dismiss."
         )
 

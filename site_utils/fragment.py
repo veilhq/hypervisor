@@ -2,7 +2,7 @@
 Content fragment generation for the SPA shell architecture.
 
 Each markdown document is output as a JSON fragment containing just the
-content, metadata, and rendering hints — rather than a full HTML page.
+content, metadata, and rendering hints - rather than a full HTML page.
 The single shell.html loads these fragments dynamically via fetch.
 """
 
@@ -11,7 +11,7 @@ import re
 from pathlib import PurePosixPath
 
 
-# Mermaid detection — same keywords as markdown_processing.convert_mermaid_blocks
+# Mermaid detection - same keywords as markdown_processing.convert_mermaid_blocks
 _MERMAID_KEYWORDS = (
     'erDiagram', 'flowchart', 'sequenceDiagram', 'classDiagram',
     'stateDiagram', 'gantt', 'pie', 'gitgraph', 'mindmap', 'timeline',
@@ -92,12 +92,12 @@ def write_fragment(fragment_dict, output_path):
 
 
 # ---------------------------------------------------------------------------
-# Connections section — unified Related + Referenced By
+# Connections section - unified Related + Referenced By
 # ---------------------------------------------------------------------------
 
 # Pattern matches the <details class="doc-section" ...> wrapper produced by
 # style_related_section() for Related/See Also/References headings.
-# Key marker: inner div has class "related-section-content" — distinguishes
+# Key marker: inner div has class "related-section-content" - distinguishes
 # the restyled link-list from regular content sections titled "Related X".
 _RELATED_SECTION_RE = re.compile(
     r'<details class="doc-section"[^>]*>.*?<div class="doc-section-content related-section-content">.*?</details>',

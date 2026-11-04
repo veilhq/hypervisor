@@ -1,5 +1,5 @@
 """
-Semantic RAG over hyperspace markdown (WI-123).
+Semantic RAG over hyperspace markdown.
 
 Hybrid retrieval: dense vectors (sqlite-vec) fused with keyword search (FTS5)
 via Reciprocal Rank Fusion, then MMR-reranked for source diversity.
@@ -66,7 +66,7 @@ CONTEXT_PREFIX_BUDGET = 60
 
 # Sections below this are short enough that packing them with a neighbour helps.
 # A complete-but-short `## ` section is still a coherent retrieval unit, so this
-# is a preference, not an invariant — see FRAGMENT_TOKENS for the hard case.
+# is a preference, not an invariant - see FRAGMENT_TOKENS for the hard case.
 MIN_CHUNK_TOKENS = 200
 
 # Below this a chunk is a genuine fragment with too little signal to stand
@@ -148,10 +148,37 @@ RRF_K = 60
 # MMR relevance/diversity balance. Leans toward relevance.
 MMR_LAMBDA = 0.7
 
-# Recency boost ceiling — a document updated today scores this much higher than
+# Recency boost ceiling - a document updated today scores this much higher than
 # one untouched for RECENCY_HALFLIFE_DAYS. Deliberately small per decision #5.
 RECENCY_BOOST = 0.15
 RECENCY_HALFLIFE_DAYS = 90
+
+# Cross-encoder rerank. Scores the top fused candidates against the query as a
+# pair, which is far more precise than bi-encoder cosine. Small English
+# MS MARCO model (~80 MB); its raw logit is squashed with a sigmoid to 0..1.
+RERANK_MODEL_NAME = "Xenova/ms-marco-MiniLM-L-6-v2"
+RERANK_TOP_N = 25
+
+# Results whose normalized rerank score falls below this are flagged low
+# confidence. Lowest floor in the eval sweep that flags every no-answer query.
+RERANK_CONFIDENCE_FLOOR = 0.05
+
+# Fallback floor on dense cosine similarity, used when the reranker is
+# unavailable. Keyword-only hits (no similarity) are low confidence there.
+SIMILARITY_CONFIDENCE_FLOOR = 0.5
+
+# Bump when the FTS layout or chunk text changes. A mismatch with the stored
+# value rebuilds the keyword index and forces the next reindex to re-embed.
+SCHEMA_VERSION = 2
+
+# bm25() column weights for fts_chunks(title, section, content).
+FTS_BM25_WEIGHTS = (8.0, 4.0, 1.0)
+
+# A bare ID, optionally introduced by a label such as "work item" or "story".
+_WORK_ID_QUERY_RE = re.compile(
+    r"^\s*(?:(?:work\s*item|work\s*story|item|story|ticket|task|id)\s*[:#]?\s*)?(WI-\d+)\s*$",
+    re.IGNORECASE,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -211,7 +238,7 @@ def _infer_doc_type(rel_path: str) -> str:
     if head == "ideas":
         return "idea"
     if head == "research":
-        return "bugfix" if len(parts) > 1 and parts[1] == "bugfixes" else "research"
+        return "research"
     if head == "context":
         return "context"
     if head == "patterns":
@@ -261,7 +288,7 @@ _METADATA_LINE_RE = re.compile(
 def strip_metadata_block(md_text: str) -> str:
     """Remove header metadata lines and separators, preserving prose.
 
-    The H1 title and the one-line description survive — they carry meaning.
+    The H1 title and the one-line description survive - they carry meaning.
     Only the `- Key: value` metadata rows and the horizontal rule that closes
     the header block are removed.
     """
@@ -326,6 +353,8 @@ class HyperspaceRAG:
         self.db_path = Path(db_path) if db_path else DB_PATH
         self.model_name = model_name
         self._model = None
+        self._reranker = None
+        self._reranker_failed = False
         self._tokenizer = None
         self._db: sqlite3.Connection | None = None
         self._lock = threading.Lock()
@@ -359,6 +388,23 @@ class HyperspaceRAG:
                     self._model = model
                     logger.info("embedding model ready")
         return self._model
+
+    @property
+    def reranker(self):
+        """Cross-encoder, loaded on first access; None if it cannot load."""
+        if self._reranker is None and not self._reranker_failed:
+            with self._lock:
+                if self._reranker is None and not self._reranker_failed:
+                    try:
+                        from fastembed.rerank.cross_encoder import TextCrossEncoder
+
+                        logger.info("loading reranker %s", RERANK_MODEL_NAME)
+                        self._reranker = TextCrossEncoder(model_name=RERANK_MODEL_NAME)
+                        logger.info("reranker ready")
+                    except Exception as exc:  # noqa: BLE001 - degrade, never fail search
+                        self._reranker_failed = True
+                        logger.warning("reranker unavailable, using fused order: %s", exc)
+        return self._reranker
 
     @staticmethod
     def _build_counting_tokenizer(model_tokenizer):
@@ -454,11 +500,40 @@ class HyperspaceRAG:
                 embedding float[{EMBEDDING_DIM}] distance_metric=cosine
             );
 
-            CREATE VIRTUAL TABLE IF NOT EXISTS fts_chunks USING fts5(content);
             """
         )
         db.commit()
+        self._migrate_fts()
         self._repair_orphans()
+
+    def _migrate_fts(self):
+        """Create the FTS table, rebuilding it first when the schema version moved.
+
+        A rebuild drops the keyword index and clears doc_hashes, so the next
+        reindex_changed re-embeds and re-indexes every document under the new
+        layout. A brand-new database just records the version.
+        """
+        db = self._db
+        stored = self._read_meta_int("schema_version", 0)
+        if stored != SCHEMA_VERSION:
+            db.execute("BEGIN IMMEDIATE")
+            # Re-check under the write lock: another process may have rebuilt
+            # while this one waited, and a second rebuild would wipe its work.
+            if self._read_meta_int("schema_version", 0) != SCHEMA_VERSION:
+                existing = db.execute("SELECT COUNT(*) FROM doc_hashes").fetchone()[0]
+                logger.info(
+                    "schema version %s -> %s (rebuilding fts, %d docs)",
+                    stored, SCHEMA_VERSION, existing,
+                )
+                db.execute("DROP TABLE IF EXISTS fts_chunks")
+                db.execute("DELETE FROM doc_hashes")
+                self._write_meta("schema_version", SCHEMA_VERSION)
+            db.commit()
+        db.execute(
+            "CREATE VIRTUAL TABLE IF NOT EXISTS fts_chunks USING fts5("
+            "title, section, content, tokenize='porter unicode61')"
+        )
+        db.commit()
 
     def _repair_orphans(self):
         """Remove vec_chunks/fts_chunks rows whose rowid has no matching chunks row.
@@ -705,7 +780,7 @@ class HyperspaceRAG:
         if not body.strip():
             return []
 
-        # Short documents stay whole — splitting a self-contained doc into
+        # Short documents stay whole - splitting a self-contained doc into
         # fragments is a net loss.
         if self.count_tokens(body) <= TARGET_BODY_TOKENS:
             return [(None, body)]
@@ -730,7 +805,7 @@ class HyperspaceRAG:
         """Fold undersized sections into neighbours.
 
         A complete-but-short `## ` section is not the pathological case the
-        200-token floor guards against — that was mid-sentence fragments. Still,
+        200-token floor guards against - that was mid-sentence fragments. Still,
         packing short sections together gives the embedding more to work with.
         Tries forward accumulation first, then folds backward into the previous
         chunk, and only emits a short chunk standalone when neither fits.
@@ -796,7 +871,7 @@ class HyperspaceRAG:
         """Prepend structural context, then hard-clamp to the model's limit.
 
         Carrying the title and section heading into the embedded text is the
-        cheap form of contextual retrieval — an isolated chunk like "the third
+        cheap form of contextual retrieval - an isolated chunk like "the third
         requirement" is meaningless without knowing which document and section
         it came from. This is document structure, distinct from the header
         metadata that decision #9 keeps out of embeddings.
@@ -806,9 +881,9 @@ class HyperspaceRAG:
         WI-123, since metadata stripping removes the `- ID:` line.
         """
         parts = [p for p in (work_id, title) if p]
-        prefix = " — ".join(parts)
+        prefix = " \u2014 ".join(parts)
         if section:
-            prefix = f"{prefix} — {section}" if prefix else section
+            prefix = f"{prefix} - {section}" if prefix else section
         prefix = self._truncate_to_tokens(prefix, CONTEXT_PREFIX_BUDGET)
 
         text = f"{prefix}\n\n{body}".strip() if prefix else body
@@ -921,11 +996,14 @@ class HyperspaceRAG:
                     "INSERT INTO vec_chunks(rowid, embedding) VALUES (?, ?)",
                     (chunk_id, _serialize_f32(vector)),
                 )
-                # The FTS index carries the context prefix so identifier lookups
-                # (work item IDs, section titles) resolve on the keyword arm.
+                # Title (with work item ID) and section get their own weighted
+                # columns so identifier and heading lookups resolve on the
+                # keyword arm.
+                fts_title = " ".join(p for p in (meta["work_id"], meta["title"]) if p)
                 db.execute(
-                    "INSERT INTO fts_chunks(rowid, content) VALUES (?, ?)",
-                    (chunk_id, embed_text),
+                    "INSERT INTO fts_chunks(rowid, title, section, content) "
+                    "VALUES (?, ?, ?, ?)",
+                    (chunk_id, fts_title, section or "", body),
                 )
 
             db.execute(
@@ -971,7 +1049,7 @@ class HyperspaceRAG:
 
             # Determine the work set first so progress can be reported. Embedding
             # runs at roughly 6-9 chunks/s on CPU, so a cold build over the full
-            # corpus takes minutes — silence would look like a hang.
+            # corpus takes minutes - silence would look like a hang.
             to_index: list[str] = []
             for rel_path in on_disk:
                 full = HYPERSPACE_ROOT / rel_path
@@ -1028,7 +1106,7 @@ class HyperspaceRAG:
                 "total_chunks": self.chunk_count(),
             }
             logger.info(
-                "reindex complete — %d indexed, %d skipped, %d removed, %d chunks",
+                "reindex complete - %d indexed, %d skipped, %d removed, %d chunks",
                 indexed,
                 skipped,
                 removed,
@@ -1119,8 +1197,9 @@ class HyperspaceRAG:
         if not fts_query:
             return []
 
+        weights = ", ".join(str(w) for w in FTS_BM25_WEIGHTS)
         sql = (
-            "SELECT rowid, bm25(fts_chunks) AS score FROM fts_chunks "
+            f"SELECT rowid, bm25(fts_chunks, {weights}) AS score FROM fts_chunks "
             "WHERE fts_chunks MATCH ?"
         )
         params: list = [fts_query]
@@ -1143,6 +1222,42 @@ class HyperspaceRAG:
         # bm25() returns negative values, more negative = better.
         return [(rowid, -score) for rowid, score in rows]
 
+    def _exact_id_search(
+        self, query: str, candidates: list[int] | None
+    ) -> list[int]:
+        """Chunk rowids of the document whose work item ID is the query (label allowed)."""
+        m = _WORK_ID_QUERY_RE.match(query)
+        if not m:
+            return []
+        try:
+            rows = self.db.execute(
+                "SELECT rowid FROM fts_chunks WHERE title MATCH ? ORDER BY rowid",
+                (f'"{m.group(1)}"',),
+            ).fetchall()
+        except sqlite3.OperationalError:
+            return []
+        allowed = None if candidates is None else set(candidates)
+        return [r[0] for r in rows if allowed is None or r[0] in allowed]
+
+    def _rerank_scores(self, query: str, rowids: list[int]) -> dict[int, float]:
+        """Cross-encoder relevance (0..1) per rowid; empty when unavailable."""
+        if not rowids or self.reranker is None:
+            return {}
+        placeholders = ",".join("?" * len(rowids))
+        rows = self.db.execute(
+            f"SELECT id, title, section, content FROM chunks "
+            f"WHERE id IN ({placeholders})",
+            tuple(rowids),
+        ).fetchall()
+        ids = [r[0] for r in rows]
+        docs = ["\n".join(p for p in (r[1], r[2], r[3]) if p) for r in rows]
+        try:
+            logits = list(self.reranker.rerank(query, docs))
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("rerank failed, using fused order: %s", exc)
+            return {}
+        return {rid: _sigmoid(x) for rid, x in zip(ids, logits)}
+
     def _recency_multiplier(self, updated: str | None) -> float:
         if not updated:
             return 1.0
@@ -1163,8 +1278,12 @@ class HyperspaceRAG:
         project: str | None = None,
         source_type: str | None = None,
         recency_boost: bool = True,
+        one_per_doc: bool = True,
     ) -> list[dict]:
-        """Hybrid search: vector + keyword, RRF-fused, MMR-reranked."""
+        """Hybrid search: vector + keyword, RRF-fused, MMR-reranked.
+
+        With one_per_doc, only a document's best chunk competes for a slot.
+        """
         if not query or not query.strip():
             return []
         if self.is_empty():
@@ -1197,15 +1316,57 @@ class HyperspaceRAG:
             ]
             fused.sort(key=lambda pair: pair[1], reverse=True)
 
+        # --- Exact work item ID: that document's chunks lead the results ---
+        pinned = self._exact_id_search(query, candidates)
+        pinned_set = set(pinned)
+        fused = [(rid, 1.0) for rid in pinned] + [
+            pair for pair in fused if pair[0] not in pinned_set
+        ]
+
+        # --- Cross-encoder rerank of the top fused candidates ---
+        pool = [rid for rid, _ in fused[:RERANK_TOP_N] if rid not in pinned_set]
+        rerank = self._rerank_scores(query, pool)
+
         # --- MMR reranking ---
-        ordered_ids = self._mmr_rerank(
-            [rid for rid, _ in fused], similarity, top_k,
-        )
+        relevance = dict(similarity)
+        relevance.update(rerank)
+        if rerank:
+            pool_ids = [rid for rid in pool if rid in rerank]
+            pool_ids.sort(key=lambda rid: rerank[rid], reverse=True)
+        else:
+            pool_ids = [rid for rid, _ in fused if rid not in pinned_set]
+        lead = pinned[:top_k]
+        if one_per_doc:
+            pool_ids = self._best_chunk_per_doc(pool_ids, {*lead})
+        ordered_ids = lead + self._mmr_rerank(pool_ids, relevance, top_k - len(lead))
 
         # --- Hydrate ---
-        results = self._hydrate(ordered_ids, fused_scores=dict(fused), similarity=similarity)
+        return self._hydrate(
+            ordered_ids,
+            fused_scores=dict(fused),
+            similarity=similarity,
+            rerank=rerank,
+            pinned=pinned_set,
+        )
 
-        return results
+    def _best_chunk_per_doc(self, rowids: list[int], skip: set[int]) -> list[int]:
+        """First (best-ranked) chunk of each document, skipping documents already led."""
+        all_ids = list(rowids) + list(skip)
+        if not all_ids:
+            return []
+        placeholders = ",".join("?" * len(all_ids))
+        path_by_id = dict(self.db.execute(
+            f"SELECT id, path FROM chunks WHERE id IN ({placeholders})", tuple(all_ids),
+        ).fetchall())
+        seen = {path_by_id.get(rid) for rid in skip}
+        out = []
+        for rid in rowids:
+            path = path_by_id.get(rid)
+            if path in seen:
+                continue
+            seen.add(path)
+            out.append(rid)
+        return out
 
     def _fetch_updated(self, rowids: set[int]) -> dict[int, str | None]:
         if not rowids:
@@ -1246,8 +1407,8 @@ class HyperspaceRAG:
         if not embeddings:
             return rowids[:top_k]
 
-        # Rank position stands in for query relevance when a row surfaced only
-        # via keyword search and has no cosine similarity.
+        # Rank position stands in for query relevance when a row has neither a
+        # rerank score nor a cosine similarity (reranker unavailable).
         fallback = {rid: 1.0 / (i + 1) for i, rid in enumerate(rowids)}
 
         selected: list[int] = []
@@ -1286,9 +1447,13 @@ class HyperspaceRAG:
         rowids: list[int],
         fused_scores: dict[int, float],
         similarity: dict[int, float],
+        rerank: dict[int, float] | None = None,
+        pinned: set[int] | None = None,
     ) -> list[dict]:
         if not rowids:
             return []
+        rerank = rerank or {}
+        pinned = pinned or set()
         placeholders = ",".join("?" * len(rowids))
         rows = self.db.execute(
             f"""
@@ -1301,6 +1466,13 @@ class HyperspaceRAG:
 
         by_id = {}
         for r in rows:
+            matched = "vector" if r[0] in similarity else "keyword"
+            if r[0] in pinned:
+                confident, matched = True, "id"
+            elif rerank:
+                confident = rerank.get(r[0], 0.0) >= RERANK_CONFIDENCE_FLOOR
+            else:
+                confident = similarity.get(r[0], 0.0) >= SIMILARITY_CONFIDENCE_FLOOR
             by_id[r[0]] = {
                 "chunk_id": r[0],
                 "path": r[1],
@@ -1316,7 +1488,10 @@ class HyperspaceRAG:
                 "token_count": r[11],
                 "similarity": round(similarity.get(r[0], 0.0), 4),
                 "score": round(fused_scores.get(r[0], 0.0), 6),
-                "matched_by": "vector" if r[0] in similarity else "keyword",
+                "matched_by": matched,
+                "rerank_score": round(rerank[r[0]], 4) if r[0] in rerank else None,
+                "confidence": "high" if confident else "low",
+                "below_floor": not confident,
             }
 
         return [by_id[rid] for rid in rowids if rid in by_id]
@@ -1361,6 +1536,13 @@ def _cosine(a, b) -> float:
     if na == 0 or nb == 0:
         return 0.0
     return dot / (na * nb)
+
+
+def _sigmoid(x: float) -> float:
+    if x >= 0:
+        return 1.0 / (1.0 + math.exp(-x))
+    e = math.exp(x)
+    return e / (1.0 + e)
 
 
 def _reciprocal_rank_fusion(
@@ -1437,7 +1619,7 @@ def on_file_changed(rel_path: str):
         return
     try:
         get_rag().index_document(rel_path)
-    except Exception as exc:  # noqa: BLE001 — watcher must never die
+    except Exception as exc:  # noqa: BLE001 - watcher must never die
         logger.warning("reindex failed for %s: %s", rel_path, exc)
 
 

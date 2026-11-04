@@ -1,22 +1,22 @@
-/* ═══════════════════════════════════════════════════════════════════════
-   STYLE GUIDE — masonry component gallery (shadcn-style)
+/* =======================================================================
+   STYLE GUIDE - masonry component gallery (shadcn-style)
    Each design-system primitive lives in its own bordered card. Cards flow
    into a CSS-columns masonry so short cards (chips, badges) pack tightly
    beside tall ones (skeletons, cards). Zero-JS: reading order is
    top-to-bottom per column, then across.
-   ═══════════════════════════════════════════════════════════════════════ */
+   ======================================================================= */
 
 /* Page intro sits above the grid, full width. Explicit subtitle sizing so it
    matches the other utilities' subtitles rather than inheriting the larger
    markdown-body paragraph size (this page is the only utility on .markdown-body). */
 .sg-intro {
   margin: 0 0 var(--space-5);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-mono);
   color: var(--text-muted);
-  line-height: 1.6;
+  line-height: var(--lh-prose);
 }
 
-/* Sticky category filter bar — jump to a group without scrolling blind. */
+/* Sticky category filter bar - jump to a group without scrolling blind. */
 .sg-toolbar {
   position: sticky;
   top: 0;
@@ -34,8 +34,8 @@
 
 .sg-filter {
   font-family: inherit;
-  font-size: var(--fs-label);
-  letter-spacing: 0.04em;
+  font-size: var(--fs-mono);
+  letter-spacing: var(--track-body);
   color: var(--text-muted);
   background: transparent;
   border: var(--border-hair) solid var(--border);
@@ -52,11 +52,11 @@
 }
 .sg-filter.active {
   color: var(--bg);
-  background: var(--accent);
-  border-color: var(--accent);
+  background: var(--selected);
+  border-color: var(--selected);
 }
 
-/* Masonry container — column count adapts to width. */
+/* Masonry container - column count adapts to width. */
 .sg-masonry {
   column-count: 3;
   column-gap: var(--space-4);
@@ -65,7 +65,7 @@
 @media (max-width: 1100px) { .sg-masonry { column-count: 2; } }
 @media (max-width: 720px)  { .sg-masonry { column-count: 1; } }
 
-/* Component card — the atomic unit of the gallery. */
+/* Component card - the atomic unit of the gallery. */
 .sg-card {
   break-inside: avoid;
   display: inline-block;   /* prevents column-break orphaning of the card box */
@@ -86,7 +86,7 @@
 /* When filtering, hidden cards drop out of flow entirely. */
 .sg-card.sg-hidden { display: none; }
 
-/* Card header — label + optional token annotation. */
+/* Card header - label + optional token annotation. */
 .sg-card-head {
   display: flex;
   align-items: baseline;
@@ -97,18 +97,18 @@
   background: var(--bg-surface);
 }
 .sg-card-title {
-  font-size: var(--fs-label);
-  letter-spacing: 0.06em;
+  font-size: var(--fs-mono);
+  letter-spacing: var(--track-label);
   text-transform: uppercase;
   color: var(--text-bright);
 }
 .sg-card-note {
-  font-size: var(--fs-detail);
+  font-size: var(--fs-mono);
   color: var(--text-dim);
   font-family: inherit;
 }
 
-/* Card body — the live preview surface. */
+/* Card body - the live preview surface. */
 .sg-card-body {
   padding: var(--space-4);
   display: flex;
@@ -124,15 +124,15 @@
   align-items: center;
 }
 
-/* A labelled specimen — small caption above a swatch/element. */
+/* A labelled specimen - small caption above a swatch/element. */
 .sg-spec-label {
-  font-size: var(--fs-caption);
+  font-size: var(--fs-mono);
   color: var(--text-dim);
-  letter-spacing: 0.06em;
+  letter-spacing: var(--track-label);
   text-transform: uppercase;
 }
 
-/* Reset heading chrome inside cards — the card head is the label, so any
+/* Reset heading chrome inside cards - the card head is the label, so any
    demo headings render as pure type specimens with no rail or border. */
 .sg-card-body h1,
 .sg-card-body h2,
@@ -158,12 +158,12 @@
   gap: var(--space-2);
 }
 .sg-swatch-name {
-  font-size: var(--fs-caption);
+  font-size: var(--fs-mono);
   color: var(--text-dim);
-  letter-spacing: 0.06em;
+  letter-spacing: var(--track-label);
 }
 .sg-swatch-val {
-  font-size: var(--fs-detail);
+  font-size: var(--fs-mono);
   color: var(--text-dim);
   margin-top: var(--space-1);
 }
@@ -174,14 +174,14 @@
   margin: 0 auto var(--space-2);
 }
 
-/* Motion demo bar — fills on hover to show transition speed. */
+/* Motion demo bar - fills on hover to show transition speed. */
 .sg-motion-row {
   display: flex;
   align-items: center;
   gap: var(--space-3);
 }
 .sg-motion-label {
-  font-size: var(--fs-caption);
+  font-size: var(--fs-mono);
   color: var(--text-dim);
   width: 14ch;
   text-align: right;
@@ -202,3 +202,34 @@
   transform-origin: left;
 }
 .sg-motion-row:hover .sg-motion-fill { transform: scaleX(1); }
+
+/* Short explanatory line under a specimen. */
+.sg-note {
+  margin-top: var(--space-2);
+  font-size: var(--fs-mono);
+  color: var(--text-dim);
+  line-height: var(--lh-body);
+}
+
+/* Flag specimens: the live flags are absolutely positioned to their chrome, so
+   the guide lays them out statically inside a bordered stage. */
+.sg-flag-stage {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-5);
+  padding: var(--space-4);
+  border: var(--border-hair) solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.sg-flag-stage .topbar-clock {
+  position: static;
+  transform: none;
+  z-index: auto;
+}
+.sg-flag-stage .toc-flag {
+  transform: none;
+  pointer-events: none;
+}
+.sg-launcher-stage .zen-launcher { position: static; }
+.sg-launcher-stage .zen-launcher-panel { position: static; margin-top: var(--space-2); }

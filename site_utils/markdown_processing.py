@@ -48,7 +48,7 @@ def normalize_tables(md_text: str) -> str:
     and strip blank lines that sit *between two table rows* to let the parser
     recognize them.
 
-    A blank line is only interior — and therefore droppable — when another table
+    A blank line is only interior - and therefore droppable - when another table
     row follows it. A blank that is followed by non-table content marks the end of
     the table and must be preserved; dropping it would glue the next block (e.g. a
     following '## Sources' heading) onto the table, causing the parser to absorb it
@@ -73,7 +73,7 @@ def normalize_tables(md_text: str) -> str:
             pending_blanks = []
             table_buf.append(line)
         elif stripped == '' and in_table:
-            # Blank inside a table — hold it; only drop if a table row follows.
+            # Blank inside a table - hold it; only drop if a table row follows.
             pending_blanks.append(line)
         else:
             # Non-table, non-blank line: the table has ended. Flush its rows,
@@ -110,7 +110,7 @@ def render_markdown(md_text: str, source_path: str | None = None) -> tuple[str, 
 
 
 # ---------------------------------------------------------------------------
-# HTML post-processing — transform raw MD output into structured layout
+# HTML post-processing - transform raw MD output into structured layout
 # ---------------------------------------------------------------------------
 
 def post_process(html: str, source_path: str | None = None, md_text: str | None = None) -> str:
@@ -149,7 +149,7 @@ def rewrite_md_links(html: str, source_path: str | None = None) -> str:
         if path.startswith(('http://', 'https://', '#')):
             return full_href + path + '.md"'
 
-        # Already absolute (starts with /) — just convert .md to /index.html
+        # Already absolute (starts with /) - just convert .md to /index.html
         if path.startswith('/'):
             clean = path.lstrip('/')
             return full_href + '/' + clean + '/index.html"'
@@ -189,7 +189,7 @@ def link_citations(html: str) -> str:
 
     Convention (see the analysis skill's Source Citation section): a document
     ends with a numbered `## Sources` (or `## References`) list, and every
-    substantive claim carries an inline [N] — or grouped [2][5] — referencing
+    substantive claim carries an inline [N] - or grouped [2][5] - referencing
     the matching source number. This transform is a no-op unless such a section
     is present, so ordinary docs that happen to contain [0]-style brackets are
     untouched.
@@ -214,7 +214,7 @@ def link_citations(html: str) -> str:
     if not hmatch:
         return html
 
-    # The sources region may contain multiple <ol> lists — the ratified format
+    # The sources region may contain multiple <ol> lists - the ratified format
     # allows grouping sources under ### sub-headers (Codebase / Live AWS / ...),
     # and markdown restarts <ol> numbering per group. We number every <li> across
     # all lists in the region continuously so [7] resolves to the 7th source
@@ -262,7 +262,7 @@ def link_citations(html: str) -> str:
             else:
                 links.append(num_m.group(0))
         # If nothing in the run maps to a real source, leave the original text
-        # untouched — don't superscript stray brackets that aren't citations.
+        # untouched - don't superscript stray brackets that aren't citations.
         if not any_matched:
             return run
         return f'<sup class="citation-group">{"".join(links)}</sup>'
@@ -309,7 +309,7 @@ def structure_sources(html: str) -> str:
     The <li> id stays on the group, so inline [N] citations still resolve to the
     whole source. A segment that does not lead with a <code> path (ADO/web
     sources like "Azure DevOps PR 1162 metadata ...") renders as a single
-    description-only row — never mangled. Runs after link_citations (which tags
+    description-only row - never mangled. Runs after link_citations (which tags
     the items) and before wrap_h2_sections.
     """
     def _rebuild(m):
@@ -334,7 +334,7 @@ def structure_sources(html: str) -> str:
         )
 
         if not is_manifest:
-            # Single prose row — keep the whole sentence together. If it happens
+            # Single prose row - keep the whole sentence together. If it happens
             # to start with a code path, still promote just that leading token as
             # the key so a single-ref source stays keyed.
             code_m = _LEADING_CODE_RE.match(inner)
@@ -342,7 +342,7 @@ def structure_sources(html: str) -> str:
                 key_html = code_m.group(1).replace(
                     '<code>', '<code class="ref-card-key">', 1
                 )
-                desc_html = re.sub(r'^\s*[—–\-:]\s*', '', code_m.group(2).strip())
+                desc_html = re.sub(r'^\s*[\u2014\u2013\-:]\s*', '', code_m.group(2).strip())
                 desc_part = (
                     f'<span class="ref-card-desc">{desc_html}</span>' if desc_html else ''
                 )
@@ -354,7 +354,7 @@ def structure_sources(html: str) -> str:
         for seg in segments:
             code_m = _LEADING_CODE_RE.match(seg)
             key_html = code_m.group(1).replace('<code>', '<code class="ref-card-key">', 1)
-            desc_html = re.sub(r'^\s*[—–\-:]\s*', '', code_m.group(2).strip())
+            desc_html = re.sub(r'^\s*[\u2014\u2013\-:]\s*', '', code_m.group(2).strip())
             desc_part = (
                 f'<span class="ref-card-desc">{desc_html}</span>' if desc_html else ''
             )
@@ -448,7 +448,7 @@ def convert_admonitions(html: str) -> str:
                         f'</div>'
                     )
                 else:
-                    # Non-admonition content — append to the previous admonition if possible
+                    # Non-admonition content - append to the previous admonition if possible
                     if result_parts and result_parts[-1].endswith('</div></div>'):
                         last = result_parts[-1]
                         insert_point = last.rfind('</div></div>')
@@ -607,7 +607,7 @@ def extract_metadata_block(html: str) -> str:
                     extra_class="doc-header-chip doc-header-chip-horizon",
                 )
             )
-        # PR author — first-class identity chip for PR-review notes (initials,
+        # PR author - first-class identity chip for PR-review notes (initials,
         # matching the assignee chip vocabulary) rather than a generic extra row.
         pr_author = parsed.get("pr author")
         if pr_author:
@@ -619,7 +619,7 @@ def extract_metadata_block(html: str) -> str:
                     data_attrs={"full-value": pr_author},
                 )
             )
-        # PR link — a chip-styled anchor (render_chip only emits a span, so the
+        # PR link - a chip-styled anchor (render_chip only emits a span, so the
         # clickable PR link is built directly, composed on the same chip primitive).
         pr_link = parsed.get("pr link")
         if pr_link:
@@ -647,7 +647,7 @@ def extract_metadata_block(html: str) -> str:
                     f'<span class="doc-header-date-value">{_display_date(val)}</span>'
                     f'</span>'
                 )
-        # PR Created — first-class date entry for PR-review notes, in the date
+        # PR Created - first-class date entry for PR-review notes, in the date
         # cluster alongside the doc's own Created/Updated rather than a muted extra.
         pr_created = parsed.get("pr created")
         if pr_created:
@@ -667,7 +667,7 @@ def extract_metadata_block(html: str) -> str:
             )
         html_parts.append('<div class="doc-header-dates">' + "".join(right_entries) + '</div>')
 
-        # --- Non-standard fields (Severity, Affected, etc.) — small block below ---
+        # --- Non-standard fields (Severity, Affected, etc.) - small block below ---
         # Filter out 'related' (moved to the ## Related section at the bottom).
         if extras:
             html_parts.append('<div class="doc-header-extras">')
@@ -714,7 +714,7 @@ def extract_metadata_block(html: str) -> str:
         meta_ul = m.group(3)
         items = re.findall(r'<li>(.*?)</li>', meta_ul, re.DOTALL)
         parsed, extras = _parse_items(items)
-        # Related is handled by the ## Related section — drop from header row
+        # Related is handled by the ## Related section - drop from header row
         parsed.pop("related", None)
         tags_html = _build_tags(parsed)
         if tags_html:
@@ -771,8 +771,7 @@ def wrap_h2_sections(html: str) -> str:
 
     Each H2 section becomes a <details> with the H2 text as the <summary>,
     allowing users to collapse/expand sections. Only the document's first
-    H2 section defaults open (typically "Overview", but templates vary —
-    "Problem", "Context", "Overall Assessment", etc.) — every other section
+    H2 section defaults open (typically "Overview", but templates vary - "Problem", "Context", "Overall Assessment", etc.) - every other section
     starts collapsed, so a freshly opened document leads with its summary
     instead of a wall of expanded content.
     """
@@ -850,7 +849,7 @@ def wrap_h2_sections(html: str) -> str:
         id_attr = f' id="{h2_id}"' if h2_id else ""
         # Resolve section icon from plain text of heading. Unmapped sections
         # fall back to a neutral "section" glyph (hash) rather than rendering
-        # no icon — a bare, un-indented heading sitting next to icon-led ones
+        # no icon - a bare, un-indented heading sitting next to icon-led ones
         # reads as out of place. hash is the codebase's existing "sections"
         # marker (skills-map), so it stays honest: it signals "a section",
         # never a borrowed category meaning.
@@ -858,8 +857,8 @@ def wrap_h2_sections(html: str) -> str:
         icon_name = SECTION_ICONS.get(plain_title, "hash")
         icon_html = f'<i data-lucide="{icon_name}" class="section-icon"></i>'
         # Only the document's first H2 section defaults open (typically
-        # "Overview", but templates vary — Problem, Context, Overall
-        # Assessment, etc.) — every other section starts collapsed, so a
+        # "Overview", but templates vary - Problem, Context, Overall
+        # Assessment, etc.) - every other section starts collapsed, so a
         # freshly opened document leads with just its summary rather than
         # a wall of expanded sections.
         open_attr = " open" if is_first_section else ""
@@ -885,10 +884,10 @@ def style_related_section(html: str) -> str:
         """Parse a categorized item and restructure into path + description blocks.
 
         Input patterns:
-          Model: `Name` in `file/path.py` — has `field1`, `field2`
-          Component: `file/path.js` — description
-          API: `file/path.js` — `funcName()` description
-          Backend: `file/path.py` — `View1`, `View2` (description)
+          Model: `Name` in `file/path.py` - has `field1`, `field2`
+          Component: `file/path.js` - description
+          API: `file/path.js` - `funcName()` description
+          Backend: `file/path.py` - `View1`, `View2` (description)
         """
         # Strip the category prefix (e.g. "Model:" or "Component:") from the raw HTML
         # The prefix appears as plain text before any <code> tags
@@ -906,8 +905,8 @@ def style_related_section(html: str) -> str:
             )
             text = html_prefix.sub('', text.strip(), count=1)
 
-        # Split on em-dash (— or &#8212;) to separate path from description
-        dash_split = re.split(r'\s*(?:—|&#8212;|&mdash;)\s*', text, maxsplit=1)
+        # Split on em-dash ( - or &#8212;) to separate path from description
+        dash_split = re.split(r'\s*(?:\u2014|&#8212;|&mdash;)\s*', text, maxsplit=1)
 
         path_part = dash_split[0].strip()
         desc_part = dash_split[1].strip() if len(dash_split) > 1 else ""

@@ -2,7 +2,7 @@
 <style>
 /* ===== Portal Dashboard =====
    Renders inside the hypervisor shell, so it inherits hyperkit tokens,
-   the hv-viz-* primitives, and HvViz from the shared bundle. Only local
+   the viz-* primitives, and HvViz from the shared bundle. Only local
    structure lives here; all color/spacing/radius come from tokens. */
 
 .range-charts { display: grid; grid-template-columns: 1.6fr 1fr; gap: var(--space-4); align-items: start; }
@@ -15,40 +15,40 @@
   border-bottom: var(--border-hair) solid var(--border);
 }
 .range-header h1 {
-  font-size: var(--fs-h2); color: var(--text-bright);
-  text-transform: uppercase; letter-spacing: 0.08em;
+  font-size: var(--fs-mono); color: var(--text-bright);
+  text-transform: uppercase; letter-spacing: var(--track-label);
   display: flex; align-items: center; gap: var(--space-2);
 }
-.range-header h1 i { width: 20px; height: 20px; color: var(--accent); }
-.range-status { font-size: var(--fs-label); color: var(--text-dim); display: flex; align-items: center; gap: var(--space-2); }
+.range-header h1 i { width: 20px; height: 20px; color: var(--text-muted); }
+.range-status { font-size: var(--fs-mono); color: var(--text-dim); display: flex; align-items: center; gap: var(--space-2); }
 .range-full { grid-column: 1 / -1; }
 
 /* KPI tiles + cards compose the shared .kpi-tile / .kpi-grid / .dashboard-card
-   primitives (hyperkit/css/cards.css) — the .range-dash grid keeps only its
+   primitives (hyperkit/css/cards.css) - the .range-dash grid keeps only its
    local 2-col override; the tile/card surfaces come from the primitives. */
 
 /* Token-entry (default/unauthenticated) state */
 .range-auth { max-width: 520px; margin: var(--space-6) auto; display: flex; flex-direction: column; gap: var(--space-3); }
-.range-auth h2 { font-size: var(--fs-heading); color: var(--text-bright); }
-.range-auth p { font-size: var(--fs-sm); color: var(--text-muted); line-height: 1.5; }
+.range-auth h2 { font-size: var(--fs-mono); color: var(--text-bright); }
+.range-auth p { font-size: var(--fs-mono); color: var(--text-muted); line-height: var(--lh-body); }
 /* range-auth textarea + select normalized to shared .form-textarea / .form-select (see markup). */
 .range-auth-row { display: flex; align-items: center; gap: var(--space-3); }
 .range-btn {
-  background: transparent; border: var(--border-hair) solid var(--accent);
-  border-radius: var(--radius); color: var(--accent); font-family: var(--font);
-  font-size: var(--fs-label); text-transform: uppercase; letter-spacing: 0.06em;
+  background: transparent; border: var(--border-hair) solid var(--interactive);
+  border-radius: var(--radius); color: var(--interactive); font-family: var(--font);
+  font-size: var(--fs-mono); text-transform: uppercase; letter-spacing: var(--track-label);
   padding: var(--space-2) var(--space-4); cursor: pointer;
   transition: background var(--motion-base) var(--ease), color var(--motion-base) var(--ease);
 }
-.range-btn:hover { background: var(--accent); color: var(--bg); }
-.range-auth-notice { font-size: var(--fs-sm); color: var(--comp); }
-.range-hint { font-size: var(--fs-caption); color: var(--text-dim); }
+.range-btn:hover { background: var(--interactive); color: var(--bg); }
+.range-auth-notice { font-size: var(--fs-mono); color: var(--warning); }
+.range-hint { font-size: var(--fs-mono); color: var(--text-dim); }
 .range-hint code { color: var(--text-muted); }
 </style>
 
 <!-- Token entry (default state) -->
 <div class="range-auth" id="range-auth">
-  <h2>Portal Dashboard — Connect</h2>
+  <h2>Portal Dashboard - Connect</h2>
   <p>This dashboard reads live range data from the portal's staff-authenticated
      analytics endpoint. Paste your portal <code>access_token</code> to connect.</p>
   <div class="range-auth-row">
@@ -73,7 +73,7 @@
   <div class="range-header">
     <h1><i data-lucide="layout-dashboard"></i> Portal Dashboard</h1>
     <div class="range-status">
-      <span id="range-updated">—</span>
+      <span id="range-updated">&mdash;</span>
       <button class="range-btn" id="range-disconnect" style="padding: 2px 8px;">Disconnect</button>
     </div>
   </div>
@@ -85,12 +85,12 @@
          row-major: [KPIs | AMI], then [Instance Status | Sessions]. -->
     <div class="range-grid">
       <div class="range-dash kpi-grid" style="grid-template-columns: 1fr 1fr;">
-        <div class="range-kpi kpi-tile" id="kpi-instances"><div class="range-kpi-label kpi-tile-label">Total Instances</div><div class="range-kpi-value kpi-tile-value">—</div><div class="range-kpi-sub kpi-tile-sub"></div></div>
-        <div class="range-kpi kpi-tile" id="kpi-participants"><div class="range-kpi-label kpi-tile-label">Participants</div><div class="range-kpi-value kpi-tile-value">—</div><div class="range-kpi-sub kpi-tile-sub">using instances</div></div>
-        <div class="range-kpi kpi-tile" id="kpi-classrooms"><div class="range-kpi-label kpi-tile-label">Classrooms</div><div class="range-kpi-value kpi-tile-value">—</div><div class="range-kpi-sub kpi-tile-sub">using instances</div></div>
-        <div class="range-kpi kpi-tile" id="kpi-sgs"><div class="range-kpi-label kpi-tile-label">Security Groups</div><div class="range-kpi-value kpi-tile-value">—</div><div class="range-kpi-sub kpi-tile-sub">EC2 / DynamoDB</div></div>
-        <div class="range-kpi kpi-tile" id="kpi-sessions"><div class="range-kpi-label kpi-tile-label">Active Sessions</div><div class="range-kpi-value kpi-tile-value">—</div><div class="range-kpi-sub kpi-tile-sub">signed in now</div></div>
-        <div class="range-kpi kpi-tile" id="kpi-active-classrooms"><div class="range-kpi-label kpi-tile-label">Active Classrooms</div><div class="range-kpi-value kpi-tile-value">—</div><div class="range-kpi-sub kpi-tile-sub">with signed-in users</div></div>
+        <div class="range-kpi kpi-tile" id="kpi-instances"><div class="range-kpi-label kpi-tile-label">Total Instances</div><div class="range-kpi-value kpi-tile-value">&mdash;</div><div class="range-kpi-sub kpi-tile-sub"></div></div>
+        <div class="range-kpi kpi-tile" id="kpi-participants"><div class="range-kpi-label kpi-tile-label">Participants</div><div class="range-kpi-value kpi-tile-value">&mdash;</div><div class="range-kpi-sub kpi-tile-sub">using instances</div></div>
+        <div class="range-kpi kpi-tile" id="kpi-classrooms"><div class="range-kpi-label kpi-tile-label">Classrooms</div><div class="range-kpi-value kpi-tile-value">&mdash;</div><div class="range-kpi-sub kpi-tile-sub">using instances</div></div>
+        <div class="range-kpi kpi-tile" id="kpi-sgs"><div class="range-kpi-label kpi-tile-label">Security Groups</div><div class="range-kpi-value kpi-tile-value">&mdash;</div><div class="range-kpi-sub kpi-tile-sub">EC2 / DynamoDB</div></div>
+        <div class="range-kpi kpi-tile" id="kpi-sessions"><div class="range-kpi-label kpi-tile-label">Active Sessions</div><div class="range-kpi-value kpi-tile-value">&mdash;</div><div class="range-kpi-sub kpi-tile-sub">signed in now</div></div>
+        <div class="range-kpi kpi-tile" id="kpi-active-classrooms"><div class="range-kpi-label kpi-tile-label">Active Classrooms</div><div class="range-kpi-value kpi-tile-value">&mdash;</div><div class="range-kpi-sub kpi-tile-sub">with signed-in users</div></div>
       </div>
 
       <div class="range-card dashboard-card">
@@ -121,7 +121,7 @@
 
   var REASONS = {
     no_token: 'Paste your portal access_token to connect.',
-    auth_expired: 'Session expired — re-paste your access_token.',
+    auth_expired: 'Session expired - re-paste your access_token.',
     network_error: 'Could not reach the portal. Check the environment and your connection.',
     server_error: 'The portal returned an unexpected response.',
     not_configured: 'Range monitoring is not configured in this environment.'
@@ -171,10 +171,10 @@
     setKpi('kpi-classrooms', classrooms);
     setKpi('kpi-sgs', sgs.in_ec2 + ' / ' + sgs.in_dynamo, 'EC2 / DynamoDB', sgMismatch);
 
-    // Instance status bars — fixed lifecycle order, per-state colors.
+    // Instance status bars - fixed lifecycle order, per-state colors.
     var STATE_ORDER = ['queued to boot', 'booting', 'running', 'available', 'queued to terminate', 'terminating'];
     var STATE_COLOR = {
-      'queued to boot': 'var(--warm)', 'booting': 'var(--warm)', 'running': 'var(--accent)',
+      'queued to boot': 'var(--warm)', 'booting': 'var(--warm)', 'running': 'var(--live)',
       'available': 'var(--cool)', 'queued to terminate': 'var(--comp)', 'terminating': 'var(--comp)'
     };
     if (window.HvViz) {
@@ -223,7 +223,7 @@
       } else if (res && res.reason === 'no_token') {
         showAuth(REASONS.no_token);
       } else {
-        // Transient error — keep the connected view, surface a toast with detail.
+        // Transient error - keep the connected view, surface a toast with detail.
         var base = REASONS[res && res.reason] || 'Range fetch failed';
         var detail = '';
         if (res) {
@@ -284,7 +284,7 @@
 
     // Stop the 30s poll when the router swaps this page out. The SPA shell
     // reuses the JS context across navigations, so a setInterval started here
-    // outlives the dashboard DOM — every subsequent tick would fire render()
+    // outlives the dashboard DOM - every subsequent tick would fire render()
     // against KPI cards that no longer exist. Registered once per session:
     // teardown hooks accumulate globally, so guard against re-adding on each
     // visit.

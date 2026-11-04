@@ -1,18 +1,18 @@
 // ===================================================================
-// Assessment Engine — Generic quiz/assessment module
+// Assessment Engine - Generic quiz/assessment module
 // ===================================================================
 // Data-driven quiz engine with dynamic dataset loading.
 // Reads available datasets from window.QUIZ_DATASETS (set by datasets.js).
 // Loads dataset files (manifest, questions, study-guide) via dynamic
 // <script> tags, then initializes the quiz UI.
 //
-// Supports switching between datasets at runtime — selecting a new
+// Supports switching between datasets at runtime - selecting a new
 // dataset clears the current quiz state and loads the new data.
 //
 // Dataset files set these globals (cleared before each load):
-//   window.QUIZ_MANIFEST    — config object
-//   window.QUIZ_QUESTIONS   — question bank array
-//   window.QUIZ_STUDY_GUIDE — study guide array (optional)
+//   window.QUIZ_MANIFEST - config object
+//   window.QUIZ_QUESTIONS - question bank array
+//   window.QUIZ_STUDY_GUIDE - study guide array (optional)
 // ===================================================================
 
 (function() {
@@ -595,7 +595,7 @@
       guideContent.innerHTML = GUIDE.map(function(d) {
         var sectionsHtml = d.sections.map(function(s) {
           var pointsHtml = s.points.map(function(p) {
-            var parts = p.split(/ — | \u2014 /);
+            var parts = p.split(/ \u2014 | \u2014 /);
             if (parts.length > 1) {
               return '<li><span class="guide-term">' + escHtml(parts[0]) + '</span> \u2014 ' + escHtml(parts.slice(1).join(" \u2014 ")) + '</li>';
             }

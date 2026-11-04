@@ -1,5 +1,5 @@
 /* ===== Health Dashboard =====
-   Focused layout: stat strip → actions → fix panel → issues → affected → tag analytics.
+   Focused layout: stat strip -> actions -> fix panel -> issues -> affected -> tag analytics.
    Single-column flow. Tag analytics expands to 3-column grid.
    Tokens from hyperkit/css/tokens.css. */
 
@@ -11,9 +11,9 @@
   margin-bottom: var(--space-5);
 }
 .health-dashboard h2 {
-  font-size: var(--fs-caption);
+  font-size: var(--fs-mono);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--track-label);
   color: var(--text-bright);
   margin: 0 0 var(--space-3);
   display: flex;
@@ -21,10 +21,10 @@
   gap: var(--space-2);
 }
 .health-dashboard h3 {
-  font-size: var(--fs-caption);
+  font-size: var(--fs-mono);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--warm);
+  letter-spacing: var(--track-body);
+  color: var(--text-bright);
   margin: 0 0 var(--space-2);
 }
 
@@ -34,8 +34,8 @@
 .health-cards {
   margin-bottom: var(--space-4);
 }
-.health-card-good .health-card-value { color: var(--accent); }
-.health-card-warn .health-card-value { color: var(--warm); }
+.health-card-good .health-card-value { color: var(--success); }
+.health-card-warn .health-card-value { color: var(--warning); }
 .health-card-bad .health-card-value { color: var(--error); }
 
 /* ===== Actions Row ===== */
@@ -45,42 +45,42 @@
 }
 .health-timestamp {
   margin-left: auto;
-  font-size: var(--fs-micro);
+  font-size: var(--fs-mono);
   color: var(--text-dim);
-  letter-spacing: 0.02em;
+  letter-spacing: var(--track-tight);
 }
 /* Refresh + Fix buttons compose .action-button (ghost silhouette, hover-to-
    accent). Local: the card fill, compact sizing, lighter border, tighter gap.
    .health-fix-btn-loading + spinner state stays local. */
 .health-refresh-btn,
 .health-fix-btn {
-  gap: var(--space-0-3);
+  gap: var(--space-1);
   background: var(--bg-card);
   border-color: var(--border);
-  padding: var(--space-0-3) var(--space-0-8);
-  font-size: var(--fs-micro);
-  letter-spacing: 0.04em;
+  padding: var(--space-1) var(--space-4);
+  font-size: var(--fs-mono);
+  letter-spacing: var(--track-body);
 }
 .health-refresh-btn:hover,
 .health-fix-btn:hover {
-  background: var(--bg-elevated);
+  background: var(--bg-raised);
 }
 .health-fix-btn:disabled {
   opacity: 0.5;
 }
 .health-fix-btn-loading {
-  border-color: var(--cool);
-  color: var(--cool);
+  border-color: var(--info);
+  color: var(--info);
   opacity: 1;
 }
 .health-fix-spinner {
   display: inline-block;
   width: 9px;
   height: 9px;
-  border: 1.5px solid var(--cool);
+  border: var(--border-hair) solid var(--info);
   border-top-color: transparent;
   border-radius: 50%;
-  animation: spin 0.6s linear infinite;
+  animation: spin var(--period-spin) linear infinite;
   vertical-align: -1px;
 }
 
@@ -99,11 +99,11 @@
   padding: var(--space-2) var(--space-3);
   margin: 0 calc(-1 * var(--space-3));
   border-radius: var(--radius);
-  font-size: var(--fs-label);
+  font-size: var(--fs-mono);
   transition: background var(--motion-fast) var(--ease);
 }
 .health-issue-row:hover {
-  background: var(--bg-elevated);
+  background: var(--bg-raised);
 }
 .health-issue-row + .health-issue-row {
   border-top: var(--border-hair) solid var(--border);
@@ -117,11 +117,11 @@
 .health-issue-count {
   min-width: 1.8rem;
   height: 1.4rem;
-  padding: 0 var(--space-0-3);
-  font-size: var(--fs-micro);
+  padding: 0 var(--space-1);
+  font-size: var(--fs-mono);
   color: var(--bg);
-  background: var(--warm);
-  border-color: var(--warm);
+  background: var(--warning);
+  border-color: var(--warning);
 }
 
 /* ===== Affected Files ===== */
@@ -136,27 +136,25 @@
   transition: background var(--motion-fast) var(--ease);
 }
 .health-affected-file:hover {
-  background: var(--bg-elevated);
+  background: var(--bg-raised);
 }
 .health-affected-file + .health-affected-file {
   border-top: var(--border-hair) solid var(--border);
 }
 .health-affected-path {
-  font-size: var(--fs-caption);
+  font-size: var(--fs-mono);
   color: var(--text-bright);
   margin-bottom: var(--space-1);
   font-family: var(--font);
-  font-weight: var(--fw-bold);
 }
 .health-affected-violation {
   display: flex;
   gap: var(--space-2);
-  padding: var(--space-0-3) 0 var(--space-0-3) var(--space-3);
-  font-size: var(--fs-micro);
+  padding: var(--space-1) 0 var(--space-1) var(--space-3);
+  font-size: var(--fs-mono);
 }
 .health-affected-rule {
   color: var(--error);
-  font-weight: var(--fw-bold);
   white-space: nowrap;
 }
 .health-affected-msg { color: var(--text-muted); }
@@ -175,16 +173,16 @@
 }
 .health-tag-stat {
   text-align: center;
-  font-size: var(--fs-micro);
+  font-size: var(--fs-mono);
   color: var(--text-dim);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: var(--track-body);
 }
 .health-tag-stat strong {
   display: block;
   color: var(--text-bright);
-  font-size: 1.4rem;
-  margin-bottom: var(--space-0-2);
+  font-size: var(--fs-mono-display);
+  margin-bottom: var(--space-1);
   letter-spacing: 0;
   text-transform: none;
 }
@@ -202,31 +200,31 @@
   border-bottom: var(--border-hair) solid var(--border);
 }
 
-/* Shared tag row style — composes .flex-between. Local: negative-margin bleed,
+/* Shared tag row style - composes .flex-between. Local: negative-margin bleed,
    padding, radius, caption size, and the divider hover-bg. */
 .health-tag-row {
   padding: var(--space-1) var(--space-2);
   margin: 0 calc(-1 * var(--space-2));
   border-radius: var(--radius);
-  font-size: var(--fs-caption);
+  font-size: var(--fs-mono);
   transition: background var(--motion-fast) var(--ease);
 }
 .health-tag-row:hover {
-  background: var(--bg-elevated);
+  background: var(--bg-raised);
 }
 .health-tag-row + .health-tag-row {
   border-top: var(--border-hair) solid var(--border);
 }
 .health-tag-pair { color: var(--text); }
-.health-tag-sep { color: var(--text-dim); margin: 0 0.2em; }
-.health-tag-meta { color: var(--text-dim); font-size: var(--fs-micro); white-space: nowrap; }
+.health-tag-sep { color: var(--text-dim); margin: 0 var(--border-rail); }
+.health-tag-meta { color: var(--text-dim); font-size: var(--fs-mono); white-space: nowrap; }
 .health-tag-pct { color: var(--text-muted); }
-.health-tag-name { color: var(--cool); }
-.health-merge-tags { color: var(--warm); font-weight: var(--fw-bold); }
+.health-tag-name { --tag-tone: var(--cool); color: var(--tag-tone); }
+.health-merge-tags { --tag-tone: var(--warm); color: var(--tag-tone); }
 
 /* ===== Empty State ===== */
 .health-empty {
-  font-size: var(--fs-caption);
+  font-size: var(--fs-mono);
   color: var(--text-dim);
   padding: var(--space-3) var(--space-2);
   text-align: center;
@@ -257,16 +255,16 @@
   margin: 0;
   padding: 0;
   border: none;
-  color: var(--warm);
+  color: var(--text-bright);
 }
-/* .health-fix-actions composes .flex-center (local: nothing — default gap). */
+/* .health-fix-actions composes .flex-center (local: nothing - default gap). */
 .health-fix-actions {}
 /* Apply button composes .action-button.action-button-primary (filled accent).
    Local: compact sizing + micro font. */
 .health-fix-apply-btn {
-  padding: var(--space-0-3) var(--space-0-8);
-  font-size: var(--fs-micro);
-  letter-spacing: 0.04em;
+  padding: var(--space-1) var(--space-4);
+  font-size: var(--fs-mono);
+  letter-spacing: var(--track-body);
 }
 .health-fix-apply-btn:hover:not(:disabled) { filter: none; opacity: 0.85; }
 /* Dismiss button composes .action-button (ghost). Local: the surface fill +
@@ -274,35 +272,35 @@
 .health-fix-dismiss-btn {
   background: var(--bg-surface);
   border-color: var(--border);
-  padding: var(--space-0-3) var(--space-0-8);
-  font-size: var(--fs-micro);
-  letter-spacing: 0.04em;
+  padding: var(--space-1) var(--space-4);
+  font-size: var(--fs-mono);
+  letter-spacing: var(--track-body);
 }
 .health-fix-dismiss-btn:hover:not(:disabled) { border-color: var(--text); color: var(--text); }
 .health-fix-summary { margin-bottom: var(--space-3); }
-.health-fix-stat { font-size: var(--fs-caption); color: var(--text); }
-.health-fix-error { color: var(--error); font-size: var(--fs-caption); }
-.health-fix-clean { color: var(--success); font-size: var(--fs-caption); }
-.health-fix-success { color: var(--success); font-size: var(--fs-caption); }
+.health-fix-stat { font-size: var(--fs-mono); color: var(--text); }
+.health-fix-error { color: var(--error); font-size: var(--fs-mono); }
+.health-fix-clean { color: var(--success); font-size: var(--fs-mono); }
+.health-fix-success { color: var(--success); font-size: var(--fs-mono); }
 .health-fix-breakdown { margin-bottom: var(--space-3); }
 .health-fix-breakdown-row {
   display: flex;
   justify-content: space-between;
   padding: var(--space-1) var(--space-2);
   border-radius: var(--radius);
-  font-size: var(--fs-micro);
+  font-size: var(--fs-mono);
 }
 .health-fix-breakdown-row + .health-fix-breakdown-row {
   border-top: var(--border-hair) solid var(--border);
 }
 .health-fix-type { color: var(--text-muted); }
-.health-fix-count { color: var(--warm); font-weight: var(--fw-bold); }
+.health-fix-count { color: var(--warning); }
 .health-fix-files { margin-top: var(--space-3); }
 .health-fix-file {
   display: flex;
   justify-content: space-between;
   padding: var(--space-1) 0;
-  font-size: var(--fs-micro);
+  font-size: var(--fs-mono);
 }
 .health-fix-file + .health-fix-file {
   border-top: var(--border-hair) solid var(--border);
@@ -311,34 +309,34 @@
 .health-fix-file-changes { color: var(--text-dim); }
 .health-fix-more {
   color: var(--text-dim);
-  font-size: var(--fs-micro);
+  font-size: var(--fs-mono);
   margin-top: var(--space-2);
   text-align: center;
 }
 .health-fix-warning {
-  color: var(--warm);
-  font-size: var(--fs-micro);
+  color: var(--warning);
+  font-size: var(--fs-mono);
   margin-top: var(--space-3);
   padding: var(--space-2) var(--space-3);
-  border-left: 3px solid var(--warm);
-  background: rgba(255, 176, 0, 0.04);
+  border-left: var(--border-rail) solid var(--warning);
+  background: color-mix(in srgb, var(--warning) 4%, transparent);
   border-radius: 0 var(--radius) var(--radius) 0;
 }
 .health-fix-note { margin-top: var(--space-2); }
 .health-fix-manual {
-  font-size: var(--fs-micro);
-  color: var(--warm);
+  font-size: var(--fs-mono);
+  color: var(--warning);
   margin-top: var(--space-3);
   padding: var(--space-3) var(--space-4);
-  border-left: 3px solid var(--warm);
-  background: rgba(255, 176, 0, 0.04);
+  border-left: var(--border-rail) solid var(--warning);
+  background: color-mix(in srgb, var(--warning) 4%, transparent);
   border-radius: 0 var(--radius) var(--radius) 0;
 }
 .health-fix-manual strong { display: block; margin-bottom: var(--space-2); }
 .health-fix-manual-list { list-style: none; padding: 0; margin: 0; }
 .health-fix-manual-list li { padding: var(--space-1) 0; color: var(--text-muted); }
 .health-fix-manual-list li + li { border-top: var(--border-hair) solid var(--border); }
-.health-fix-manual-rule { color: var(--comp); font-weight: var(--fw-bold); margin-right: var(--space-2); }
+.health-fix-manual-rule { color: var(--identifier); margin-right: var(--space-2); }
 .health-fix-manual-msg { color: var(--text-muted); }
 
 /* ===== Responsive ===== */

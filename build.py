@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Hypervisor — Static site generator for .hyperspace markdown documents.
+Hypervisor - Static site generator for .hyperspace markdown documents.
 
 Hub-and-spoke navigation: site nav rail → category indexes → doc pages. The homepage is a status dashboard (Workspace Pulse + Pinned).
 No sidebar. Persistent search bar in top bar on every page.
@@ -24,6 +24,8 @@ from site_utils.build_cache import BuildCache
 # Structured logging (shared ecosystem logger)
 sys.path.insert(0, str(OUTPUT_DIR.parent.parent.resolve() / ".hyperkit" / "python"))
 from hyper_logging import setup_logger  # noqa: E402
+from hyperkit_css import hyperkit_css_parts as load_hyperkit_css_parts  # noqa: E402
+from design_lint import report as report_design_lint  # noqa: E402
 
 logger = setup_logger("hypervisor")
 
@@ -41,7 +43,7 @@ from site_utils.fragment import build_fragment, write_fragment
 
 
 # ---------------------------------------------------------------------------
-# Build functions — importable by both build.py and hypervisor-app.py
+# Build functions - importable by both build.py and hypervisor-app.py
 # ---------------------------------------------------------------------------
 
 def _get_active_layout():
@@ -65,36 +67,17 @@ def prepare_output():
 def copy_assets():
     """Concatenate CSS and JS modules, copy static assets to the output directory.
 
-    Hyperkit (WI-142 Phase 1) supplies the shared tokens.css + primitives.css
+    Hyperkit supplies the shared tokens.css + primitives.css
     and four shared JS modules (noise-field, greeting, cursor-trail, toast).
     Hyperkit CSS loads first so app-local CSS can override shared primitives
     (e.g. Hypervisor's bordered .hv-tab) via normal cascade order. Missing
     Hyperkit files fail the build loudly rather than silently falling back to
-    a stale local copy — see the ValueError below.
+    a stale local copy - see the ValueError below.
     """
-    # --- Hyperkit CSS (shared ecosystem modules) — must exist, no silent fallback ---
-    hyperkit_css_parts = []
-    hyperkit_css_order = (
-        "tokens.css",
-        "keyframes.css",
-        "primitives.css",
-        "globals.css",
-        "components.css",
-        "content.css",
-        "cards.css",
-        "features.css",
-        "viz.css",
-        "accessibility.css",
+    # --- Hyperkit CSS (shared ecosystem modules) - must exist, no silent fallback ---
+    hyperkit_css_parts = load_hyperkit_css_parts(
+        ("components", "content", "cards", "features", "viz"), app="Hypervisor"
     )
-    for name in hyperkit_css_order:
-        f = HYPERKIT_CSS_DIR / name
-        if not f.exists():
-            raise FileNotFoundError(
-                f"Hyperkit CSS file missing: {f}\n"
-                "Hypervisor's build.py requires all shared CSS modules in "
-                ".hyperspace/.hyperkit/css/. Restore the .hyperkit/ directory."
-            )
-        hyperkit_css_parts.append(f.read_text(encoding="utf-8"))
 
     # Concatenate CSS modules into site/style.css
     # Order: Hyperkit shared → layout packs (both loaded for runtime switching) → app-local → zz-*
@@ -102,7 +85,7 @@ def copy_assets():
         css_parts = list(hyperkit_css_parts)
 
         # --- Layout pack from .hyperkit/layouts/{active}/ ---
-        # Only the active layout is loaded — no dead CSS from inactive packs.
+        # Only the active layout is loaded - no dead CSS from inactive packs.
         # Layout preference stored in preferences.json; defaults to "cyberdeck".
         layouts_dir = HYPERKIT_CSS_DIR.parent / "layouts"
         active_layout = _get_active_layout()
@@ -138,12 +121,12 @@ def copy_assets():
         if src.exists():
             shutil.copy2(src, OUTPUT_DIR / "style.css")
 
-    # --- Hyperkit JS modules — copy to site/js/kit/ for per-module <script> delivery ---
+    # --- Hyperkit JS modules - copy to site/js/kit/ for per-module <script> delivery ---
     if not HYPERKIT_JS_DIR.exists():
         raise FileNotFoundError(
             f"Hyperkit JS directory missing: {HYPERKIT_JS_DIR}\n"
             "Hypervisor's build.py requires .hyperspace/.hyperkit/js/. "
-            "Run WI-142 setup or restore the .hyperkit/ directory."
+            "Restore the .hyperkit/ directory."
         )
     kit_js_dst_dir = OUTPUT_DIR / "js" / "kit"
     kit_js_dst_dir.mkdir(parents=True, exist_ok=True)
@@ -162,7 +145,7 @@ def copy_assets():
 
     # Concatenate JS modules into site/app.js (backward compat for utility pages)
     # AND copy each module to site/js/{subdir}/{name}.js for per-module <script>
-    # tag delivery (parse-error isolation — WI-118).
+    # tag delivery (parse-error isolation).
     # Order: Hyperkit (noise-field, greeting, cursor-trail, toast) → core/ →
     # features/ (non-zz) → webgl/ → screensaver/ (non-zz) → screensaver/zz-* →
     # features/zz-*
@@ -243,7 +226,7 @@ def build_doc_pages(files, backlink_index, build_id, cache=None):
         # --- Markdown files: standard pipeline with caching ---
         md_text = read_md(src_path)
 
-        # Check cache — skip rendering if content unchanged and output exists
+        # Check cache - skip rendering if content unchanged and output exists
         if cache and cache.is_unchanged(rel, md_text):
             continue
 
@@ -416,13 +399,13 @@ def full_build(quiet=False):
     Uses content hash caching to skip re-rendering unchanged documents.
 
     Outputs:
-        site/index.html         — The SPA shell (single HTML entry point)
-        site/content/*.json     — Content fragments for each document/index
-        site/search-index.json  — Search index loaded once at startup
-        site/nav-state.json     — Nav rail state (categories, recent indicators)
-        site/style.css          — Concatenated CSS
-        site/app.js             — Concatenated JS
-        site/_build.json        — Build ID for live-reload detection
+        site/index.html - The SPA shell (single HTML entry point)
+        site/content/*.json - Content fragments for each document/index
+        site/search-index.json - Search index loaded once at startup
+        site/nav-state.json - Nav rail state (categories, recent indicators)
+        site/style.css - Concatenated CSS
+        site/app.js - Concatenated JS
+        site/_build.json - Build ID for live-reload detection
     """
     build_id = str(int(time.time() * 1000))
     if not quiet:
@@ -436,7 +419,7 @@ def full_build(quiet=False):
 
     logger.info("collected %d markdown documents", len(files))
 
-    # Initialize build cache — detects template/asset changes automatically
+    # Initialize build cache - detects template/asset changes automatically
     cache = BuildCache()
 
     search_index = build_search_index(files)
@@ -672,10 +655,11 @@ def build_single_file(changed_path):
 
 
 # ---------------------------------------------------------------------------
-# CLI entry point — preserves original behavior
+# CLI entry point - preserves original behavior
 # ---------------------------------------------------------------------------
 
 def main():
+    report_design_lint("Hypervisor", _HYPERVISOR_DIR)  # exits 1 before anything is written
     build_id = full_build()
     print("  Build complete. Launch the desktop app to view.")
 

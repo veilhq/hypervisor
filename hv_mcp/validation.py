@@ -1,5 +1,5 @@
 """
-Document validation — single file and batch modes.
+Document validation - single file and batch modes.
 """
 
 import os
@@ -20,7 +20,17 @@ REQUIRED_SECTIONS = {
     "idea": ["problem", "concept", "rough solution plan", "related"],
     "work-item": ["overview", "tasks", "implementation notes"],
     "adr": ["context", "decision", "rationale", "related"],
-    "bugfix": ["problem description", "root cause", "the fix"],
+}
+
+# Work items carrying a `Kind:` field are checked against their kind's sections
+# instead of REQUIRED_SECTIONS["work-item"]. Items without a Kind are stories.
+WORK_ITEM_KINDS = ("story", "spike", "bug")
+KIND_REQUIRED_SECTIONS = {
+    "story": ["overview", "tasks", "implementation notes"],
+    "bug": ["overview", "problem", "root cause", "location", "fix",
+            "tasks", "implementation notes"],
+    "spike": ["overview", "question", "time-box", "findings", "recommendation",
+              "tasks", "implementation notes"],
 }
 
 # Acceptable aliases for required sections (legacy naming conventions).
@@ -44,9 +54,6 @@ def _detect_doc_type(rel_path: str) -> str | None:
     # ADRs are typically named adr-*.md in research/
     if any(p.startswith("adr-") for p in parts):
         return "adr"
-    # Bugfixes live in research/bugfixes/
-    if "bugfixes" in parts:
-        return "bugfix"
     return None
 
 
@@ -126,6 +133,9 @@ def validate_single(rel_path: str) -> dict:
     has_created = False
     has_updated = False
     tags_found = []
+    kind_found = None
+    kind_line = None
+    feature_found = None
     past_title = False
 
     for i, line in enumerate(lines_list[:30], 1):
@@ -189,7 +199,7 @@ def validate_single(rel_path: str) -> dict:
                     "line": i,
                 })
 
-        # Horizon validation (work items only — missing is OK, invalid value is not)
+        # Horizon validation (work items only - missing is OK, invalid value is not)
         m = re.match(r'Horizon\s*:\s*(.+)', stripped, re.IGNORECASE)
         if m:
             from .config import VALID_HORIZONS
@@ -201,6 +211,15 @@ def validate_single(rel_path: str) -> dict:
                     "message": f"Horizon '{horizon_val}' is not valid. Must be one of: {', '.join(VALID_HORIZONS)}",
                     "line": i,
                 })
+
+        # Kind / Feature (work items)
+        m = re.match(r'Kind\s*:\s*(.*)', stripped, re.IGNORECASE)
+        if m:
+            kind_found = m.group(1).strip().lower()
+            kind_line = i
+        m = re.match(r'Feature\s*:\s*(.*)', stripped, re.IGNORECASE)
+        if m:
+            feature_found = m.group(1).strip()
 
         # Bold metadata check
         if re.match(r'\*\*[A-Za-z]+\*\*\s*:', stripped):
@@ -252,11 +271,28 @@ def validate_single(rel_path: str) -> dict:
                 "line": None,
             })
 
-    # Structure check — verify required H2 sections for document type
+    # Structure check - verify required H2 sections for document type
     doc_type = _detect_doc_type(rel_path)
-    if doc_type and doc_type in REQUIRED_SECTIONS:
+    required_sections = REQUIRED_SECTIONS.get(doc_type) if doc_type else None
+    if doc_type == "work-item" and kind_found is not None:
+        if kind_found not in KIND_REQUIRED_SECTIONS:
+            violations.append({
+                "rule": "kind-invalid",
+                "message": f"Kind '{kind_found}' is not valid. Must be one of: {', '.join(WORK_ITEM_KINDS)}",
+                "line": kind_line,
+            })
+        else:
+            required_sections = KIND_REQUIRED_SECTIONS[kind_found]
+        # Items that opted into the Kind format must name their parent feature.
+        if not feature_found:
+            violations.append({
+                "rule": "metadata-missing-feature",
+                "message": "Missing 'Feature:' metadata field. Name the feature this work item belongs to.",
+                "line": None,
+            })
+    if required_sections:
         h2_sections = _extract_h2_sections(md_text)
-        for required in REQUIRED_SECTIONS[doc_type]:
+        for required in required_sections:
             # Check canonical name or any alias
             aliases = SECTION_ALIASES.get(required, set())
             if required not in h2_sections and not aliases.intersection(h2_sections):

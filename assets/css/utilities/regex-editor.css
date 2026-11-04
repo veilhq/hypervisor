@@ -18,9 +18,9 @@
   background: var(--bg);
 }
 .rx-delim {
-  padding: var(--space-0-6) var(--space-0-4);
+  padding: var(--space-3) var(--space-2);
   color: var(--text-dim);
-  font-size: var(--fs-heading);
+  font-size: var(--fs-mono);
   font-family: var(--font);
   user-select: none;
   flex-shrink: 0;
@@ -29,14 +29,14 @@
    body font-size, letter-spacing, and the flex sizing inside the delimiter wrap. */
 .rx-pattern {
   flex: 1;
-  padding: var(--space-0-6) 0;
-  color: var(--accent);
-  font-size: var(--fs-body);
-  letter-spacing: 0.02em;
+  padding: var(--space-3) 0;
+  color: var(--selected);
+  font-size: var(--fs-mono);
+  letter-spacing: var(--track-tight);
   min-width: 0;
 }
 .rx-pattern-wrap:focus-within {
-  border-color: var(--accent);
+  border-color: var(--focus);
 }
 
 /* ---- Flags ---- */
@@ -48,50 +48,48 @@
   flex-shrink: 0;
 }
 .rx-flag {
-  padding: 0.35rem 0.45rem;
+  padding: var(--space-1) var(--space-2);
   background: none;
   border: var(--border-hair) solid transparent;
-  color: var(--text-dim);
+  color: var(--text-muted);
   font-family: var(--font);
-  font-size: var(--fs-label);
-  font-weight: var(--fw-bold);
-  letter-spacing: 0.04em;
+  font-size: var(--fs-mono);
+  letter-spacing: var(--track-body);
   transition: color var(--motion-fast) var(--ease), border-color var(--motion-fast) var(--ease);
 }
 .rx-flag:hover {
-  color: var(--text-muted);
+  color: var(--text);
 }
 .rx-flag.active {
-  color: var(--accent);
-  border-color: var(--accent);
+  color: var(--selected);
+  border-color: var(--selected);
 }
 
 /* ---- Error display ---- */
 .rx-error {
   display: none;
-  padding: var(--space-0-4) var(--space-0-6);
-  margin-top: var(--space-0-4);
-  font-size: var(--fs-caption);
-  color: var(--comp);
-  border-left: var(--border-rail) solid var(--comp);
+  padding: var(--space-2) var(--space-3);
+  margin-top: var(--space-2);
+  font-size: var(--fs-mono);
+  color: var(--error);
+  border-left: var(--border-rail) solid var(--error);
   border-radius: var(--radius);
-  background: rgba(255, 51, 51, 0.04);
-  line-height: 1.5;
+  background: color-mix(in srgb, var(--error) 4%, transparent);
+  line-height: var(--lh-body);
 }
 
 /* ---- Test string ---- */
 /* .rx-test-label composes .flex-between; local keeps spacing + label styling. */
 .rx-test-label {
   margin-top: var(--space-4);
-  margin-bottom: 0.35rem;
-  font-size: var(--fs-caption);
+  margin-bottom: var(--space-1);
+  font-size: var(--fs-mono);
   color: var(--text-dim);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--track-label);
 }
 .rx-match-count {
-  color: var(--accent);
-  font-weight: var(--fw-bold);
+  color: var(--selected);
 }
 
 .rx-test-wrap {
@@ -107,11 +105,11 @@
   left: 0;
   right: 0;
   bottom: 0;
-  padding: var(--space-0-6) var(--space-3);
+  padding: var(--space-3) var(--space-3);
   font-family: var(--font);
-  font-size: var(--fs-h5-6);
-  line-height: 1.65;
-  letter-spacing: 0.02em;
+  font-size: var(--fs-mono);
+  line-height: var(--lh-prose);
+  letter-spacing: var(--track-tight);
   color: var(--text);
   white-space: pre-wrap;
   word-wrap: break-word;
@@ -123,16 +121,16 @@
   position: relative;
   width: 100%;
   min-height: 120px;
-  padding: var(--space-0-6) var(--space-3);
+  padding: var(--space-3) var(--space-3);
   background: transparent;
   border: var(--border-hair) solid var(--border-strong);
   border-radius: var(--radius);
   color: transparent;
-  caret-color: var(--accent);
+  caret-color: var(--focus);
   font-family: var(--font);
-  font-size: var(--fs-h5-6);
-  line-height: 1.65;
-  letter-spacing: 0.02em;
+  font-size: var(--fs-mono);
+  line-height: var(--lh-prose);
+  letter-spacing: var(--track-tight);
   outline: none;
   resize: none;
   overflow: hidden;
@@ -140,7 +138,11 @@
   word-wrap: break-word;
 }
 .rx-test:focus {
-  border-color: var(--accent);
+  border-color: var(--focus);
+}
+.rx-test:focus-visible {
+  outline: var(--border-hair) solid var(--focus);
+  outline-offset: var(--border-hair);
 }
 .rx-test::placeholder {
   color: var(--text-dim);
@@ -148,41 +150,42 @@
 
 /* ---- Match highlights ---- */
 .rx-hl {
-  background: rgba(0, 255, 65, 0.15);
-  color: var(--accent);
-  padding: 0.05rem 0;
-  border-bottom: var(--border-hair) solid var(--accent);
+  background: color-mix(in srgb, var(--selected) 15%, transparent);
+  color: var(--selected);
+  padding: var(--border-hair) 0;
+  border-bottom: var(--border-hair) solid var(--selected);
 }
 .rx-hl-1 {
-  background: rgba(0, 204, 204, 0.12);
-  color: var(--cool);
-  border-bottom-color: var(--cool);
+  --hl-tone: var(--cool);
+  background: color-mix(in srgb, var(--hl-tone) 12%, transparent);
+  color: var(--hl-tone);
+  border-bottom-color: var(--hl-tone);
 }
 
 /* ---- Substitution ---- */
 /* .rx-sub-row composes .flex-center; local tightens the gap and adds top margin. */
 .rx-sub-row {
-  gap: var(--space-0-6);
+  gap: var(--space-3);
   margin-top: var(--space-3);
 }
 .rx-sub-label {
-  font-size: var(--fs-caption);
+  font-size: var(--fs-mono);
   color: var(--text-dim);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--track-label);
   flex-shrink: 0;
 }
-/* .rx-replace composes .form-input; local keeps warm text, flex sizing, the
-   tighter padding + font-size, and the warm focus border. */
+/* .rx-replace composes .form-input; local keeps bright text, flex sizing, the
+   tighter padding + font-size, and the focus border. */
 .rx-replace {
   flex: 1;
-  padding: 0.45rem var(--space-0-6);
-  color: var(--warm);
-  font-size: var(--fs-h5-6);
-  letter-spacing: 0.02em;
+  padding: var(--space-2) var(--space-3);
+  color: var(--text-bright);
+  font-size: var(--fs-mono);
+  letter-spacing: var(--track-tight);
 }
 .rx-replace:focus {
-  border-color: var(--warm);
+  border-color: var(--focus);
 }
 
 .rx-sub-output-wrap {
@@ -191,22 +194,22 @@
 /* .rx-sub-output-label composes .flex-between; local keeps spacing + labeling. */
 .rx-sub-output-label {
   margin-bottom: var(--space-1);
-  font-size: var(--fs-caption);
+  font-size: var(--fs-mono);
   color: var(--text-dim);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--track-label);
 }
-/* .rx-sub-copy composes the shared .text-button primitive (bare inline copy
-   link) — no local override needed. */
+/* .rx-sub-copy composes the shared .link-button primitive (bare inline copy
+   link) - no local override needed. */
 .rx-sub-output {
-  padding: var(--space-0-6) var(--space-3);
+  padding: var(--space-3) var(--space-3);
   background: var(--bg);
   border: var(--border-hair) solid var(--border);
   border-radius: var(--radius);
   color: var(--text);
   font-family: var(--font);
-  font-size: var(--fs-h5-6);
-  line-height: 1.65;
+  font-size: var(--fs-mono);
+  line-height: var(--lh-prose);
   white-space: pre-wrap;
   word-wrap: break-word;
   margin: 0;
@@ -222,7 +225,7 @@
 
 /* ---- Matches panel ---- */
 /* .rx-matches-panel composes .content-card for its surface (bg/border/radius);
-   local keeps the scroll box layout. The card hover-lift is suppressed — this
+   local keeps the scroll box layout. The card hover-lift is suppressed - this
    is a static aside panel, not an interactive card. */
 .rx-matches-panel {
   max-height: 360px;
@@ -237,11 +240,10 @@
 }
 .rx-panel-header {
   padding: var(--space-2) var(--space-3);
-  font-size: var(--fs-caption);
-  font-weight: var(--fw-bold);
-  color: var(--text-dim);
+  font-size: var(--fs-mono);
+  color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--track-label);
   border-bottom: var(--border-hair) solid var(--border);
   flex-shrink: 0;
 }
@@ -255,7 +257,7 @@
 .rx-matches-empty {
   padding: var(--space-5) var(--space-3);
   color: var(--text-dim);
-  font-size: var(--fs-caption);
+  font-size: var(--fs-mono);
   text-align: center;
 }
 
@@ -267,7 +269,7 @@
   transition: background var(--motion-tick) var(--ease);
 }
 .rx-match-item:hover {
-  background: var(--accent-glow);
+  background: var(--selected-wash);
 }
 .rx-match-item:last-child {
   border-bottom: none;
@@ -282,41 +284,39 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: var(--fs-micro);
-  font-weight: var(--fw-bold);
-  color: var(--text-dim);
+  font-size: var(--fs-mono);
+  color: var(--text-muted);
   border: var(--border-hair) solid var(--border);
   border-radius: var(--radius);
 }
 .rx-match-value {
   flex: 1;
-  font-size: var(--fs-caption);
-  color: var(--accent);
+  font-size: var(--fs-mono);
+  color: var(--selected);
   word-break: break-all;
   font-family: var(--font);
 }
 .rx-match-pos {
   flex-shrink: 0;
-  font-size: var(--fs-micro);
+  font-size: var(--fs-mono);
   color: var(--text-dim);
-  letter-spacing: 0.04em;
+  letter-spacing: var(--track-body);
 }
 
 /* ---- Capture groups ---- */
 .rx-match-groups {
-  margin-top: var(--space-0-3);
-  padding-left: 1.7rem;
+  margin-top: var(--space-1);
+  padding-left: var(--space-5);
 }
 .rx-group-row {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  font-size: var(--fs-caption);
-  padding: var(--space-0-1) 0;
+  font-size: var(--fs-mono);
+  padding: var(--space-1) 0;
 }
 .rx-group-name {
-  color: var(--cool);
-  font-weight: var(--fw-bold);
+  color: var(--identifier);
   flex-shrink: 0;
 }
 .rx-group-value {
@@ -339,22 +339,21 @@
 .rx-ref-toggle {
   display: flex;
   align-items: center;
-  gap: var(--space-0-4);
+  gap: var(--space-2);
   width: 100%;
   padding: var(--space-2) var(--space-3);
   background: none;
   border: none;
-  color: var(--text-dim);
+  color: var(--text-muted);
   font-family: var(--font);
-  font-size: var(--fs-caption);
-  font-weight: var(--fw-bold);
+  font-size: var(--fs-mono);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--track-label);
   text-align: left;
   transition: color var(--motion-fast) var(--ease);
 }
 .rx-ref-toggle:hover {
-  color: var(--text-muted);
+  color: var(--text);
 }
 .rx-ref-chevron {
   margin-left: auto;
@@ -386,31 +385,30 @@
   break-inside: avoid;
 }
 .rx-ref-section-title {
-  font-size: var(--fs-micro);
-  color: var(--warm);
+  font-size: var(--fs-mono);
+  color: var(--text-bright);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-bottom: 0.35rem;
-  font-weight: var(--fw-bold);
+  letter-spacing: var(--track-label);
+  margin-bottom: var(--space-1);
 }
 .rx-ref-table {
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
+  gap: var(--border-rail);
 }
 .rx-ref-row {
   display: flex;
   align-items: baseline;
-  gap: var(--space-0-6);
-  font-size: var(--fs-caption);
-  line-height: 1.5;
+  gap: var(--space-3);
+  font-size: var(--fs-mono);
+  line-height: var(--lh-body);
 }
 .rx-ref-row code {
   flex-shrink: 0;
   min-width: 5rem;
-  color: var(--accent);
+  color: var(--syntax-accent);
   font-family: var(--font);
-  font-size: var(--fs-caption);
+  font-size: var(--fs-mono);
   cursor: pointer;
   transition: color var(--motion-tick) var(--ease);
 }
@@ -429,12 +427,12 @@
   border-top: var(--border-hair) solid var(--border);
 }
 .rx-ref-link a {
-  font-size: var(--fs-micro);
+  font-size: var(--fs-mono);
   color: var(--text-dim);
   text-decoration: none;
-  letter-spacing: 0.04em;
+  letter-spacing: var(--track-body);
   transition: color var(--motion-fast) var(--ease);
 }
 .rx-ref-link a:hover {
-  color: var(--accent);
+  color: var(--interactive);
 }

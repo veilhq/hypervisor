@@ -1,4 +1,4 @@
-"""Page builders — homepage, pinboard, utility pages, learn section.
+"""Page builders - homepage, pinboard, utility pages, learn section.
 
 All builders now output content fragments (JSON) for the SPA shell architecture.
 """
@@ -272,7 +272,7 @@ def build_utility_pages(build_id):
         "screensaver": "monitor", "assessment": "file-check", "portal-dashboard": "layout-dashboard",
     }
 
-    manifest = []  # {name, icon, href, order} per utility — drives nav + command palette
+    manifest = []  # {name, icon, href, order} per utility - drives nav + command palette
 
     for util_file in sorted(UTILITIES_DIR.glob("*.html")):
         util_content = util_file.read_text(encoding="utf-8")
@@ -333,7 +333,7 @@ def build_utility_pages(build_id):
 
         util_count += 1
 
-    # Emit the manifest — the single source of truth for the utilities nav list
+    # Emit the manifest - the single source of truth for the utilities nav list
     # and the command palette. Sorted by declared order, then name.
     manifest.sort(key=lambda u: (u["order"], u["name"].lower()))
     manifest_path = OUTPUT_DIR / "content" / "_utils" / "_manifest.json"
@@ -349,7 +349,7 @@ def build_utility_pages(build_id):
 
 
 # ---------------------------------------------------------------------------
-# Learn section — self-contained technical walkthrough of Hypervisor internals
+# Learn section - self-contained technical walkthrough of Hypervisor internals
 # ---------------------------------------------------------------------------
 
 
@@ -410,7 +410,7 @@ def _build_learn_index(entries, build_id):
     cards_html += '<i data-lucide="graduation-cap" class="dir-header-icon"></i>\n'
     cards_html += '<h1 class="dir-header-title">Learn Hypervisor</h1>\n'
     cards_html += '</div>\n'
-    cards_html += '<div class="dir-header-desc">A guided walkthrough of how Hypervisor works — architecture, build pipeline, styling, interactivity, and design decisions.</div>\n'
+    cards_html += '<div class="dir-header-desc">A guided walkthrough of how Hypervisor works - architecture, build pipeline, styling, interactivity, and design decisions.</div>\n'
     cards_html += '</div>\n'
     cards_html += '<div class="card-grid">\n'
 
@@ -437,7 +437,7 @@ def _build_learn_index(entries, build_id):
 def build_pinboard_page(build_id):
     """Generate the pinboard as a content fragment.
 
-    The pinboard is client-side rendered — pins are stored in localStorage
+    The pinboard is client-side rendered - pins are stored in localStorage
     and the JS module populates the content dynamically.
     """
     content_html = """\
@@ -493,16 +493,16 @@ def build_about_page(build_id):
     into a browsable knowledge base. It runs inside a PyWebView desktop app with live
     file watching, checkbox write-back, a full-text search index, and a Python MCP
     server for programmatic access to hyperspace documents.</p>
-    <p>The homepage is a status dashboard — active work items, recent activity, and
+    <p>The homepage is a status dashboard - active work items, recent activity, and
     pinned documents. Category navigation lives in the site nav rail; this page is
     just for the brand.</p>
   </section>
   <section class="about-links">
     <h2>Explore</h2>
     <ul class="about-link-list">
-      <li><a href="/learn/index.html"><i data-lucide="graduation-cap" class="doc-icon"></i> Learn — how Hypervisor works</a></li>
-      <li><a href="/_pins/index.html"><i data-lucide="pin" class="doc-icon"></i> Pinboard — documents you've pinned</a></li>
-      <li><a href="/index.html"><i data-lucide="activity" class="doc-icon"></i> Home — workspace pulse</a></li>
+      <li><a href="/learn/index.html"><i data-lucide="graduation-cap" class="doc-icon"></i> Learn - how Hypervisor works</a></li>
+      <li><a href="/_pins/index.html"><i data-lucide="pin" class="doc-icon"></i> Pinboard - documents you've pinned</a></li>
+      <li><a href="/index.html"><i data-lucide="activity" class="doc-icon"></i> Home - workspace pulse</a></li>
     </ul>
   </section>
   <section class="about-build">

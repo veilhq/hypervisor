@@ -1,5 +1,5 @@
 <style>
-/* ===== ADO Dashboard — Hyperkit Token Migration =====
+/* ===== ADO Dashboard - Hyperkit Token Migration =====
    All spacing uses --space-*, font sizes use --fs-*, borders use
    --border-hair, transitions use --motion-*, and cards/badges/buttons
    use --radius. */
@@ -11,7 +11,7 @@
   padding: var(--space-2) 0;
 }
 .dash-full { grid-column: 1 / -1; }
-/* Sprint summary panel — groups the header row + KPI tiles in one bordered
+/* Sprint summary panel - groups the header row + KPI tiles in one bordered
    container spanning the full dashboard width. */
 .dash-summary {
   grid-column: 1 / -1;
@@ -27,7 +27,7 @@
 .dash-summary .kpi-grid {
   grid-template-columns: repeat(5, 1fr);
 }
-/* Donut + team row — three cards across on a wide surface, spanning the full
+/* Donut + team row - three cards across on a wide surface, spanning the full
    dash grid, collapsing to fewer columns as width shrinks. */
 .dash-donut-row {
   grid-column: 1 / -1;
@@ -42,7 +42,7 @@
   padding: var(--space-4);
   gap: var(--space-2);
 }
-/* Static display surfaces (charts, donuts, lists) — suppress the .content-card
+/* Static display surfaces (charts, donuts, lists) - suppress the .content-card
    hover lift/shadow/accent-border; these cards aren't interactive targets. */
 .dash-card:hover {
   transform: none;
@@ -53,15 +53,15 @@
 /* .dash-card-title composes .flex-center (row + align-items:center). Local:
    the caption typography and the tighter gap override. */
 .dash-card-title {
-  font-size: var(--fs-label);
+  font-size: var(--fs-mono);
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--track-caps);
   color: var(--text-dim);
-  gap: var(--space-0-4);
+  gap: var(--space-2);
 }
 .dash-card-title i { width: 14px; height: 14px; }
 .dash-kpi-label {
-  font-size: var(--fs-body);
+  font-size: var(--fs-mono);
   color: var(--text-muted);
 }
 /* .dash-header composes .flex-center (row + align-center). One row: title on
@@ -80,9 +80,9 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: var(--space-0-4) var(--space-1-2);
+  gap: var(--space-2) var(--space-5);
   margin-left: var(--space-4);
-  font-size: var(--fs-label);
+  font-size: var(--fs-mono);
   color: var(--text-muted);
 }
 .dash-header-actions {
@@ -92,53 +92,52 @@
   margin-left: auto;
 }
 .dash-header h1 {
-  font-size: var(--fs-h2);
+  font-size: var(--fs-mono);
   color: var(--text-bright);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--track-label);
   display: flex;
   align-items: center;
   gap: var(--space-2);
 }
 .dash-header h1 i,
 .dash-header h1 svg,
-.dash-header h1 [data-lucide] { width: 18px; height: 18px; color: var(--accent); }
+.dash-header h1 [data-lucide] { width: 18px; height: 18px; color: var(--text-muted); }
 .dash-meta {
-  font-size: var(--fs-micro);
+  font-size: var(--fs-mono);
   color: var(--text-dim);
   text-align: right;
 }
 .dash-meta span { display: block; }
 
-/* Metadata strip below header — composes .flex-between. Local: grid-column
+/* Metadata strip below header - composes .flex-between. Local: grid-column
    span, wrap, the two-axis gap override, spacing, and caption typography. */
 /* .dash-meta-strip-item composes .flex-center. Local: the tighter gap
    override and nowrap. Used inside .dash-header-meta now. */
 .dash-meta-strip-item {
-  gap: var(--space-0-3);
+  gap: var(--space-1);
   white-space: nowrap;
 }
 .dash-meta-strip-item i,
 .dash-meta-strip-item svg,
 .dash-meta-strip-item [data-lucide] { width: 11px; height: 11px; color: var(--text-dim); }
 .dash-meta-strip-value {
-  color: var(--accent);
-  font-weight: var(--fw-bold);
+  color: var(--identifier);
 }
 .dash-meta-strip-sep {
   color: var(--border);
 }
 
-/* Refresh button — composes .action-button (inline-flex, transparent ghost,
+/* Refresh button - composes .action-button (inline-flex, transparent ghost,
    radius, hover-to-accent). Local: the compact dashboard sizing (smaller
    padding/gap, no bold, lighter border than the primitive's --border-strong),
    and the .is-loading spinner state. */
 .dash-refresh-btn {
   background: var(--bg-card);
   border-color: var(--border);
-  letter-spacing: 0.06em;
-  padding: var(--space-0-3) var(--space-0-6);
-  gap: var(--space-0-3);
+  letter-spacing: var(--track-label);
+  padding: var(--space-1) var(--space-3);
+  gap: var(--space-1);
 }
 .dash-refresh-btn:active {
   opacity: 0.7;
@@ -151,7 +150,7 @@
   opacity: 0.5;
 }
 .dash-refresh-btn.is-loading i {
-  animation: dash-spin 1s linear infinite;
+  animation: dash-spin var(--period-spin) linear infinite;
 }
 @keyframes dash-spin {
   from { transform: rotate(0deg); }
@@ -159,14 +158,14 @@
 }
 
 /* Bar chart */
-/* Bar chart, stacked bar, and legend now use the shared hv-viz-* primitives
+/* Bar chart, stacked bar, and legend now use the shared viz-* primitives
    (hyperkit css/viz.css + js/viz.js), available via the hypervisor shell. */
 
 /* Team grid */
-/* Team grid now uses the shared hv-viz-team-* primitives. */
+/* Team grid now uses the shared viz-team-* primitives. */
 
-/* PR list — composes .flex-stack. Local: the tighter row gap override. */
-.dash-pr-list { gap: var(--space-0-3); }
+/* PR list - composes .flex-stack. Local: the tighter row gap override. */
+.dash-pr-list { gap: var(--space-1); }
 /* Row composes .list-row (grid base, align-center, transition). KEPT LOCAL:
    the per-row grid-template-columns (list-row's --row-grid won't match), and
    the bordered-tile silhouette (full border + radius + surface fill) that
@@ -174,54 +173,54 @@
 .dash-pr-item {
   grid-template-columns: 40px 1fr 80px 50px;
   gap: var(--space-2);
-  padding: var(--space-0-3) var(--space-2);
+  padding: var(--space-1) var(--space-2);
   background: var(--bg-surface);
   border: var(--border-hair) solid var(--border);
   border-radius: var(--radius);
-  font-size: var(--fs-body);
+  font-size: var(--fs-mono);
   cursor: pointer;
   text-decoration: none;
   color: inherit;
   transition: border-color var(--motion-base) var(--ease);
 }
 .dash-pr-item:hover {
-  border-color: var(--accent);
+  border-color: var(--interactive);
 }
-.dash-pr-id { color: var(--accent); }
+.dash-pr-id { color: var(--identifier); }
 .dash-pr-title {
   color: var(--text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.dash-pr-repo { color: var(--text-dim); font-size: var(--fs-label); }
+.dash-pr-repo { color: var(--text-dim); font-size: var(--fs-mono); }
 .dash-pr-age { text-align: right; }
-.dash-pr-age-fresh { color: var(--accent); }
-.dash-pr-age-mid { color: var(--warm); }
-.dash-pr-age-old { color: var(--comp); }
+.dash-pr-age-fresh { color: var(--success); }
+.dash-pr-age-mid { color: var(--warning); }
+.dash-pr-age-old { color: var(--error); }
 
-/* Risks — .dash-risks composes .flex-stack (local: tighter gap); each
+/* Risks - .dash-risks composes .flex-stack (local: tighter gap); each
    .dash-risk composes .flex-center (local: gap + the left-rail tile look). */
-.dash-risks { gap: var(--space-0-3); }
+.dash-risks { gap: var(--space-1); }
 .dash-risk {
   gap: var(--space-2);
-  padding: var(--space-0-3) var(--space-2);
-  font-size: var(--fs-body);
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--fs-mono);
   color: var(--text);
-  border-left: 3px solid var(--comp);
+  border-left: 3px solid var(--error);
   border-radius: 0 var(--radius) var(--radius) 0;
   background: var(--bg-surface);
 }
-/* Risk tag composes .status-chip (uppercase silhouette). Local: comp color +
+/* Risk tag composes .status-chip (uppercase silhouette). Local: error color +
    nowrap; caption size kept so the dense row stays compact. */
 .dash-risk-tag {
-  font-size: var(--fs-caption);
-  color: var(--comp);
+  font-size: var(--fs-mono);
+  color: var(--error);
   white-space: nowrap;
 }
 
 /* Burndown chart, sparkline, and their legends now use the shared
-   hv-viz-line / hv-viz-sparkline / hv-viz-legend primitives. Only the
+   viz-line / viz-sparkline / viz-legend primitives. Only the
    flex wrapper that positions the sparkline + month labels is app-local. */
 .dash-sparkline-wrap {
   display: flex;
@@ -237,10 +236,9 @@
 }
 
 /* Tab switcher */
-/* Tabs compose the shared .nav-tab primitive (notched shape, --bg-card surface,
-   hover/active background). Per the primitive contract, local styles add ONLY
-   sizing/typography — no border, no bar, no background override. The active
-   state (accent-glow wash) comes from .nav-tab-active, toggled by the JS. */
+/* Tabs compose the shared .nav-tab primitive (rounded rect, selected state).
+   Local styles add only sizing/typography; the active state comes from
+   .nav-tab-active, toggled by the JS. */
 .dash-tabs {
   grid-column: 1 / -1;
   display: flex;
@@ -251,13 +249,11 @@
 .dash-tab {
   padding: var(--space-2) var(--space-5);
   font-family: var(--font);
-  font-size: var(--fs-label);
+  font-size: var(--fs-mono);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-muted);
+  letter-spacing: var(--track-label);
+  cursor: pointer;
 }
-.dash-tab:hover { color: var(--text-bright); }
-.dash-tab.nav-tab-active { color: var(--accent); }
 .dash-tab-panel { display: none; grid-column: 1 / -1; }
 .dash-tab-panel.is-active {
   display: grid;
@@ -265,122 +261,121 @@
   gap: var(--space-4);
 }
 
-/* Commit list — composes .flex-stack (local: tighter gap). */
-.dash-commit-list { gap: var(--space-0-3); }
+/* Commit list - composes .flex-stack (local: tighter gap). */
+.dash-commit-list { gap: var(--space-1); }
 /* Row composes .list-row. KEPT LOCAL: per-row grid columns + bordered-tile
    silhouette (full border + radius + surface fill). */
 .dash-commit-item {
   grid-template-columns: 70px 55px 100px 1fr 120px 50px;
   gap: var(--space-2);
-  padding: var(--space-0-3) var(--space-2);
+  padding: var(--space-1) var(--space-2);
   background: var(--bg-surface);
   border: var(--border-hair) solid var(--border);
   border-radius: var(--radius);
-  font-size: var(--fs-body);
+  font-size: var(--fs-mono);
 }
-.dash-commit-hash { color: var(--accent); font-size: var(--fs-label); }
+.dash-commit-hash { color: var(--identifier); font-size: var(--fs-mono); }
 .dash-commit-author { color: var(--text-bright); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .dash-commit-msg { color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.dash-commit-branch { color: var(--warm); font-size: var(--fs-label); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.dash-commit-repo { color: var(--comp); font-size: var(--fs-label); font-weight: var(--fw-bold); font-style: italic; }
+.dash-commit-branch { color: var(--identifier); font-size: var(--fs-mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dash-commit-repo { color: var(--text-muted); font-size: var(--fs-mono);font-style: italic; }
 .dash-commit-age { text-align: right; }
 
-/* Branch list — composes .flex-stack (local: tighter gap). */
-.dash-branch-list { gap: var(--space-0-3); }
+/* Branch list - composes .flex-stack (local: tighter gap). */
+.dash-branch-list { gap: var(--space-1); }
 /* Row composes .list-row. KEPT LOCAL: per-row grid columns + bordered-tile
    silhouette. */
 .dash-branch-item {
   grid-template-columns: 80px 1fr 55px 1fr 100px 50px;
   gap: var(--space-2);
-  padding: var(--space-0-3) var(--space-2);
+  padding: var(--space-1) var(--space-2);
   background: var(--bg-surface);
   border: var(--border-hair) solid var(--border);
   border-radius: var(--radius);
-  font-size: var(--fs-body);
+  font-size: var(--fs-mono);
 }
-.dash-branch-name { color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.dash-branch-repo { color: var(--comp); font-size: var(--fs-label); font-weight: var(--fw-bold); font-style: italic; }
-.dash-branch-hash { color: var(--warm); font-size: var(--fs-label); }
+.dash-branch-name { color: var(--identifier); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dash-branch-repo { color: var(--text-muted); font-size: var(--fs-mono);font-style: italic; }
+.dash-branch-hash { color: var(--identifier-dim); font-size: var(--fs-mono); }
 .dash-branch-msg { color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.dash-branch-author { color: var(--text-muted); font-size: var(--fs-label); text-align: right; }
-.dash-branch-time { color: var(--text-dim); font-size: var(--fs-label); text-align: right; }
+.dash-branch-author { color: var(--text-muted); font-size: var(--fs-mono); text-align: right; }
+.dash-branch-time { color: var(--text-dim); font-size: var(--fs-mono); text-align: right; }
 
-/* Conflict list — composes .flex-stack (local: tighter gap). */
-.dash-conflict-list { gap: var(--space-0-3); }
+/* Conflict list - composes .flex-stack (local: tighter gap). */
+.dash-conflict-list { gap: var(--space-1); }
 /* Row composes .list-row. KEPT LOCAL: per-row grid columns + bordered-tile
    silhouette + the interactive accent-border hover. */
 .dash-conflict-item {
   grid-template-columns: 1fr auto 1fr 60px 80px;
   gap: var(--space-2);
-  padding: var(--space-0-4) var(--space-2);
+  padding: var(--space-2) var(--space-2);
   background: var(--bg-surface);
   border: var(--border-hair) solid var(--border);
   border-radius: var(--radius);
-  font-size: var(--fs-body);
+  font-size: var(--fs-mono);
   cursor: pointer;
   transition: border-color var(--motion-fast) var(--ease);
 }
-.dash-conflict-item:hover { border-color: var(--accent); }
-.dash-conflict-branch { color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.dash-conflict-arrow { color: var(--text-dim); font-size: var(--fs-label); text-align: center; }
-.dash-conflict-repo { color: var(--comp); font-size: var(--fs-label); font-weight: var(--fw-bold); font-style: italic; text-align: right; }
+.dash-conflict-item:hover { border-color: var(--interactive); }
+.dash-conflict-branch { color: var(--identifier); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dash-conflict-arrow { color: var(--text-dim); font-size: var(--fs-mono); text-align: center; }
+.dash-conflict-repo { color: var(--text-muted); font-size: var(--fs-mono);font-style: italic; text-align: right; }
 /* Severity badge composes .status-chip + an outlined variant; the per-severity
    color is applied by the -low/-high modifiers below. Local: bold weight +
    compact padding for the dense row. */
 .dash-conflict-badge {
-  font-weight: var(--fw-bold);
-  padding: var(--space-0-1) var(--space-0-4);
+  padding: var(--space-1) var(--space-2);
   text-align: center;
 }
-.dash-conflict-badge-low { color: var(--warm); border-color: var(--warm); }
-.dash-conflict-badge-high { color: var(--comp); border-color: var(--comp); }
+.dash-conflict-badge-low { color: var(--warning); border-color: var(--warning); }
+.dash-conflict-badge-high { color: var(--error); border-color: var(--error); }
 .dash-conflict-files {
   display: none;
   grid-column: 1 / -1;
-  padding: var(--space-0-3) var(--space-2);
-  font-size: var(--fs-label);
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--fs-mono);
   color: var(--text-muted);
   border-top: var(--border-hair) solid var(--border);
-  margin-top: var(--space-0-3);
+  margin-top: var(--space-1);
 }
 .dash-conflict-files.expanded { display: block; }
-.dash-conflict-file { padding: var(--space-0-1) 0; }
-.dash-conflict-clear { color: var(--accent); font-size: var(--fs-body); padding: var(--space-0-4) var(--space-2); }
+.dash-conflict-file { padding: var(--space-1) 0; }
+.dash-conflict-clear { color: var(--success); font-size: var(--fs-mono); padding: var(--space-2) var(--space-2); }
 .dash-conflict-clear svg { width: 14px; height: 14px; vertical-align: -2px; }
-.dash-conflict-note { color: var(--text-dim); font-size: var(--fs-label); padding: var(--space-0-3) var(--space-2); font-style: italic; }
+.dash-conflict-note { color: var(--text-dim); font-size: var(--fs-mono); padding: var(--space-1) var(--space-2); font-style: italic; }
 
-/* Pipeline list — composes .flex-stack (local: tighter gap). */
-.dash-pipeline-list { gap: var(--space-0-3); }
+/* Pipeline list - composes .flex-stack (local: tighter gap). */
+.dash-pipeline-list { gap: var(--space-1); }
 /* Row composes .list-row. KEPT LOCAL: per-row grid columns + bordered-tile
    silhouette. */
 .dash-pipeline-item {
   grid-template-columns: 20px 1fr 60px 80px 50px;
   gap: var(--space-2);
-  padding: var(--space-0-3) var(--space-2);
+  padding: var(--space-1) var(--space-2);
   background: var(--bg-surface);
   border: var(--border-hair) solid var(--border);
   border-radius: var(--radius);
-  font-size: var(--fs-body);
+  font-size: var(--fs-mono);
 }
-.dash-pipeline-icon { font-size: var(--fs-heading); text-align: center; }
-.dash-pipeline-icon-pass { color: var(--accent); }
-.dash-pipeline-icon-fail { color: var(--comp); }
+.dash-pipeline-icon { font-size: var(--fs-mono); text-align: center; }
+.dash-pipeline-icon-pass { color: var(--success); }
+.dash-pipeline-icon-fail { color: var(--error); }
 .dash-pipeline-icon-cancel { color: var(--text-muted); }
-.dash-pipeline-icon-running { color: var(--warm); }
+.dash-pipeline-icon-running { color: var(--info); }
 .dash-pipeline-icon-queued { color: var(--text-dim); }
 .dash-pipeline-name { color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.dash-pipeline-duration { color: var(--text-muted); font-size: var(--fs-label); text-align: right; }
-.dash-pipeline-by { color: var(--text-muted); font-size: var(--fs-label); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.dash-pipeline-time { color: var(--text-dim); font-size: var(--fs-label); text-align: right; }
+.dash-pipeline-duration { color: var(--text-muted); font-size: var(--fs-mono); text-align: right; }
+.dash-pipeline-by { color: var(--text-muted); font-size: var(--fs-mono); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dash-pipeline-time { color: var(--text-dim); font-size: var(--fs-mono); text-align: right; }
 
-/* Pipeline param badges — wrapper composes .flex-center (local: wrap + tighter
+/* Pipeline param badges - wrapper composes .flex-center (local: wrap + tighter
    gap + top margin). Each badge composes .status-chip + .status-chip-outlined-*
-   silhouette; local: the cool border/color, truncation, and max-width. */
-.dash-param-badges { flex-wrap: wrap; gap: var(--space-0-2); margin-top: var(--space-0-3); }
+   silhouette; local: the info border/color, truncation, and max-width. */
+.dash-param-badges { flex-wrap: wrap; gap: var(--space-1); margin-top: var(--space-1); }
 .dash-param-badge {
-  color: var(--cool);
-  border-color: var(--cool);
-  padding: var(--space-0-1) var(--space-0-4);
+  color: var(--info);
+  border-color: var(--info);
+  padding: var(--space-1) var(--space-2);
   white-space: nowrap;
   max-width: 200px;
   overflow: hidden;
@@ -389,51 +384,51 @@
 
 /* Empty state message */
 .dash-empty {
-  font-size: var(--fs-body);
+  font-size: var(--fs-mono);
   color: var(--text-muted);
   padding: var(--space-2);
 }
 
-/* Work Request items — row composes .list-row. KEPT LOCAL: per-row grid
+/* Work Request items - row composes .list-row. KEPT LOCAL: per-row grid
    columns + bordered-tile silhouette + interactive accent-border hover. */
 .dash-wr-item {
   grid-template-columns: 40px 1fr 80px 100px;
   gap: var(--space-2);
-  padding: var(--space-0-3) var(--space-2);
+  padding: var(--space-1) var(--space-2);
   background: var(--bg-surface);
   border: var(--border-hair) solid var(--border);
   border-radius: var(--radius);
-  font-size: var(--fs-body);
+  font-size: var(--fs-mono);
   cursor: pointer;
   text-decoration: none;
   color: inherit;
   transition: border-color var(--motion-base) var(--ease);
 }
 .dash-wr-item:hover {
-  border-color: var(--accent);
+  border-color: var(--interactive);
 }
 
-/* Work Request filters — wrapper composes .flex-center (local: wrap + gap +
+/* Work Request filters - wrapper composes .flex-center (local: wrap + gap +
    margin). Each filter composes .action-button (ghost pill); local: the card
    fill, compact sizing, lighter border, and the .is-active accent state. */
 .dash-wr-filters {
   flex-wrap: wrap;
-  gap: var(--space-0-3);
+  gap: var(--space-1);
   margin-bottom: var(--space-2);
 }
 .dash-wr-filter {
   background: var(--bg-card);
   border-color: var(--border);
-  letter-spacing: 0.04em;
-  padding: var(--space-0-2) var(--space-2);
+  letter-spacing: var(--track-body);
+  padding: var(--space-1) var(--space-2);
 }
 .dash-wr-filter:hover:not(:disabled) {
   color: var(--text-bright);
   border-color: var(--text-muted);
 }
 .dash-wr-filter.is-active {
-  color: var(--accent);
-  border-color: var(--accent);
+  color: var(--selected);
+  border-color: var(--selected);
 }
 
 /* Skeleton loading state */
@@ -457,9 +452,9 @@
   justify-content: center;
   padding: var(--space-6) 0;
   color: var(--text-dim);
-  font-size: var(--fs-label);
+  font-size: var(--fs-mono);
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--track-caps);
 }
 .dash-tab-loading {
   display: none;
@@ -491,9 +486,9 @@
   <div class="dash-header flex-center">
     <h1><i data-lucide="bar-chart-3"></i> Sprint Dashboard</h1>
     <div class="dash-header-meta">
-      <span class="dash-meta-strip-item flex-center"><i data-lucide="flag"></i> <span class="dash-meta-strip-value" id="dash-sprint">—</span></span>
+      <span class="dash-meta-strip-item flex-center"><i data-lucide="flag"></i> <span class="dash-meta-strip-value" id="dash-sprint">&mdash;</span></span>
       <span class="dash-meta-strip-sep">|</span>
-      <span class="dash-meta-strip-item flex-center"><i data-lucide="calendar"></i> <span id="dash-dates">—</span></span>
+      <span class="dash-meta-strip-item flex-center"><i data-lucide="calendar"></i> <span id="dash-dates">&mdash;</span></span>
       <span class="dash-meta-strip-sep">|</span>
       <span class="dash-meta-strip-item flex-center"><i data-lucide="clock"></i> <span id="dash-generated">never</span></span>
     </div>
@@ -511,27 +506,27 @@
   <div class="kpi-grid">
     <div class="kpi-tile">
       <div class="kpi-tile-label">Committed</div>
-      <div class="kpi-tile-value" id="kpi-total-pts">—</div>
+      <div class="kpi-tile-value" id="kpi-total-pts">&mdash;</div>
       <div class="kpi-tile-sub">story points</div>
     </div>
     <div class="kpi-tile">
       <div class="kpi-tile-label">Remaining</div>
-      <div class="kpi-tile-value" id="kpi-remaining-pts">—</div>
+      <div class="kpi-tile-value" id="kpi-remaining-pts">&mdash;</div>
       <div class="kpi-tile-sub"><span id="kpi-pct-label"></span> burned</div>
     </div>
     <div class="kpi-tile">
       <div class="kpi-tile-label">Days Left</div>
-      <div class="kpi-tile-value" id="kpi-days-left">—</div>
+      <div class="kpi-tile-value" id="kpi-days-left">&mdash;</div>
       <div class="kpi-tile-sub">working days</div>
     </div>
     <div class="kpi-tile">
       <div class="kpi-tile-label">Active PRs</div>
-      <div class="kpi-tile-value" id="kpi-prs">—</div>
+      <div class="kpi-tile-value" id="kpi-prs">&mdash;</div>
       <div class="kpi-tile-sub">open for review</div>
     </div>
     <div class="kpi-tile">
       <div class="kpi-tile-label">Work Requests</div>
-      <div class="kpi-tile-value" id="kpi-wr-count">—</div>
+      <div class="kpi-tile-value" id="kpi-wr-count">&mdash;</div>
       <div class="kpi-tile-sub">outstanding</div>
     </div>
   </div>
@@ -595,32 +590,32 @@
   <div class="dash-card dash-full content-card flex-stack">
     <div class="dash-card-title flex-center"><i data-lucide="activity"></i> Velocity (last 6 sprints)</div>
     <div class="dash-sparkline-wrap">
-      <div class="hv-viz-sparkline">
+      <div class="viz-sparkline">
         <canvas id="velocity-canvas"></canvas>
       </div>
     </div>
-    <div class="dash-kpi-label">avg 54 pts/sprint — current pace: 63 committed</div>
+    <div class="dash-kpi-label">avg 54 pts/sprint - current pace: 63 committed</div>
   </div>
 
   <div class="dash-card dash-full content-card flex-stack">
     <div class="dash-card-title flex-center"><i data-lucide="trending-up"></i> Sprint Progress</div>
-    <div class="hv-viz-stacked" id="progress-bar"></div>
-    <div class="hv-viz-legend" id="progress-legend"></div>
+    <div class="viz-stacked" id="progress-bar"></div>
+    <div class="viz-legend" id="progress-legend"></div>
   </div>
 
   <!-- Burndown Chart -->
   <div class="dash-card dash-full content-card flex-stack">
     <div class="dash-card-title flex-center"><i data-lucide="trending-down"></i> Burndown</div>
-    <div class="hv-viz-line">
+    <div class="viz-line">
       <canvas id="burndown-canvas"></canvas>
     </div>
-    <div class="hv-viz-legend">
-      <div class="hv-viz-legend-item">
-        <div class="hv-viz-legend-line" style="background:var(--accent)"></div>
+    <div class="viz-legend">
+      <div class="viz-legend-item">
+        <div class="viz-legend-line" style="background:var(--magnitude)"></div>
         Actual
       </div>
-      <div class="hv-viz-legend-item">
-        <div class="hv-viz-legend-line-dashed"></div>
+      <div class="viz-legend-item">
+        <div class="viz-legend-line-dashed"></div>
         Ideal
       </div>
     </div>
@@ -638,7 +633,7 @@
     </div>
     <div class="dash-card dashboard-card">
       <div class="dashboard-card-title"><i data-lucide="users"></i> Team Workload</div>
-      <div class="hv-viz-team" id="team-grid"></div>
+      <div class="viz-team" id="team-grid"></div>
     </div>
   </div>
 
@@ -766,7 +761,7 @@
     var sticky = opts.duration === 'sticky' || (variant === 'error' && opts.duration == null);
     var duration = opts.duration != null && opts.duration !== 'sticky' ? opts.duration : (variant === 'warn' ? 5000 : 3000);
     var el = document.createElement('div');
-    el.style.cssText = 'font-family:"Departure Mono",monospace;font-size: var(--fs-caption);line-height:1.35;color:#ccc;background:#0a0a0a;border:1px solid #333;border-left:2px solid ' + color + ';padding:0.5rem 0.75rem;opacity:0;transform:translateY(8px);transition:opacity 0.25s,transform 0.25s;pointer-events:auto;';
+    el.style.cssText = 'font-family:"Departure Mono",monospace;font-size: var(--fs-mono);line-height:1.35;color:#ccc;background:#0a0a0a;border:1px solid #333;border-left:2px solid ' + color + ';padding:0.5rem 0.75rem;opacity:0;transform:translateY(8px);transition:opacity 0.25s,transform 0.25s;pointer-events:auto;';
     if (opts.title) {
       var t = document.createElement('div');
       t.textContent = opts.title;
@@ -842,7 +837,7 @@
   }
 
   // Stop polling when the router swaps this page out. Registered once per
-  // session — teardown hooks accumulate globally, so guard against re-adding
+  // session - teardown hooks accumulate globally, so guard against re-adding
   // on every visit.
   if (window.__router && !window.__adoPollTeardownRegistered) {
     window.__adoPollTeardownRegistered = true;
@@ -851,7 +846,7 @@
 
   // --- Burndown Chart ---
   // All burndown state is populated on refresh from live ADO data.
-  // No hardcoded sprint data — chart renders only after first refresh.
+  // No hardcoded sprint data - chart renders only after first refresh.
   var sprintStart = null;
   var sprintFinish = null;
 
@@ -924,7 +919,7 @@
       if (val !== undefined && val !== null) {
         series.push(val);
       } else if (series.length > 0) {
-        // Gap between two real points — carry forward
+        // Gap between two real points - carry forward
         series.push(series[series.length - 1]);
       } else {
         break; // no data at start yet
@@ -939,10 +934,10 @@
   var totalDays = 0;
 
   function drawBurndown() {
-    var container = document.querySelector('.hv-viz-line');
+    var container = document.querySelector('.viz-line');
     if (!container) return;
 
-    // No sprint data yet — placeholder handled by lineChart's emptyMessage.
+    // No sprint data yet - placeholder handled by lineChart's emptyMessage.
     if (!sprintStart || !sprintFinish || sprintDays.length === 0) {
       if (window.HvViz) {
         HvViz.lineChart(container, { series: [], emptyMessage: 'click refresh to load sprint data' });
@@ -957,7 +952,7 @@
       ideal.push(totalPoints * (1 - i / Math.max(1, n - 1)));
     }
 
-    // Today marker index — nearest past working day within the sprint.
+    // Today marker index - nearest past working day within the sprint.
     var todayStr = new Date().toISOString().slice(0, 10);
     var workingDates = getWorkingDateStrings(sprintStart, sprintFinish);
     var todayIdx = -1;
@@ -975,7 +970,7 @@
         todayIndex: todayIdx,
         series: [
           { points: ideal, dashed: true, color: 'var(--text-muted)' },
-          { points: actual, color: 'var(--accent)' }
+          { points: actual, color: 'var(--magnitude)' }
         ]
       });
     }
@@ -990,16 +985,16 @@
   var velocityLabels = ['2026-04','2026-05','2026-06','2026-07','2026-08','2026-09'];
 
   function drawSparkline() {
-    var container = document.querySelector('.hv-viz-sparkline');
+    var container = document.querySelector('.viz-sparkline');
     if (!container || !window.HvViz) return;
     HvViz.sparkline(container, { values: velocityData, baseline: true, showValues: true });
 
     // Month labels beneath, via the shared label primitive.
     var wrap = container.parentElement;
-    var labels = wrap ? wrap.querySelector('.hv-viz-sparkline-labels') : null;
+    var labels = wrap ? wrap.querySelector('.viz-sparkline-labels') : null;
     if (!labels && wrap) {
       labels = document.createElement('div');
-      labels.className = 'hv-viz-sparkline-labels';
+      labels.className = 'viz-sparkline-labels';
       wrap.appendChild(labels);
     }
     if (labels) {
@@ -1017,7 +1012,7 @@
 
   // --- Refresh Button ---
   var STATE_COLORS = {
-    'Closed': 'var(--accent)',
+    'Closed': 'var(--success)',
     'Review': 'var(--warm)',
     'In Progress': 'var(--cool)',
     'Ready': 'var(--text-muted)',
@@ -1078,7 +1073,7 @@
     if (kpiDays) kpiDays.textContent = workingDaysLeft(data.sprint.finish);
     if (kpiPrs) kpiPrs.textContent = data.kpis.active_prs;
     if (sprintEl) sprintEl.textContent = data.sprint.name;
-    if (datesEl) datesEl.textContent = formatDate(data.sprint.start) + ' – ' + formatDate(data.sprint.finish);
+    if (datesEl) datesEl.textContent = formatDate(data.sprint.start) + ' \u2013 ' + formatDate(data.sprint.finish);
 
     // Sprint Progress stacked bar
     var progressBar = document.getElementById('progress-bar');
@@ -1116,21 +1111,21 @@
         stateEntries.forEach(function(entry) {
           var pct = (entry.count / totalItems * 100).toFixed(1);
           var seg = document.createElement('div');
-          seg.className = 'hv-viz-stacked-seg';
+          seg.className = 'viz-stacked-seg';
           seg.style.width = pct + '%';
           seg.style.background = getStateColor(entry.state);
           progressBar.appendChild(seg);
           if (progressLegend) {
             var lg = document.createElement('div');
-            lg.className = 'hv-viz-legend-item';
-            lg.innerHTML = '<div class="hv-viz-legend-swatch" style="background:' + getStateColor(entry.state) + '"></div>' + entry.state + ' (' + entry.count + ')';
+            lg.className = 'viz-legend-item';
+            lg.innerHTML = '<div class="viz-legend-swatch" style="background:' + getStateColor(entry.state) + '"></div>' + entry.state + ' (' + entry.count + ')';
             progressLegend.appendChild(lg);
           }
         });
       }
     }
 
-    // State donuts — Work by State (counts) + Points by State (story points).
+    // State donuts - Work by State (counts) + Points by State (story points).
     var stateDonut = document.getElementById('state-donut');
     if (stateDonut && data.states && window.HvViz) {
       var stateOrder2 = ['Closed','Review','In Progress','Ready','Hold','Active'];
@@ -1181,19 +1176,19 @@
       } else {
         // Standalone-open fallback.
         teamGrid.innerHTML = '';
-        teamGrid.className = 'hv-viz-team';
+        teamGrid.className = 'viz-team';
         members.forEach(function(member) {
           var row = document.createElement('div');
-          row.className = 'hv-viz-team-row';
+          row.className = 'viz-team-row';
           var barHtml = '';
           var totalPts = member.points || 1;
           for (var st in member.states) {
             var segPct = (member.states[st] / totalPts * 100).toFixed(0);
-            barHtml += '<div class="hv-viz-team-seg" style="width:' + segPct + '%;background:' + getStateColor(st) + '"></div>';
+            barHtml += '<div class="viz-team-seg" style="width:' + segPct + '%;background:' + getStateColor(st) + '"></div>';
           }
-          row.innerHTML = '<span class="hv-viz-team-name">' + member.name + '</span>' +
-            '<div class="hv-viz-team-bar">' + barHtml + '</div>' +
-            '<span class="hv-viz-team-meta">' + member.points + ' pts</span>';
+          row.innerHTML = '<span class="viz-team-name">' + member.name + '</span>' +
+            '<div class="viz-team-bar">' + barHtml + '</div>' +
+            '<span class="viz-team-meta">' + member.points + ' pts</span>';
           teamGrid.appendChild(row);
         });
       }
@@ -1227,13 +1222,13 @@
     if (risksEl && data.risks) {
       risksEl.innerHTML = '';
       if (data.risks.length === 0) {
-        risksEl.innerHTML = '<div style="font-size: var(--fs-caption);color:var(--text-muted)">No risks detected</div>';
+        risksEl.innerHTML = '<div style="font-size: var(--fs-mono);color:var(--text-muted)">No risks detected</div>';
       } else {
         data.risks.forEach(function(risk) {
           var item = document.createElement('div');
           item.className = 'dash-risk flex-center';
           item.innerHTML = '<span class="dash-risk-tag status-chip">' + risk.type + '</span>' +
-            risk.title + ' (' + risk.id + ')' + (risk.assigned ? ' — ' + risk.assigned : '');
+            risk.title + ' (' + risk.id + ')' + (risk.assigned ? ' \u2014 ' + risk.assigned : '');
           risksEl.appendChild(item);
         });
       }
@@ -1257,7 +1252,7 @@
         wrStates[wr.state] = (wrStates[wr.state] || 0) + 1;
         if (completedStates.indexOf(wr.state) === -1) uncompletedCount++;
       });
-      // KPI tile — outstanding (uncompleted) work requests.
+      // KPI tile - outstanding (uncompleted) work requests.
       var kpiWr = document.getElementById('kpi-wr-count');
       if (kpiWr) kpiWr.textContent = uncompletedCount;
       if (wrFilters) {
@@ -1325,14 +1320,14 @@
 
       wrList.innerHTML = '';
       if (filtered.length === 0) {
-        wrList.innerHTML = '<div style="font-size: var(--fs-caption);color:var(--text-muted)">No work requests match this filter</div>';
+        wrList.innerHTML = '<div style="font-size: var(--fs-mono);color:var(--text-muted)">No work requests match this filter</div>';
         return;
       }
       filtered.forEach(function(wr) {
         var stateColor = 'var(--text-muted)';
         if (wr.state === 'In Review') stateColor = 'var(--warm)';
         else if (wr.state === 'Approved') stateColor = 'var(--cool)';
-        else if (wr.state === 'Completed') stateColor = 'var(--accent)';
+        else if (wr.state === 'Completed') stateColor = 'var(--success)';
         else if (wr.state === 'New') stateColor = 'var(--text-dim)';
         var item = document.createElement('a');
         item.className = 'dash-wr-item list-row';
@@ -1343,8 +1338,8 @@
         }
         item.innerHTML = '<span class="dash-pr-id">' + wr.id + '</span>' +
           '<span class="dash-pr-title">' + wr.title + '</span>' +
-          '<span style="color:' + stateColor + ';font-size: var(--fs-micro);">' + wr.state + '</span>' +
-          '<span style="color:var(--text-muted);font-size: var(--fs-micro);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (wr.assigned || '—') + '</span>';
+          '<span style="color:' + stateColor + ';font-size: var(--fs-mono);">' + wr.state + '</span>' +
+          '<span style="color:var(--text-muted);font-size: var(--fs-mono);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (wr.assigned || '\u2014') + '</span>';
         wrList.appendChild(item);
       });
     }
@@ -1352,7 +1347,7 @@
     // Update generated timestamp
     if (genEl) genEl.textContent = 'refreshed: ' + new Date().toLocaleString();
 
-    // Burndown — update sprint dates, use server history, redraw
+    // Burndown - update sprint dates, use server history, redraw
     if (data.sprint && data.burndown) {
       sprintStart = data.sprint.start;
       sprintFinish = data.sprint.finish;
@@ -1364,7 +1359,7 @@
 
       // If server provided Analytics history, use it directly
       if (data.burndown.history && data.burndown.history.length > 0) {
-        // Build a date→remaining map from server history
+        // Build a date->remaining map from server history
         var serverHistory = {};
         for (var i = 0; i < data.burndown.history.length; i++) {
           var entry = data.burndown.history[i];
@@ -1696,7 +1691,7 @@
   if (reportBtn) {
     reportBtn.addEventListener('click', function() {
       if (!lastDashData) {
-        if (window.__hvToast) window.__hvToast({ variant: 'warn', message: 'No data yet — refresh first' });
+        if (window.__hvToast) window.__hvToast({ variant: 'warn', message: 'No data yet - refresh first' });
         return;
       }
       if (!window.pywebview || !window.pywebview.api) {
@@ -1739,10 +1734,10 @@
           var pts = (d.state_points && d.state_points[entry.state]) ? d.state_points[entry.state] : 0;
           var color = reportStateColors[entry.state] || '#666';
           stateBarHtml += '<div style="display:grid;grid-template-columns:100px 1fr 40px 50px;align-items:center;gap:0.5rem;margin-bottom:0.4rem;">'
-            + '<span style="font-size: var(--fs-sm);color:#ccc;text-align:right;">' + entry.state + '</span>'
+            + '<span style="font-size: var(--fs-mono);color:#ccc;text-align:right;">' + entry.state + '</span>'
             + '<div style="height:20px;background:#111;border:1px solid #222;position:relative;"><div style="height:100%;width:' + pct + '%;background:' + color + ';opacity:0.85;"></div></div>'
-            + '<span style="font-size: var(--fs-caption);color:#909090;">' + entry.count + '</span>'
-            + '<span style="font-size: var(--fs-caption);color:#909090;">' + pts + ' pts</span>'
+            + '<span style="font-size: var(--fs-mono);color:#909090;">' + entry.count + '</span>'
+            + '<span style="font-size: var(--fs-mono);color:#909090;">' + pts + ' pts</span>'
             + '</div>';
         });
       }
@@ -1757,7 +1752,7 @@
           var pct = (entry.count / totalItems * 100).toFixed(1);
           var color = reportStateColors[entry.state] || '#666';
           progressHtml += '<div style="height:100%;width:' + pct + '%;background:' + color + ';opacity:0.85;"></div>';
-          progressLegendHtml += '<span style="display:inline-flex;align-items:center;gap:0.3rem;margin-right:1rem;font-size: var(--fs-detail);color:#909090;">'
+          progressLegendHtml += '<span style="display:inline-flex;align-items:center;gap:0.3rem;margin-right:1rem;font-size: var(--fs-mono);color:#909090;">'
             + '<span style="width:10px;height:10px;background:' + color + ';display:inline-block;opacity:0.85;"></span>'
             + entry.state + ' (' + entry.count + ')</span>';
         });
@@ -1777,9 +1772,9 @@
             barHtml += '<div style="height:100%;width:' + segPct + '%;background:' + color + ';opacity:0.85;"></div>';
           }
           teamHtml += '<div style="display:grid;grid-template-columns:140px 1fr 50px;align-items:center;gap:0.6rem;margin-bottom:0.6rem;">'
-            + '<span style="font-size: var(--fs-sm);color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + m.name + '</span>'
+            + '<span style="font-size: var(--fs-mono);color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + m.name + '</span>'
             + '<div style="height:22px;display:flex;border:1px solid #222;overflow:hidden;">' + barHtml + '</div>'
-            + '<span style="font-size: var(--fs-detail);color:#909090;text-align:right;">' + m.points + ' pts</span>'
+            + '<span style="font-size: var(--fs-mono);color:#909090;text-align:right;">' + m.points + ' pts</span>'
             + '</div>';
         });
       }
@@ -1789,53 +1784,67 @@
       if (d.prs && d.prs.length) {
         d.prs.forEach(function(pr) {
           var ageColor = pr.age_days > 7 ? '#ff3333' : pr.age_days > 2 ? '#ffb000' : accent;
-          prHtml += '<div style="display:grid;grid-template-columns:40px 1fr 90px 40px;align-items:center;gap:0.5rem;padding:0.3rem 0.5rem;background:#0a0a0a;border:1px solid #222;margin-bottom:0.3rem;font-size: var(--fs-caption);">'
+          prHtml += '<div style="display:grid;grid-template-columns:40px 1fr 90px 40px;align-items:center;gap:0.5rem;padding:0.3rem 0.5rem;background:#0a0a0a;border:1px solid #222;margin-bottom:0.3rem;font-size: var(--fs-mono);">'
             + '<span style="color:' + accent + ';">#' + pr.id + '</span>'
             + '<span style="color:#ccc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + pr.title + '</span>'
-            + '<span style="color:#666;font-size: var(--fs-micro);">' + pr.repo + '</span>'
+            + '<span style="color:#666;font-size: var(--fs-mono);">' + pr.repo + '</span>'
             + '<span style="color:' + ageColor + ';text-align:right;">' + pr.age_days + 'd</span>'
             + '</div>';
         });
       } else {
-        prHtml = '<div style="font-size: var(--fs-caption);color:#909090;">No active pull requests</div>';
+        prHtml = '<div style="font-size: var(--fs-mono);color:#909090;">No active pull requests</div>';
       }
 
       // Build risks
       var risksHtml = '';
       if (d.risks && d.risks.length) {
         d.risks.forEach(function(r) {
-          risksHtml += '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem 0.5rem;font-size: var(--fs-caption);color:#ccc;border-left:3px solid #ff3333;background:#0a0a0a;margin-bottom:0.3rem;">'
-            + '<span style="font-size: var(--fs-micro);text-transform:uppercase;letter-spacing:0.06em;color:#ff3333;white-space:nowrap;">' + r.type + '</span>'
-            + r.title + ' (' + r.id + ')' + (r.assigned ? ' — ' + r.assigned : '')
+          risksHtml += '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem 0.5rem;font-size: var(--fs-mono);color:#ccc;border-left:3px solid #ff3333;background:#0a0a0a;margin-bottom:0.3rem;">'
+            + '<span style="font-size: var(--fs-mono);text-transform:uppercase;letter-spacing:0.06em;color:#ff3333;white-space:nowrap;">' + r.type + '</span>'
+            + r.title + ' (' + r.id + ')' + (r.assigned ? ' \u2014 ' + r.assigned : '')
             + '</div>';
         });
       } else {
-        risksHtml = '<div style="font-size: var(--fs-caption);color:#909090;">No risks detected</div>';
+        risksHtml = '<div style="font-size: var(--fs-mono);color:#909090;">No risks detected</div>';
+      }
+
+      // Reuse the page's embedded Departure Mono face so the downloaded report renders offline.
+      var monoFaceCss = '';
+      for (var sheetIdx = 0; sheetIdx < document.styleSheets.length && !monoFaceCss; sheetIdx++) {
+        var sheetRules;
+        try { sheetRules = document.styleSheets[sheetIdx].cssRules; } catch (err) { continue; }
+        for (var ruleIdx = 0; ruleIdx < sheetRules.length; ruleIdx++) {
+          var faceRule = sheetRules[ruleIdx];
+          if (faceRule.type === CSSRule.FONT_FACE_RULE && /Departure Mono/.test(faceRule.style.getPropertyValue('font-family'))) {
+            monoFaceCss = faceRule.cssText;
+            break;
+          }
+        }
       }
 
       // Assemble the full report HTML
       var htmlReport = '<!DOCTYPE html>\n<html><head><meta charset="utf-8">\n'
-        + '<title>Sprint Report — ' + sprintName + '</title>\n'
+        + '<title>Sprint Report - ' + sprintName + '</title>\n'
         + '<style>\n'
-        + '@font-face { font-family: "Departure Mono"; src: url("https://cdn.jsdelivr.net/gh/nicholasgasior/departure-mono-font@main/DepartureMono-Regular.woff2") format("woff2"); }\n'
+        + monoFaceCss + '\n'
         + '* { margin: 0; padding: 0; box-sizing: border-box; }\n'
         + 'body { font-family: "Departure Mono", monospace; background: #000; color: #ccc; padding: 2rem; max-width: 1000px; margin: 0 auto; -webkit-font-smoothing: none; }\n'
         + '.report-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }\n'
         + '.report-full { grid-column: 1 / -1; }\n'
         + '.report-card { background: #0a0a0a; border: 1px solid #222; padding: 1rem; }\n'
-        + '.report-card-title { font-size: var(--fs-detail); text-transform: uppercase; letter-spacing: 0.1em; color: #666; margin-bottom: 0.75rem; }\n'
+        + '.report-card-title { font-size: var(--fs-mono); text-transform: uppercase; letter-spacing: 0.1em; color: #666; margin-bottom: 0.75rem; }\n'
         + '.report-header { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #222; margin-bottom: 0.5rem; }\n'
-        + '.report-header h1 { font-size: 1.1rem; color: #fff; text-transform: uppercase; letter-spacing: 0.08em; }\n'
-        + '.report-meta { grid-column: 1 / -1; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.4rem 1.2rem; padding: 0.4rem 0 0.8rem; font-size: var(--fs-detail); color: #909090; }\n'
-        + '.report-meta-val { color: ' + accent + '; font-weight: var(--fw-bold); }\n'
+        + '.report-header h1 { font-size: var(--fs-mono); color: #fff; text-transform: uppercase; letter-spacing: 0.08em; }\n'
+        + '.report-meta { grid-column: 1 / -1; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.4rem 1.2rem; padding: 0.4rem 0 0.8rem; font-size: var(--fs-mono); color: #909090; }\n'
+        + '.report-meta-val { color: ' + accent + ';}\n'
         + '.report-meta-sep { color: #222; }\n'
         + '</style>\n</head><body>\n'
         + '<div class="report-grid">\n'
-        + '  <div class="report-header"><h1>Sprint Report: ' + sprintName + '</h1><span style="font-size: var(--fs-micro);color:#666;">Generated ' + now + '</span></div>\n'
+        + '  <div class="report-header"><h1>Sprint Report: ' + sprintName + '</h1><span style="font-size: var(--fs-mono);color:#666;">Generated ' + now + '</span></div>\n'
         + '  <div class="report-meta">\n'
         + '    <span><span class="report-meta-val">' + sprintName + '</span></span>\n'
         + '    <span class="report-meta-sep">|</span>\n'
-        + '    <span>' + startDate + ' – ' + endDate + '</span>\n'
+        + '    <span>' + startDate + ' \u2013 ' + endDate + '</span>\n'
         + '    <span class="report-meta-sep">|</span>\n'
         + '    <span><span class="report-meta-val">' + d.kpis.total_points + '</span> pts committed</span>\n'
         + '    <span class="report-meta-sep">|</span>\n'
@@ -1880,7 +1889,7 @@
     });
   }
 
-  // Auto-refresh on page load — sprint first, then background-load others
+  // Auto-refresh on page load - sprint first, then background-load others
   loadSprint().then(function() {
     loadSource();
     loadPipelines();

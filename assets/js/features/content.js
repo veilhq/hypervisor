@@ -299,7 +299,7 @@
           var content = section.querySelector(".doc-section-content");
 
           if (!section.hasAttribute("open")) {
-            // Opening — drawer slides open
+            // Opening - drawer slides open
             // Let the browser add [open] so content exists in DOM
             // We need a rAF to measure after the content renders
             requestAnimationFrame(function () {
@@ -324,7 +324,7 @@
             return; // let native <details> open happen
           }
 
-          // Closing — drawer slides closed
+          // Closing - drawer slides closed
           e.preventDefault();
           if (!content) { section.removeAttribute("open"); return; }
 
@@ -349,7 +349,7 @@
       });
     }
 
-    // Content init function — runs on every navigation
+    // Content init function - runs on every navigation
     function contentInit() {
       initTodoFilters();
       initSectionCopy();
@@ -357,13 +357,13 @@
       initSectionCollapse();
     }
 
-    // Register with router lifecycle (no teardown needed — elements are replaced)
+    // Register with router lifecycle (no teardown needed - elements are replaced)
     if (window.__router) {
       window.__router.onNavigate(null, contentInit);
     }
   })();
 
-  // --- Zoom controls (shell-level — init once) ---
+  // --- Zoom controls (shell-level - init once) ---
   (function initZoom() {
     var inBtn = document.getElementById("zoom-in");
     var outBtn = document.getElementById("zoom-out");
@@ -384,6 +384,8 @@
 
     function apply() {
       document.documentElement.style.fontSize = (basePx * zoom / 100) + "px";
+      // Mono stays on its 11px grid: zoom moves it in whole steps only.
+      document.documentElement.style.setProperty("--mono-step", String(Math.max(1, Math.round(zoom / 100))));
       label.textContent = zoom + "%";
       outBtn.classList.toggle("active", zoom < 100);
       inBtn.classList.toggle("active", zoom > 100);
@@ -405,7 +407,7 @@
     });
   })();
 
-  // --- Width toggle (shell-level — init once) ---
+  // --- Width toggle (shell-level - init once) ---
   (function initWidthToggle() {
     var btn = document.getElementById("width-toggle");
     var page = document.getElementById("page-main");
@@ -448,13 +450,15 @@
       setTimeout(function () {
         function done() { exporting = false; }
         try {
-          var html = buildStandalonePage();
           var sourceRelPath = getSourceRelPath();
           var baseFilename = getExportBaseName();
 
+          // The page is rendered server-side through the real site template so
+          // the export layout always matches the live site. The desktop
+          // (pywebview) bridge is required - there is no browser fallback.
           if (window.pywebview && window.pywebview.api && window.pywebview.api.save_export_zip && sourceRelPath) {
             var zipFilename = baseFilename + ".zip";
-            window.pywebview.api.save_export_zip(html, zipFilename, sourceRelPath).then(function (result) {
+            window.pywebview.api.save_export_zip(zipFilename, sourceRelPath).then(function (result) {
               if (result && result.ok) {
                 if (window.__hypervisorToast) window.__hypervisorToast({ variant: "success", message: "exported: " + zipFilename });
               } else if (result && result.error === "cancelled") {
@@ -468,7 +472,7 @@
               done();
             });
           } else {
-            downloadFile(html, baseFilename + ".html", "text/html");
+            if (window.__hypervisorToast) window.__hypervisorToast({ variant: "error", message: "export unavailable" });
             done();
           }
         } catch (e) {
@@ -491,86 +495,8 @@
       if (srcEl && srcEl.textContent) {
         return srcEl.textContent.trim().replace(/\.md$/, "").replace(/[\/\\]/g, "-").replace(/^-+|-+$/g, "");
       }
-      var title = document.title.replace(/ — Hypervisor$/, "").trim().replace(/[^a-zA-Z0-9_-]/g, "-").toLowerCase();
+      var title = document.title.replace(/ - Hypervisor$/, "").trim().replace(/[^a-zA-Z0-9_-]/g, "-").toLowerCase();
       return title || "hypervisor-export";
     }
-
-    function buildStandalonePage() {
-      var css = collectCSS();
-      var title = document.title || "Hypervisor Export";
-      var article = document.getElementById("content-target");
-      var articleHtml = article ? article.innerHTML : "";
-      var breadcrumbs = document.querySelector(".breadcrumbs");
-      var breadcrumbsHtml = breadcrumbs ? breadcrumbs.innerHTML : "";
-      var srcPath = document.getElementById("source-path");
-      var srcPathText = srcPath ? srcPath.textContent : "";
-
-      var out = '<!DOCTYPE html>\n<html lang="en">\n<head>\n';
-      out += '  <meta charset="UTF-8">\n';
-      out += '  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n';
-      out += '  <title>' + HvUtils.escapeHtml(title) + '</title>\n';
-      out += "  <link rel=\"stylesheet\" href=\"https://db.onlinewebfonts.com/c/4571adf8e6d8270ea61a4f43a3ef31d2?family=Departure+Mono\">\n";
-      out += '  <style>\n' + css + '\n  </style>\n';
-      out += '</head>\n<body class="export-mode">\n';
-      out += '<header class="topbar">\n  <div class="topbar-inner">\n    <div class="topbar-left">\n';
-      out += '      <span class="brand"><span class="brand-text">HYPERVISOR</span></span>\n';
-      out += '      <nav class="breadcrumbs" aria-label="Breadcrumb">' + breadcrumbsHtml + '</nav>\n';
-      out += '    </div>\n    <div class="topbar-right"></div>\n  </div>\n</header>\n';
-      out += '<main class="page">\n  <article class="markdown-body">\n' + articleHtml + '\n  </article>\n</main>\n';
-      out += '<footer class="page-footer">\n  <span class="source-path">' + HvUtils.escapeHtml(srcPathText) + '</span>\n';
-      out += '  <span class="footer-sep">|</span>\n  <span class="footer-label">hypervisor export</span>\n</footer>\n';
-      out += '</body>\n</html>';
-      return out;
-    }
-
-    function collectCSS() {
-      var css = "";
-      var sheets = document.styleSheets;
-      for (var i = 0; i < sheets.length; i++) {
-        try {
-          var rules = sheets[i].cssRules || sheets[i].rules;
-          if (!rules) continue;
-          for (var j = 0; j < rules.length; j++) { css += rules[j].cssText + "\n"; }
-        } catch (e) {}
-      }
-      var root = getComputedStyle(document.documentElement);
-      var vars = ["--accent", "--accent-dim", "--accent-glow", "--accent-border", "--warm", "--cool", "--comp"];
-      var overrides = ":root {\n";
-      vars.forEach(function (v) { var val = root.getPropertyValue(v).trim(); if (val) overrides += "  " + v + ": " + val + ";\n"; });
-      overrides += "}\n";
-      overrides += "\n/* Export overrides */\n";
-      overrides += "body.export-mode, body.export-mode * { cursor: auto !important; }\n";
-      overrides += "body.export-mode .topbar::before { backdrop-filter: none; -webkit-backdrop-filter: none; background: #050505; }\n";
-      overrides += "body.export-mode .page-footer { position: relative; backdrop-filter: none; -webkit-backdrop-filter: none; background: #050505; }\n";
-      overrides += "body.export-mode .scroll-top { display: none !important; }\n";
-      overrides += "body.export-mode .search-wrap { display: none; }\n";
-      overrides += "body.export-mode .topbar-inner { grid-template-columns: 1fr; }\n";
-      overrides += "body.export-mode .code-copy { display: none; }\n";
-      overrides += "body.export-mode .section-copy { display: none; }\n";
-      overrides += "body.export-mode { animation: none; }\n";
-      overrides += "body.export-mode, body.export-mode * { user-select: auto !important; -webkit-user-select: auto !important; }\n";
-      overrides += "body.export-mode .page { animation: none; max-width: 1280px; }\n";
-      overrides += "body.export-mode .toc-flag-wrap, body.export-mode .toc-flag-hit, body.export-mode .toc-drawer { display: none; }\n";
-      return overrides + "\n" + css;
-    }
-
-    function downloadFile(content, filename, mimeType) {
-      if (window.pywebview && window.pywebview.api && window.pywebview.api.save_export) {
-        window.pywebview.api.save_export(content, filename).then(function (result) {
-          if (result && result.ok) {
-            if (window.__hypervisorToast) window.__hypervisorToast({ variant: "success", message: "exported: " + filename });
-          }
-        }).catch(function () {});
-        return;
-      }
-      var blob = new Blob([content], { type: mimeType + ";charset=utf-8" });
-      var url = URL.createObjectURL(blob);
-      var a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      a.style.display = "none";
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(function () { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
-    }
   })();
+

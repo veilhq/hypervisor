@@ -7,17 +7,17 @@
 }
 .quiz-dataset-title {
   color: var(--text-dim);
-  font-size: 0.65em;
+  font-size: var(--fs-mono);
   font-weight: var(--fw-normal);
 }
 
 /* ---- Quiz meta bar ---- */
 /* .quiz-meta composes .flex-center (display/align/gap); type + spacing local. */
 .quiz-meta {
-  font-size: var(--fs-caption);
+  font-size: var(--fs-mono);
   color: var(--text-dim);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--track-label);
   margin: var(--space-3) 0 var(--space-2);
 }
 .quiz-meta-sep { color: var(--border-strong); }
@@ -38,23 +38,23 @@
 /* .quiz-progress-fill composes .progress-fill; solid accent (not the primitive
    gradient) and the 0% initial width are the local part. */
 .quiz-progress-fill {
-  background: var(--accent);
+  background: var(--magnitude);
   width: 0%;
 }
 
 /* ---- Quiz card ---- */
 /* .quiz-card composes .content-card (border/radius/bg surface); padding local. */
 .quiz-card {
-  padding: var(--space-1-25);
+  padding: var(--space-5);
 }
 .quiz-card-tags {
   margin-bottom: var(--space-3);
 }
 .quiz-domain {
-  font-size: var(--fs-micro);
-  color: var(--cool);
+  font-size: var(--fs-mono);
+  color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--track-label);
 }
 /* .quiz-type-tag composes .status-chip (silhouette); the default outline
    border + per-type color stay local. */
@@ -62,47 +62,46 @@
   border: var(--border-hair) solid var(--border);
 }
 .quiz-type-recall { color: var(--text-dim); }
-.quiz-type-scenario { color: var(--warm); border-color: var(--warm); }
+.quiz-type-scenario { --badge-tone: var(--warm); color: var(--badge-tone); border-color: var(--badge-tone); }
 /* .quiz-multi-tag composes .status-chip.status-chip-outlined-accent (accent
    color + border from the variant); the heavier weight is the local part. */
 .quiz-multi-tag {
-  font-weight: var(--fw-bold);
 }
 .quiz-question {
-  font-size: var(--fs-body);
+  font-size: var(--fs-mono);
   color: var(--text-bright);
-  line-height: 1.6;
+  line-height: var(--lh-prose);
   margin-bottom: var(--space-4);
 }
 
 /* ---- Options ---- */
 /* .quiz-options composes .flex-stack; the tighter gap + margin are local. */
 .quiz-options {
-  gap: var(--space-0-4);
+  gap: var(--space-2);
   margin-bottom: var(--space-4);
 }
 .quiz-option {
   display: flex;
   align-items: flex-start;
-  gap: var(--space-0-6);
+  gap: var(--space-3);
   padding: var(--space-2) var(--space-3);
   background: var(--bg);
   border: var(--border-hair) solid var(--border);
   border-radius: var(--radius);
   color: var(--text);
   font-family: var(--font);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-mono);
   text-align: left;
-  line-height: 1.5;
+  line-height: var(--lh-body);
   transition: border-color var(--motion-fast) var(--ease), background var(--motion-fast) var(--ease);
 }
 .quiz-option:hover:not(:disabled) {
   border-color: var(--border-strong);
-  background: var(--bg-elevated);
+  background: var(--bg-raised);
 }
 .quiz-option.selected {
-  border-color: var(--accent);
-  background: var(--accent-glow);
+  border-color: var(--selected);
+  background: var(--selected-wash);
 }
 .quiz-option.correct {
   border-color: var(--success);
@@ -124,46 +123,45 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: var(--fs-micro);
-  font-weight: var(--fw-bold);
-  color: var(--text-dim);
+  font-size: var(--fs-mono);
+  color: var(--text-muted);
   border: var(--border-hair) solid var(--border);
   border-radius: var(--radius);
-  margin-top: var(--space-0-1);
+  margin-top: var(--space-1);
 }
 .quiz-option.selected .quiz-option-letter {
-  color: var(--accent);
-  border-color: var(--accent);
+  color: var(--selected);
+  border-color: var(--selected);
 }
 .quiz-option.correct .quiz-option-letter {
   color: var(--bg);
-  background: var(--accent);
-  border-color: var(--accent);
+  background: var(--success);
+  border-color: var(--success);
 }
 .quiz-option.incorrect .quiz-option-letter {
   color: var(--bg);
-  background: var(--comp);
-  border-color: var(--comp);
+  background: var(--error);
+  border-color: var(--error);
 }
 
 /* ---- Feedback ---- */
 .quiz-feedback {
-  font-size: var(--fs-label);
-  line-height: 1.6;
+  font-size: var(--fs-mono);
+  line-height: var(--lh-prose);
   padding: 0;
   min-height: 0;
   transition: all var(--motion-base) var(--ease);
 }
 .quiz-feedback-correct {
-  color: var(--accent-dim);
-  padding: var(--space-0-6) var(--space-3);
-  border-left: var(--border-rail) solid var(--accent);
+  color: var(--success-dim);
+  padding: var(--space-3) var(--space-3);
+  border-left: var(--border-rail) solid var(--success);
   border-radius: var(--radius);
-  background: var(--accent-glow);
+  background: var(--success-wash);
 }
 .quiz-feedback-incorrect {
   color: var(--text);
-  padding: var(--space-0-6) var(--space-3);
+  padding: var(--space-3) var(--space-3);
   border-left: var(--border-rail) solid var(--error);
   border-radius: var(--radius);
   background: color-mix(in srgb, var(--error) 4%, transparent);
@@ -179,42 +177,41 @@
    size, wider tracking, and solid --bg fill are the local overrides. Per-state
    accent/cool colors live on the -check/-next variants below. */
 .quiz-btn {
-  padding: 0.45rem var(--space-1-2);
-  font-size: var(--fs-caption);
-  letter-spacing: 0.08em;
+  padding: var(--space-2) var(--space-5);
+  font-size: var(--fs-mono);
+  letter-spacing: var(--track-label);
   background: var(--bg);
 }
 .quiz-btn-check {
-  border-color: var(--accent);
-  color: var(--accent);
+  border-color: var(--interactive);
+  color: var(--interactive);
 }
 .quiz-btn-check:hover:not(:disabled) {
-  background: var(--accent);
+  background: var(--interactive);
   color: var(--bg);
 }
 .quiz-btn-check:disabled {
   opacity: 0.3;
 }
 .quiz-btn-next {
-  border-color: var(--cool);
-  color: var(--cool);
+  border-color: var(--interactive);
+  color: var(--interactive);
 }
 .quiz-btn-next:hover {
-  background: var(--cool);
+  background: var(--interactive);
   color: var(--bg);
 }
 
 /* ---- Sidebar ---- */
-/* .quiz-sidebar composes .content-card (border/radius/bg surface) — no local
+/* .quiz-sidebar composes .content-card (border/radius/bg surface) - no local
    overrides needed. */
 /* .quiz-sidebar-header composes .flex-center; type + spacing + rule local. */
 .quiz-sidebar-header {
   padding: var(--space-2) var(--space-3);
-  font-size: var(--fs-caption);
-  font-weight: var(--fw-bold);
-  color: var(--text-dim);
+  font-size: var(--fs-mono);
+  color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--track-label);
   border-bottom: var(--border-hair) solid var(--border);
 }
 .quiz-sidebar-body {
@@ -225,22 +222,22 @@
 }
 .quiz-setting label {
   display: block;
-  font-size: var(--fs-caption);
+  font-size: var(--fs-mono);
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin-bottom: var(--space-0-3);
+  letter-spacing: var(--track-body);
+  margin-bottom: var(--space-1);
 }
 /* quiz select + checkbox normalized to shared .form-select / .form-check (see markup). */
 /* .quiz-domain-filters composes .flex-stack; the tighter gap is local. */
 .quiz-domain-filters {
-  gap: var(--space-0-3);
+  gap: var(--space-1);
 }
 /* .quiz-domain-label composes .flex-center; the tighter gap + label type
    (non-uppercase, no tracking) are local. */
 .quiz-domain-label {
-  gap: var(--space-0-4);
-  font-size: var(--fs-caption);
+  gap: var(--space-2);
+  font-size: var(--fs-mono);
   color: var(--text);
   text-transform: none !important;
   letter-spacing: 0 !important;
@@ -253,7 +250,7 @@
 /* ---- Session stats ---- */
 /* .quiz-stat-row composes .flex-between; type + padding local. */
 .quiz-stat-row {
-  font-size: var(--fs-caption);
+  font-size: var(--fs-mono);
   color: var(--text-muted);
   padding: var(--space-1) 0;
 }
@@ -272,47 +269,46 @@
 }
 .quiz-final-pct {
   display: block;
-  font-size: 2.5rem;
-  font-weight: var(--fw-bold);
-  line-height: 1;
-  margin-bottom: var(--space-0-3);
+  font-size: calc(var(--fs-mono) * 3);
+  line-height: var(--lh-tight);
+  margin-bottom: var(--space-1);
 }
 .quiz-final-label {
-  font-size: var(--fs-label);
+  font-size: var(--fs-mono);
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--track-label);
 }
 .quiz-no-missed {
   margin-top: var(--space-3);
-  font-size: var(--fs-label);
-  color: var(--accent);
+  font-size: var(--fs-mono);
+  color: var(--success);
 }
 .quiz-final-note {
   display: block;
-  font-size: var(--fs-micro);
+  font-size: var(--fs-mono);
   color: var(--text-dim);
-  margin-top: var(--space-0-4);
-  letter-spacing: 0.04em;
+  margin-top: var(--space-2);
+  letter-spacing: var(--track-body);
 }
 /* .quiz-summary-actions composes .flex-center-all; margin-top local. */
 .quiz-summary-actions {
-  margin-top: var(--space-1-25);
+  margin-top: var(--space-5);
 }
 
 /* ---- Domain breakdown ---- */
 .quiz-breakdown-title {
-  font-size: var(--fs-caption);
+  font-size: var(--fs-mono);
   color: var(--text-dim);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--track-label);
   margin-bottom: var(--space-3);
 }
 /* .quiz-breakdown-row composes .flex-center; the wider gap + type + margin are local. */
 .quiz-breakdown-row {
   gap: var(--space-3);
   margin-bottom: var(--space-2);
-  font-size: var(--fs-caption);
+  font-size: var(--fs-mono);
 }
 .quiz-breakdown-domain {
   flex: 0 0 140px;
@@ -337,12 +333,12 @@
   position: absolute;
   top: 0;
   left: 0;
-  background: var(--accent);
+  background: var(--magnitude);
 }
 .quiz-breakdown-pct {
   flex: 0 0 2.5rem;
   text-align: right;
-  font-size: var(--fs-caption);
+  font-size: var(--fs-mono);
 }
 
 /* ===== Quiz Tabs ===== */
@@ -353,11 +349,11 @@
   border-bottom: var(--border-hair) solid var(--border);
 }
 .quiz-tab {
-  padding: var(--space-0-4) var(--space-4);
+  padding: var(--space-2) var(--space-4);
   font-family: var(--font);
-  font-size: var(--fs-caption);
+  font-size: var(--fs-mono);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--track-label);
   color: var(--text-dim);
   background: none;
   border: none;
@@ -366,13 +362,13 @@
 }
 .quiz-tab:hover { color: var(--text); }
 .quiz-tab.active {
-  color: var(--accent);
-  border-bottom-color: var(--accent);
+  color: var(--selected);
+  border-bottom-color: var(--selected);
 }
 
 
 /* ===== Study Guide tab ===== */
-/* Domain nav — a wrapped row of toggle chips. Each composes .status-chip
+/* Domain nav - a wrapped row of toggle chips. Each composes .status-chip
    (silhouette); the .active state fills accent, inactive is outlined-muted. */
 .guide-nav {
   display: flex;
@@ -385,22 +381,21 @@
   color: var(--text-muted);
   background: transparent;
   border: var(--border-hair) solid var(--border-strong);
-  /* Larger than the chip default — these are primary filter controls, not
+  /* Larger than the chip default - these are primary filter controls, not
      inline status pills, so lift the font size and padding for comfortable
      clicking. */
-  font-size: var(--fs-label);
+  font-size: var(--fs-mono);
   padding: var(--space-1) var(--space-3);
-  line-height: 1.4;
+  line-height: var(--lh-ui);
 }
-.guide-nav-btn:hover { color: var(--accent); border-color: var(--accent); }
+.guide-nav-btn:hover { color: var(--interactive); border-color: var(--interactive); }
 .guide-nav-btn.active {
   color: var(--bg);
-  background: var(--accent);
-  border-color: var(--accent);
+  background: var(--selected);
+  border-color: var(--selected);
 }
 .guide-nav-num {
-  font-weight: var(--fw-bold);
-  margin-right: var(--space-0-4);
+  margin-right: var(--space-2);
 }
 .guide-nav-num::after { content: ':'; }
 
@@ -426,24 +421,23 @@
   border-bottom: var(--border-hair) solid var(--border);
 }
 .guide-domain-title {
-  font-size: var(--fs-body);
-  font-weight: var(--fw-bold);
-  color: var(--accent);
+  font-size: var(--fs-mono);
+  color: var(--text-bright);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: var(--track-body);
 }
 .guide-domain-weight {
   flex-shrink: 0;
-  font-size: var(--fs-micro);
+  font-size: var(--fs-mono);
   color: var(--text-dim);
-  letter-spacing: 0.04em;
+  letter-spacing: var(--track-body);
 }
 .guide-section + .guide-section { margin-top: var(--space-4); }
 .guide-section-title {
-  font-size: var(--fs-caption);
+  font-size: var(--fs-mono);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--warm);
+  letter-spacing: var(--track-label);
+  color: var(--text-bright);
   margin: 0 0 var(--space-2);
 }
 .guide-list {
@@ -455,13 +449,12 @@
   gap: var(--space-2);
 }
 .guide-list li {
-  font-size: var(--fs-sm);
+  font-size: var(--fs-mono);
   color: var(--text-muted);
-  line-height: 1.6;
+  line-height: var(--lh-prose);
   padding-left: var(--space-3);
   border-left: var(--border-hair) solid var(--border);
 }
 .guide-term {
   color: var(--text-bright);
-  font-weight: var(--fw-bold);
 }

@@ -103,7 +103,7 @@
     var el = document.getElementById("footer-clock");
     if (!el) return;
     function tick() {
-      // Skip the DOM write while hidden — nothing is on screen to read it.
+      // Skip the DOM write while hidden - nothing is on screen to read it.
       if (document.hidden) return;
       var now = new Date();
       var h = String(now.getHours()).padStart(2, "0");
@@ -120,7 +120,7 @@
   })();
 
   // --- Cursor companion box ---
-  // Relocated to Hyperkit (WI-142 follow-up) — window.HvCursorBox is loaded
+  // Relocated to Hyperkit: window.HvCursorBox is loaded
   // before this file. Edit the module in .hyperkit/js/cursor-box.js, not here.
   (function initCursorBox() {
     if (!window.HvCursorBox) return;
@@ -128,10 +128,10 @@
   })();
 
 
-  // --- WebGL cursor trail (WI-119) ---
+  // --- WebGL cursor trail ---
   // Sits directly below the .cursor-box companion (z-index 549 vs 550) and
   // stamps the sitewide pointer SVG along the motion segment each frame.
-  // Idempotent, idle-suspending, and a11y-gated internally — no coordination
+  // Idempotent, idle-suspending, and a11y-gated internally - no coordination
   // needed with the cursor-box above.
   (function initCursorTrail() {
     if (!window.HvCursorTrail) return;

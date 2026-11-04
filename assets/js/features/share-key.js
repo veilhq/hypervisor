@@ -26,7 +26,7 @@
           cancelLabel: "cancel",
           hint: hint
         }).then(function (next) {
-          // Cancelled — leave the key unchanged.
+          // Cancelled - leave the key unchanged.
           if (next === null) return;
 
           window.pywebview.api.set_lan_key(next).then(function (r) {

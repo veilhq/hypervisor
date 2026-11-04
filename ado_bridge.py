@@ -1,5 +1,5 @@
-"""
-ADO Bridge — Azure DevOps data fetching for the Hypervisor desktop app.
+﻿"""
+ADO Bridge - Azure DevOps data fetching for the Hypervisor desktop app.
 
 Extracted from hypervisor-app.py. All methods are standalone functions that
 return dicts suitable for pushing to the frontend via PyWebView bridge.
@@ -23,7 +23,7 @@ TOOLS_DIR = Path(__file__).parent / "tools"
 def refresh_ado_sprint():
     """Fetch core sprint data: iteration, work items, PRs, work requests, burndown.
 
-    This is the fast-path call for the Sprint tab — skips source control
+    This is the fast-path call for the Sprint tab - skips source control
     and pipeline data entirely.
 
     Returns:
@@ -200,7 +200,7 @@ def refresh_ado_source():
 
 
 def refresh_ado_dashboard():
-    """Full dashboard refresh — fetches all tabs in parallel.
+    """Full dashboard refresh - fetches all tabs in parallel.
 
     Returns:
         dict with complete dashboard data or error information.
@@ -274,7 +274,7 @@ def refresh_ado_pipelines_full():
 
 
 def refresh_ado_pipelines():
-    """Lightweight poll — fetch only active/queued pipeline runs.
+    """Lightweight poll - fetch only active/queued pipeline runs.
 
     Used by the 60s auto-poll on the Pipelines tab.
 

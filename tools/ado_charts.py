@@ -1,5 +1,5 @@
 """
-ADO Charts — SVG chart generators for the ADO dashboard.
+ADO Charts - SVG chart generators for the ADO dashboard.
 
 Generates inline SVG that uses Hypervisor's CSS custom properties for theming.
 Charts render in the terminal aesthetic: monospace labels, hard edges, no curves.
@@ -12,7 +12,7 @@ from collections import Counter
 
 
 # ---------------------------------------------------------------------------
-# Color palette — maps to Hypervisor CSS variables
+# Color palette - maps to Hypervisor CSS variables
 # ---------------------------------------------------------------------------
 
 # These are referenced as CSS vars in the SVG style blocks
@@ -27,7 +27,7 @@ CHART_COLORS = [
 
 # State-specific colors for burndown/status charts
 STATE_COLORS = {
-    "Closed": "var(--accent)",
+    "Closed": "var(--success)",
     "Review": "var(--warm)",
     "In Progress": "var(--cool)",
     "Ready": "var(--text-muted)",
@@ -253,7 +253,7 @@ def stacked_bar(data, width=600, height=32):
 # Sparkline (mini line chart for trends)
 # ---------------------------------------------------------------------------
 
-def sparkline(values, width=200, height=40, color="var(--accent)"):
+def sparkline(values, width=200, height=40, color="var(--magnitude)"):
     """Generate a tiny inline sparkline SVG.
 
     Args:
@@ -383,7 +383,7 @@ def pr_timeline(prs, width=600, row_height=28):
 
         # Color based on age (green < 3 days, amber 3-7, red > 7)
         if age <= 2:
-            color = "var(--accent)"
+            color = "var(--success)"
         elif age <= 7:
             color = "var(--warm)"
         else:

@@ -237,7 +237,7 @@
         html += '<span class="pin-card-date">pinned ' + pinnedDate + '</span></div>';
         if (tags.length) {
           html += '<div class="pin-card-tags">';
-          tags.slice(0, 5).forEach(function (tag) { html += '<span class="pin-card-tag">' + HvUtils.escapeHtml(tag) + '</span>'; });
+          tags.slice(0, 5).forEach(function (tag) { html += '<span class="label-badge pin-card-tag">' + HvUtils.escapeHtml(tag) + '</span>'; });
           html += '</div>';
         }
         html += '</div>';

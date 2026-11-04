@@ -1,4 +1,4 @@
-"""ADO dashboard payload builder — shapes raw ADO data into the JSON structure
+"""ADO dashboard payload builder - shapes raw ADO data into the JSON structure
 expected by the hypervisor dashboard UI.
 
 Separated from hypervisor-app.py so the business logic is testable independently.
@@ -144,7 +144,7 @@ def build_dashboard_payload(iteration, work_items, pull_requests, work_requests=
     closed_points = state_points.get("Closed", 0)
     remaining_points = total_points - closed_points
 
-    # Burndown data — provides today's snapshot so the frontend can
+    # Burndown data - provides today's snapshot so the frontend can
     # accumulate a daily series in localStorage across the sprint.
     today_str = datetime.now().strftime("%Y-%m-%d")
 

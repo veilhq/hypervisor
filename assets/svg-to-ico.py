@@ -2,7 +2,7 @@
 
 Rasterizes with PyMuPDF (MuPDF). MuPDF ignores CSS rules in <style> blocks,
 so simple `.class { fill: #hex }` rules are inlined as presentation attributes
-first — this is the pattern Illustrator/Figma SVG exports use.
+first - this is the pattern Illustrator/Figma SVG exports use.
 
 Non-square artwork is scaled to fit and centered on a transparent square canvas
 so the glyph isn't distorted.
@@ -145,7 +145,7 @@ def main() -> None:
     largest = frames[max(sizes)]
     combined = prefix.with_suffix(".ico")
     largest.save(combined, format="ICO", sizes=[(s, s) for s in sizes])
-    print(f"Saved: {combined.name} ({combined.stat().st_size / 1024:.1f} KB) — combined {sizes}")
+    print(f"Saved: {combined.name} ({combined.stat().st_size / 1024:.1f} KB) - combined {sizes}")
 
 
 if __name__ == "__main__":

@@ -1,5 +1,5 @@
 """
-_index.md regeneration logic — generates the navigable index from in-memory state.
+_index.md regeneration logic - generates the navigable index from in-memory state.
 """
 
 from datetime import datetime
@@ -15,6 +15,8 @@ def regenerate_index_file():
 
     with get_index_lock():
         entries = list(index_list)
+        ideas_conventions = index_list.get("ideas/_conventions.md") is not None
+        work_conventions = index_list.get("work/_conventions.md") is not None
 
     now = datetime.now().strftime("%Y-%m-%d")
 
@@ -22,7 +24,6 @@ def regenerate_index_file():
     work_todo = [e for e in entries if e["directory"] == "work/to-do"]
     work_done = [e for e in entries if e["directory"] == "work/done"]
     ideas = [e for e in entries if e["type"] == "idea" and not e["path"].startswith("ideas/_")]
-    ideas_conventions = [e for e in entries if e["path"] == "ideas/_conventions.md"]
     context_entries = [e for e in entries if e["type"] == "context"]
     patterns_entries = [e for e in entries if e["type"] == "pattern"]
     reference_entries = [e for e in entries if e["type"] == "reference"]
@@ -37,9 +38,9 @@ def regenerate_index_file():
         return f"- [{e['title']}]({e['path']}){desc}"
 
     def _work_link(e):
-        """Link formatter for work items — includes WI-N ID prefix."""
+        """Link formatter for work items - includes WI-N ID prefix."""
         wi_id = e.get("work_id")
-        prefix = f"**{wi_id}** — " if wi_id else ""
+        prefix = f"**{wi_id}** \u2014 " if wi_id else ""
         desc = f" - {e['description']}" if e.get("description") else ""
         return f"- {prefix}[{e['title']}]({e['path']}){desc}"
 
@@ -82,7 +83,6 @@ def regenerate_index_file():
     lines.append("Actionable work items. Each file is a unified document containing design, acceptance criteria, tasks, and PR notes. Pending items in `to-do/`, completed in `done/`.")
     lines.append("")
 
-    work_conventions = [e for e in entries if e["path"] == "work/_conventions.md"]
     if work_conventions:
         lines.append("- [Conventions](work/_conventions.md)")
         lines.append("")

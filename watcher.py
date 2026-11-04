@@ -4,7 +4,7 @@ File watcher for the Hypervisor desktop app.
 Watches .hyperspace/**/*.md for changes and triggers incremental rebuilds.
 Uses watchdog with debouncing to handle rapid successive saves.
 
-Content hashing is used to suppress phantom events — on Windows, reading a
+Content hashing is used to suppress phantom events - on Windows, reading a
 file during a build can update its access time, which watchdog may report as
 a modification. By comparing MD5 hashes of file content, we only trigger
 rebuilds when the file's actual bytes have changed.
@@ -41,11 +41,11 @@ class MarkdownHandler(FileSystemEventHandler):
         self._timer = None
         self._lock = threading.Lock()
         self._pending_path = None
-        # Paths written programmatically — events for these are ignored
+        # Paths written programmatically - events for these are ignored
         # until their grace period expires. Maps resolved path → expiry timestamp.
         self._ignored_paths = {}
         self._ignored_lock = threading.Lock()
-        # Content hash cache — maps resolved path → MD5 hex digest.
+        # Content hash cache - maps resolved path → MD5 hex digest.
         # Used to detect phantom events where the OS reports a modification
         # but the file content hasn't actually changed.
         self._content_hashes = {}
@@ -70,7 +70,7 @@ class MarkdownHandler(FileSystemEventHandler):
                 return False
             if time.time() < expiry:
                 return True
-            # Grace period expired — clean up
+            # Grace period expired - clean up
             del self._ignored_paths[resolved]
             return False
 
@@ -91,7 +91,7 @@ class MarkdownHandler(FileSystemEventHandler):
         resolved = str(Path(abs_path).resolve())
         current_hash = self._hash_file(abs_path)
         if current_hash is None:
-            # Can't read the file — treat as changed to be safe
+            # Can't read the file - treat as changed to be safe
             return True
         with self._hash_lock:
             previous_hash = self._content_hashes.get(resolved)
@@ -143,7 +143,7 @@ class MarkdownHandler(FileSystemEventHandler):
             return
         if self._is_ignored(event.src_path):
             return
-        # New file — store its hash and proceed
+        # New file - store its hash and proceed
         self._has_content_changed(event.src_path)
         self._handle(event.src_path)
 
@@ -162,7 +162,7 @@ class MarkdownHandler(FileSystemEventHandler):
         self._debounce(None)
 
     def on_moved(self, event):
-        """Handle file/directory moves — trigger a full rebuild.
+        """Handle file/directory moves - trigger a full rebuild.
 
         watchdog fires MoveEvents (not create+delete pairs) for renames
         and moves. A full rebuild is needed because the old path's page
@@ -183,7 +183,7 @@ class MarkdownHandler(FileSystemEventHandler):
         # accumulating in _content_hashes for the life of the process.
         if src_md:
             self._remove_hash(event.src_path)
-        # File moved — full rebuild to handle old path removal + new path generation
+        # File moved - full rebuild to handle old path removal + new path generation
         self._debounce(None)
 
     def _handle(self, src_path):
@@ -198,7 +198,7 @@ class MarkdownHandler(FileSystemEventHandler):
         self._debounce(rel_path)
 
     def _debounce(self, rel_path):
-        """Debounce rapid events — only fire the callback after the quiet period."""
+        """Debounce rapid events - only fire the callback after the quiet period."""
         with self._lock:
             self._pending_path = rel_path
             if self._timer is not None:

@@ -1,5 +1,5 @@
 /* === Hypervisor: Core (bridge, preferences, toasts) === */
-/* Hypervisor — polished component-feel interactions */
+/* Hypervisor - polished component-feel interactions */
 
 (function () {
   "use strict";
@@ -33,7 +33,7 @@
 
   // --- Persistent preferences (desktop app) ---
   // Single source of truth: preferences.json on disk.
-  // localStorage is an expendable cache — losing it is fine, prefs.json has the truth.
+  // localStorage is an expendable cache - losing it is fine, prefs.json has the truth.
   // One load on init, direct writes via bridge after that. No queue, no coordination.
 
   window.savePreference = function savePreference(key, value) {
@@ -57,7 +57,7 @@
         applyAllPreferences(prefs);
       }
     } catch (e) {
-      // Bridge failed — dismiss splash after safety timeout
+      // Bridge failed - dismiss splash after safety timeout
     }
 
     // --- Show and wire fullscreen toggle ---
@@ -111,7 +111,7 @@
 
     // --- Wire launcher icon row (homepage orchestrator) ---
     // Runs on navigate because launcher icons are in the home content fragment,
-    // not the static shell — they don't exist at initial script execution time.
+    // not the static shell - they don't exist at initial script execution time.
     function wireLaunchers() {
       var launcherBoxes = document.querySelectorAll('.launcher-box[data-launch]');
       for (var i = 0; i < launcherBoxes.length; i++) {
@@ -205,10 +205,13 @@
       } else if (data["hypervisor-screensaver-palette"] === "0") {
         window.__screensaver.setUsePalette(false);
       }
-      if (data["hypervisor-screensaver-clock"] === "0") {
-        window.__screensaver.setShowClock(false);
-      } else if (data["hypervisor-screensaver-clock"] === "1") {
-        window.__screensaver.setShowClock(true);
+      if (data["hypervisor-screensaver-clock-face"] &&
+          typeof window.__screensaver.setClockFace === "function") {
+        window.__screensaver.setClockFace(data["hypervisor-screensaver-clock-face"]);
+      } else if (data["hypervisor-screensaver-clock"] === "0" &&
+                 typeof window.__screensaver.setClockFace === "function") {
+        // Legacy on/off pref: clock turned off maps to the "none" face.
+        window.__screensaver.setClockFace("none");
       }
       if (data["hypervisor-screensaver-idle"]) {
         var idle = parseInt(data["hypervisor-screensaver-idle"], 10);
@@ -235,6 +238,7 @@
         var zOut = document.getElementById("zoom-out");
         var zBase = 14;
         document.documentElement.style.fontSize = (zBase * z / 100) + "px";
+        document.documentElement.style.setProperty("--mono-step", String(Math.max(1, Math.round(z / 100))));
         if (zLabel) zLabel.textContent = z + "%";
         if (zIn) zIn.classList.toggle("active", z > 100);
         if (zOut) zOut.classList.toggle("active", z < 100);
@@ -251,7 +255,7 @@
   });
 
   // --- Scroll position preservation ---
-  // No longer needed — SPA router preserves scroll naturally.
+  // No longer needed - SPA router preserves scroll naturally.
   // Left as a no-op for any code that references __hv_scroll.
 
   // --- Reload helper for desktop app ---
@@ -268,7 +272,7 @@
   };
 
   // --- Toast notifications ---
-  // Relocated to .hyperkit/js/toast.js (WI-142 Phase 1). window.HvToast and
+  // Relocated to .hyperkit/js/toast.js. window.HvToast and
   // window.__hypervisorToast are defined there, loaded before this script.
 
   // --- Custom confirm dialog ---
@@ -283,6 +287,9 @@
 
         var box = document.createElement("div");
         box.className = "confirm-dialog-box";
+        box.setAttribute("role", opts.danger ? "alertdialog" : "dialog");
+        box.setAttribute("aria-modal", "true");
+        box.setAttribute("aria-label", String(message));
 
         // Head cluster: the prose question + optional mono subject read as one
         // tight group, separated from the actions by the box's section gap.
@@ -377,6 +384,9 @@
 
         var box = document.createElement("div");
         box.className = "confirm-dialog-box prompt-dialog";
+        box.setAttribute("role", "dialog");
+        box.setAttribute("aria-modal", "true");
+        box.setAttribute("aria-label", String(message));
 
         // Head cluster: question + optional subject + hint read as one tight
         // group above the input.
@@ -446,12 +456,19 @@
 
         requestAnimationFrame(function () { overlay.classList.add("visible"); });
 
+        // Optional suggestions: a filterable dropdown; free text is still accepted.
+        var suggestList = null;
+        if (opts.suggestions && opts.suggestions.length && window.__hypervisorSuggest) {
+          suggestList = window.__hypervisorSuggest(input, opts.suggestions);
+        }
+
         function dismiss(result) {
           overlay.classList.remove("visible");
           setTimeout(function () {
             if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
           }, 150);
           document.removeEventListener("keydown", onKey);
+          if (suggestList) suggestList.destroy();
           resolve(result);
         }
 

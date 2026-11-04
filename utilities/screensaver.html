@@ -20,8 +20,8 @@
             </select>
           </div>
           <div class="ss-setting-row flex-between">
-            <label for="ss-clock-toggle">Show clock overlay</label>
-            <input type="checkbox" id="ss-clock-toggle" class="form-check" checked>
+            <label for="ss-clock-face">Clock face</label>
+            <select id="ss-clock-face" class="form-select"></select>
           </div>
           <div class="ss-setting-row flex-between">
             <label for="ss-palette-toggle">Use full palette</label>
@@ -35,10 +35,18 @@
             <label for="ss-dither-pattern">GL Dither: pattern</label>
             <select id="ss-dither-pattern" class="form-select">
               <option value="trig">Trig Waves</option>
-              <option value="fbm">FBM Noise</option>
-              <option value="warp">Domain Warp</option>
-              <option value="voronoi-trig">Voronoi × Trig</option>
-              <option value="trig-warp-reaction">Voronoi + Warp</option>
+              <option value="interference">Interference</option>
+              <option value="plasma">Plasma</option>
+              <option value="swirl">Swirl</option>
+              <option value="lissajous">Lissajous</option>
+              <option value="tunnel">Tunnel</option>
+              <option value="kaleidoscope">Kaleidoscope</option>
+              <option value="inkfold">Ink Fold</option>
+              <option value="seamfold">Seam Fold</option>
+              <option value="iris">Iris</option>
+              <option value="fracture">Fracture</option>
+              <option value="phasefold">Phase Fold</option>
+              <option value="logzoom">Log Zoom</option>
             </select>
           </div>
         </div>
@@ -52,7 +60,7 @@
 
 <script>
 (function () {
-  // app.js loads after this inline script — wait for the screensaver API
+  // app.js loads after this inline script - wait for the screensaver API
   function boot() {
     var api = window.__screensaver;
     if (!api) return setTimeout(boot, 50);
@@ -75,7 +83,7 @@
     var currentMode = api.getMode();
     var cardsContainer = document.getElementById("ss-cards");
     var idleSelect = document.getElementById("ss-idle");
-    var clockToggle = document.getElementById("ss-clock-toggle");
+    var clockFaceSelect = document.getElementById("ss-clock-face");
     var paletteToggle = document.getElementById("ss-palette-toggle");
     var launchBtn = document.getElementById("ss-launch");
 
@@ -159,10 +167,26 @@
       api.setIdleTimeout(parseInt(this.value, 10));
     });
 
-    // Clock toggle
-    clockToggle.checked = api.getShowClock();
-    clockToggle.addEventListener("change", function () {
-      api.setShowClock(this.checked);
+    // Clock face select - None first, then one option per registered face.
+    (function buildClockFaces() {
+      var faces = window.ssClockFaces || {};
+      var current = api.getClockFace ? api.getClockFace() : "digital-24";
+      clockFaceSelect.innerHTML = "";
+      var noneOpt = document.createElement("option");
+      noneOpt.value = "none";
+      noneOpt.textContent = "None";
+      clockFaceSelect.appendChild(noneOpt);
+      Object.keys(faces).forEach(function (key) {
+        var meta = faces[key].meta || {};
+        var opt = document.createElement("option");
+        opt.value = key;
+        opt.textContent = meta.name || key;
+        clockFaceSelect.appendChild(opt);
+      });
+      clockFaceSelect.value = current;
+    })();
+    clockFaceSelect.addEventListener("change", function () {
+      if (api.setClockFace) api.setClockFace(this.value);
     });
 
     // Palette toggle

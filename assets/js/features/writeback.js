@@ -1,7 +1,7 @@
 /* === Hypervisor: Write-back (task checkboxes, status) === */
 
   // --- Task checkbox write-back (desktop app only) ---
-  // Uses event delegation on document — survives navigation without reinit.
+  // Uses event delegation on document - survives navigation without reinit.
   (function initTaskWriteBack() {
     document.addEventListener("click", function (e) {
       var taskBox = e.target.closest(".task-box");
@@ -45,7 +45,7 @@
   })();
 
   // --- Status metadata write-back (desktop app only) ---
-  // Uses event delegation on document — survives navigation without reinit.
+  // Uses event delegation on document - survives navigation without reinit.
   (function initStatusWriteBack() {
     var VALID_STATUSES = [
       "Proposed", "In Discussion", "Planned",
@@ -145,8 +145,20 @@
       input.focus();
       input.select();
 
+      // Known assignees as a filterable dropdown; typing a new name still works.
+      // Picking a row commits through the blur handler below.
+      var suggestList = window.__hypervisorSuggest
+        ? window.__hypervisorSuggest(input, [], { anchor: chip, onPick: function () { input.blur(); } })
+        : null;
+      if (suggestList && window.pywebview.api.list_assignees) {
+        window.pywebview.api.list_assignees().then(function (names) {
+          if (input.isConnected) suggestList.setItems(names);
+        }).catch(function () {});
+      }
+
       function commit() {
         var val = input.value.trim();
+        if (suggestList) suggestList.destroy();
         chip.classList.remove("assignee-editing");
 
         if (!val) {
@@ -176,6 +188,7 @@
       }
 
       function cancel() {
+        if (suggestList) suggestList.destroy();
         chip.classList.remove("assignee-editing");
         chip.textContent = originalInitials;
       }
@@ -188,7 +201,7 @@
       input.addEventListener("blur", function () {
         if (committed !== false) { commit(); } else { cancel(); }
       });
-      // Reset the committed flag guard — treat blur-without-keydown as commit
+      // Reset the committed flag guard - treat blur-without-keydown as commit
       committed = true;
     });
   })();

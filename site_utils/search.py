@@ -1,5 +1,5 @@
 """
-Search index builder — generates JSON blob embedded in every page for client-side search.
+Search index builder - generates JSON blob embedded in every page for client-side search.
 """
 
 import re

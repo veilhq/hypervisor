@@ -97,7 +97,7 @@
         // Combine: high-freq dominates for jagged, fractured look
         var v = n1 * 0.3 + n2 * 0.4 + n3 * 0.3;
 
-        // Angular warping — multiple harmonics for complex lobe shapes
+        // Angular warping - multiple harmonics for complex lobe shapes
         var angle = Math.atan2(ny, distFromCenter + 0.01);
         var angularWarp = 0.12 * Math.sin(angle * 2.0 + seed * 0.2) +
                           0.12 * Math.sin(angle * 5.0 - seed * 0.15) +
@@ -105,7 +105,7 @@
                           0.05 * Math.sin(angle * 13.0 - seed * 0.6);
         v += angularWarp;
 
-        // Radial falloff — gentle containment, allows blot to use most of the screen
+        // Radial falloff - gentle containment, allows blot to use most of the screen
         var cy = Math.abs(ny); // 0 at vertical center, 1 at top/bottom
         var radial = 1.0 - Math.pow(distFromCenter * distFromCenter * 0.9 + cy * cy * 0.6, 0.8);
         radial = Math.max(0, radial);
@@ -288,7 +288,7 @@
         if (alphaIdx > ALPHA_STEPS) alphaIdx = ALPHA_STEPS;
         if (alphaIdx < 0) alphaIdx = 0;
 
-        // Color — lookup from pre-built strings
+        // Color - lookup from pre-built strings
         if (palette) {
           var cIdx = isInk ? Math.min(2, Math.floor(inkStrength * 2.99)) : 0;
           ssCtx.fillStyle = colorLUT[cIdx][alphaIdx];

@@ -7,14 +7,6 @@ html.a11y-bw-theme .nav-panel,
 html.a11y-bw-theme .menu-dropdown {
   background: var(--bg-card);
 }
-html.a11y-bw-theme .topbar::before { background: rgba(228, 228, 228, 0.85); }
-html.a11y-bw-theme .page-footer { background: rgba(228, 228, 228, 0.85); }
-html.a11y-bw-theme .topbar-clock { background: var(--comp); color: #ffffff; }
-html.a11y-bw-theme .cmd-palette-overlay { background: rgba(200, 200, 200, 0.75); }
-html.a11y-bw-theme .cmd-palette { background: var(--bg-card); box-shadow: 0 0 24px rgba(0, 0, 255, 0.08), 0 8px 32px rgba(0, 0, 0, 0.15); }
+html.a11y-bw-theme .cmd-palette { background: var(--bg-card); box-shadow: var(--shadow-panel); }
 html.a11y-bw-theme .cmd-palette-input-wrap { background: var(--bg-card-hover); }
-html.a11y-bw-theme .shortcuts-overlay { background: rgba(200, 200, 200, 0.7); }
-html.a11y-bw-theme .modal-overlay { background: rgba(200, 200, 200, 0.75); }
-html.a11y-bw-theme .confirm-dialog-overlay { background: rgba(200, 200, 200, 0.75); }
-html.a11y-bw-theme .nav-backdrop { background: rgba(200, 200, 200, 0.5); }
-html.a11y-bw-theme .scratch-panel { box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1); }
+html.a11y-bw-theme .scratch-panel { box-shadow: none; }

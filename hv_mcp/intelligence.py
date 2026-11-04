@@ -2,7 +2,7 @@
 Phase 2 Smart Context tools: session_brief, suggest_next_action, context_for_work_item.
 
 These tools traverse the in-memory index and backlink graph to deliver
-full context in single calls — replacing multiple file reads with one structured response.
+full context in single calls - replacing multiple file reads with one structured response.
 """
 
 from datetime import datetime, timedelta
@@ -39,6 +39,13 @@ def _get_index_snapshot() -> list[dict]:
     from .index import _index
     with get_index_lock():
         return list(_index)
+
+
+def _get_entry(path: str) -> dict | None:
+    """Thread-safe lookup of one index entry by relative path."""
+    from .index import _index
+    with get_index_lock():
+        return _index.get(path)
 
 
 def _read_file_content(rel_path: str) -> str | None:
@@ -110,7 +117,7 @@ def session_brief(project: str | None = None) -> dict:
     """Return a curated session context summary.
 
     Provides active work, recent decisions/research, stale items, and
-    recent completions — everything needed to start a productive session.
+    recent completions - everything needed to start a productive session.
 
     Args:
         project: Filter to a specific project (optional). If None, returns cross-project view.
@@ -155,7 +162,7 @@ def session_brief(project: str | None = None) -> dict:
     active_work.sort(
         key=lambda x: parse_date(
             best_activity_date(
-                next((e for e in entries if e.get("path") == x["path"]), {})
+                _get_entry(x["path"]) or {}
             )
         ) or datetime.min,
         reverse=True,
@@ -251,10 +258,10 @@ def suggest_next_action() -> dict:
     """Analyze the work landscape and return prioritized action suggestions.
 
     Heuristics:
-    - Work items with all tasks checked but still In Progress → "ready to complete"
-    - Items In Progress for 7+ days with no tasks checked → "may be blocked"
-    - Ideas with 3+ related research docs → "ready to promote"
-    - Planned items with related research already done → "ready to start"
+    - Work items with all tasks checked but still In Progress -> "ready to complete"
+    - Items In Progress for 7+ days with no tasks checked -> "may be blocked"
+    - Ideas with 3+ related research docs -> "ready to promote"
+    - Planned items with related research already done -> "ready to start"
 
     Returns:
         Prioritized list of suggested actions with reasoning.
@@ -392,7 +399,7 @@ def context_for_work_item(slug: str) -> dict:
     """Get a work item plus all linked and related documents as a structured package.
 
     Traverses the backlink graph and tag relationships to deliver full context
-    in one call — replacing 5-8 file reads.
+    in one call - replacing 5-8 file reads.
 
     Args:
         slug: The filename (without .md) of the work item, OR a work item ID (e.g., 'WI-23').
@@ -408,11 +415,11 @@ def context_for_work_item(slug: str) -> dict:
     target_entry = None
     norm_id = normalize_work_id(slug)
     if norm_id:
-        for entry in entries:
-            if entry.get("work_id") and entry["work_id"].upper() == norm_id.upper():
-                target_path = entry["path"]
-                target_entry = entry
-                break
+        from .index import _index
+        with get_index_lock():
+            target_entry = _index.get_by_work_id(norm_id)
+        if target_entry:
+            target_path = target_entry["path"]
         if not target_entry:
             # Fallback: scan work files on disk (handles empty index / startup race)
             import re
@@ -445,7 +452,7 @@ def context_for_work_item(slug: str) -> dict:
         # Find by slug (filename without .md)
         for candidate_dir in ("work/to-do", "work/done"):
             candidate = f"{candidate_dir}/{slug}.md"
-            match = next((e for e in entries if e.get("path") == candidate), None)
+            match = _get_entry(candidate)
             if match:
                 target_path = candidate
                 target_entry = match
@@ -464,7 +471,7 @@ def context_for_work_item(slug: str) -> dict:
     outlinks = get_outlinks_for(target_path)
     linked_docs: list[dict] = []
     for link_path in sorted(outlinks):
-        linked_entry = next((e for e in entries if e.get("path") == link_path), None)
+        linked_entry = _get_entry(link_path)
         if linked_entry:
             linked_docs.append({
                 "path": link_path,
@@ -478,7 +485,7 @@ def context_for_work_item(slug: str) -> dict:
     backlinks_set = get_backlinks_for(target_path)
     backlinks: list[dict] = []
     for bl_path in sorted(backlinks_set):
-        bl_entry = next((e for e in entries if e.get("path") == bl_path), None)
+        bl_entry = _get_entry(bl_path)
         if bl_entry:
             backlinks.append({
                 "path": bl_path,

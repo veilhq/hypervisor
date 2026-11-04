@@ -1,5 +1,5 @@
 """
-Build cache — tracks content hashes to skip re-rendering unchanged documents.
+Build cache - tracks content hashes to skip re-rendering unchanged documents.
 
 Stores MD5 hashes of source .md files and a global "template hash" derived from
 the page template + CSS + JS assets. If a doc's content hash matches the cache
@@ -105,12 +105,12 @@ class BuildCache:
         for brand_svg in sorted(ASSETS_DIR.glob("hypervisor*.svg")):
             hasher.update(brand_svg.read_bytes())
 
-        # Hash Hyperkit CSS (tokens.css, primitives.css — prepended before local CSS)
+        # Hash Hyperkit CSS (tokens.css, primitives.css - prepended before local CSS)
         if HYPERKIT_CSS_DIR.exists():
             for css_file in sorted(HYPERKIT_CSS_DIR.glob("*.css")):
                 hasher.update(css_file.read_bytes())
 
-        # Hash Hyperkit JS (ecosystem modules — loaded before local JS)
+        # Hash Hyperkit JS (ecosystem modules - loaded before local JS)
         if HYPERKIT_JS_DIR.exists():
             for js_file in sorted(HYPERKIT_JS_DIR.glob("*.js")):
                 hasher.update(js_file.read_bytes())

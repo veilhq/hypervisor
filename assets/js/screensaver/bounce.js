@@ -7,7 +7,7 @@
     var bounceState = { x: 0, y: 0, vx: 2, vy: 1.5, hue: 0, colorIdx: 0, size: 64 };
 
     // Brand icon paths (viewBox 0 0 76.72 60.87)
-    // Mirrors assets/hypervisor.svg — update both together when rebranding.
+    // Mirrors assets/hypervisor.svg - update both together when rebranding.
     var BOUNCE_VB_W = 76.72;
     var BOUNCE_VB_H = 60.87;
     var bouncePaths = [
@@ -77,5 +77,5 @@
       ssCtx.restore();
     }
 
-    ssModes.bounce = { init: bounceInit, draw: bounceDraw, resize: bounceResize, meta: { name: "Bounce", icon: "move-diagonal", desc: "A word bouncing off the walls — retro" } };
+    ssModes.bounce = { init: bounceInit, draw: bounceDraw, resize: bounceResize, meta: { name: "Bounce", icon: "move-diagonal", desc: "A word bouncing off the walls - retro" } };
 })();

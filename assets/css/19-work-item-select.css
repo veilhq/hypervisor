@@ -8,8 +8,8 @@ ul.todo-list li.work-item-selected,
 ul.todo-list li.work-item-selected:hover,
 ul.todo-list li.work-item-selected[data-status]:hover {
   background: var(--surface-active);
-  border-color: var(--accent-border);
-  border-left-color: var(--accent);
+  border-color: var(--selected-border);
+  border-left-color: var(--selected);
 }
 
 /* Shift-click range selection should not also paint a text selection. */
@@ -23,7 +23,7 @@ ul.todo-list li[data-selectable] {
   width: 1px;
   height: 1px;
   padding: 0;
-  margin: -1px;
+  margin: calc(var(--border-hair) * -1);
   overflow: hidden;
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;

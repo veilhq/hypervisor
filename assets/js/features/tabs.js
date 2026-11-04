@@ -72,7 +72,7 @@
       // Clear stale flag
       tab.stale = false;
 
-      // Apply cached fragment if available — with crossfade
+      // Apply cached fragment if available - with crossfade
       if (tab.fragment && window.__router) {
         var content = document.getElementById("content-target");
         if (content) {
@@ -240,7 +240,7 @@
       a.href = url;
       var pathname = a.pathname;
 
-      // Don't duplicate if already open — switch to it
+      // Don't duplicate if already open - switch to it
       var existing = tabs.find(function (t) { return t.path === pathname; });
       if (existing) {
         switchTab(existing.id);
@@ -276,7 +276,7 @@
         // Create initial tab from current page
         var path = window.location.pathname;
         var frag = window.__router ? window.__router.getCurrentFragment() : null;
-        var title = frag ? frag.title : document.title.replace(" — Hypervisor", "");
+        var title = frag ? frag.title : document.title.replace(" - Hypervisor", "");
         tabs.push({ id: genId(), path: path, title: title, fragment: frag, scrollPos: 0, stale: false });
         activeTabId = tabs[0].id;
       }
@@ -313,14 +313,14 @@
     };
 
     // --- Expose applyFragment publicly for tab switching ---
-    // The router wraps applyFragment in its own IIFE — we need access.
+    // The router wraps applyFragment in its own IIFE - we need access.
     // We'll hook via a routeChanged event listener + direct navigate for tab switch.
     // Patch switchTab to use navigate for tabs without cached fragments:
     var _origSwitchTab = switchTab;
     switchTab = function (id) {
       var tab = getTab(id);
       if (tab && !tab.fragment && window.__router) {
-        // No cached fragment — need to fetch
+        // No cached fragment - need to fetch
         activeTabId = id;
         var current = getTab(activeTabId);
         // save prev scroll

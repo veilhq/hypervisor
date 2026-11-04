@@ -1,5 +1,5 @@
 """
-site_utils — Hypervisor build modules.
+site_utils - Hypervisor build modules.
 """
 
 from .config import *  # noqa: F401,F403

@@ -1,5 +1,5 @@
 """
-Template drift detection — compares markdown reference templates against
+Template drift detection - compares markdown reference templates against
 programmatic templates (templates.py) to ensure structural consistency.
 
 Checks section headings, metadata field names, and section order.
@@ -17,7 +17,6 @@ from .templates import (
     apply_idea_template,
     apply_document_template,
     apply_adr_template,
-    apply_bugfix_template,
 )
 
 TEMPLATES_DIR = HYPERSPACE_ROOT / "templates"
@@ -94,6 +93,44 @@ def _generate_sample(template_type: str) -> str | None:
                 acceptance_criteria={"Feature Area": ["Criterion one"]},
                 tasks=["Task one"],
                 work_id="WI-0",
+                feature="Sample Feature",
+            )
+        elif template_type == "work-item-bug":
+            return apply_work_item_template(
+                title="Sample Bug",
+                description="Sample description.",
+                tags=["test"],
+                project="General System Development",
+                doc_type="Professional",
+                overview="As a user, I want something.",
+                tasks=["Task one"],
+                work_id="WI-0",
+                kind="bug",
+                feature="Sample Feature",
+                problem="Problem description.",
+                root_cause="Root cause here.",
+                location="Blame unavailable.",
+                fix="Fix description.",
+                acceptance_criteria={"Area": ["Criterion one"]},
+                testing="Test steps here.",
+            )
+        elif template_type == "work-item-spike":
+            return apply_work_item_template(
+                title="Sample Spike",
+                description="Sample description.",
+                tags=["test"],
+                project="General System Development",
+                doc_type="Professional",
+                overview="As a user, I want something.",
+                tasks=["Task one"],
+                work_id="WI-0",
+                kind="spike",
+                feature="Sample Feature",
+                question="The question.",
+                time_box="2 days",
+                acceptance_criteria={"Deliverable": ["Criterion one"]},
+                findings="Findings here.",
+                recommendations="Recommendation here.",
             )
         elif template_type == "idea":
             return apply_idea_template(
@@ -123,18 +160,6 @@ def _generate_sample(template_type: str) -> str | None:
                 consequences="Result Z.",
                 related=["[Link](path.md)"],
             )
-        elif template_type == "bugfix":
-            return apply_bugfix_template(
-                title="Sample Bug",
-                tags=["test"],
-                severity="Medium",
-                affected="component/path",
-                problem="Problem description.",
-                root_cause="Root cause here.",
-                fix="Fix description.",
-                recommendations="Recommendation here.",
-                testing="Test steps here.",
-            )
     except Exception:
         return None
     return None
@@ -143,9 +168,10 @@ def _generate_sample(template_type: str) -> str | None:
 # Map template types to their markdown filenames
 TEMPLATE_MAP = {
     "work-item": "work-item-template.md",
+    "work-item-bug": "work-item-bug-template.md",
+    "work-item-spike": "work-item-spike-template.md",
     "idea": "idea-template.md",
     "adr": "adr-template.md",
-    "bugfix": "bugfix-template.md",
     "document": "hyperspace-document-template.md",
 }
 
@@ -154,9 +180,10 @@ TEMPLATE_MAP = {
 # tool only generates the minimum required structure on creation.
 OPTIONAL_SECTIONS = {
     "work-item": {"open questions", "pr notes"},
+    "work-item-bug": {"open questions", "pr notes"},
+    "work-item-spike": {"open questions", "pr notes"},
     "idea": {"key questions"},
     "adr": {"implementation", "references", "notes"},
-    "bugfix": set(),
     "document": {"code examples", "references", "next steps", "document type guidelines"},
 }
 

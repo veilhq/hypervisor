@@ -32,7 +32,7 @@ def stale_documents(days: int = 30) -> dict:
         activity = best_activity_date(entry)
         dt = parse_date(activity)
         if dt is None:
-            # No parseable date — skip (can't determine staleness)
+            # No parseable date - skip (can't determine staleness)
             continue
 
         age = (now - dt).days
@@ -141,7 +141,7 @@ def tag_analytics() -> dict:
     with get_index_lock():
         entries = list(_index)
 
-    # Exclude template files — their placeholder tags aren't real usage
+    # Exclude template files - their placeholder tags aren't real usage
     entries = [e for e in entries if e.get("type") != "template"]
 
     # --- Usage counts ---

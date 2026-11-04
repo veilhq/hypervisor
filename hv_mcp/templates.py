@@ -1,5 +1,5 @@
 """
-Document template generators — produce markdown content for each document type.
+Document template generators - produce markdown content for each document type.
 """
 
 import re
@@ -39,17 +39,68 @@ def _demote_headings(text: str) -> str:
     return "\n".join(result)
 
 
+WORK_ITEM_KINDS = ("story", "spike", "bug")
+
+_TBD = "_To be determined._"
+
+
+def _render_ac(acceptance_criteria: dict) -> str:
+    """Render {area: [criteria]} as H3 groups of plain bullets."""
+    out = []
+    for section_name, criteria in acceptance_criteria.items():
+        out.append(f"### {section_name}")
+        out.extend(f"- {criterion}" for criterion in criteria)
+        out.append("")
+    return "\n".join(out).rstrip()
+
+
+def _kind_sections(
+    kind: str, problem, root_cause, location, fix, testing,
+    question, time_box, findings, recommendations, acceptance_criteria,
+) -> list[tuple[str, str]]:
+    """Return the (heading, body) sections that replace Design for bugs and spikes."""
+    ac = [("Acceptance Criteria", _render_ac(acceptance_criteria))] if acceptance_criteria else []
+    if kind == "bug":
+        return [
+            ("Problem", _demote_headings(problem or _TBD)),
+            ("Root Cause", _demote_headings(root_cause or _TBD)),
+            ("Location", location or "Blame unavailable: no file or line range was given."),
+            ("Fix", _demote_headings(fix or _TBD)),
+            *ac,
+            ("Testing", _demote_headings(testing or _TBD)),
+        ]
+    if kind == "spike":
+        return [
+            ("Question", _demote_headings(question or _TBD)),
+            ("Time-box", time_box or _TBD),
+            *ac,
+            ("Findings", _demote_headings(findings or _TBD)),
+            ("Recommendation", _demote_headings(recommendations or _TBD)),
+        ]
+    return []
+
+
 def apply_work_item_template(
     title: str, description: str, tags: list[str], project: str,
     doc_type: str, overview: str, design: str | None = None,
     acceptance_criteria: dict | None = None, tasks: list[str] | None = None,
     work_id: str | None = None, open_questions: list[str] | None = None,
     assignee: str = "Josh Wooten", horizon: str = "Backlog",
+    kind: str = "story", feature: str | None = None,
+    problem: str | None = None, root_cause: str | None = None,
+    location: str | None = None, fix: str | None = None,
+    testing: str | None = None, question: str | None = None,
+    time_box: str | None = None, findings: str | None = None,
+    recommendations: str | None = None,
 ) -> str:
-    """Generate a work-item markdown document."""
+    """Generate a work-item markdown document (story, spike, or bug)."""
     now = datetime.now().strftime("%Y-%m-%dT%H:%M")
     overview = _normalize_newlines(overview)
     design = _normalize_newlines(design)
+    problem, root_cause, fix, testing, question, findings, recommendations = (
+        _normalize_newlines(v) for v in
+        (problem, root_cause, fix, testing, question, findings, recommendations)
+    )
     lines = []
     lines.append(f"# {title}")
     lines.append("")
@@ -60,9 +111,12 @@ def apply_work_item_template(
     lines.append(f"- Tags: {', '.join(tags)}")
     if work_id:
         lines.append(f"- ID: {work_id}")
+    lines.append(f"- Kind: {kind.title()}")
     lines.append(f"- Type: {doc_type}")
     lines.append("- Status: Planned")
     lines.append(f"- Project: {project}")
+    if feature:
+        lines.append(f"- Feature: {feature}")
     if assignee:
         lines.append(f"- Assignee: {assignee}")
     lines.append(f"- Horizon: {horizon}")
@@ -74,24 +128,33 @@ def apply_work_item_template(
     lines.append(overview)
     lines.append("")
 
-    if design:
-        design = _demote_headings(design)
-        lines.append("---")
-        lines.append("")
-        lines.append("## Design")
-        lines.append("")
-        lines.append(design)
-        lines.append("")
+    if kind == "story":
+        if design:
+            design = _demote_headings(design)
+            lines.append("---")
+            lines.append("")
+            lines.append("## Design")
+            lines.append("")
+            lines.append(design)
+            lines.append("")
 
-    if acceptance_criteria:
-        lines.append("---")
-        lines.append("")
-        lines.append("## Acceptance Criteria")
-        lines.append("")
-        for section_name, criteria in acceptance_criteria.items():
-            lines.append(f"### {section_name}")
-            for criterion in criteria:
-                lines.append(f"- {criterion}")
+        if acceptance_criteria:
+            lines.append("---")
+            lines.append("")
+            lines.append("## Acceptance Criteria")
+            lines.append("")
+            lines.append(_render_ac(acceptance_criteria))
+            lines.append("")
+    else:
+        for heading, body in _kind_sections(
+            kind, problem, root_cause, location, fix, testing,
+            question, time_box, findings, recommendations, acceptance_criteria,
+        ):
+            lines.append("---")
+            lines.append("")
+            lines.append(f"## {heading}")
+            lines.append("")
+            lines.append(body)
             lines.append("")
 
     if tasks:
@@ -108,8 +171,8 @@ def apply_work_item_template(
         lines.append("")
         lines.append("## Open Questions")
         lines.append("")
-        for question in open_questions:
-            lines.append(f"- {question}")
+        for question_text in open_questions:
+            lines.append(f"- {question_text}")
         lines.append("")
 
     lines.append("---")
@@ -155,7 +218,7 @@ def apply_idea_template(
     if problem:
         lines.append(problem)
     else:
-        lines.append("_To be defined — what's broken, missing, or painful today?_")
+        lines.append("_To be defined - what's broken, missing, or painful today?_")
     lines.append("")
     lines.append("---")
     lines.append("")
@@ -170,7 +233,7 @@ def apply_idea_template(
     if solution_plan:
         lines.append(solution_plan)
     else:
-        lines.append("_To be filled in — high-level approach, major steps, or implementation sketch._")
+        lines.append("_To be filled in - high-level approach, major steps, or implementation sketch._")
     lines.append("")
     if key_questions:
         lines.append("---")
@@ -301,72 +364,5 @@ def apply_adr_template(
         for link in related:
             lines.append(f"- {link}")
         lines.append("")
-
-    return "\n".join(lines)
-
-
-def apply_bugfix_template(
-    title: str, tags: list[str], severity: str, affected: str,
-    problem: str, root_cause: str, fix: str,
-    testing: str | None = None, recommendations: str | None = None,
-) -> str:
-    """Generate a bugfix investigation document."""
-    now = datetime.now().strftime("%Y-%m-%dT%H:%M")
-    problem = _normalize_newlines(problem)
-    root_cause = _normalize_newlines(root_cause)
-    fix = _normalize_newlines(fix)
-    testing = _normalize_newlines(testing)
-    recommendations = _normalize_newlines(recommendations)
-    lines = []
-    lines.append(f"# {title}")
-    lines.append("")
-    lines.append(f"Bug investigation: {title.lower()}.")
-    lines.append("")
-    lines.append(f"- Created: {now}")
-    lines.append(f"- Updated: {now}")
-    lines.append(f"- Tags: {', '.join(tags)}")
-    lines.append("- Status: Identified")
-    lines.append(f"- Severity: {severity}")
-    lines.append(f"- Affected: {affected}")
-    lines.append("")
-    lines.append("---")
-    lines.append("")
-    lines.append("## Problem Description")
-    lines.append("")
-    lines.append(problem)
-    lines.append("")
-    lines.append("---")
-    lines.append("")
-    lines.append("## Root Cause")
-    lines.append("")
-    lines.append(root_cause)
-    lines.append("")
-    lines.append("---")
-    lines.append("")
-    lines.append("## The Fix")
-    lines.append("")
-    lines.append(fix)
-    lines.append("")
-
-    if recommendations:
-        lines.append("---")
-        lines.append("")
-        lines.append("## Additional Recommendations")
-        lines.append("")
-        lines.append(recommendations)
-        lines.append("")
-
-    if testing:
-        lines.append("---")
-        lines.append("")
-        lines.append("## Testing")
-        lines.append("")
-        lines.append(testing)
-        lines.append("")
-
-    lines.append("---")
-    lines.append("")
-    lines.append("## Related")
-    lines.append("")
 
     return "\n".join(lines)

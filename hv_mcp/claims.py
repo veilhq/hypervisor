@@ -1,16 +1,16 @@
 """
-Work item claim verification — sweeps a work item's Implementation Notes,
+Work item claim verification - sweeps a work item's Implementation Notes,
 Tasks, and Acceptance Criteria for file/line references and checks them
 against the actual codebase.
 
 This is heuristic pattern-matching against source, not proof. It surfaces
-candidate gaps and open questions for human review — it never auto-completes
+candidate gaps and open questions for human review - it never auto-completes
 a task or deletes an acceptance criterion. All findings are advisory.
 
 Repo roots are resolved directly from the workspace root (the directory
 containing .hyperspace/), since work items already write paths in
 "{repo-name}/path/to/file.ext" form (e.g. "cyber-portal/api/apps/views.py").
-No project → repo-path config mapping is required — the repo name is already
+No project -> repo-path config mapping is required - the repo name is already
 embedded in the claim text itself.
 """
 
@@ -31,18 +31,18 @@ from .index_file import regenerate_index_file
 # Constants
 # ---------------------------------------------------------------------------
 
-# Workspace root — sibling repos (cyber-portal, portal-cms, etc.) live here,
+# Workspace root - sibling repos (cyber-portal, portal-cms, etc.) live here,
 # one level up from .hyperspace/.
 WORKSPACE_ROOT = HYPERSPACE_ROOT.parent
 
-# Safety cap — max number of distinct file claims read per run, to avoid
+# Safety cap - max number of distinct file claims read per run, to avoid
 # a runaway scan on a work item with an unusually large Implementation Notes
 # section. Claims beyond the cap are reported as "skipped", not silently dropped.
 MAX_FILE_READS = 50
 
 # When an exact claimed line doesn't match, search this many lines above/below
 # before concluding the reference truly no longer holds. Files get edited and
-# lines drift — this distinguishes "moved" from "gone".
+# lines drift - this distinguishes "moved" from "gone".
 LINE_DRIFT_WINDOW = 20
 
 # A claimed line match requires at least this many "identifier-like" tokens
@@ -57,7 +57,7 @@ MIN_MATCH_TOKENS = 1
 #   `portal-cms/app/components/layout/DefaultNavbar.js` line ~145
 #   `cyber-portal/api/permissions/decorators.py` (~line 105)
 #
-# Requires at least one "/" inside the backticks — this is what distinguishes
+# Requires at least one "/" inside the backticks - this is what distinguishes
 # a real repo-relative path from a bare symbol/filename mention like
 # `FAQViewSet.list` or `DefaultNavbar.js`, which show up frequently in prose
 # alongside the real path and would otherwise be misidentified as claims.
@@ -74,7 +74,7 @@ _PATH_LINE_RE = re.compile(
 #   | `Course_Log` / `Content_Log` | `api/cms_logs/models.py` lines 63, 90 | `created_by_user_id` |
 #
 # Unlike _PATH_LINE_RE, the path and the line reference are not required to
-# be adjacent — they can sit in the same table row (line) separated by other
+# be adjacent - they can sit in the same table row (line) separated by other
 # cell content (`|`). This regex scans the whole row for a path cell, then
 # looks for a line reference anywhere later in the same row. A comma-
 # separated list ("lines 63, 90") produces one claim per number; a dash
@@ -112,11 +112,7 @@ def _resolve_work_item(slug: str) -> tuple[str | None, str | None]:
     norm_id = normalize_work_id(slug)
     if norm_id:
         with get_index_lock():
-            entries = list(_index)
-        match = next(
-            (e for e in entries if e.get("work_id") and e["work_id"].upper() == norm_id.upper()),
-            None,
-        )
+            match = _index.get_by_work_id(norm_id)
         if match:
             return match["path"], None
 
@@ -200,7 +196,7 @@ def _extract_table_claims(line: str, source_section: str) -> list[dict]:
     """Extract claims from a single markdown table row.
 
     A table row may reference a path once but list multiple line numbers
-    (e.g. "lines 63, 90" covering two sibling models in the same row) — each
+    (e.g. "lines 63, 90" covering two sibling models in the same row) - each
     number produces its own claim so a stale reference to just one of them
     is still caught. Rows with a path cell but no line reference are treated
     as existence-only claims (line_start/line_end = None), matching the
@@ -208,7 +204,7 @@ def _extract_table_claims(line: str, source_section: str) -> list[dict]:
 
     May produce claims that duplicate ones already found by the inline-prose
     regex in _extract_claims (e.g. when a table cell happens to also satisfy
-    the adjacent `` `path` line N `` shape) — this is intentional. The caller
+    the adjacent `` `path` line N `` shape) - this is intentional. The caller
     (validate_work_item_claims) de-dupes by (path, line_start, line_end), so
     an overlapping single-number match collapses harmlessly while additional
     numbers in a comma-separated list (like the "90" in "lines 63, 90") still
@@ -323,15 +319,15 @@ def _verify_claim(claim: dict) -> dict:
     """Check a single file/line claim against the actual codebase.
 
     Returns the claim dict augmented with a 'result' key:
-        - "file_missing"   — path does not exist under the workspace root
-        - "verified"       — line content plausibly matches the claim
-        - "line_moved"      — file exists, exact line didn't match, but a
+        - "file_missing" - path does not exist under the workspace root
+        - "verified" - line content plausibly matches the claim
+        - "line_moved" - file exists, exact line didn't match, but a
                               matching window was found nearby
-        - "unverifiable"   — file exists but no identifier tokens could be
+        - "unverifiable" - file exists but no identifier tokens could be
                               checked (claim has no extractable content), or
                               no line number was given
-        - "gap"            — file exists, line given, no match found within
-                              the drift window — claim likely stale
+        - "gap" - file exists, line given, no match found within
+                              the drift window - claim likely stale
     """
     full_path = WORKSPACE_ROOT / claim["path"]
 
@@ -341,12 +337,12 @@ def _verify_claim(claim: dict) -> dict:
 
     if claim["line_start"] is None:
         claim["result"] = "unverifiable"
-        claim["reason"] = "No line number given — existence-only check passed."
+        claim["reason"] = "No line number given - existence-only check passed."
         return claim
 
     tokens = _claim_tokens(claim)
     if len(tokens) < MIN_MATCH_TOKENS:
-        # No code-relevant tokens extractable — fall back to line-range existence check.
+        # No code-relevant tokens extractable - fall back to line-range existence check.
         # If the file has enough lines to cover the claimed range, treat as verified
         # (we confirmed the file exists and the claim references a plausible line range).
         try:
@@ -385,21 +381,21 @@ def _verify_claim(claim: dict) -> dict:
         claim["result"] = "verified"
         return claim
 
-    # Drift window — content may have shifted
+    # Drift window - content may have shifted
     if _window_matches(line_start - LINE_DRIFT_WINDOW, line_end + LINE_DRIFT_WINDOW):
         claim["result"] = "line_moved"
         return claim
 
-    # Token overlap failed — but if this is a table-row claim with mostly
+    # Token overlap failed - but if this is a table-row claim with mostly
     # descriptive context (label words), fall back to line-range bounds check.
     # Table claims describe *what* is at a location, not *how* it reads in code.
     all_context_tokens = _identifier_tokens(claim["context"])
     if len(tokens) <= 2 and len(all_context_tokens) > len(tokens) + 3:
-        # Most tokens were filtered as path/label fragments — this is a
+        # Most tokens were filtered as path/label fragments - this is a
         # descriptive table claim. Line-range existence is sufficient.
         if line_start <= len(file_lines):
             claim["result"] = "verified"
-            claim["reason"] = "Descriptive claim — file exists and line range is within bounds."
+            claim["reason"] = "Descriptive claim - file exists and line range is within bounds."
             return claim
 
     claim["result"] = "gap"
@@ -422,30 +418,30 @@ def _build_findings_block(findings: dict, now: str) -> str:
     if missing:
         lines.append("- **Missing files** (referenced path no longer exists):")
         for c in missing:
-            lines.append(f"  - `{c['path']}` — referenced in {c['section']}: \"{c['context'][:120]}\"")
+            lines.append(f"  - `{c['path']}` - referenced in {c['section']}: \"{c['context'][:120]}\"")
         lines.append("")
 
     if gaps:
         lines.append("- **Stale line references** (file exists, claimed content not found nearby):")
         for c in gaps:
             rng = f"line {c['line_start']}" if c['line_start'] == c['line_end'] else f"lines {c['line_start']}-{c['line_end']}"
-            lines.append(f"  - `{c['path']}` {rng} — referenced in {c['section']}: \"{c['context'][:120]}\"")
+            lines.append(f"  - `{c['path']}` {rng} - referenced in {c['section']}: \"{c['context'][:120]}\"")
         lines.append("")
 
     if moved:
-        lines.append("- **Line drift** (content found nearby, but not at the claimed line — file was likely edited):")
+        lines.append("- **Line drift** (content found nearby, but not at the claimed line - file was likely edited):")
         for c in moved:
             rng = f"line {c['line_start']}" if c['line_start'] == c['line_end'] else f"lines {c['line_start']}-{c['line_end']}"
-            lines.append(f"  - `{c['path']}` claimed {rng}, content found within {LINE_DRIFT_WINDOW} lines — verify and update the reference.")
+            lines.append(f"  - `{c['path']}` claimed {rng}, content found within {LINE_DRIFT_WINDOW} lines - verify and update the reference.")
         lines.append("")
 
     if findings.get("possibly_done_tasks"):
-        lines.append("- **Open questions — unchecked tasks with matching code found:**")
+        lines.append("- **Open questions - unchecked tasks with matching code found:**")
         for t in findings["possibly_done_tasks"]:
-            lines.append(f"  - \"{t}\" — related identifiers found in the codebase; confirm whether this task is actually complete.")
+            lines.append(f"  - \"{t}\" - related identifiers found in the codebase; confirm whether this task is actually complete.")
         lines.append("")
 
-    lines.append("_Generated by validate_work_item_claims — heuristic pattern match, not proof. Review before acting._")
+    lines.append("_Generated by validate_work_item_claims - heuristic pattern match, not proof. Review before acting._")
     return "\n".join(lines)
 
 
@@ -473,7 +469,7 @@ def _apply_document_update(rel_path: str, md_text: str, findings_block: str) -> 
             insert_at -= 1
         new_lines = lines[:insert_at] + ["", findings_block, ""] + lines[insert_at:]
     else:
-        # No Implementation Notes section — append one before PR Notes if present,
+        # No Implementation Notes section - append one before PR Notes if present,
         # otherwise at the end of the file.
         pr_notes_idx = None
         for i, line in enumerate(lines):
@@ -551,7 +547,7 @@ def validate_work_item_claims(slug: str, apply_updates: bool = False) -> dict:
         + _extract_claims(ac_text, "Acceptance Criteria")
     )
 
-    # De-dupe identical (path, line_start, line_end) claims — same reference
+    # De-dupe identical (path, line_start, line_end) claims - same reference
     # often appears more than once in prose.
     seen = set()
     deduped = []
@@ -579,7 +575,7 @@ def validate_work_item_claims(slug: str, apply_updates: bool = False) -> dict:
     }
 
     # --- Secondary heuristic: unchecked tasks that mention identifiers
-    # findable in the codebase — surfaced as open questions, never auto-checked ---
+    # findable in the codebase - surfaced as open questions, never auto-checked ---
     unchecked = _extract_unchecked_tasks(md_text)
     for task in unchecked:
         task_claims = _extract_claims(task, "Tasks")

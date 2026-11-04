@@ -1,5 +1,5 @@
 """
-Health history — persists validation snapshots for trend tracking.
+Health history - persists validation snapshots for trend tracking.
 
 Stores snapshots in .hypervisor/state/health-history.json. Each entry records:
 - timestamp
@@ -43,7 +43,7 @@ def record_health_snapshot(validation_result: dict):
     """Append a validation snapshot to the health history.
 
     Args:
-        validation_result: The output of validate_all() — must contain
+        validation_result: The output of validate_all() - must contain
                           'total_documents', 'valid', 'violations', 'top_issues'.
     """
     history = _load_history()

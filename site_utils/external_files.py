@@ -1,4 +1,4 @@
-"""External file operations — import and delete .external/ documents.
+"""External file operations - import and delete .external/ documents.
 
 Pure file-manipulation functions with no PyWebView or window dependencies.
 Called by HypervisorAPI methods that handle rebuild/UI concerns.

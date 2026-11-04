@@ -1,7 +1,7 @@
 /* === Hypervisor: Command Palette (Ctrl+K) === */
 
-  // Unified command palette — fuzzy search across documents, actions, utilities,
-  // tags, and navigation indexes. Pure keyboard-driven with Lucide icons.
+  // Unified command palette - fuzzy search across documents, actions, utilities,
+  // and navigation indexes. Pure keyboard-driven with Lucide icons.
 
   (function initCommandPalette() {
 
@@ -62,7 +62,7 @@
       '<div class="cmd-palette">' +
         '<div class="cmd-palette-input-wrap">' +
           '<i data-lucide="search" class="cmd-palette-icon"></i>' +
-          '<input type="text" class="cmd-palette-input" placeholder="Search documents, actions, tags..." autocomplete="off" spellcheck="false">' +
+          '<input type="text" class="cmd-palette-input" placeholder="Search documents, actions..." autocomplete="off" spellcheck="false">' +
         '</div>' +
         '<div class="cmd-palette-results"></div>' +
         '<div class="cmd-palette-footer">' +
@@ -77,24 +77,6 @@
     var resultsEl = overlay.querySelector(".cmd-palette-results");
     var selectedIdx = -1;
     var currentItems = [];
-
-    // --- Tag index (built from search index) ---
-    var tagIndex = {};
-    function rebuildTagIndex() {
-      tagIndex = {};
-      if (!index || !index.length) return;
-      index.forEach(function (entry) {
-        if (entry.tags) {
-          entry.tags.forEach(function (t) {
-            var key = t.toLowerCase();
-            if (!tagIndex[key]) tagIndex[key] = { label: t, count: 0 };
-            tagIndex[key].count++;
-          });
-        }
-      });
-    }
-    rebuildTagIndex();
-    window.addEventListener("searchIndexReady", rebuildTagIndex);
 
     // --- Fuzzy match ---
     function fuzzyMatch(query, text) {
@@ -160,7 +142,7 @@
         }
       });
 
-      // 3b. Directories (shared source — every indexed hyperspace dir)
+      // 3b. Directories (shared source - every indexed hyperspace dir)
       (window.HvSearchSources ? window.HvSearchSources.directories() : []).forEach(function (d) {
         var score = Math.max(fuzzyMatch(query, d.name), fuzzyMatch(query, d.path));
         if (score > 0) {
@@ -175,32 +157,7 @@
         }
       });
 
-      // 4. Tags
-      Object.keys(tagIndex).forEach(function (key) {
-        var tag = tagIndex[key];
-        var score = fuzzyMatch(query, tag.label);
-        if (score > 0) {
-          results.push({
-            category: "tag",
-            name: tag.label + " (" + tag.count + ")",
-            icon: "tag",
-            hint: "tag",
-            score: score,
-            action: (function (tagLabel) {
-              return function () {
-                closePalette();
-                if (window.__router) window.__router.navigate("/work/to-do/index.html");
-                setTimeout(function () {
-                  var pill = document.querySelector('.tag-pill[data-tag="' + tagLabel + '"]');
-                  if (pill) pill.click();
-                }, 200);
-              };
-            })(tag.label)
-          });
-        }
-      });
-
-      // 5. Navigation indexes
+      // 4. Navigation indexes
       NAV_INDEXES.forEach(function (n) {
         var score = fuzzyMatch(query, n.name);
         if (score > 0) {
@@ -217,7 +174,7 @@
 
       // Order by category band first (directories + utilities surface ahead of
       // documents and the rest), then by score within a band. Cap at 20.
-      var CATEGORY_RANK = { directory: 0, utility: 0, nav: 1, tag: 1, doc: 2, action: 2 };
+      var CATEGORY_RANK = { directory: 0, utility: 0, nav: 1, doc: 2, action: 2 };
       results.sort(function (a, b) {
         var ra = CATEGORY_RANK[a.category] != null ? CATEGORY_RANK[a.category] : 3;
         var rb = CATEGORY_RANK[b.category] != null ? CATEGORY_RANK[b.category] : 3;

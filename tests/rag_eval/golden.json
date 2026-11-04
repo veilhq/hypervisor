@@ -1,0 +1,273 @@
+[
+  {
+    "query": "WI-350",
+    "expected_paths": [
+      "work/to-do/508-accessibility-tech-debt-remediation-jason-s-plan.md"
+    ],
+    "kind": "id"
+  },
+  {
+    "query": "WI-232",
+    "expected_paths": [
+      "work/to-do/ado-pipeline-iam-least-privilege-retire-static-keys-and.md"
+    ],
+    "kind": "id"
+  },
+  {
+    "query": "WI-326",
+    "expected_paths": [
+      "work/to-do/application-level-data-retention-for-the-log-databases.md"
+    ],
+    "kind": "id"
+  },
+  {
+    "query": "WI-171",
+    "expected_paths": [
+      "work/to-do/add-module-organizational-level-to-cms-course-structure.md"
+    ],
+    "kind": "id"
+  },
+  {
+    "query": "WI-255",
+    "expected_paths": [
+      "work/to-do/range-infrastructure-failure-alerting-via-cloudwatch-alarms.md"
+    ],
+    "kind": "id"
+  },
+  {
+    "query": "WI-364",
+    "expected_paths": [
+      "work/to-do/surface-color-inferred-in-the-metrics-dashboard-response.md"
+    ],
+    "kind": "id"
+  },
+  {
+    "query": "work item WI-148",
+    "expected_paths": [
+      "work/to-do/cms-personal-environment-deploy-fix.md"
+    ],
+    "kind": "id"
+  },
+  {
+    "query": "WI-234",
+    "expected_paths": [
+      "work/to-do/external-inbox-for-cross-team-document-delivery.md"
+    ],
+    "kind": "id"
+  },
+  {
+    "query": "stop two editors clobbering each other's changes in the course authoring tool",
+    "expected_paths": [
+      "work/to-do/cms-concurrent-editing.md"
+    ],
+    "kind": "paraphrase"
+  },
+  {
+    "query": "restore the database automatically when a release goes wrong",
+    "expected_paths": [
+      "work/to-do/automated-db-regression-on-failure.md"
+    ],
+    "kind": "paraphrase"
+  },
+  {
+    "query": "keep unsaved course work when the login times out",
+    "expected_paths": [
+      "work/to-do/coursebuilder-draft-persistence.md"
+    ],
+    "kind": "paraphrase"
+  },
+  {
+    "query": "spoken audio of virtual machine screens for blind learners",
+    "expected_paths": [
+      "work/to-do/screen-reader-access-for-range-vm-view.md",
+      "work/to-do/spike-vm-accessibility-read-aloud-images-teacher-text.md"
+    ],
+    "kind": "paraphrase"
+  },
+  {
+    "query": "avoid paying for redundant internet egress gateways in dev",
+    "expected_paths": [
+      "work/to-do/conditional-nat-gateways-for-non-production-environments.md"
+    ],
+    "kind": "paraphrase"
+  },
+  {
+    "query": "email newly signed up people to the marketing platform every week",
+    "expected_paths": [
+      "work/to-do/weekly-new-user-sync-to-constant-contact.md"
+    ],
+    "kind": "paraphrase"
+  },
+  {
+    "query": "let admins carve out exceptions from a broad access grant",
+    "expected_paths": [
+      "work/to-do/role-level-deny-entitlements-iam-style.md"
+    ],
+    "kind": "paraphrase"
+  },
+  {
+    "query": "desktop windows without the OS border and a custom dragging header",
+    "expected_paths": [
+      "work/to-do/frameless-draggable-window-primitive-hyperkit.md"
+    ],
+    "kind": "paraphrase"
+  },
+  {
+    "query": "download a video or just its sound from a web link",
+    "expected_paths": [
+      "work/to-do/media-url-downloader-for-hypercycle.md"
+    ],
+    "kind": "paraphrase"
+  },
+  {
+    "query": "teammates' AI assistants query our documents without write access",
+    "expected_paths": [
+      "work/to-do/expose-read-only-hypervisor-mcp-tools-to-teammate-agents.md"
+    ],
+    "kind": "paraphrase"
+  },
+  {
+    "query": "short outage after switching live traffic between environments",
+    "expected_paths": [
+      "work/to-do/post-swap-503-health-check-gate-runs-before-scale.md"
+    ],
+    "kind": "paraphrase"
+  },
+  {
+    "query": "let support staff pretend to be a learner to troubleshoot",
+    "expected_paths": [
+      "work/to-do/user-impersonation-and-activity-tracking.md"
+    ],
+    "kind": "paraphrase"
+  },
+  {
+    "query": "temporary test sites spun up for each code review request",
+    "expected_paths": [
+      "work/to-do/automatic-per-pr-preview-environments-on-fargate.md",
+      "work/to-do/numbered-pr-preview-environment-slots.md",
+      "work/to-do/pr-preview-environments.md"
+    ],
+    "kind": "paraphrase"
+  },
+  {
+    "query": "picking several grade levels shows nothing in the catalog",
+    "expected_paths": [
+      "work/to-do/grade-level-filters-don-t-stack-in-cms-catalog.md"
+    ],
+    "kind": "paraphrase"
+  },
+  {
+    "query": "why loading fixtures inside a migration step breaks a fresh install",
+    "expected_paths": [
+      "research/best-practices/django-data-migrations.md"
+    ],
+    "kind": "paraphrase"
+  },
+  {
+    "query": "can a different coding assistant CLI sit under the desktop agent app",
+    "expected_paths": [
+      "research/ai-workspace/claude-code-backend-for-hyperagent.md"
+    ],
+    "kind": "paraphrase"
+  },
+  {
+    "query": "why telling a model what not to do works worse than telling it what to do",
+    "expected_paths": [
+      "research/ai-workspace/prohibitive-vs-instructive-steering.md"
+    ],
+    "kind": "paraphrase"
+  },
+  {
+    "query": "exploring monitoring vendor APIs and tool servers for future use",
+    "expected_paths": [
+      "research/infra/datadog-integration-possibilities.md"
+    ],
+    "kind": "paraphrase"
+  },
+  {
+    "query": "replacing fetch calls with a browser unload-safe API for analytics hits",
+    "expected_paths": [
+      "research/portal/beacon-api-for-page-view-tracking.md"
+    ],
+    "kind": "paraphrase"
+  },
+  {
+    "query": "recording per-field change history on Django records",
+    "expected_paths": [
+      "research/portal/django-simple-history-evaluation.md"
+    ],
+    "kind": "paraphrase"
+  },
+  {
+    "query": "sizing subnets and falling back across zones when an instance type is unavailable",
+    "expected_paths": [
+      "research/range/range-multi-az-launch-spike-resolving-subnet-sizing.md"
+    ],
+    "kind": "paraphrase"
+  },
+  {
+    "query": "running a free local language model when paid credits run out",
+    "expected_paths": [
+      "research/ai-workspace/ollama-integration-path-for-hyperagent.md"
+    ],
+    "kind": "paraphrase"
+  },
+  {
+    "query": "how teammates on the same wifi can read our docs without edit rights",
+    "expected_paths": [
+      "context/ecosystem/lan-sharing.md"
+    ],
+    "kind": "paraphrase"
+  },
+  {
+    "query": "policies for clocking hours and taking days off",
+    "expected_paths": [
+      "context/standards/team-operations-and-professionalism.md"
+    ],
+    "kind": "paraphrase"
+  },
+  {
+    "query": "how traffic is routed between virtual private networks and subnets",
+    "expected_paths": [
+      "context/portal/network-topology.md"
+    ],
+    "kind": "paraphrase"
+  },
+  {
+    "query": "brand rules for logos and typefaces",
+    "expected_paths": [
+      "context/standards/cyberorg-style-guide.md"
+    ],
+    "kind": "paraphrase"
+  },
+  {
+    "query": "sourdough bread starter feeding schedule",
+    "expected_paths": [],
+    "kind": "no-answer"
+  },
+  {
+    "query": "configure Istio service mesh ingress gateway on Kubernetes",
+    "expected_paths": [],
+    "kind": "no-answer"
+  },
+  {
+    "query": "NVIDIA quarterly earnings and stock price",
+    "expected_paths": [],
+    "kind": "no-answer"
+  },
+  {
+    "query": "best hiking trails near Denver",
+    "expected_paths": [],
+    "kind": "no-answer"
+  },
+  {
+    "query": "Rust borrow checker lifetime elision rules",
+    "expected_paths": [],
+    "kind": "no-answer"
+  },
+  {
+    "query": "how to knit a wool scarf",
+    "expected_paths": [],
+    "kind": "no-answer"
+  }
+]

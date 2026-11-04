@@ -1,6 +1,6 @@
 <style>
 /* =========================================================================
-   Changelog Viewer — browsable archive of kiro-cli release notes.
+   Changelog Viewer - browsable archive of kiro-cli release notes.
    Reads the persistent archive via pywebview.api.refresh_changelog().
    Self-contained styles, hyperkit tokens throughout. Layout from the shared
    .utility-body primitive.
@@ -17,20 +17,20 @@
   background: transparent;
   border: var(--border-hair) solid var(--border-strong);
 }
-.cl-filter:hover { color: var(--accent); border-color: var(--accent); }
+.cl-filter:hover { color: var(--interactive); border-color: var(--interactive); }
 .cl-filter.active {
   color: var(--bg);
-  background: var(--accent);
-  border-color: var(--accent);
+  background: var(--selected);
+  border-color: var(--selected);
 }
 .cl-meta {
   margin-left: auto;
-  font-size: var(--fs-micro);
+  font-size: var(--fs-mono);
   color: var(--text-dim);
   font-variant-numeric: tabular-nums;
 }
 
-/* ---- Version block — composes .content-card; adds the staggered reveal and
+/* ---- Version block - composes .content-card; adds the staggered reveal and
    the latest-release accent wash. ---- */
 .cl-version {
   margin-bottom: var(--space-3);
@@ -47,10 +47,10 @@
 }
 html.a11y-reduce-motion .cl-version { animation: none !important; opacity: 1; transform: none; }
 
-/* Latest release — accent-glow wash + brighter frame to draw the eye. */
+/* Latest release - accent-glow wash + brighter frame to draw the eye. */
 .cl-version.is-latest {
-  border-color: var(--accent-border);
-  background: linear-gradient(var(--accent-glow), transparent 60%), var(--bg-card);
+  border-color: var(--selected-border);
+  background: linear-gradient(var(--selected-wash), transparent 60%), var(--bg-card);
 }
 
 .cl-version-head {
@@ -59,21 +59,20 @@ html.a11y-reduce-motion .cl-version { animation: none !important; opacity: 1; tr
   border-bottom: var(--border-hair) solid var(--border);
 }
 .cl-version-num {
-  font-size: var(--fs-heading);
-  font-weight: var(--fw-bold);
+  font-size: var(--fs-mono);
   color: var(--text-bright);
   font-variant-numeric: tabular-nums;
 }
-.cl-version.is-latest .cl-version-num { color: var(--accent); }
+.cl-version.is-latest .cl-version-num { color: var(--selected); }
 .cl-version-date {
-  font-size: var(--fs-micro);
+  font-size: var(--fs-mono);
   color: var(--text-dim);
   font-variant-numeric: tabular-nums;
 }
-/* "LATEST" flag composes .status-chip.status-chip-filled — extra tracking only. */
-.cl-latest-flag { letter-spacing: 0.1em; }
+/* "LATEST" flag composes .status-chip.status-chip-filled - extra tracking only. */
+.cl-latest-flag { letter-spacing: var(--track-caps); }
 
-/* Category summary chips in the header — shape-at-a-glance. Compose
+/* Category summary chips in the header - shape-at-a-glance. Compose
    .status-chip; only the count layout + per-category color are local. */
 .cl-summary {
   margin-left: auto;
@@ -82,16 +81,16 @@ html.a11y-reduce-motion .cl-version { animation: none !important; opacity: 1; tr
   justify-content: flex-end;
 }
 .cl-summary-chip {
-  gap: var(--space-0-2);
+  gap: var(--space-1);
   color: var(--text-dim);
   font-variant-numeric: tabular-nums;
 }
 .cl-summary-chip b { font-weight: var(--fw-bold); }
-.cl-summary-chip[data-type="Added"]      { color: var(--accent); border-color: var(--accent-border); }
+.cl-summary-chip[data-type="Added"]      { color: var(--success); border-color: var(--success-border); }
 .cl-summary-chip[data-type="Changed"]     { color: var(--text-muted); }
-.cl-summary-chip[data-type="Fixed"]        { color: var(--cool); }
-.cl-summary-chip[data-type="Security"]     { color: var(--comp); }
-.cl-summary-chip[data-type="Deprecated"]   { color: var(--warm); }
+.cl-summary-chip[data-type="Fixed"]        { color: var(--info); }
+.cl-summary-chip[data-type="Security"]     { color: var(--error); }
+.cl-summary-chip[data-type="Deprecated"]   { color: var(--warning); }
 
 .cl-entries { padding: var(--space-1) 0 var(--space-2); }
 .cl-group-header {
@@ -103,20 +102,20 @@ html.a11y-reduce-motion .cl-version { animation: none !important; opacity: 1; tr
 /* Category badge composes .status-chip; the currentColor border + per-category
    color are the local part. */
 .cl-type-badge { border-color: currentColor; }
-.cl-group-header[data-type="Added"]      { color: var(--accent); }
+.cl-group-header[data-type="Added"]      { color: var(--success); }
 .cl-group-header[data-type="Changed"]     { color: var(--text-muted); }
-.cl-group-header[data-type="Fixed"]        { color: var(--cool); }
-.cl-group-header[data-type="Security"]     { color: var(--comp); }
-.cl-group-header[data-type="Deprecated"]   { color: var(--warm); }
-.cl-group-count { font-size: var(--fs-micro); color: var(--text-dim); font-variant-numeric: tabular-nums; }
+.cl-group-header[data-type="Fixed"]        { color: var(--info); }
+.cl-group-header[data-type="Security"]     { color: var(--error); }
+.cl-group-header[data-type="Deprecated"]   { color: var(--warning); }
+.cl-group-count { font-size: var(--fs-mono); color: var(--text-dim); font-variant-numeric: tabular-nums; }
 
 .cl-entry {
   display: flex;
   align-items: baseline;
   gap: var(--space-2);
   padding: var(--space-1) var(--space-3) var(--space-1) var(--space-5);
-  font-size: var(--fs-sm);
-  line-height: 1.55;
+  font-size: var(--fs-mono);
+  line-height: var(--lh-body);
   color: var(--text-muted);
   transition: color var(--motion-fast) var(--ease);
 }
@@ -130,7 +129,7 @@ html.a11y-reduce-motion .cl-version { animation: none !important; opacity: 1; tr
   padding: var(--space-5);
   text-align: center;
   color: var(--text-dim);
-  font-size: var(--fs-label);
+  font-size: var(--fs-mono);
 }
 </style>
 
@@ -185,7 +184,7 @@ html.a11y-reduce-motion .cl-version { animation: none !important; opacity: 1; tr
     if (v.date) html += '<span class="cl-version-date">' + esc(v.date) + '</span>';
     if (isLatest) html += '<span class="cl-latest-flag status-chip status-chip-filled">Latest</span>';
 
-    // Category summary chips — count per type, in canonical order.
+    // Category summary chips - count per type, in canonical order.
     html += '<span class="cl-summary flex-center">';
     TYPE_ORDER.forEach(function (type) {
       var n = (buckets[type] || []).length;

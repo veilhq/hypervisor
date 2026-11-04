@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-ADO Stats Collector — Prototype
+ADO Stats Collector - Prototype
 
 Pulls Azure DevOps sprint data and generates a hyperspace-compatible markdown
 dashboard file.
@@ -174,8 +174,8 @@ def load_config():
     """Load configuration from environment variables.
 
     Auth priority:
-      1. Azure CLI cached 'az login' session (Entra ID) — preferred
-      2. ADO_PAT environment variable — legacy fallback
+      1. Azure CLI cached 'az login' session (Entra ID) - preferred
+      2. ADO_PAT environment variable - legacy fallback
 
     Returns:
         dict with org, project, team, and auth settings.
@@ -194,7 +194,7 @@ def load_config():
 
     pat = os.environ.get("ADO_PAT")
 
-    # Determine auth method — prefer Entra ID via the cached 'az login' session
+    # Determine auth method - prefer Entra ID via the cached 'az login' session
     use_entra = find_az() is not None
 
     if not use_entra and not pat:
@@ -221,8 +221,8 @@ class ADOClient:
     """Minimal Azure DevOps REST API client.
 
     Supports two auth modes:
-      - Entra ID via the cached 'az login' session — preferred
-      - PAT (Basic auth) — legacy fallback
+      - Entra ID via the cached 'az login' session - preferred
+      - PAT (Basic auth) - legacy fallback
     """
 
     def __init__(self, org, pat=None, use_entra=False):
@@ -244,7 +244,7 @@ class ADOClient:
         """Set the Authorization header from a (cached) Entra ID token.
 
         Args:
-            force: Bypass the token cache — used after an HTTP 401.
+            force: Bypass the token cache - used after an HTTP 401.
         """
         self.session.headers["Authorization"] = f"Bearer {get_entra_token(force=force)}"
 
@@ -594,7 +594,7 @@ class ADOClient:
                     "repo_id": repo_id,
                 }
             except Exception:
-                # Non-fatal — skip branches where diff fails
+                # Non-fatal - skip branches where diff fails
                 continue
 
         return branch_diffs
@@ -704,9 +704,9 @@ def generate_dashboard(iteration, work_items, pull_requests):
     try:
         start_dt = datetime.fromisoformat(start)
         finish_dt = datetime.fromisoformat(finish)
-        date_range = f"{start_dt.strftime('%b %d')} – {finish_dt.strftime('%b %d, %Y')}"
+        date_range = f"{start_dt.strftime('%b %d')} - {finish_dt.strftime('%b %d, %Y')}"
     except ValueError:
-        date_range = f"{start} – {finish}"
+        date_range = f"{start} - {finish}"
 
     state_summary = build_state_summary(work_items)
     team_summary = build_team_summary(work_items)
@@ -717,7 +717,7 @@ def generate_dashboard(iteration, work_items, pull_requests):
     stories = [wi for wi in work_items if wi["fields"].get("System.WorkItemType") != "Bug"]
 
     lines = []
-    lines.append(f"# ADO Sprint Dashboard — {iter_name}")
+    lines.append(f"# ADO Sprint Dashboard - {iter_name}")
     lines.append("")
     lines.append(f"Snapshot of Azure DevOps sprint health for iteration {iter_name} ({date_range}).")
     lines.append("")

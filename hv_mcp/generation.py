@@ -23,6 +23,13 @@ TITLE_LIKELY_DUPLICATE = 85   # token_sort_ratio above this = likely duplicate
 TITLE_REVIEW_THRESHOLD = 65   # title ratio above this triggers review
 COMBINED_REVIEW_THRESHOLD = 0.55  # weighted score above this = review_existing
 
+# Semantic (embedding) path: max chunk cosine similarity per document
+SEMANTIC_TOP_K = 40
+SEMANTIC_LOW = 0.55
+SEMANTIC_MEDIUM = 0.68
+SEMANTIC_HIGH = 0.78
+SEMANTIC_HIGH_WITH_TITLE = 0.72
+
 # Weights for combined similarity scoring
 WEIGHT_TITLE = 0.55
 WEIGHT_TAGS = 0.25
@@ -209,7 +216,7 @@ def suggest_tags(content: str) -> dict:
 # similar_documents
 # ---------------------------------------------------------------------------
 
-def similar_documents(title: str, content: str | None = None) -> dict:
+def _similar_documents_jaccard(title: str, content: str | None = None) -> dict:
     """Find existing documents that overlap with a proposed new document.
 
     Uses three signals:
@@ -310,6 +317,109 @@ def similar_documents(title: str, content: str | None = None) -> dict:
         "recommendation": recommendation,
         "proposed_tags": sorted(proposed_tags),
     }
+
+
+def _semantic_similar(title: str, content: str | None, proposed_tags: set[str]) -> dict | None:
+    """Embedding-based overlap check; returns None when the RAG path is unavailable."""
+    try:
+        from .rag import get_rag
+        rag = get_rag()
+        if rag.is_empty():
+            return None
+        query = f"{title}" + (" " + content[:2000] if content else "")
+        hits = rag.search(query, top_k=SEMANTIC_TOP_K, recency_boost=False, one_per_doc=False)
+    except Exception:  # noqa: BLE001 - any engine failure falls back to Jaccard
+        return None
+
+    # Keyword-only hits carry similarity 0.0 and are not comparable; skip them.
+    docs: dict[str, dict] = {}
+    for h in hits:
+        sim = h.get("similarity") or 0.0
+        if sim <= 0.0:
+            continue
+        cur = docs.get(h["path"])
+        if cur is None or sim > cur["sim"]:
+            docs[h["path"]] = {"sim": sim, "hit": h}
+    if not docs:
+        return None
+
+    title_lower = title.lower()
+    results: list[dict] = []
+    for path, d in docs.items():
+        sim, h = d["sim"], d["hit"]
+        if sim < SEMANTIC_LOW:
+            continue
+        entry_title = h.get("title") or ""
+        title_score = fuzz.token_sort_ratio(title_lower, entry_title.lower()) / 100.0
+        shared = proposed_tags & set(h.get("tags", []))
+
+        if sim >= SEMANTIC_HIGH or (sim >= SEMANTIC_HIGH_WITH_TITLE and title_score >= 0.7):
+            level = "high"
+        elif sim >= SEMANTIC_MEDIUM:
+            level = "medium"
+        else:
+            level = "low"
+
+        reasons = [f"semantic similarity {int(sim * 100)}%"]
+        if h.get("section"):
+            reasons.append(f"closest section: {h['section']}")
+        if title_score >= 0.6:
+            reasons.append(f"title {int(title_score * 100)}% match")
+        if shared:
+            reasons.append(f"shared tags: {', '.join(sorted(shared))}")
+
+        results.append({
+            "path": path,
+            "title": entry_title,
+            "type": h.get("doc_type") or "document",
+            "similarity": level,
+            "score": round(sim, 3),
+            "title_match": int(title_score * 100),
+            "reason": "; ".join(reasons),
+        })
+
+    results.sort(key=lambda x: x["score"], reverse=True)
+    results = results[:10]
+
+    recommendation = "proceed"
+    if results:
+        top = results[0]["similarity"]
+        if top == "high":
+            recommendation = "likely_duplicate"
+        elif top == "medium":
+            recommendation = "review_existing"
+
+    return {
+        "similar": results,
+        "recommendation": recommendation,
+        "proposed_tags": sorted(proposed_tags),
+    }
+
+
+def similar_documents(title: str, content: str | None = None) -> dict:
+    """Find existing documents that overlap with a proposed new document.
+
+    Embeds title+content and aggregates RAG chunk hits per document (max chunk
+    similarity). Falls back to fuzzy title / tag / content Jaccard scoring when
+    the RAG index is empty or the embedding model is unavailable.
+
+    Args:
+        title: Proposed document title.
+        content: Optional body content for deeper comparison.
+
+    Returns:
+        List of similar documents with similarity level and recommendation.
+    """
+    if not title or not title.strip():
+        return {"similar": [], "recommendation": "proceed", "error": "No title provided."}
+
+    combined_text = f"{title} {content[:500] if content else ''}"
+    proposed_tags = set(s["tag"] for s in suggest_tags(combined_text).get("suggestions", [])[:5])
+
+    semantic = _semantic_similar(title, content, proposed_tags)
+    if semantic is not None:
+        return semantic
+    return _similar_documents_jaccard(title, content)
 
 
 # ---------------------------------------------------------------------------

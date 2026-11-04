@@ -1,5 +1,5 @@
 """
-Hypervisor MCP Server — Convention as Code.
+Hypervisor MCP Server - Convention as Code.
 
 Entry point that registers all tools with FastMCP and starts the server.
 All logic lives in the `mcp/` package submodules.
@@ -12,7 +12,7 @@ import sys
 from pathlib import Path
 
 # ---------------------------------------------------------------------------
-# Path setup — ensure mcp package and site_utils are importable
+# Path setup - ensure mcp package and site_utils are importable
 # ---------------------------------------------------------------------------
 _THIS_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(_THIS_DIR))
@@ -60,7 +60,7 @@ server = FastMCP(
 
 
 # ---------------------------------------------------------------------------
-# Tool Registration — Search & Retrieval
+# Tool Registration - Search & Retrieval
 # ---------------------------------------------------------------------------
 
 @server.tool(name="search_hyperspace")
@@ -74,7 +74,7 @@ def search_hyperspace_tool(
 
     Args:
         query: Text to search in titles, descriptions, and snippets (optional).
-        tags: Filter by tags — results must contain ALL specified tags (optional).
+        tags: Filter by tags - results must contain ALL specified tags (optional).
         type: Filter by document type: work-item, idea, research, context, pattern, etc. (optional).
         limit: Maximum results to return (default 20).
 
@@ -107,7 +107,7 @@ def get_work_items_tool(
 
     Args:
         status: Filter by status (Planned, In Progress, Complete). Optional.
-        tags: Filter by tags — results must contain ALL specified tags. Optional.
+        tags: Filter by tags - results must contain ALL specified tags. Optional.
         project: Filter by project name. Optional.
 
     Returns:
@@ -125,26 +125,35 @@ def semantic_search_tool(
     project: str | None = None,
     source_type: str | None = None,
 ) -> list[dict] | dict:
-    """Search hyperspace documents by meaning — finds conceptually related
+    """Search hyperspace documents by meaning - finds conceptually related
     content even when exact keywords don't match. Use this when looking for
     'how does X work', 'what was decided about Y', or 'anything related to Z'.
     Use search_hyperspace instead for exact tag/title filtering.
 
     Hybrid retrieval: dense embedding similarity (sqlite-vec) fused with keyword
-    search (FTS5) via Reciprocal Rank Fusion, then MMR-reranked for diversity.
+    search (FTS5: stemmed, title/section/body weighted) via Reciprocal Rank
+    Fusion. The top candidates are rescored by a cross-encoder, then
+    MMR-reranked for diversity. A query that is just a work item ID (e.g.
+    'WI-123') returns that document's chunks first.
 
     Args:
         query: Natural language question or topic to search for.
         top_k: Maximum results to return (default 5).
-        tags: Filter by tags — results must contain ALL specified tags (optional).
+        tags: Filter by tags - results must contain ALL specified tags (optional).
         doc_type: Filter by document type: work-item, idea, research, context, etc. (optional).
         project: Filter by project name (optional).
         source_type: Filter by source type: 'doc' (authored docs) or 'kb' (agent knowledge bank) (optional).
 
     Returns:
         List of matching chunks with: content, path, title, section, similarity
-        score, doc_type, tags, updated date. Results are ordered by fused
-        relevance with diversity enforced.
+        score, doc_type, tags, updated date. Results are ordered by relevance
+        with diversity enforced. Each result also carries a confidence signal:
+        'rerank_score' (0-1 cross-encoder relevance, null if the reranker is
+        unavailable), 'confidence' ('high' or 'low'), and 'below_floor' (true
+        when the chunk scored under the relevance floor). If every result is
+        low confidence, the corpus likely has no good answer; say so rather
+        than presenting the results as findings. 'matched_by' is 'vector',
+        'keyword', or 'id' (exact work item ID lookup).
     """
     rag = get_rag()
     return rag.search(
@@ -158,7 +167,7 @@ def semantic_search_tool(
 
 
 # ---------------------------------------------------------------------------
-# Tool Registration — Tags
+# Tool Registration - Tags
 # ---------------------------------------------------------------------------
 
 @server.tool(name="get_tags")
@@ -191,7 +200,7 @@ def add_tag_tool(
 
 
 # ---------------------------------------------------------------------------
-# Tool Registration — Validation
+# Tool Registration - Validation
 # ---------------------------------------------------------------------------
 
 @server.tool(name="validate_document")
@@ -216,20 +225,20 @@ def audit_work_item_tool(slug: str) -> dict:
     """Comprehensive reality check for a work item against the codebase and conventions.
 
     Runs four layers of verification:
-    1. Claim verification — checks file/line references in Design, Implementation
+    1. Claim verification - checks file/line references in Design, Implementation
        Notes, Tasks, and Acceptance Criteria against the actual codebase. Detects
        missing files, stale line references, and line drift from edits.
-    2. Pattern conformance — checks whether proposed new infrastructure (models,
+    2. Pattern conformance - checks whether proposed new infrastructure (models,
        tables, signals, services) aligns with existing codebase patterns. Flags
        when the target app already has established patterns the design should use.
-    3. Steering compliance — checks whether design decisions reference existing
+    3. Steering compliance - checks whether design decisions reference existing
        infrastructure and justify divergence when proposing something new.
-    4. Open questions resolution — extracts unresolved questions from the
+    4. Open questions resolution - extracts unresolved questions from the
        ## Open Questions section and searches the codebase for evidence that
        may help answer them. Reports which questions have codebase evidence
        and what was found.
 
-    All findings are advisory — heuristic pattern matching, not proof. This tool
+    All findings are advisory - heuristic pattern matching, not proof. This tool
     never modifies documents or marks tasks complete.
 
     Args:
@@ -255,7 +264,7 @@ def validate_work_item_claims_tool(slug: str, apply_updates: bool = False) -> di
     edits. Also flags unchecked tasks whose described behavior already appears
     to exist in the codebase, as an open question for human review.
 
-    This is heuristic pattern-matching against source, not proof — it never
+    This is heuristic pattern-matching against source, not proof - it never
     auto-completes a task or removes an acceptance criterion. Findings are
     always advisory. Defaults to dry-run (apply_updates=False); pass True to
     write findings into the document's Implementation Notes section.
@@ -284,13 +293,13 @@ def check_task_progress_tool(slug: str, fetch: bool = True,
     Finds branches whose commit author matches the work item's Assignee, then
     matches their changed files against the file references in each task. Answers
     "has this landed yet?" for work assigned to other people, before any PR
-    exists — a PR is a completion artifact, so waiting for one means the signal
+    exists - a PR is a completion artifact, so waiting for one means the signal
     arrives after it stops being useful.
 
     Two evidence sources, because branch diffs alone are insufficient. Unmerged
     branches are diffed against the integration branch. Merged and removed work
     is read from tree state instead, since a fully merged branch produces an
-    empty diff that is indistinguishable from "no work started" — and tree state
+    empty diff that is indistinguishable from "no work started" - and tree state
     additionally survives squash-merges.
 
     Matching keys on basename and backticked symbol rather than the task's stated
@@ -330,7 +339,7 @@ def check_task_progress_tool(slug: str, fetch: bool = True,
 
 
 # ---------------------------------------------------------------------------
-# Tool Registration — CRUD
+# Tool Registration - CRUD
 # ---------------------------------------------------------------------------
 
 @server.tool(name="create_document")
@@ -366,8 +375,6 @@ def create_document_tool(
     decision: str | None = None,
     rationale: str | None = None,
     consequences: str | None = None,
-    severity: str | None = None,
-    affected: str | None = None,
     problem: str | None = None,
     root_cause: str | None = None,
     fix: str | None = None,
@@ -375,11 +382,18 @@ def create_document_tool(
     recommendations: str | None = None,
     assignee: str = "Josh Wooten",
     horizon: str = "Backlog",
+    kind: str = "story",
+    feature: str | None = None,
+    location_file: str | None = None,
+    location_lines: str | None = None,
+    question: str | None = None,
+    time_box: str | None = None,
+    findings: str | None = None,
 ) -> dict:
     """Create a new hyperspace document with full convention enforcement.
 
     Args:
-        type: Document type — work-item, idea, document, adr, bugfix.
+        type: Document type - work-item, idea, document, adr.
         title: Document title.
         tags: List of tags (validated against canonical registry).
         description: One-liner description (shown under H1 and in index).
@@ -390,7 +404,7 @@ def create_document_tool(
         design: Technical design content (optional, work-items).
         acceptance_criteria: Dict of {section_name: [criteria_list]} (optional, work-items).
         tasks: List of task descriptions (optional, work-items).
-        open_questions: List of unresolved implementation questions — scoping ambiguities,
+        open_questions: List of unresolved implementation questions - scoping ambiguities,
             decisions that need to be made before coding starts (optional, work-items).
             Rendered as a dedicated '## Open Questions' section between Tasks and
             Implementation Notes so they're visible before work begins.
@@ -404,15 +418,25 @@ def create_document_tool(
         decision: ADR decision statement (required for type='adr').
         rationale: ADR rationale (required for type='adr').
         consequences: ADR consequences (optional).
-        severity: Bug severity — Low, Medium, High, Critical (required for bugfix).
-        affected: Affected component/path (required for bugfix).
-        problem: Problem description — what's broken or missing (optional for ideas, required for bugfix).
-        root_cause: Root cause analysis (required for bugfix).
-        fix: Fix description (required for bugfix).
-        testing: Testing steps (optional, bugfix).
-        recommendations: Additional recommendations (optional, bugfix).
+        problem: What's broken or missing (optional for ideas, required for kind='bug').
+        root_cause: Root cause analysis (optional, kind='bug').
+        fix: Fix description (optional, kind='bug').
+        testing: Verification steps (optional, kind='bug').
+        recommendations: Recommended next step (optional, kind='spike').
+        kind: Work-item kind - story (default), spike (time-boxed research), or bug.
+            Each kind renders its own sections; all share the ID sequence, Status,
+            Horizon, and Assignee.
+        feature: Name of the feature the work item belongs to (required for work-items).
+            The overview must mention it by name and say how the item contributes to it.
+        location_file: File where a bug lives, absolute or relative to the workspace root
+            (optional, kind='bug'). With location_lines, git blame is captured into the
+            Location section at creation time.
+        location_lines: Line or inclusive range such as '120' or '120-135' (optional, kind='bug').
+        question: The question a spike answers (required for kind='spike').
+        time_box: How long the spike may run, such as '2 days' (required for kind='spike').
+        findings: What the spike found (optional, kind='spike').
         assignee: Full name of the person assigned (defaults to Josh Wooten). Work-items only.
-        horizon: Sprint planning horizon — Sprint, Sprint+1, Sprint+2, Sprint+3, or Backlog
+        horizon: Sprint planning horizon - Sprint, Sprint+1, Sprint+2, Sprint+3, or Backlog
             (default Backlog). Work-items only.
 
     Returns:
@@ -425,10 +449,12 @@ def create_document_tool(
         tasks=tasks, open_questions=open_questions, concept=concept, key_questions=key_questions,
         content=content, related=related, solution_plan=solution_plan,
         number=number, context_text=context_text, decision=decision,
-        rationale=rationale, consequences=consequences,
-        severity=severity, affected=affected, problem=problem,
+        rationale=rationale, consequences=consequences, problem=problem,
         root_cause=root_cause, fix=fix, testing=testing,
         recommendations=recommendations, assignee=assignee, horizon=horizon,
+        kind=kind, feature=feature, location_file=location_file,
+        location_lines=location_lines, question=question, time_box=time_box,
+        findings=findings,
     )
 
 
@@ -454,7 +480,7 @@ def update_document_tool(
         project: New project name (validated against registry).
         doc_type: New Type value (Personal or Professional).
         assignee: Full name of assignee. Pass empty string to clear.
-        horizon: Sprint planning horizon — Sprint, Sprint+1, Sprint+2, Sprint+3, or Backlog.
+        horizon: Sprint planning horizon - Sprint, Sprint+1, Sprint+2, Sprint+3, or Backlog.
 
     Returns:
         Confirmation with updated fields, or error.
@@ -481,7 +507,7 @@ def move_work_item_tool(slug: str) -> dict:
 
 @server.tool(name="end_sprint")
 def end_sprint_tool() -> dict:
-    """End the current sprint — cascade all work item Horizon values forward.
+    """End the current sprint - cascade all work item Horizon values forward.
 
     Reads all open work items in work/to-do/, applies the sprint cascade:
     - Sprint items that are still open remain Sprint (rolled over)
@@ -491,7 +517,7 @@ def end_sprint_tool() -> dict:
     - Backlog remains Backlog
     - Completed items (in done/) are unaffected
 
-    This is a stateless operation — no sprint counter is tracked.
+    This is a stateless operation - no sprint counter is tracked.
 
     Returns:
         Summary of how many items were moved per horizon slot.
@@ -501,7 +527,7 @@ def end_sprint_tool() -> dict:
 
 
 # ---------------------------------------------------------------------------
-# Tool Registration — Phase 2: Analytics & Health
+# Tool Registration - Phase 2: Analytics & Health
 # ---------------------------------------------------------------------------
 
 @server.tool(name="stale_documents")
@@ -542,7 +568,7 @@ def tag_analytics_tool() -> dict:
 
 
 # ---------------------------------------------------------------------------
-# Tool Registration — Phase 2: Smart Context
+# Tool Registration - Phase 2: Smart Context
 # ---------------------------------------------------------------------------
 
 @server.tool(name="session_brief")
@@ -584,7 +610,7 @@ def context_for_work_item_tool(slug: str) -> dict:
     """Get a work item plus all linked and related documents in one call.
 
     Traverses the backlink graph and tag relationships to deliver full context
-    as a structured package — replacing 5-8 individual file reads.
+    as a structured package - replacing 5-8 individual file reads.
 
     Args:
         slug: The filename (without .md) of the work item, OR a work item ID (e.g., 'WI-23').
@@ -597,7 +623,7 @@ def context_for_work_item_tool(slug: str) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# Tool Registration — Phase 2: Template Evolution & Migration
+# Tool Registration - Phase 2: Template Evolution & Migration
 # ---------------------------------------------------------------------------
 
 @server.tool(name="migrate_document")
@@ -612,7 +638,7 @@ def migrate_document_tool(path: str = "all", dry_run: bool = True) -> dict:
     - Normalizes dates to YYYY-MM-DDTHH:MM format
     - Reorders metadata to canonical order
 
-    Never modifies content sections — only structural metadata.
+    Never modifies content sections - only structural metadata.
 
     Args:
         path: Relative path to a document, or "all" for batch mode. Default "all".
@@ -636,7 +662,7 @@ def get_schema_changelog_tool() -> dict:
 
 
 # ---------------------------------------------------------------------------
-# Tool Registration — Phase 2: Content Generation
+# Tool Registration - Phase 2: Content Generation
 # ---------------------------------------------------------------------------
 
 @server.tool(name="suggest_tags")
@@ -647,7 +673,7 @@ def suggest_tags_tool(content: str) -> dict:
     to produce confidence-ranked suggestions from the canonical registry.
 
     Args:
-        content: Text to analyze — can be a title, description, or body content.
+        content: Text to analyze - can be a title, description, or body content.
 
     Returns:
         Ranked tag suggestions with confidence scores (0-1) and matching reasons.
@@ -677,7 +703,7 @@ def outline_work_item_tool(description: str) -> dict:
     """Generate a structured work item outline from freeform text.
 
     Produces suggested title, tags, project, overview (user story), acceptance
-    criteria stubs, and task stubs — ready for review before create_document.
+    criteria stubs, and task stubs - ready for review before create_document.
 
     Args:
         description: Freeform text describing what needs to be built or fixed.
@@ -689,7 +715,7 @@ def outline_work_item_tool(description: str) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# Tool Registration — App Launcher
+# Tool Registration - App Launcher
 # ---------------------------------------------------------------------------
 
 @server.tool(name="launch_hypervisor")
@@ -715,7 +741,7 @@ def _startup():
     Called once regardless of transport mode. For HTTP mode this runs before
     the uvicorn server starts accepting connections. RAG engine loading is
     deferred to a background thread so the server starts accepting connections
-    immediately — the embedding model loads on first use or shortly after boot.
+    immediately - the embedding model loads on first use or shortly after boot.
     """
     logger.info("initializing search index and file watcher")
     rebuild_index()
@@ -737,7 +763,7 @@ def _warm_rag_background():
             _rag_instance = get_rag()
             result = _rag_instance.reindex_changed()
             indexed = result.get("documents_indexed", 0) if isinstance(result, dict) else 0
-            logger.info("background: RAG ready — %d docs reindexed", indexed)
+            logger.info("background: RAG ready - %d docs reindexed", indexed)
         except Exception as exc:
             logger.error("background: RAG init failed: %s", exc)
 
@@ -746,7 +772,7 @@ def _warm_rag_background():
 
 
 # ---------------------------------------------------------------------------
-# Service Lock — allows Hypervisor/Hyperagent to discover a running instance
+# Service Lock - allows Hypervisor/Hyperagent to discover a running instance
 # ---------------------------------------------------------------------------
 
 _SERVICE_LOCK = _THIS_DIR / ".mcp_service_running"
@@ -761,7 +787,7 @@ def _write_service_lock(port: int):
 
 
 def _remove_service_lock():
-    """Clean up the lock file on shutdown — only if we own it.
+    """Clean up the lock file on shutdown - only if we own it.
 
     A race between two instances can leave the winner's lock in place while
     the loser exits. Unconditional deletion here would remove the live
@@ -773,10 +799,10 @@ def _remove_service_lock():
         if _SERVICE_LOCK.exists():
             lines = _SERVICE_LOCK.read_text(encoding="utf-8").strip().split("\n")
             if int(lines[0]) != os.getpid():
-                return  # lock belongs to another instance — leave it alone
+                return  # lock belongs to another instance - leave it alone
         _SERVICE_LOCK.unlink(missing_ok=True)
     except (OSError, ValueError, IndexError):
-        # Malformed or inaccessible — safe to remove
+        # Malformed or inaccessible - safe to remove
         try:
             _SERVICE_LOCK.unlink(missing_ok=True)
         except OSError:
@@ -787,7 +813,7 @@ def _is_service_running() -> tuple[bool, int | None]:
     """Check if a shared MCP service is already running.
 
     Returns:
-        (is_running, port) — port is None if not running.
+        (is_running, port) - port is None if not running.
     """
     if not _SERVICE_LOCK.exists():
         return False, None
@@ -848,7 +874,7 @@ if __name__ == "__main__":
         running, existing_port = _is_service_running()
         if running:
             logger.error(
-                "MCP service already running on port %d — exiting", existing_port
+                "MCP service already running on port %d - exiting", existing_port
             )
             print(
                 f"Hypervisor MCP service already running on port {existing_port}. "
@@ -870,18 +896,18 @@ if __name__ == "__main__":
         logger.info("starting in HTTP mode on port %d", args.port)
         _startup()
 
-        # Warm the RAG engine in background — server accepts connections immediately
+        # Warm the RAG engine in background - server accepts connections immediately
         _warm_rag_background()
 
         logger.info("accepting connections on http://127.0.0.1:%d/mcp", args.port)
         print(f"Hypervisor MCP service starting on http://127.0.0.1:{args.port}/mcp")
         server.run(transport="streamable-http")
     else:
-        # Legacy stdio mode — backward compatible, RAG must be ready before
+        # Legacy stdio mode - backward compatible, RAG must be ready before
         # tool calls arrive since there's no concurrent connection model
         logger.info("starting in stdio mode")
         _startup()
-        logger.info("loading RAG engine (stdio — synchronous)")
+        logger.info("loading RAG engine (stdio - synchronous)")
         _rag_instance = get_rag()
         _rag_instance.reindex_changed()
         logger.info("RAG ready, serving")
