@@ -79,7 +79,7 @@
     container.innerHTML =
       '<span class="doc-title-tags-count" title="' +
       escapeHtml(allTags.join(", ")) +
-      '">' + n + " TAG" + (n === 1 ? "" : "S") + "</span>";
+      '">' + (n < 10 ? "0" + n : n) + " TAG" + (n === 1 ? "" : "S") + "</span>";
   }
 
   function escapeHtml(s) {

@@ -4,13 +4,6 @@
    stats, and empty state. Layout comes from the shared .utility-body
    primitive. Tokens from hyperkit/css/tokens.css. */
 
-.skills-intro {
-  color: var(--text-muted);
-  font-size: var(--fs-mono);
-  line-height: var(--lh-prose);
-  max-width: 68ch;
-  margin: 0 0 var(--space-5);
-}
 
 /* ---- Toolbar ---- */
 .skills-toolbar {

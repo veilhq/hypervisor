@@ -331,6 +331,7 @@ JS lives in `assets/js/` organized into four subdirectories. During build, `buil
 | `effects.js` | Terminal glitch effect, footer clock, cursor companion box |
 | `ideas-dismiss.js` | Dismiss/delete buttons on ideas/ directory page (lifecycle-aware, requires bridge) |
 | `live-reload.js` | Build-change polling, fragment re-fetch via router |
+| `rebuild-queue.js` | Pending-rebuild toast with a "Rebuild now" flush action |
 | `pins.js` | Pinboard: pin CRUD, card rendering, per-page pin button (lifecycle-aware) |
 | `scratch.js` | Scratch buffer / daily journal — backtick hotkey, auto-save, history browsing (requires bridge) |
 | `shortcuts.js` | Keyboard shortcuts overlay |
@@ -464,8 +465,8 @@ The site runs inside PyWebView with a Bottle HTTP server. All paths are absolute
 
 The desktop app uses fragment-based live reload — no full page reload needed:
 
-1. File watcher detects a `.md` change and calls `build_single_file(rel_path)`
-2. `build_single_file` regenerates the changed document's fragment JSON, affected directory index fragments, the homepage fragment, and `nav-state.json`
+1. File watcher detects a `.md` change and queues it. The queue coalesces paths and runs one build after a 3s quiet period (15s maximum hold), or immediately when flushed from the UI. While changes wait, a sticky toast shows the pending count with a "Rebuild now" action (`features/rebuild-queue.js`, bridge method `flush_rebuild_queue`). Deletions, moves, and HTML changes mark the batch as a full rebuild.
+2. `build_files(paths)` regenerates each changed document's fragment JSON, then the affected directory index fragments, the homepage fragment, and `nav-state.json` once for the whole batch (`build_single_file` wraps it for one path)
 3. Python calls `window.__hypervisorReload()` via PyWebView's `evaluate_js`
 4. `__hypervisorReload()` calls `router.reload()` which re-fetches the current page's fragment with a cache-busting `?t=` parameter
 5. The router applies the new fragment (content swap, TOC update, lifecycle hooks)

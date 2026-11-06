@@ -41,7 +41,7 @@
     if (pinCount) {
       try {
         var pins = JSON.parse(localStorage.getItem("hypervisor-pins") || "[]");
-        if (pins.length > 0) pinCount.textContent = pins.length;
+        if (pins.length > 0) pinCount.textContent = HvUtils.pad2(pins.length);
       } catch (e) {}
     }
   })();

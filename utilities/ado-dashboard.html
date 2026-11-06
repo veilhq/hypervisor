@@ -407,6 +407,17 @@
 .dash-wr-item:hover {
   border-color: var(--interactive);
 }
+.dash-wr-state { font-size: var(--fs-mono); }
+.dash-wr-assigned {
+  color: var(--text-muted);
+  font-size: var(--fs-mono);
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dash-note { font-size: var(--fs-mono); color: var(--text-muted); }
+.dash-count-tag { margin-left: var(--space-1); color: var(--text-muted); }
 
 /* Work Request filters - wrapper composes .flex-center (local: wrap + gap +
    margin). Each filter composes .action-button (ghost pill); local: the card
@@ -504,27 +515,27 @@
 
   <!-- KPI tiles -->
   <div class="kpi-grid">
-    <div class="kpi-tile">
+    <div class="kpi-tile kpi-tile-display">
       <div class="kpi-tile-label">Committed</div>
       <div class="kpi-tile-value" id="kpi-total-pts">&mdash;</div>
       <div class="kpi-tile-sub">story points</div>
     </div>
-    <div class="kpi-tile">
+    <div class="kpi-tile kpi-tile-display">
       <div class="kpi-tile-label">Remaining</div>
       <div class="kpi-tile-value" id="kpi-remaining-pts">&mdash;</div>
       <div class="kpi-tile-sub"><span id="kpi-pct-label"></span> burned</div>
     </div>
-    <div class="kpi-tile">
+    <div class="kpi-tile kpi-tile-display">
       <div class="kpi-tile-label">Days Left</div>
       <div class="kpi-tile-value" id="kpi-days-left">&mdash;</div>
       <div class="kpi-tile-sub">working days</div>
     </div>
-    <div class="kpi-tile">
+    <div class="kpi-tile kpi-tile-display">
       <div class="kpi-tile-label">Active PRs</div>
       <div class="kpi-tile-value" id="kpi-prs">&mdash;</div>
       <div class="kpi-tile-sub">open for review</div>
     </div>
-    <div class="kpi-tile">
+    <div class="kpi-tile kpi-tile-display">
       <div class="kpi-tile-label">Work Requests</div>
       <div class="kpi-tile-value" id="kpi-wr-count">&mdash;</div>
       <div class="kpi-tile-sub">outstanding</div>
@@ -645,7 +656,7 @@
 
   <!-- Work Requests -->
   <div class="dash-card dash-full content-card flex-stack">
-    <div class="dash-card-title flex-center"><i data-lucide="inbox"></i> Outstanding Work Requests <span id="wr-count" style="color:var(--accent);margin-left:0.4rem;"></span></div>
+    <div class="dash-card-title flex-center"><i data-lucide="inbox"></i> Outstanding Work Requests <span id="wr-count" class="dash-count-tag"></span></div>
     <div class="dash-wr-filters" id="wr-filters"></div>
     <div class="dash-pr-list" id="wr-list"></div>
   </div>
@@ -740,48 +751,6 @@
 </div>
 
 <script>
-// --- Local __hvToast polyfill (WI-115) ------------------------------------
-// ado-dashboard is a standalone utility page and does not load the shared
-// hypervisor app.js, so the ecosystem HvToast primitive isn't available.
-// This minimal polyfill matches the new variant-aware visual so this page's
-// refresh/export feedback surfaces to the user. If a shared utility-page
-// bundle is introduced later, this block can be removed.
-(function initLocalToast() {
-  if (window.__hvToast) return;
-  var container = document.createElement('div');
-  container.className = 'notification-toast-container';
-  container.setAttribute('aria-live', 'polite');
-  container.style.cssText = 'position:fixed;bottom:3.5rem;right:1rem;z-index:500;display:flex;flex-direction:column-reverse;gap:0.5rem;pointer-events:none;max-width:400px;';
-  document.addEventListener('DOMContentLoaded', function () { document.body.appendChild(container); });
-  var VC = { success: '#00ff41', info: '#00cccc', warn: '#ffb000', error: '#ff3333' };
-  function show(input) {
-    var opts = typeof input === 'string' ? { variant: 'info', message: input } : (input || {});
-    var variant = VC[opts.variant] ? opts.variant : 'info';
-    var color = VC[variant];
-    var sticky = opts.duration === 'sticky' || (variant === 'error' && opts.duration == null);
-    var duration = opts.duration != null && opts.duration !== 'sticky' ? opts.duration : (variant === 'warn' ? 5000 : 3000);
-    var el = document.createElement('div');
-    el.style.cssText = 'font-family:"Departure Mono",monospace;font-size: var(--fs-mono);line-height:1.35;color:#ccc;background:#0a0a0a;border:1px solid #333;border-left:2px solid ' + color + ';padding:0.5rem 0.75rem;opacity:0;transform:translateY(8px);transition:opacity 0.25s,transform 0.25s;pointer-events:auto;';
-    if (opts.title) {
-      var t = document.createElement('div');
-      t.textContent = opts.title;
-      t.style.cssText = 'font-weight: var(--fw-bold);letter-spacing:0.06em;text-transform:uppercase;color:#fff;margin-bottom:0.15rem;';
-      el.appendChild(t);
-    }
-    var m = document.createElement('div');
-    m.textContent = opts.message || '';
-    el.appendChild(m);
-    if (variant === 'error' || variant === 'warn') el.setAttribute('role', 'alert');
-    container.appendChild(el);
-    requestAnimationFrame(function () { el.style.opacity = '1'; el.style.transform = 'translateY(0)'; });
-    if (!sticky) setTimeout(function () {
-      el.style.opacity = '0'; el.style.transform = 'translateY(8px)';
-      setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 300);
-    }, duration);
-  }
-  window.__hvToast = show;
-})();
-
 (function() {
   // Set generation timestamp
   var genEl = document.getElementById('dash-generated');
@@ -1013,11 +982,11 @@
   // --- Refresh Button ---
   var STATE_COLORS = {
     'Closed': 'var(--success)',
-    'Review': 'var(--warm)',
-    'In Progress': 'var(--cool)',
+    'Review': 'var(--warning)',
+    'In Progress': 'var(--info)',
     'Ready': 'var(--text-muted)',
-    'Hold': 'var(--comp)',
-    'Active': 'var(--comp)',
+    'Hold': 'var(--error)',
+    'Active': 'var(--live)',
     'New': 'var(--text-dim)'
   };
 
@@ -1067,11 +1036,11 @@
     var sprintEl = document.getElementById('dash-sprint');
     var datesEl = document.getElementById('dash-dates');
 
-    if (kpiTotal) kpiTotal.textContent = data.kpis.total_points;
-    if (kpiRemaining) kpiRemaining.textContent = data.kpis.remaining_points;
+    if (kpiTotal) kpiTotal.textContent = HvUtils.pad2(data.kpis.total_points);
+    if (kpiRemaining) kpiRemaining.textContent = HvUtils.pad2(data.kpis.remaining_points);
     if (kpiPctLabel) kpiPctLabel.textContent = '(' + data.kpis.pct_burned + '%)';
-    if (kpiDays) kpiDays.textContent = workingDaysLeft(data.sprint.finish);
-    if (kpiPrs) kpiPrs.textContent = data.kpis.active_prs;
+    if (kpiDays) kpiDays.textContent = HvUtils.pad2(workingDaysLeft(data.sprint.finish));
+    if (kpiPrs) kpiPrs.textContent = HvUtils.pad2(data.kpis.active_prs);
     if (sprintEl) sprintEl.textContent = data.sprint.name;
     if (datesEl) datesEl.textContent = formatDate(data.sprint.start) + ' \u2013 ' + formatDate(data.sprint.finish);
 
@@ -1222,7 +1191,7 @@
     if (risksEl && data.risks) {
       risksEl.innerHTML = '';
       if (data.risks.length === 0) {
-        risksEl.innerHTML = '<div style="font-size: var(--fs-mono);color:var(--text-muted)">No risks detected</div>';
+        risksEl.innerHTML = '<div class="dash-note">No risks detected</div>';
       } else {
         data.risks.forEach(function(risk) {
           var item = document.createElement('div');
@@ -1266,7 +1235,7 @@
         // All
         var allBtn = document.createElement('button');
         allBtn.className = 'dash-wr-filter action-button';
-        allBtn.textContent = 'All (' + data.work_requests.length + ')';
+        allBtn.textContent = 'All (' + HvUtils.pad2(data.work_requests.length) + ')';
         allBtn.setAttribute('data-filter', 'all');
         wrFilters.appendChild(allBtn);
         var stateNames = Object.keys(wrStates).sort();
@@ -1316,17 +1285,17 @@
         return aCompleted - bCompleted;
       });
 
-      if (wrCount) wrCount.textContent = '(' + filtered.length + ')';
+      if (wrCount) wrCount.textContent = '(' + HvUtils.pad2(filtered.length) + ')';
 
       wrList.innerHTML = '';
       if (filtered.length === 0) {
-        wrList.innerHTML = '<div style="font-size: var(--fs-mono);color:var(--text-muted)">No work requests match this filter</div>';
+        wrList.innerHTML = '<div class="dash-note">No work requests match this filter</div>';
         return;
       }
       filtered.forEach(function(wr) {
         var stateColor = 'var(--text-muted)';
-        if (wr.state === 'In Review') stateColor = 'var(--warm)';
-        else if (wr.state === 'Approved') stateColor = 'var(--cool)';
+        if (wr.state === 'In Review') stateColor = 'var(--warning)';
+        else if (wr.state === 'Approved') stateColor = 'var(--info)';
         else if (wr.state === 'Completed') stateColor = 'var(--success)';
         else if (wr.state === 'New') stateColor = 'var(--text-dim)';
         var item = document.createElement('a');
@@ -1338,8 +1307,8 @@
         }
         item.innerHTML = '<span class="dash-pr-id">' + wr.id + '</span>' +
           '<span class="dash-pr-title">' + wr.title + '</span>' +
-          '<span style="color:' + stateColor + ';font-size: var(--fs-mono);">' + wr.state + '</span>' +
-          '<span style="color:var(--text-muted);font-size: var(--fs-mono);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (wr.assigned || '\u2014') + '</span>';
+          '<span class="dash-wr-state" style="color:' + stateColor + ';">' + wr.state + '</span>' +
+          '<span class="dash-wr-assigned">' + (wr.assigned || '\u2014') + '</span>';
         wrList.appendChild(item);
       });
     }
@@ -1609,7 +1578,7 @@
       if (el) el.style.display = 'none';
       if (!result || !result.ok) {
         var msg = (result && result.error) ? result.error : 'Unknown error';
-        if (window.__hvToast) window.__hvToast({ variant: 'error', title: 'Sprint load failed', message: msg });
+        if (window.HvToast) window.HvToast.show({ variant: 'error', title: 'Sprint load failed', message: msg });
         return;
       }
       renderDashboard(result);
@@ -1649,7 +1618,7 @@
 
   function doRefresh() {
     if (!window.pywebview || !window.pywebview.api) {
-      if (window.__hvToast) window.__hvToast({ variant: 'warn', message: 'Refresh requires the desktop app (PyWebView)' });
+      if (window.HvToast) window.HvToast.show({ variant: 'warn', message: 'Refresh requires the desktop app (PyWebView)' });
       return;
     }
 
@@ -1658,7 +1627,7 @@
       refreshBtn.classList.remove('is-loading');
       if (!result || !result.ok) {
         var msg = (result && result.error) ? result.error : 'Unknown error';
-        if (window.__hvToast) window.__hvToast({ variant: 'error', title: 'Refresh failed', message: msg });
+        if (window.HvToast) window.HvToast.show({ variant: 'error', title: 'Refresh failed', message: msg });
         return;
       }
       renderDashboard(result);
@@ -1669,7 +1638,7 @@
       });
     }).catch(function(err) {
       refreshBtn.classList.remove('is-loading');
-      if (window.__hvToast) window.__hvToast({ variant: 'error', title: 'Refresh error', message: String(err) });
+      if (window.HvToast) window.HvToast.show({ variant: 'error', title: 'Refresh error', message: String(err) });
     });
   }
 
@@ -1691,11 +1660,11 @@
   if (reportBtn) {
     reportBtn.addEventListener('click', function() {
       if (!lastDashData) {
-        if (window.__hvToast) window.__hvToast({ variant: 'warn', message: 'No data yet - refresh first' });
+        if (window.HvToast) window.HvToast.show({ variant: 'warn', message: 'No data yet - refresh first' });
         return;
       }
       if (!window.pywebview || !window.pywebview.api) {
-        if (window.__hvToast) window.__hvToast({ variant: 'warn', message: 'Report export requires the desktop app' });
+        if (window.HvToast) window.HvToast.show({ variant: 'warn', message: 'Report export requires the desktop app' });
         return;
       }
 
@@ -1706,19 +1675,13 @@
       var endDate = formatDate(d.sprint.finish);
       var daysLeft = workingDaysLeft(d.sprint.finish);
 
-      // Build the report as a self-contained HTML that mirrors the dashboard layout
-      var accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#00ff41';
-
-      // State color map (resolved values for the standalone report)
-      var reportStateColors = {
-        'Closed': accent,
-        'Review': '#ffb000',
-        'In Progress': '#00cccc',
-        'Ready': '#909090',
-        'Hold': '#ff3333',
-        'Active': '#ff3333',
-        'New': '#666666'
-      };
+      // Self-contained report: live token values are copied into a :root block so the file renders offline.
+      var REPORT_TOKENS = ['--bg', '--bg-card', '--border', '--border-hair', '--text', '--text-bright', '--text-muted', '--text-dim',
+        '--success', '--warning', '--error', '--info', '--live', '--identifier', '--radius', '--font', '--fs-mono', '--lh-ui',
+        '--track-label', '--space-1', '--space-2', '--space-3', '--space-4', '--space-5', '--space-6'];
+      var rootStyle = getComputedStyle(document.documentElement);
+      var reportRoot = ':root { ' + REPORT_TOKENS.map(function(n) { return n + ': ' + rootStyle.getPropertyValue(n).trim() + ';'; }).join(' ') + ' }\n';
+      var segHtml = function(pct, color) { return '<div class="report-seg" style="width:' + pct + '%;background:' + color + ';"></div>'; };
 
       // Build state bar rows
       var stateBarHtml = '';
@@ -1732,12 +1695,11 @@
         allStates.forEach(function(entry) {
           var pct = (entry.count / maxCount * 100).toFixed(0);
           var pts = (d.state_points && d.state_points[entry.state]) ? d.state_points[entry.state] : 0;
-          var color = reportStateColors[entry.state] || '#666';
-          stateBarHtml += '<div style="display:grid;grid-template-columns:100px 1fr 40px 50px;align-items:center;gap:0.5rem;margin-bottom:0.4rem;">'
-            + '<span style="font-size: var(--fs-mono);color:#ccc;text-align:right;">' + entry.state + '</span>'
-            + '<div style="height:20px;background:#111;border:1px solid #222;position:relative;"><div style="height:100%;width:' + pct + '%;background:' + color + ';opacity:0.85;"></div></div>'
-            + '<span style="font-size: var(--fs-mono);color:#909090;">' + entry.count + '</span>'
-            + '<span style="font-size: var(--fs-mono);color:#909090;">' + pts + ' pts</span>'
+          stateBarHtml += '<div class="report-row report-row-state">'
+            + '<span class="report-state-name">' + entry.state + '</span>'
+            + '<div class="report-track">' + segHtml(pct, getStateColor(entry.state)) + '</div>'
+            + '<span class="report-note">' + HvUtils.pad2(entry.count) + '</span>'
+            + '<span class="report-note">' + pts + ' pts</span>'
             + '</div>';
         });
       }
@@ -1750,11 +1712,11 @@
         for (var s in d.states) totalItems += d.states[s];
         allStates.forEach(function(entry) {
           var pct = (entry.count / totalItems * 100).toFixed(1);
-          var color = reportStateColors[entry.state] || '#666';
-          progressHtml += '<div style="height:100%;width:' + pct + '%;background:' + color + ';opacity:0.85;"></div>';
-          progressLegendHtml += '<span style="display:inline-flex;align-items:center;gap:0.3rem;margin-right:1rem;font-size: var(--fs-mono);color:#909090;">'
-            + '<span style="width:10px;height:10px;background:' + color + ';display:inline-block;opacity:0.85;"></span>'
-            + entry.state + ' (' + entry.count + ')</span>';
+          var color = getStateColor(entry.state);
+          progressHtml += segHtml(pct, color);
+          progressLegendHtml += '<span class="report-legend">'
+            + '<span class="report-swatch" style="background:' + color + ';"></span>'
+            + entry.state + ' (' + HvUtils.pad2(entry.count) + ')</span>';
         });
       }
 
@@ -1762,19 +1724,16 @@
       var teamHtml = '';
       if (d.team) {
         d.team.sort(function(a, b) { return b.points - a.points; });
-        var maxPts = d.team[0] ? d.team[0].points : 1;
         d.team.forEach(function(m) {
           if (m.points === 0) return;
           var barHtml = '';
           for (var st in m.states) {
-            var segPct = (m.states[st] / m.points * 100).toFixed(0);
-            var color = reportStateColors[st] || '#666';
-            barHtml += '<div style="height:100%;width:' + segPct + '%;background:' + color + ';opacity:0.85;"></div>';
+            barHtml += segHtml((m.states[st] / m.points * 100).toFixed(0), getStateColor(st));
           }
-          teamHtml += '<div style="display:grid;grid-template-columns:140px 1fr 50px;align-items:center;gap:0.6rem;margin-bottom:0.6rem;">'
-            + '<span style="font-size: var(--fs-mono);color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + m.name + '</span>'
-            + '<div style="height:22px;display:flex;border:1px solid #222;overflow:hidden;">' + barHtml + '</div>'
-            + '<span style="font-size: var(--fs-mono);color:#909090;text-align:right;">' + m.points + ' pts</span>'
+          teamHtml += '<div class="report-row report-row-team">'
+            + '<span class="report-name">' + m.name + '</span>'
+            + '<div class="report-track">' + barHtml + '</div>'
+            + '<span class="report-note report-right">' + m.points + ' pts</span>'
             + '</div>';
         });
       }
@@ -1783,29 +1742,29 @@
       var prHtml = '';
       if (d.prs && d.prs.length) {
         d.prs.forEach(function(pr) {
-          var ageColor = pr.age_days > 7 ? '#ff3333' : pr.age_days > 2 ? '#ffb000' : accent;
-          prHtml += '<div style="display:grid;grid-template-columns:40px 1fr 90px 40px;align-items:center;gap:0.5rem;padding:0.3rem 0.5rem;background:#0a0a0a;border:1px solid #222;margin-bottom:0.3rem;font-size: var(--fs-mono);">'
-            + '<span style="color:' + accent + ';">#' + pr.id + '</span>'
-            + '<span style="color:#ccc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + pr.title + '</span>'
-            + '<span style="color:#666;font-size: var(--fs-mono);">' + pr.repo + '</span>'
-            + '<span style="color:' + ageColor + ';text-align:right;">' + pr.age_days + 'd</span>'
+          var ageClass = pr.age_days > 7 ? 'report-age-old' : pr.age_days > 2 ? 'report-age-mid' : 'report-age-fresh';
+          prHtml += '<div class="report-row report-row-pr">'
+            + '<span class="report-id">#' + pr.id + '</span>'
+            + '<span class="report-name">' + pr.title + '</span>'
+            + '<span class="report-note">' + pr.repo + '</span>'
+            + '<span class="report-right ' + ageClass + '">' + pr.age_days + 'd</span>'
             + '</div>';
         });
       } else {
-        prHtml = '<div style="font-size: var(--fs-mono);color:#909090;">No active pull requests</div>';
+        prHtml = '<div class="report-note">No active pull requests</div>';
       }
 
       // Build risks
       var risksHtml = '';
       if (d.risks && d.risks.length) {
         d.risks.forEach(function(r) {
-          risksHtml += '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem 0.5rem;font-size: var(--fs-mono);color:#ccc;border-left:3px solid #ff3333;background:#0a0a0a;margin-bottom:0.3rem;">'
-            + '<span style="font-size: var(--fs-mono);text-transform:uppercase;letter-spacing:0.06em;color:#ff3333;white-space:nowrap;">' + r.type + '</span>'
-            + r.title + ' (' + r.id + ')' + (r.assigned ? ' \u2014 ' + r.assigned : '')
+          risksHtml += '<div class="report-risk">'
+            + '<span class="report-risk-type">' + r.type + '</span>'
+            + r.title + ' (' + r.id + ')' + (r.assigned ? ' — ' + r.assigned : '')
             + '</div>';
         });
       } else {
-        risksHtml = '<div style="font-size: var(--fs-mono);color:#909090;">No risks detected</div>';
+        risksHtml = '<div class="report-note">No risks detected</div>';
       }
 
       // Reuse the page's embedded Departure Mono face so the downloaded report renders offline.
@@ -1827,37 +1786,58 @@
         + '<title>Sprint Report - ' + sprintName + '</title>\n'
         + '<style>\n'
         + monoFaceCss + '\n'
+        + reportRoot
         + '* { margin: 0; padding: 0; box-sizing: border-box; }\n'
-        + 'body { font-family: "Departure Mono", monospace; background: #000; color: #ccc; padding: 2rem; max-width: 1000px; margin: 0 auto; -webkit-font-smoothing: none; }\n'
-        + '.report-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }\n'
+        + 'body { font-family: var(--font); font-size: var(--fs-mono); line-height: var(--lh-ui); background: var(--bg); color: var(--text); padding: var(--space-6); max-width: 1000px; margin: 0 auto; -webkit-font-smoothing: none; }\n'
+        + '.report-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }\n'
         + '.report-full { grid-column: 1 / -1; }\n'
-        + '.report-card { background: #0a0a0a; border: 1px solid #222; padding: 1rem; }\n'
-        + '.report-card-title { font-size: var(--fs-mono); text-transform: uppercase; letter-spacing: 0.1em; color: #666; margin-bottom: 0.75rem; }\n'
-        + '.report-header { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #222; margin-bottom: 0.5rem; }\n'
-        + '.report-header h1 { font-size: var(--fs-mono); color: #fff; text-transform: uppercase; letter-spacing: 0.08em; }\n'
-        + '.report-meta { grid-column: 1 / -1; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.4rem 1.2rem; padding: 0.4rem 0 0.8rem; font-size: var(--fs-mono); color: #909090; }\n'
-        + '.report-meta-val { color: ' + accent + ';}\n'
-        + '.report-meta-sep { color: #222; }\n'
+        + '.report-card { background: var(--bg-card); border: var(--border-hair) solid var(--border); border-radius: var(--radius); padding: var(--space-4); }\n'
+        + '.report-card-title { text-transform: uppercase; letter-spacing: var(--track-label); color: var(--text-muted); margin-bottom: var(--space-3); }\n'
+        + '.report-header { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; padding: var(--space-2) 0; border-bottom: var(--border-hair) solid var(--border); margin-bottom: var(--space-2); }\n'
+        + '.report-header h1 { font-size: var(--fs-mono); font-weight: inherit; color: var(--text-bright); text-transform: uppercase; letter-spacing: var(--track-label); }\n'
+        + '.report-meta { grid-column: 1 / -1; display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-1) var(--space-4); padding: var(--space-1) 0 var(--space-3); color: var(--text-muted); }\n'
+        + '.report-meta-val { color: var(--text-bright); }\n'
+        + '.report-meta-sep { color: var(--border); }\n'
+        + '.report-row { display: grid; align-items: center; gap: var(--space-2); margin-bottom: var(--space-1); }\n'
+        + '.report-row-state { grid-template-columns: 100px 1fr 40px 50px; }\n'
+        + '.report-row-team { grid-template-columns: 140px 1fr 50px; }\n'
+        + '.report-row-pr { grid-template-columns: 40px 1fr 90px 40px; padding: var(--space-1) var(--space-2); background: var(--bg); border: var(--border-hair) solid var(--border); }\n'
+        + '.report-track { display: flex; height: var(--space-5); overflow: hidden; background: var(--bg); border: var(--border-hair) solid var(--border); }\n'
+        + '.report-track-lg { height: var(--space-6); }\n'
+        + '.report-seg { height: 100%; }\n'
+        + '.report-state-name { text-align: right; }\n'
+        + '.report-name { color: var(--text-bright); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }\n'
+        + '.report-id { color: var(--identifier); }\n'
+        + '.report-note { color: var(--text-muted); }\n'
+        + '.report-right { text-align: right; }\n'
+        + '.report-age-fresh { color: var(--success); }\n'
+        + '.report-age-mid { color: var(--warning); }\n'
+        + '.report-age-old { color: var(--error); }\n'
+        + '.report-legend-row { margin-top: var(--space-2); }\n'
+        + '.report-legend { display: inline-flex; align-items: center; gap: var(--space-1); margin-right: var(--space-4); color: var(--text-muted); }\n'
+        + '.report-swatch { width: var(--space-2); height: var(--space-2); display: inline-block; }\n'
+        + '.report-risk { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-1) var(--space-2); border-left: var(--space-1) solid var(--error); background: var(--bg); margin-bottom: var(--space-1); }\n'
+        + '.report-risk-type { text-transform: uppercase; letter-spacing: var(--track-label); color: var(--error); white-space: nowrap; }\n'
         + '</style>\n</head><body>\n'
         + '<div class="report-grid">\n'
-        + '  <div class="report-header"><h1>Sprint Report: ' + sprintName + '</h1><span style="font-size: var(--fs-mono);color:#666;">Generated ' + now + '</span></div>\n'
+        + '  <div class="report-header"><h1>Sprint Report: ' + sprintName + '</h1><span class="report-note">Generated ' + now + '</span></div>\n'
         + '  <div class="report-meta">\n'
         + '    <span><span class="report-meta-val">' + sprintName + '</span></span>\n'
         + '    <span class="report-meta-sep">|</span>\n'
-        + '    <span>' + startDate + ' \u2013 ' + endDate + '</span>\n'
+        + '    <span>' + startDate + ' – ' + endDate + '</span>\n'
         + '    <span class="report-meta-sep">|</span>\n'
         + '    <span><span class="report-meta-val">' + d.kpis.total_points + '</span> pts committed</span>\n'
         + '    <span class="report-meta-sep">|</span>\n'
         + '    <span><span class="report-meta-val">' + d.kpis.remaining_points + '</span> remaining (' + d.kpis.pct_burned + '%)</span>\n'
         + '    <span class="report-meta-sep">|</span>\n'
-        + '    <span><span class="report-meta-val">' + daysLeft + '</span> days left</span>\n'
+        + '    <span><span class="report-meta-val">' + HvUtils.pad2(daysLeft) + '</span> days left</span>\n'
         + '    <span class="report-meta-sep">|</span>\n'
-        + '    <span><span class="report-meta-val">' + d.kpis.active_prs + '</span> active PRs</span>\n'
+        + '    <span><span class="report-meta-val">' + HvUtils.pad2(d.kpis.active_prs) + '</span> active PRs</span>\n'
         + '  </div>\n'
         + '  <div class="report-card report-full">\n'
         + '    <div class="report-card-title">Sprint Progress</div>\n'
-        + '    <div style="height:28px;display:flex;border:1px solid #222;overflow:hidden;">' + progressHtml + '</div>\n'
-        + '    <div style="margin-top:0.5rem;">' + progressLegendHtml + '</div>\n'
+        + '    <div class="report-track report-track-lg">' + progressHtml + '</div>\n'
+        + '    <div class="report-legend-row">' + progressLegendHtml + '</div>\n'
         + '  </div>\n'
         + '  <div class="report-card">\n'
         + '    <div class="report-card-title">By State</div>\n'
@@ -1881,9 +1861,9 @@
       var filename = 'sprint-report-' + sprintName.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '.html';
       window.pywebview.api.save_export(htmlReport, filename).then(function(result) {
         if (result && result.ok) {
-          if (window.__hvToast) window.__hvToast({ variant: 'success', message: 'Report saved: ' + result.path });
+          if (window.HvToast) window.HvToast.show({ variant: 'success', message: 'Report saved: ' + result.path });
         } else if (result && result.error !== 'cancelled') {
-          if (window.__hvToast) window.__hvToast({ variant: 'error', title: 'Save failed', message: result.error });
+          if (window.HvToast) window.HvToast.show({ variant: 'error', title: 'Save failed', message: result.error });
         }
       });
     });

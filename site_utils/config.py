@@ -230,6 +230,23 @@ MD = markdown.Markdown(
     },
 )
 
+# Words kept upper-case when a directory or file name is turned into a label
+# (e.g. "sso" -> "SSO", "pr-notes" -> "PR Notes"). Add new acronyms here.
+ACRONYMS = frozenset({
+    "acm", "acp", "ado", "adr", "adrs", "ai", "api", "apis", "aws", "ci", "cd",
+    "cli", "cms", "coppa", "css", "dns", "dodea", "e2e", "eb", "ferpa", "html",
+    "http", "id", "jrotc", "js", "jwt", "llm", "mcp", "oidc", "poc", "pr", "prs",
+    "qa", "rag", "rbac", "saml", "sql", "sso", "ui", "url", "uuid", "ux", "vm",
+    "vms", "waf", "wi",
+})
+
+
+def humanize(name: str) -> str:
+    """Turn a kebab/snake-case name into a display label, keeping ACRONYMS upper-case."""
+    words = name.replace("-", " ").replace("_", " ").split()
+    return " ".join(w.upper() if w.lower() in ACRONYMS else w.title() for w in words)
+
+
 # --- Category metadata ---
 CATEGORY_LABELS = {
     "context": "Context", "diagrams": "Diagrams", "work": "Work",

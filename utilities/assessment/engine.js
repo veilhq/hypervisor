@@ -391,9 +391,9 @@
   }
 
   function updateSessionStats() {
-    if (els.statAttempted) els.statAttempted.textContent = state.sessionAttempted;
-    if (els.statCorrect) els.statCorrect.textContent = state.sessionCorrect;
-    if (els.statIncorrect) els.statIncorrect.textContent = state.sessionIncorrect;
+    if (els.statAttempted) els.statAttempted.textContent = HvUtils.pad2(state.sessionAttempted);
+    if (els.statCorrect) els.statCorrect.textContent = HvUtils.pad2(state.sessionCorrect);
+    if (els.statIncorrect) els.statIncorrect.textContent = HvUtils.pad2(state.sessionIncorrect);
     var acc = state.sessionAttempted ? Math.round((state.sessionCorrect / state.sessionAttempted) * 100) : 0;
     if (els.statAccuracy) els.statAccuracy.textContent = state.sessionAttempted ? acc + "%" : "\u2014";
   }

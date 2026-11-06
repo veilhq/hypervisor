@@ -20,31 +20,40 @@ from .config import VALID_TRANSITIONS, load_tags, load_projects, HYPERVISOR_DIR
 # Site Build Trigger
 # ---------------------------------------------------------------------------
 
+def _app_is_running() -> bool:
+    """True when the desktop app's lock file names a live process."""
+    lock = HYPERVISOR_DIR / ".app_running"
+    try:
+        pid = int(lock.read_text(encoding="utf-8").strip())
+    except (OSError, ValueError):
+        return False
+    try:
+        import ctypes
+        kernel32 = ctypes.windll.kernel32
+        handle = kernel32.OpenProcess(0x1000, False, pid)  # QUERY_LIMITED_INFORMATION
+        if handle:
+            kernel32.CloseHandle(handle)
+            return True
+    except (AttributeError, OSError):
+        pass
+    return False
+
+
 def trigger_site_build(changed_path: str | None = None):
     """Run a site build to regenerate HTML after write ops.
 
     Args:
         changed_path: Relative path to the primary file that changed (e.g.
-                      "work/to-do/my-item.md"). When provided AND the desktop
-                      app is running, triggers an incremental build for that
-                      file instead of relying on the watcher (which can miss
-                      the file due to debounce settling on a later _index.md
-                      write). When None, triggers a full build.
+                      "work/to-do/my-item.md"). When None, triggers a full build.
 
-    When the desktop app is running and a specific file is provided, the build
-    runs synchronously to guarantee the fragment exists before the watcher fires
-    a reload. Without this, the watcher's debounce can settle on _index.md,
-    trigger a reload showing the new index card, but the document fragment
-    hasn't been written yet - causing navigation to fail.
+    When the desktop app is running, its watcher sees the file write and
+    queues it, so a burst of writes becomes one build after a short hold. This
+    function does nothing in that case.
 
     When the app is NOT running (MCP-only mode), builds run in a background
     thread to avoid blocking the tool response.
     """
-    app_lock = HYPERVISOR_DIR / ".app_running"
-    app_is_running = app_lock.exists()
-
-    if app_is_running and not changed_path:
-        # No specific file - let the watcher handle it to avoid duplicates.
+    if _app_is_running():
         return
 
     def _build():
@@ -59,11 +68,7 @@ def trigger_site_build(changed_path: str | None = None):
         except Exception:
             pass
 
-    if app_is_running and changed_path:
-        # Synchronous: fragment MUST exist before the watcher triggers reload
-        _build()
-    else:
-        threading.Thread(target=_build, daemon=True).start()
+    threading.Thread(target=_build, daemon=True).start()
 
 
 # ---------------------------------------------------------------------------

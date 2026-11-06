@@ -205,94 +205,77 @@ body.zen-staged .page {
    so the stage reads as greeting / launcher / search / work with no gap when
    nothing is typed. */
 
-/* ---- Launcher dropdown (top-left corner) ---- */
-/* One dim glyph at rest; the panel floats beneath it and holds the moved
-   .launcher-row, laid out as one vertical column of the standard launcher tiles. */
-
+/* ---- Launcher view (hotkey) ---- */
+/* The `a` key swaps the stage for the launcher: the stage fades out and the
+   moved .launcher-row tiles spring in at center, one after another. The layer
+   is a full-viewport overlay so a click on empty space dismisses it. */
 .zen-launcher {
   position: fixed;
-  top: var(--space-5);
-  left: var(--space-5);
-  z-index: var(--z-dropdown);
-}
-.zen-launcher-trigger {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--space-2);
-  background: none;
-  border: none;
-  color: var(--text-dim);
-  cursor: pointer;
-  transition: color var(--motion-fast) var(--ease);
-}
-.zen-launcher-trigger:hover { color: var(--text-bright); }
-.zen-launcher.open .zen-launcher-trigger { color: var(--selected); }
-.zen-launcher-trigger svg {
-  width: var(--icon-md);
-  height: var(--icon-md);
-}
-
-.zen-launcher-panel {
-  position: absolute;
-  top: calc(100% + var(--space-2));
-  left: 0;
-  width: max-content;
-  max-width: calc(100vw - 2 * var(--space-5));
-  padding: var(--space-3);
-  background: var(--bg-raised);
-  border: var(--border-hair) solid var(--border);
-  border-radius: var(--radius);
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(calc(-1 * var(--space-1)));
-  transition: opacity var(--motion-medium) var(--ease),
-              transform var(--motion-medium) var(--ease),
-              visibility var(--motion-medium) var(--ease);
-}
-.zen-launcher.open .zen-launcher-panel {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
-}
-
-.zen-launcher .launcher-row {
+  inset: 0;
   display: flex;
   flex-direction: column;
+  gap: var(--space-4);
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-dropdown);
+  visibility: hidden;
+  pointer-events: none;
+  transition: visibility 0s linear var(--motion-base);
 }
-/* Tiles keep the base launcher look. On open they drop out of the trigger one
-   after another with the bounce ease; on close they retract bottom-first, then
-   the panel fades once the last tile is gone. --launcher-i is the tile index and
-   --launcher-n the tile count (set in zen-mode.js). */
-.zen-launcher-panel {
-  --launcher-exit: calc(var(--launcher-n, 8) * var(--motion-stagger));
-  transition: opacity var(--motion-base) var(--ease) var(--launcher-exit),
-              transform var(--motion-base) var(--ease) var(--launcher-exit),
-              visibility 0s linear calc(var(--launcher-exit) + var(--motion-base));
+.zen-launcher.open {
+  visibility: visible;
+  pointer-events: auto;
+  transition: visibility 0s;
 }
-.zen-launcher.open .zen-launcher-panel {
-  transition: opacity var(--motion-fast) var(--ease),
-              transform var(--motion-fast) var(--ease),
-              visibility 0s;
+
+/* Prose-face prompt below the tiles; fades in after the last tile lands. */
+.zen-launcher-subtitle {
+  font-family: var(--font-body);
+  font-size: var(--fs-prose-ui);
+  line-height: var(--lh-ui);
+  letter-spacing: var(--track-tight);
+  color: var(--text-muted);
+  opacity: 0;
+  transition: opacity var(--motion-fast) var(--ease);
 }
+.zen-launcher.open .zen-launcher-subtitle {
+  opacity: 1;
+  transition: opacity var(--motion-base) var(--ease)
+                calc(var(--motion-fast) + var(--motion-stagger) * var(--launcher-n, 8));
+}
+.zen-launcher .launcher-row {
+  max-width: min(52rem, calc(100vw - 2 * var(--space-6)));
+}
+/* Tiles keep the base launcher look. Closed they rest slightly low and small;
+   open, each rises into place on a light stagger (--launcher-i is the tile
+   index, set in the generator), starting as the stage finishes fading. */
 .zen-launcher .launcher-box {
   opacity: 0;
-  transform: translateY(calc(-1 * var(--space-4))) scale(0.5);
+  transform: translateY(var(--space-4)) scale(0.5);
   animation: none;
-  transition: opacity var(--motion-base) var(--ease)
-                calc((var(--launcher-n, 8) - 1 - var(--launcher-i, 0)) * var(--motion-stagger)),
-              transform var(--motion-base) var(--ease)
-                calc((var(--launcher-n, 8) - 1 - var(--launcher-i, 0)) * var(--motion-stagger)),
+  transition: opacity var(--motion-fast) var(--ease),
+              transform var(--motion-fast) var(--ease),
               translate var(--motion-fast) var(--ease);
 }
 .zen-launcher.open .launcher-box {
   opacity: 1;
   transform: none;
-  transition: opacity var(--motion-enter) var(--ease)
-                calc(var(--motion-stagger) * (1 + var(--launcher-i, 0))),
+  transition: opacity var(--motion-base) var(--ease)
+                calc(var(--motion-fast) + var(--motion-stagger) * var(--launcher-i, 0)),
               transform var(--motion-enter) var(--ease-bounce)
-                calc(var(--motion-stagger) * (1 + var(--launcher-i, 0))),
+                calc(var(--motion-fast) + var(--motion-stagger) * var(--launcher-i, 0)),
               translate var(--motion-fast) var(--ease);
+}
+
+/* The stage fades out while the launcher is up. Held with `forwards` so it stays
+   gone; removing the class replays the stage's own entrance on the way back. */
+.zen-stage.launching {
+  animation: zen-stage-out var(--motion-base) var(--ease) forwards;
+  pointer-events: none;
+}
+@keyframes zen-stage-out {
+  from { opacity: 1; visibility: visible; }
+  to   { opacity: 0; visibility: hidden; }
 }
 
 /* ---- Lower section: Work / Activity / Hidden view + wordless pill toggle ---- */
@@ -396,16 +379,18 @@ body.zen-staged .page {
 @media (prefers-reduced-motion: reduce) {
   .zen-stage,
   .zen-section-view.active { animation: none; }
+  .zen-stage.launching { opacity: 0; visibility: hidden; }
   .zen-section-body,
   .zen-greeting,
-  .zen-launcher-panel,
+  .zen-launcher-subtitle,
   .zen-launcher .launcher-box,
   .zen-launcher.open .launcher-box { transition: none; }
 }
 html.a11y-reduce-motion .zen-stage,
 html.a11y-reduce-motion .zen-section-view.active { animation: none; }
+html.a11y-reduce-motion .zen-stage.launching { opacity: 0; visibility: hidden; }
 html.a11y-reduce-motion .zen-section-body,
 html.a11y-reduce-motion .zen-greeting,
-html.a11y-reduce-motion .zen-launcher-panel,
+html.a11y-reduce-motion .zen-launcher-subtitle,
 html.a11y-reduce-motion .zen-launcher .launcher-box,
 html.a11y-reduce-motion .zen-launcher.open .launcher-box { transition: none; }

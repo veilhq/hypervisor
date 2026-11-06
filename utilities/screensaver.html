@@ -1,12 +1,24 @@
 <div class="utility-body">
     <h1><i data-lucide="monitor" class="utility-title-icon"></i> Screensaver</h1>
-    <p class="ss-subtitle">Choose a screensaver mode. Press <kbd class="ss-kbd">s</kbd> anywhere to launch, or wait for the idle timer.</p>
+    <p class="utility-intro">Choose a screensaver mode. Press <kbd class="ss-kbd">s</kbd> anywhere to launch, or wait for the idle timer.</p>
 
-    <div class="utility-body-split" style="--util-aside:300px">
-      <div class="ss-cards" id="ss-cards"></div>
+    <div class="ss-top">
+      <div class="ss-stage">
+        <div class="ss-card-media ss-stage-media">
+          <span class="ss-card-frame"><canvas class="ss-card-preview" id="ss-stage-preview"></canvas></span>
+        </div>
+        <div class="ss-stage-foot">
+          <div class="ss-stage-info">
+            <div class="ss-card-header" id="ss-stage-head"></div>
+            <div class="ss-card-desc" id="ss-stage-desc"></div>
+          </div>
+          <button class="ss-launch action-button action-button-primary" id="ss-launch"><i data-lucide="play" class="ss-launch-icon"></i> Launch Now</button>
+        </div>
+      </div>
 
-      <aside class="ss-panel">
         <div class="ss-settings">
+          <div class="ss-col">
+          <div class="ss-group-label">General</div>
           <div class="ss-setting-row flex-between">
             <label for="ss-idle">Idle timeout</label>
             <select id="ss-idle" class="form-select">
@@ -27,12 +39,18 @@
             <label for="ss-palette-toggle">Use full palette</label>
             <input type="checkbox" id="ss-palette-toggle" class="form-check">
           </div>
+          </div>
+          <div class="ss-col">
+          <div class="ss-group-label">Grid</div>
           <div class="ss-setting-row flex-between">
-            <label for="ss-grid-mouse-toggle">Grid: mouse interaction</label>
+            <label for="ss-grid-mouse-toggle">Mouse interaction</label>
             <input type="checkbox" id="ss-grid-mouse-toggle" class="form-check" checked>
           </div>
+          </div>
+          <div class="ss-col">
+          <div class="ss-group-label">GL Dither</div>
           <div class="ss-setting-row flex-between">
-            <label for="ss-dither-pattern">GL Dither: pattern</label>
+            <label for="ss-dither-pattern">Pattern</label>
             <select id="ss-dither-pattern" class="form-select">
               <option value="trig">Trig Waves</option>
               <option value="interference">Interference</option>
@@ -49,13 +67,12 @@
               <option value="logzoom">Log Zoom</option>
             </select>
           </div>
+          </div>
         </div>
-
-        <div class="ss-actions flex-center">
-          <button class="ss-launch action-button action-button-primary" id="ss-launch"><i data-lucide="play" style="width:12px;height:12px;vertical-align:-1px"></i> Launch Now</button>
-        </div>
-      </aside>
     </div>
+
+    <div class="ss-group-label">Modes</div>
+    <div class="ss-cards" id="ss-cards"></div>
   </div>
 
 <script>
@@ -87,6 +104,39 @@
     var paletteToggle = document.getElementById("ss-palette-toggle");
     var launchBtn = document.getElementById("ss-launch");
 
+    // Render a static preview at the frame's real pixel size so the aspect
+    // matches the box (no stretch); api.preview() reads canvas.width/height.
+    function drawPreview(canvas, frame, key) {
+      var rect = frame.getBoundingClientRect();
+      var dpr = window.devicePixelRatio || 1;
+      var pw = Math.max(1, Math.round(rect.width * dpr));
+      var ph = Math.max(1, Math.round(rect.height * dpr));
+      canvas.width = pw;
+      canvas.height = ph;
+      var ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#000000";
+      ctx.fillRect(0, 0, pw, ph);
+      try { api.preview(key, ctx, pw, ph); } catch (e) {}
+    }
+
+    // Stage: large preview + name/description of the selected mode.
+    function renderStage() {
+      var mode = MODES.filter(function (m) { return m.key === currentMode; })[0];
+      if (!mode) return;
+      var canvas = document.getElementById("ss-stage-preview");
+      drawPreview(canvas, canvas.parentNode, mode.key);
+      document.getElementById("ss-stage-head").innerHTML =
+        '<i data-lucide="' + mode.icon + '" class="ss-card-icon"></i>' +
+        '<span class="ss-card-name">' + mode.name + '</span>';
+      document.getElementById("ss-stage-desc").textContent = mode.desc;
+    }
+
+    function refresh() {
+      buildCards();
+      renderStage();
+      if (window.lucide) lucide.createIcons({ attrs: { "stroke-width": 1.5 } });
+    }
+
     // Build mode cards with live preview canvases
     function buildCards() {
       cardsContainer.innerHTML = "";
@@ -97,6 +147,8 @@
         card.setAttribute("role", "button");
         card.setAttribute("tabindex", "0");
         card.setAttribute("aria-label", "Select " + mode.name + " screensaver");
+
+        card.title = mode.desc;
 
         var media = document.createElement("span");
         media.className = "ss-card-media";
@@ -114,40 +166,18 @@
         var header = document.createElement("div");
         header.className = "ss-card-header";
         header.innerHTML = '<i data-lucide="' + mode.icon + '" class="ss-card-icon"></i>' +
-                           '<span class="ss-card-name">' + mode.name + '</span>' +
-                           (mode.key === currentMode ? '<span class="label-badge label-badge-accent ss-card-active">active</span>' : '');
+                           '<span class="ss-card-name">' + mode.name + '</span>';
         body.appendChild(header);
-
-        var desc = document.createElement("div");
-        desc.className = "ss-card-desc";
-        desc.textContent = mode.desc;
-        body.appendChild(desc);
 
         card.appendChild(body);
         cardsContainer.appendChild(card);
-
-        // Render static preview at the frame's real pixel size so the aspect
-        // matches the box (no stretch). Backing store scaled by DPR for crisp
-        // output; api.preview() reads canvas.width/height as its draw extent.
-        var rect = frame.getBoundingClientRect();
-        var dpr = window.devicePixelRatio || 1;
-        var pw = Math.max(1, Math.round(rect.width * dpr));
-        var ph = Math.max(1, Math.round(rect.height * dpr));
-        preview.width = pw;
-        preview.height = ph;
-        var pCtx = preview.getContext("2d");
-        pCtx.fillStyle = "#000000";
-        pCtx.fillRect(0, 0, pw, ph);
-        try {
-          api.preview(mode.key, pCtx, pw, ph);
-        } catch (e) {}
+        drawPreview(preview, frame, mode.key);
 
         // Selection handler
         function selectMode() {
           currentMode = mode.key;
           api.setMode(mode.key);
-          buildCards();
-          if (window.lucide) lucide.createIcons({ attrs: { "stroke-width": 1.5 } });
+          refresh();
         }
         card.addEventListener("click", selectMode);
         card.addEventListener("keydown", function (e) {
@@ -159,7 +189,7 @@
       });
     }
 
-    buildCards();
+    refresh();
 
     // Idle timeout
     idleSelect.value = String(api.getIdleTimeout());
@@ -194,8 +224,7 @@
     paletteToggle.addEventListener("change", function () {
       api.setUsePalette(this.checked);
       // Rebuild previews to reflect palette change
-      buildCards();
-      if (window.lucide) lucide.createIcons({ attrs: { "stroke-width": 1.5 } });
+      refresh();
     });
 
     // Grid mouse toggle

@@ -67,6 +67,7 @@ There is no bundler, no framework, no build tool chain. The output is a director
         effects.js            # Terminal glitch, footer clock, cursor companion
         ideas-dismiss.js      # Dismiss/delete buttons on ideas/ page
         live-reload.js        # Build-change polling / fragment re-fetch
+        rebuild-queue.js      # Pending-rebuild toast + flush action
         pins.js               # Pinboard: pin CRUD, card rendering, navigation
         scratch.js            # Scratch buffer / daily journal (backtick hotkey)
         shortcuts.js          # Keyboard shortcuts overlay

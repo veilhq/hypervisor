@@ -2,7 +2,8 @@
 File watcher for the Hypervisor desktop app.
 
 Watches .hyperspace/**/*.md for changes and triggers incremental rebuilds.
-Uses watchdog with debouncing to handle rapid successive saves.
+Changes are queued and coalesced: the build runs once after a quiet period
+(or a maximum hold), or immediately on flush(), covering every queued file.
 
 Content hashing is used to suppress phantom events - on Windows, reading a
 file during a build can update its access time, which watchdog may report as
@@ -34,13 +35,19 @@ class MarkdownHandler(FileSystemEventHandler):
     # Directories to ignore (relative to HYPERSPACE_ROOT)
     IGNORE_DIRS = {".hypervisor", "__pycache__", ".scratch"}
 
-    def __init__(self, rebuild_callback, debounce_seconds=0.3):
+    def __init__(self, rebuild_callback, hold_seconds=3.0, max_hold_seconds=15.0,
+                 queue_callback=None):
         super().__init__()
         self.rebuild_callback = rebuild_callback
-        self.debounce_seconds = debounce_seconds
+        self.hold_seconds = hold_seconds
+        self.max_hold_seconds = max_hold_seconds
+        self.queue_callback = queue_callback
         self._timer = None
         self._lock = threading.Lock()
-        self._pending_path = None
+        # Queued changes: incremental paths plus a flag for "needs a full build".
+        self._pending_paths = set()
+        self._pending_full = False
+        self._first_event_at = None
         # Paths written programmatically - events for these are ignored
         # until their grace period expires. Maps resolved path → expiry timestamp.
         self._ignored_paths = {}
@@ -198,34 +205,88 @@ class MarkdownHandler(FileSystemEventHandler):
         self._debounce(rel_path)
 
     def _debounce(self, rel_path):
-        """Debounce rapid events - only fire the callback after the quiet period."""
+        """Queue a change (None = full rebuild) and restart the hold timer.
+
+        The timer waits for a quiet period of hold_seconds, but never longer
+        than max_hold_seconds after the first queued change.
+        """
         with self._lock:
-            self._pending_path = rel_path
+            now = time.monotonic()
+            if self._first_event_at is None:
+                self._first_event_at = now
+            if rel_path is None:
+                self._pending_full = True
+            else:
+                self._pending_paths.add(rel_path)
             if self._timer is not None:
                 self._timer.cancel()
-            self._timer = threading.Timer(self.debounce_seconds, self._fire)
+            remaining = self.max_hold_seconds - (now - self._first_event_at)
+            self._timer = threading.Timer(max(0.0, min(self.hold_seconds, remaining)), self._fire)
+            self._timer.daemon = True
             self._timer.start()
+            count = self._count_locked()
+            full = self._pending_full
+        self._notify_queue(count, full)
+
+    def _count_locked(self):
+        return len(self._pending_paths) + (1 if self._pending_full else 0)
+
+    def _notify_queue(self, count, full):
+        if self.queue_callback is None:
+            return
+        try:
+            self.queue_callback(count, full)
+        except Exception as e:  # a UI hiccup must never block the queue
+            logger.debug("watcher: queue callback failed: %s", e)
+
+    def pending_count(self):
+        """Number of queued changes waiting for the next build."""
+        with self._lock:
+            return self._count_locked()
+
+    def flush(self):
+        """Run the queued rebuild now. Returns the number of changes flushed."""
+        with self._lock:
+            if self._timer is not None:
+                self._timer.cancel()
+        return self._fire()
 
     def _fire(self):
-        """Execute the rebuild callback after the debounce period."""
+        """Hand the queued changes to the rebuild callback as one batch."""
         with self._lock:
-            path = self._pending_path
-            self._pending_path = None
+            paths = sorted(self._pending_paths)
+            full = self._pending_full
+            self._pending_paths = set()
+            self._pending_full = False
+            self._first_event_at = None
             self._timer = None
-        if path:
-            logger.info("watcher: file changed, rebuilding: %s", path)
+        if not paths and not full:
+            return 0
+        if full:
+            logger.info("watcher: %d queued change(s), full rebuild", len(paths))
         else:
-            logger.info("watcher: change detected, triggering full rebuild")
-        self.rebuild_callback(path)
+            logger.info("watcher: rebuilding %d queued file(s)", len(paths))
+        self._notify_queue(0, False)
+        self.rebuild_callback(paths, full)
+        return len(paths) + (1 if full else 0)
 
 
 class FileWatcher:
     """Manages the watchdog observer for .hyperspace markdown files."""
 
-    def __init__(self, rebuild_callback, debounce_seconds=0.3):
-        self.handler = MarkdownHandler(rebuild_callback, debounce_seconds)
+    def __init__(self, rebuild_callback, hold_seconds=3.0, max_hold_seconds=15.0,
+                 queue_callback=None):
+        self.handler = MarkdownHandler(
+            rebuild_callback, hold_seconds, max_hold_seconds, queue_callback)
         self.observer = Observer()
         self.observer.daemon = True
+
+    def flush(self):
+        """Rebuild queued changes immediately. Returns how many were flushed."""
+        return self.handler.flush()
+
+    def pending_count(self):
+        return self.handler.pending_count()
 
     def start(self):
         """Start watching .hyperspace/ for markdown changes."""

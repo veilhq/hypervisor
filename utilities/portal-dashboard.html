@@ -14,12 +14,8 @@
   padding: var(--space-2) 0;
   border-bottom: var(--border-hair) solid var(--border);
 }
-.range-header h1 {
-  font-size: var(--fs-mono); color: var(--text-bright);
-  text-transform: uppercase; letter-spacing: var(--track-label);
-  display: flex; align-items: center; gap: var(--space-2);
-}
-.range-header h1 i { width: 20px; height: 20px; color: var(--text-muted); }
+.range-header h1 { display: flex; align-items: center; gap: var(--space-2); }
+.range-header h1 i, .range-header h1 svg { width: var(--icon-lg); height: var(--icon-lg); color: var(--text-muted); }
 .range-status { font-size: var(--fs-mono); color: var(--text-dim); display: flex; align-items: center; gap: var(--space-2); }
 .range-full { grid-column: 1 / -1; }
 
@@ -33,14 +29,6 @@
 .range-auth p { font-size: var(--fs-mono); color: var(--text-muted); line-height: var(--lh-body); }
 /* range-auth textarea + select normalized to shared .form-textarea / .form-select (see markup). */
 .range-auth-row { display: flex; align-items: center; gap: var(--space-3); }
-.range-btn {
-  background: transparent; border: var(--border-hair) solid var(--interactive);
-  border-radius: var(--radius); color: var(--interactive); font-family: var(--font);
-  font-size: var(--fs-mono); text-transform: uppercase; letter-spacing: var(--track-label);
-  padding: var(--space-2) var(--space-4); cursor: pointer;
-  transition: background var(--motion-base) var(--ease), color var(--motion-base) var(--ease);
-}
-.range-btn:hover { background: var(--interactive); color: var(--bg); }
 .range-auth-notice { font-size: var(--fs-mono); color: var(--warning); }
 .range-hint { font-size: var(--fs-mono); color: var(--text-dim); }
 .range-hint code { color: var(--text-muted); }
@@ -63,7 +51,7 @@
   <p class="range-hint">Find it in your browser while logged into the portal:
      F12 &rarr; Application &rarr; Cookies &rarr; <code>access_token</code>.</p>
   <div class="range-auth-row">
-    <button class="range-btn" id="range-connect">Connect</button>
+    <button class="action-button" id="range-connect">Connect</button>
     <span class="range-auth-notice" id="range-notice"></span>
   </div>
 </div>
@@ -71,10 +59,10 @@
 <!-- Connected state -->
 <div id="range-connected" style="display:none;">
   <div class="range-header">
-    <h1><i data-lucide="layout-dashboard"></i> Portal Dashboard</h1>
+    <h1 class="utility-title"><i data-lucide="layout-dashboard"></i> Portal Dashboard</h1>
     <div class="range-status">
       <span id="range-updated">&mdash;</span>
-      <button class="range-btn" id="range-disconnect" style="padding: 2px 8px;">Disconnect</button>
+      <button class="action-button" id="range-disconnect">Disconnect</button>
     </div>
   </div>
 
@@ -85,12 +73,12 @@
          row-major: [KPIs | AMI], then [Instance Status | Sessions]. -->
     <div class="range-grid">
       <div class="range-dash kpi-grid" style="grid-template-columns: 1fr 1fr;">
-        <div class="range-kpi kpi-tile" id="kpi-instances"><div class="range-kpi-label kpi-tile-label">Total Instances</div><div class="range-kpi-value kpi-tile-value">&mdash;</div><div class="range-kpi-sub kpi-tile-sub"></div></div>
-        <div class="range-kpi kpi-tile" id="kpi-participants"><div class="range-kpi-label kpi-tile-label">Participants</div><div class="range-kpi-value kpi-tile-value">&mdash;</div><div class="range-kpi-sub kpi-tile-sub">using instances</div></div>
-        <div class="range-kpi kpi-tile" id="kpi-classrooms"><div class="range-kpi-label kpi-tile-label">Classrooms</div><div class="range-kpi-value kpi-tile-value">&mdash;</div><div class="range-kpi-sub kpi-tile-sub">using instances</div></div>
-        <div class="range-kpi kpi-tile" id="kpi-sgs"><div class="range-kpi-label kpi-tile-label">Security Groups</div><div class="range-kpi-value kpi-tile-value">&mdash;</div><div class="range-kpi-sub kpi-tile-sub">EC2 / DynamoDB</div></div>
-        <div class="range-kpi kpi-tile" id="kpi-sessions"><div class="range-kpi-label kpi-tile-label">Active Sessions</div><div class="range-kpi-value kpi-tile-value">&mdash;</div><div class="range-kpi-sub kpi-tile-sub">signed in now</div></div>
-        <div class="range-kpi kpi-tile" id="kpi-active-classrooms"><div class="range-kpi-label kpi-tile-label">Active Classrooms</div><div class="range-kpi-value kpi-tile-value">&mdash;</div><div class="range-kpi-sub kpi-tile-sub">with signed-in users</div></div>
+        <div class="range-kpi kpi-tile kpi-tile-display" id="kpi-instances"><div class="range-kpi-label kpi-tile-label">Total Instances</div><div class="range-kpi-value kpi-tile-value">&mdash;</div><div class="range-kpi-sub kpi-tile-sub"></div></div>
+        <div class="range-kpi kpi-tile kpi-tile-display" id="kpi-participants"><div class="range-kpi-label kpi-tile-label">Participants</div><div class="range-kpi-value kpi-tile-value">&mdash;</div><div class="range-kpi-sub kpi-tile-sub">using instances</div></div>
+        <div class="range-kpi kpi-tile kpi-tile-display" id="kpi-classrooms"><div class="range-kpi-label kpi-tile-label">Classrooms</div><div class="range-kpi-value kpi-tile-value">&mdash;</div><div class="range-kpi-sub kpi-tile-sub">using instances</div></div>
+        <div class="range-kpi kpi-tile kpi-tile-display" id="kpi-sgs"><div class="range-kpi-label kpi-tile-label">Security Groups</div><div class="range-kpi-value kpi-tile-value">&mdash;</div><div class="range-kpi-sub kpi-tile-sub">EC2 / DynamoDB</div></div>
+        <div class="range-kpi kpi-tile kpi-tile-display" id="kpi-sessions"><div class="range-kpi-label kpi-tile-label">Active Sessions</div><div class="range-kpi-value kpi-tile-value">&mdash;</div><div class="range-kpi-sub kpi-tile-sub">signed in now</div></div>
+        <div class="range-kpi kpi-tile kpi-tile-display" id="kpi-active-classrooms"><div class="range-kpi-label kpi-tile-label">Active Classrooms</div><div class="range-kpi-value kpi-tile-value">&mdash;</div><div class="range-kpi-sub kpi-tile-sub">with signed-in users</div></div>
       </div>
 
       <div class="range-card dashboard-card">
@@ -149,7 +137,7 @@
     // rather than dereference null. stopPolling() prevents the leak; this is
     // the belt-and-suspenders guard for an in-flight poll already resolving.
     if (!card) return;
-    card.querySelector('.range-kpi-value').textContent = value;
+    card.querySelector('.range-kpi-value').textContent = typeof value === 'number' ? HvUtils.pad2(value) : value;
     if (sub != null) card.querySelector('.range-kpi-sub').textContent = sub;
     card.classList.toggle('kpi-tile-warn', !!warn);
   }
@@ -169,13 +157,13 @@
     setKpi('kpi-instances', total, orphanInst ? (orphanInst + ' orphaned') : 'in database', orphanInst > 0);
     setKpi('kpi-participants', participants);
     setKpi('kpi-classrooms', classrooms);
-    setKpi('kpi-sgs', sgs.in_ec2 + ' / ' + sgs.in_dynamo, 'EC2 / DynamoDB', sgMismatch);
+    setKpi('kpi-sgs', HvUtils.pad2(sgs.in_ec2) + ' / ' + HvUtils.pad2(sgs.in_dynamo), 'EC2 / DynamoDB', sgMismatch);
 
     // Instance status bars - fixed lifecycle order, per-state colors.
     var STATE_ORDER = ['queued to boot', 'booting', 'running', 'available', 'queued to terminate', 'terminating'];
     var STATE_COLOR = {
-      'queued to boot': 'var(--warm)', 'booting': 'var(--warm)', 'running': 'var(--live)',
-      'available': 'var(--cool)', 'queued to terminate': 'var(--comp)', 'terminating': 'var(--comp)'
+      'queued to boot': 'var(--warning)', 'booting': 'var(--warning)', 'running': 'var(--live)',
+      'available': 'var(--info)', 'queued to terminate': 'var(--error)', 'terminating': 'var(--error)'
     };
     if (window.HvViz) {
       HvViz.bars('range-status-bars', {

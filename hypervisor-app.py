@@ -51,11 +51,17 @@ webview_logger = setup_logger("webview")
 import webview.http
 
 from site_utils.config import HYPERSPACE_ROOT, OUTPUT_DIR, ASSETS_DIR, CHANGELOG_CACHE_FILE
+from site_utils.claude_changelog import (
+    load_claude_changelog,
+    installed_claude_version,
+    update_claude_cli as _update_claude_cli,
+    version_key,
+)
 from site_utils.file_utils import read_md, _extract_assignee_from_text
 from site_utils.work_items import mark_done as _mark_done
 from site_utils.external_files import import_external_file as _import_external, delete_external_file as _delete_external
 from site_utils.ideas import delete_idea as _delete_idea
-from build import full_build, build_single_file
+from build import full_build, build_single_file, build_files
 from watcher import FileWatcher
 
 
@@ -729,6 +735,12 @@ class HypervisorAPI:
                 logger.error("rebuild after bulk metadata update failed: %s", e)
 
         return {"ok": failed == 0, "updated": updated, "failed": failed, "results": results}
+
+    def flush_rebuild_queue(self):
+        """Rebuild any queued file changes now instead of waiting out the hold."""
+        flushed = self._watcher.flush()
+        logger.info("rebuild queue flushed from UI: %d change(s)", flushed)
+        return {"ok": True, "flushed": flushed}
 
     def rebuild(self):
         """Force a full site rebuild from the UI."""
@@ -1428,6 +1440,7 @@ class HypervisorAPI:
             content_html, toc_html = render_markdown(md_content, source_path=rel_posix)
             html_content = build_export_page(content_html, title, rel_posix, toc_html=toc_html)
         except Exception as e:
+            logger.exception("export render failed for %s", source_rel_path)
             return {"ok": False, "error": f"Failed to render export: {e}"}
 
         try:
@@ -1582,6 +1595,42 @@ class HypervisorAPI:
             }
         except Exception as e:
             return {"ok": False, "error": str(e)}
+
+    def refresh_claude_changelog(self):
+        """Return Claude Code release notes for the viewer.
+
+        Returns:
+            dict with ok, versions (newest-first), installed (local CLI version
+            or None), latest, source ("live", "cache", or "empty").
+        """
+        try:
+            versions, source = load_claude_changelog()
+            installed = installed_claude_version()
+            latest = versions[0]["version"] if versions else None
+            return {
+                "ok": True,
+                "versions": versions,
+                "count": len(versions),
+                "installed": installed,
+                "latest": latest,
+                "update_available": bool(
+                    installed and latest and version_key(latest) > version_key(installed)),
+                "source": source,
+            }
+        except Exception as e:
+            logger.warning("refresh_claude_changelog failed: %s", e)
+            return {"ok": False, "error": str(e)}
+
+    def update_claude_cli(self):
+        """Run `claude update` for the viewer's Update button.
+
+        Returns:
+            dict with ok, version (installed after the run), output.
+        """
+        logger.info("update_claude_cli: running claude update")
+        result = _update_claude_cli()
+        logger.info("update_claude_cli: ok=%s version=%s", result["ok"], result["version"])
+        return result
 
     def refresh_changelog(self):
         """Return the persistent kiro-cli changelog archive for the viewer.
@@ -1876,31 +1925,67 @@ class HypervisorAPI:
             return {"ok": False, "error": str(e)}
 
 
-def on_file_changed(rel_path):
-    """Callback from the file watcher when a .md file changes.
+_rebuild_lock = threading.Lock()
+
+
+def on_queue_changed(count, full):
+    """Tell the UI how many changes are waiting in the rebuild queue (0 clears it)."""
+    if not _window:
+        return
+    js = "if(window.__hvRebuildQueue)window.__hvRebuildQueue(%d,%s);" % (
+        int(count), "true" if full else "false")
+    try:
+        for win in webview.windows:
+            win.evaluate_js(js)
+    except (OSError, RuntimeError) as e:
+        logger.debug("Queue notice failed: %s", e)
+
+
+def on_file_changed(rel_paths, full):
+    """Callback from the file watcher with one batch of queued changes.
 
     Args:
-        rel_path: Relative path to the changed file, or None for deletions/full rebuild.
+        rel_paths: Relative paths of changed .md files to rebuild incrementally.
+        full: True when a deletion, move, or HTML change requires a full rebuild.
     """
     global _window, _api
 
-    if rel_path:
-        print(f"  File changed: {rel_path}")
-        build_single_file(rel_path)
-    else:
-        print("  File deleted or moved - full rebuild")
-        full_build(quiet=True)
+    with _rebuild_lock:
+        if full:
+            print("  File deleted or moved - full rebuild")
+            full_build(quiet=True)
+        elif rel_paths:
+            print(f"  Files changed: {len(rel_paths)}")
+            build_files(rel_paths)
+        else:
+            return
 
-    # RAG incremental reindex (desktop-app path - fires alongside the MCP
-    # server's watcher hook, but only one will do real work because the DB
-    # uses content-hash dedup).
-    rag_msg = _rag_index_file(rel_path)
+        # RAG incremental reindex (desktop-app path - fires alongside the MCP
+        # server's watcher hook, but only one will do real work because the DB
+        # uses content-hash dedup).
+        if full:
+            rag_msgs = [_rag_index_file(None)]
+        else:
+            rag_msgs = [_rag_index_file(p) for p in rel_paths]
+    rag_msgs = [m for m in rag_msgs if m]
+    if not rag_msgs:
+        rag_msg = None
+    elif len(rag_msgs) == 1:
+        rag_msg = rag_msgs[0]
+    else:
+        rag_msg = "RAG indexed %d docs" % len(rag_msgs)
+    rel_path = rel_paths[0] if len(rel_paths) == 1 and not full else None
 
     if _window:
         try:
             # With the SPA router, __hypervisorReload re-fetches the current fragment.
             # Show a toast notification after reload completes.
-            if rel_path:
+            if len(rel_paths) > 1 and not full:
+                reload_toast = (
+                    "window.__hypervisorReload();"
+                    "if(window.__hypervisorToast)window.__hypervisorToast({variant:'info',message:'updated: " + str(len(rel_paths)) + " files',dedupeKey:'live-reload'});"
+                )
+            elif rel_path:
                 safe_path = rel_path.replace("\\", "/").replace("'", "\\'")
                 reload_toast = (
                     "window.__hypervisorReload();"
@@ -2272,7 +2357,8 @@ def main():
     print(f"  Build complete (id: {build_id})")
 
     # Set up file watcher
-    watcher = FileWatcher(on_file_changed, debounce_seconds=0.3)
+    watcher = FileWatcher(on_file_changed, hold_seconds=3.0, max_hold_seconds=15.0,
+                          queue_callback=on_queue_changed)
 
     # Set up the JS bridge API
     api = HypervisorAPI(watcher)

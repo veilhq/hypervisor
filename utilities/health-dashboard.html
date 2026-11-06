@@ -119,9 +119,9 @@
     var timestamp = DATA.timestamp;
 
     // --- Summary Stats ---
-    document.getElementById('hd-total-val').textContent = health.current.total;
-    document.getElementById('hd-valid-val').textContent = health.current.valid;
-    document.getElementById('hd-violations-val').textContent = health.current.violations;
+    document.getElementById('hd-total-val').textContent = HvUtils.pad2(health.current.total);
+    document.getElementById('hd-valid-val').textContent = HvUtils.pad2(health.current.valid);
+    document.getElementById('hd-violations-val').textContent = HvUtils.pad2(health.current.violations);
 
     var violCard = document.getElementById('hd-violations');
     if (health.current.violations === 0) {

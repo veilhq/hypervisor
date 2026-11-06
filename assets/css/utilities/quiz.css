@@ -269,7 +269,10 @@
 }
 .quiz-final-pct {
   display: block;
-  font-size: calc(var(--fs-mono) * 3);
+  font-family: var(--font-display);
+  font-size: var(--fs-display-num);
+  font-weight: var(--fw-extrabold);
+  letter-spacing: var(--track-display);
   line-height: var(--lh-tight);
   margin-bottom: var(--space-1);
 }

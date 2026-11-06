@@ -1,7 +1,8 @@
 <style>
 /* =========================================================================
-   Changelog Viewer - browsable archive of kiro-cli release notes.
-   Reads the persistent archive via pywebview.api.refresh_changelog().
+   Changelog Viewer - browsable release notes for kiro-cli (persistent archive,
+   pywebview.api.refresh_changelog()) and Claude Code (upstream CHANGELOG.md,
+   pywebview.api.refresh_claude_changelog()).
    Self-contained styles, hyperkit tokens throughout. Layout from the shared
    .utility-body primitive.
    ========================================================================= */
@@ -11,18 +12,23 @@
 /* .cl-filter composes .status-chip; only the toggle + interactive cursor are
    local. Idle = outlined-muted silhouette; .active = filled accent (the JS
    toggles .active, so the state lives here, not in swapped variant classes). */
-.cl-filter {
+.cl-source-row { gap: var(--space-1); margin-bottom: var(--space-3); }
+.cl-filter,
+.cl-source {
   cursor: pointer;
   color: var(--text-muted);
   background: transparent;
   border: var(--border-hair) solid var(--border-strong);
 }
-.cl-filter:hover { color: var(--interactive); border-color: var(--interactive); }
-.cl-filter.active {
+.cl-filter:hover,
+.cl-source:hover { color: var(--interactive); border-color: var(--interactive); }
+.cl-filter.active,
+.cl-source.active {
   color: var(--bg);
   background: var(--selected);
   border-color: var(--selected);
 }
+.cl-refresh svg, .cl-refresh i { width: var(--icon-sm); height: var(--icon-sm); }
 .cl-meta {
   margin-left: auto;
   font-size: var(--fs-mono);
@@ -47,11 +53,8 @@
 }
 html.a11y-reduce-motion .cl-version { animation: none !important; opacity: 1; transform: none; }
 
-/* Latest release - accent-glow wash + brighter frame to draw the eye. */
-.cl-version.is-latest {
-  border-color: var(--selected-border);
-  background: linear-gradient(var(--selected-wash), transparent 60%), var(--bg-card);
-}
+/* Latest release - brighter frame to draw the eye. */
+.cl-version.is-latest { border-color: var(--selected-border); }
 
 .cl-version-head {
   gap: var(--space-2);
@@ -69,11 +72,22 @@ html.a11y-reduce-motion .cl-version { animation: none !important; opacity: 1; tr
   color: var(--text-dim);
   font-variant-numeric: tabular-nums;
 }
+/* Claude Code flags: the installed release and releases newer than it. */
+.cl-installed-flag { color: var(--success); border-color: var(--success-border); }
+.cl-new-flag { color: var(--live); border-color: var(--live); }
+.cl-version.is-new { border-color: var(--live); }
 /* "LATEST" flag composes .status-chip.status-chip-filled - extra tracking only. */
 .cl-latest-flag { letter-spacing: var(--track-caps); }
 
-/* Category summary chips in the header - shape-at-a-glance. Compose
-   .status-chip; only the count layout + per-category color are local. */
+/* Category legend: --chip-tone (summary chips) and --badge-tone (group badges)
+   carry the per-category color; Changed stays neutral. */
+.cl-summary-chip[data-type="Added"],     .cl-group-header[data-type="Added"]      { --chip-tone: var(--success); --badge-tone: var(--success); }
+.cl-summary-chip[data-type="Changed"],   .cl-group-header[data-type="Changed"]    { --chip-tone: var(--text-muted); --badge-tone: var(--text-muted); }
+.cl-summary-chip[data-type="Fixed"],     .cl-group-header[data-type="Fixed"]      { --chip-tone: var(--info); --badge-tone: var(--info); }
+.cl-summary-chip[data-type="Security"],  .cl-group-header[data-type="Security"]   { --chip-tone: var(--error); --badge-tone: var(--error); }
+.cl-summary-chip[data-type="Deprecated"], .cl-group-header[data-type="Deprecated"] { --chip-tone: var(--warning); --badge-tone: var(--warning); }
+
+/* Category summary chips in the header - shape-at-a-glance. */
 .cl-summary {
   margin-left: auto;
   gap: var(--space-1);
@@ -82,15 +96,11 @@ html.a11y-reduce-motion .cl-version { animation: none !important; opacity: 1; tr
 }
 .cl-summary-chip {
   gap: var(--space-1);
-  color: var(--text-dim);
+  color: var(--chip-tone);
+  background: transparent;
+  border: var(--border-hair) solid var(--chip-tone);
   font-variant-numeric: tabular-nums;
 }
-.cl-summary-chip b { font-weight: var(--fw-bold); }
-.cl-summary-chip[data-type="Added"]      { color: var(--success); border-color: var(--success-border); }
-.cl-summary-chip[data-type="Changed"]     { color: var(--text-muted); }
-.cl-summary-chip[data-type="Fixed"]        { color: var(--info); }
-.cl-summary-chip[data-type="Security"]     { color: var(--error); }
-.cl-summary-chip[data-type="Deprecated"]   { color: var(--warning); }
 
 .cl-entries { padding: var(--space-1) 0 var(--space-2); }
 .cl-group-header {
@@ -99,14 +109,8 @@ html.a11y-reduce-motion .cl-version { animation: none !important; opacity: 1; tr
   border-top: var(--border-hair) solid var(--border);
 }
 .cl-group-header:first-child { border-top: none; }
-/* Category badge composes .status-chip; the currentColor border + per-category
-   color are the local part. */
-.cl-type-badge { border-color: currentColor; }
-.cl-group-header[data-type="Added"]      { color: var(--success); }
-.cl-group-header[data-type="Changed"]     { color: var(--text-muted); }
-.cl-group-header[data-type="Fixed"]        { color: var(--info); }
-.cl-group-header[data-type="Security"]     { color: var(--error); }
-.cl-group-header[data-type="Deprecated"]   { color: var(--warning); }
+/* Category badge composes .label-badge; tone comes from the legend above. */
+.cl-type-badge { color: var(--badge-tone); border-color: var(--badge-tone); }
 .cl-group-count { font-size: var(--fs-mono); color: var(--text-dim); font-variant-numeric: tabular-nums; }
 
 .cl-entry {
@@ -134,7 +138,12 @@ html.a11y-reduce-motion .cl-version { animation: none !important; opacity: 1; tr
 </style>
 
 <div class="utility-body">
-  <h1><i data-lucide="scroll-text" class="utility-title-icon"></i> Kiro CLI Changelog</h1>
+  <h1 class="utility-title"><i data-lucide="scroll-text" class="utility-title-icon"></i> <span id="cl-title">Kiro CLI Changelog</span></h1>
+
+  <div class="cl-source-row flex-center" id="cl-sources">
+    <button class="cl-source status-chip active" data-source="kiro">Kiro CLI</button>
+    <button class="cl-source status-chip" data-source="claude-code">Claude Code</button>
+  </div>
 
   <div class="cl-toolbar flex-center" id="cl-toolbar" style="display:none;">
     <div class="cl-filters flex-center" id="cl-filters">
@@ -145,7 +154,8 @@ html.a11y-reduce-motion .cl-version { animation: none !important; opacity: 1; tr
       <button class="cl-filter status-chip" data-type="Security">Security</button>
       <button class="cl-filter status-chip" data-type="Deprecated">Deprecated</button>
     </div>
-    <button class="cl-refresh action-button" id="cl-refresh"><i data-lucide="refresh-cw" style="width:11px;height:11px;vertical-align:-1px"></i> Refresh</button>
+    <button class="cl-update action-button action-button-primary" id="cl-update" style="display:none;">Update Claude Code</button>
+    <button class="cl-refresh action-button" id="cl-refresh"><i data-lucide="refresh-cw"></i> Refresh</button>
     <span class="cl-meta" id="cl-meta"></span>
   </div>
 
@@ -160,8 +170,27 @@ html.a11y-reduce-motion .cl-version { animation: none !important; opacity: 1; tr
   var listEl = document.getElementById("cl-list");
   var toolbarEl = document.getElementById("cl-toolbar");
   var metaEl = document.getElementById("cl-meta");
+  var titleEl = document.getElementById("cl-title");
+  var updateBtn = document.getElementById("cl-update");
   var activeFilter = "all";
   var versions = [];
+  var source = "kiro";
+  var installed = null;
+
+  var SOURCES = {
+    "kiro": { title: "Kiro CLI Changelog", api: "refresh_changelog", empty: "No changelog captured yet. Notes are archived automatically when kiro-cli updates." },
+    "claude-code": { title: "Claude Code Changelog", api: "refresh_claude_changelog", empty: "No Claude Code release notes available. Check the network connection and refresh." }
+  };
+
+  // Numeric compare of dotted versions; true when a is newer than b.
+  function isNewer(a, b) {
+    var left = String(a).split("."), right = String(b).split(".");
+    for (var i = 0; i < Math.max(left.length, right.length); i++) {
+      var diff = (parseInt(left[i], 10) || 0) - (parseInt(right[i], 10) || 0);
+      if (diff) return diff > 0;
+    }
+    return false;
+  }
 
   function esc(s) {
     return String(s == null ? "" : s)
@@ -176,20 +205,23 @@ html.a11y-reduce-motion .cl-version { animation: none !important; opacity: 1; tr
 
     // Stagger the reveal so blocks cascade in rather than snapping together.
     var delay = Math.min(index * 60, 400);
-    var cls = "cl-version content-card" + (isLatest ? " is-latest" : "");
+    var pending = source === "claude-code" && installed && isNewer(v.version, installed);
+    var cls = "cl-version content-card" + (isLatest ? " is-latest" : "") + (pending ? " is-new" : "");
     var html = '<div class="' + cls + '" style="animation-delay:' + delay + 'ms">';
 
     html += '<div class="cl-version-head flex-center">';
     html += '<span class="cl-version-num">v' + esc(v.version) + '</span>';
     if (v.date) html += '<span class="cl-version-date">' + esc(v.date) + '</span>';
     if (isLatest) html += '<span class="cl-latest-flag status-chip status-chip-filled">Latest</span>';
+    if (pending) html += '<span class="cl-new-flag status-chip">Update</span>';
+    if (source === "claude-code" && installed === v.version) html += '<span class="cl-installed-flag status-chip">Installed</span>';
 
     // Category summary chips - count per type, in canonical order.
     html += '<span class="cl-summary flex-center">';
     TYPE_ORDER.forEach(function (type) {
       var n = (buckets[type] || []).length;
       if (!n) return;
-      html += '<span class="cl-summary-chip status-chip" data-type="' + type + '"><b>' + n + '</b> ' + type + '</span>';
+      html += '<span class="cl-summary-chip status-chip" data-type="' + type + '"><b>' + HvUtils.pad2(n) + '</b> ' + type + '</span>';
     });
     html += '</span>';
     html += '</div>';
@@ -199,8 +231,8 @@ html.a11y-reduce-motion .cl-version { animation: none !important; opacity: 1; tr
       var items = buckets[type];
       if (!items || !items.length) return;
       html += '<div class="cl-group-header flex-center" data-type="' + type + '">';
-      html += '<span class="cl-type-badge status-chip">' + type + '</span>';
-      html += '<span class="cl-group-count">' + items.length + '</span>';
+      html += '<span class="cl-type-badge label-badge">' + type + '</span>';
+      html += '<span class="cl-group-count">' + HvUtils.pad2(items.length) + '</span>';
       html += '</div>';
       items.forEach(function (e) {
         html += '<div class="cl-entry" data-type="' + type + '">';
@@ -215,7 +247,7 @@ html.a11y-reduce-motion .cl-version { animation: none !important; opacity: 1; tr
 
   function render() {
     if (!versions.length) {
-      listEl.innerHTML = '<div class="cl-empty">No changelog captured yet. Notes are archived automatically when kiro-cli updates.</div>';
+      listEl.innerHTML = '<div class="cl-empty">' + esc(SOURCES[source].empty) + '</div>';
       toolbarEl.style.display = "none";
       return;
     }
@@ -257,30 +289,78 @@ html.a11y-reduce-motion .cl-version { animation: none !important; opacity: 1; tr
     fetchData();
   });
 
+  // The upstream Claude Code file spans hundreds of releases; show the newest.
+  var MAX_VERSIONS = 40;
+
   function onData(result) {
     if (result && result.ok) {
-      versions = result.versions || [];
-      var meta = versions.length + " version" + (versions.length === 1 ? "" : "s");
-      if (result.source === "live") meta += " \u00b7 captured live";
+      var total = (result.versions || []).length;
+      versions = (result.versions || []).slice(0, MAX_VERSIONS);
+      installed = result.installed || null;
+      var meta = total > versions.length
+        ? "latest " + versions.length + " of " + total + " versions"
+        : total + " version" + (total === 1 ? "" : "s");
+      if (result.update_available) meta += " \u00b7 update available (v" + result.latest + ")";
+      else if (result.source === "live") meta += " \u00b7 captured live";
       else if (result.source === "cache") meta += " \u00b7 from archive";
       metaEl.textContent = meta;
       render();
+      updateBtn.style.display = source === "claude-code" && result.update_available ? "" : "none";
+      updateBtn.disabled = false;
+      updateBtn.textContent = "Update Claude Code";
     } else {
       listEl.innerHTML = '<div class="cl-empty">Error: ' + esc(result && result.error || "unknown") + '</div>';
     }
   }
 
   function fetchData() {
-    if (window.pywebview && window.pywebview.api && window.pywebview.api.refresh_changelog) {
-      window.pywebview.api.refresh_changelog().then(onData);
+    var api = SOURCES[source].api;
+    var requested = source;
+    function call() {
+      window.pywebview.api[api]().then(function (result) {
+        if (requested === source) onData(result);
+      });
+    }
+    if (window.pywebview && window.pywebview.api && window.pywebview.api[api]) {
+      call();
     } else {
       window.addEventListener("pywebviewready", function () {
-        if (window.pywebview.api.refresh_changelog) {
-          window.pywebview.api.refresh_changelog().then(onData);
-        }
+        if (window.pywebview.api[api]) call();
       });
     }
   }
+
+  // Run `claude update`, then reload the list so the installed flag moves.
+  updateBtn.addEventListener("click", function () {
+    if (!window.pywebview || !window.pywebview.api || !window.pywebview.api.update_claude_cli) return;
+    updateBtn.disabled = true;
+    updateBtn.textContent = "Updating…";
+    window.pywebview.api.update_claude_cli().then(function (result) {
+      if (result && result.ok) {
+        fetchData();
+        return;
+      }
+      updateBtn.disabled = false;
+      updateBtn.textContent = "Update Claude Code";
+      metaEl.textContent = "Update failed: " + ((result && result.output) || "unknown error");
+    });
+  });
+
+  document.getElementById("cl-sources").addEventListener("click", function (e) {
+    var btn = e.target.closest(".cl-source");
+    if (!btn || btn.dataset.source === source) return;
+    source = btn.dataset.source;
+    installed = null;
+    titleEl.textContent = SOURCES[source].title;
+    document.querySelectorAll(".cl-source").forEach(function (b) {
+      b.classList.toggle("active", b.dataset.source === source);
+    });
+    metaEl.textContent = "";
+    updateBtn.style.display = "none";
+    listEl.innerHTML = '<div class="cl-empty">Loading&hellip;</div>';
+    toolbarEl.style.display = "none";
+    fetchData();
+  });
 
   fetchData();
 })();

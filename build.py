@@ -530,17 +530,26 @@ def full_build(quiet=False):
 
 
 def build_single_file(changed_path):
-    """Incremental rebuild: re-render one doc fragment and regenerate affected indexes.
+    """Incremental rebuild of one changed .md file (path relative to HYPERSPACE_ROOT).
+
+    Returns the build_id used for this rebuild.
+    """
+    return build_files([changed_path])
+
+
+def build_files(changed_paths):
+    """Incremental rebuild: re-render each changed doc fragment, then regenerate
+    the shared indexes, nav state, and homepage once for the whole batch.
 
     Args:
-        changed_path: Path to the changed .md file, relative to HYPERSPACE_ROOT
-                      (e.g. "work/to-do/my-item/story.md")
+        changed_paths: Paths to changed .md files, relative to HYPERSPACE_ROOT
+                       (e.g. ["work/to-do/my-item/story.md"])
 
     Returns the build_id used for this rebuild.
     """
     from pathlib import Path, PurePosixPath
 
-    logger.info("incremental build: %s", changed_path)
+    logger.info("incremental build: %d file(s)", len(changed_paths))
 
     build_id = str(int(time.time() * 1000))
     files = collect_files(HYPERSPACE_ROOT)
@@ -599,34 +608,35 @@ def build_single_file(changed_path):
         json.dumps(nav_state, ensure_ascii=False), encoding="utf-8"
     )
 
-    # Rebuild the changed doc fragment
-    rel = PurePosixPath(changed_path)
-    md_path = HYPERSPACE_ROOT / rel
-    if md_path.exists():
-        md_text = read_md(md_path)
-        title = get_title(md_text, nice_name(rel.name))
-        content_html, toc_html = render_markdown(md_text, source_path=str(rel))
-        hdir = html_dir_for(rel)
-
-        rel_posix = str(rel).replace("\\", "/")
-        doc_backlinks = backlink_index.get(rel_posix, [])
-        backlinks_html = render_backlinks_html(doc_backlinks)
-
-        fragment = build_fragment(
-            content_html, title, rel_posix,
-            toc_html=toc_html, backlinks_html=backlinks_html,
-            page_type="doc", source_path=rel_posix,
-        )
-
-        fragment_path = OUTPUT_DIR / "content" / (str(PurePosixPath(hdir)) + ".json")
-        write_fragment(fragment, fragment_path)
-
-    # Rebuild ancestor directory index fragments
-    parent = str(PurePosixPath(changed_path).parent).replace("\\", "/")
+    # Rebuild each changed doc fragment, collecting the ancestor dirs to refresh
     ancestors = []
-    while parent and parent != ".":
-        ancestors.append(parent)
-        parent = str(PurePosixPath(parent).parent).replace("\\", "/")
+    for changed_path in changed_paths:
+        rel = PurePosixPath(changed_path)
+        md_path = HYPERSPACE_ROOT / rel
+        if md_path.exists():
+            md_text = read_md(md_path)
+            title = get_title(md_text, nice_name(rel.name))
+            content_html, toc_html = render_markdown(md_text, source_path=str(rel))
+            hdir = html_dir_for(rel)
+
+            rel_posix = str(rel).replace("\\", "/")
+            doc_backlinks = backlink_index.get(rel_posix, [])
+            backlinks_html = render_backlinks_html(doc_backlinks)
+
+            fragment = build_fragment(
+                content_html, title, rel_posix,
+                toc_html=toc_html, backlinks_html=backlinks_html,
+                page_type="doc", source_path=rel_posix,
+            )
+
+            fragment_path = OUTPUT_DIR / "content" / (str(PurePosixPath(hdir)) + ".json")
+            write_fragment(fragment, fragment_path)
+
+        parent = str(PurePosixPath(changed_path).parent).replace("\\", "/")
+        while parent and parent != ".":
+            if parent not in ancestors:
+                ancestors.append(parent)
+            parent = str(PurePosixPath(parent).parent).replace("\\", "/")
 
     for ancestor in ancestors:
         content_html, page_title = generate_dir_index_content(files, ancestor, recent_paths=recent_paths)

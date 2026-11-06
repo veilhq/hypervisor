@@ -1,6 +1,6 @@
 <div class="utility-body log-viewer-layout">
   <div class="log-viewer-container">
-    <h1><i data-lucide="terminal" class="utility-title-icon"></i> Log Viewer</h1>
+    <h1 class="utility-title"><i data-lucide="terminal" class="utility-title-icon"></i> Log Viewer</h1>
 
     <!-- Toolbar -->
     <div class="log-toolbar flex-center">
@@ -8,33 +8,33 @@
         <!-- Source toggles - "All" is static; per-source buttons are generated
              in JS from the log files discovered on disk (list_log_files), so a
              new app's log appears automatically with no edit here. -->
-        <button class="log-filter-btn status-chip log-filter-active" data-source="all" id="log-src-all">All</button>
+        <button class="log-filter-btn nav-tab nav-tab-active" data-source="all" id="log-src-all">All</button>
       </div>
       <div class="log-toolbar-center flex-center">
         <!-- Severity toggles -->
-        <button class="log-severity-btn status-chip log-severity-active" data-severity="error" id="log-sev-error">
+        <button class="log-severity-btn nav-tab nav-tab-active" data-severity="error" id="log-sev-error">
           <span class="log-sev-dot log-sev-dot-error"></span>ERR
         </button>
-        <button class="log-severity-btn status-chip log-severity-active" data-severity="warn" id="log-sev-warn">
+        <button class="log-severity-btn nav-tab nav-tab-active" data-severity="warn" id="log-sev-warn">
           <span class="log-sev-dot log-sev-dot-warn"></span>WARN
         </button>
-        <button class="log-severity-btn status-chip log-severity-active" data-severity="info" id="log-sev-info">
+        <button class="log-severity-btn nav-tab nav-tab-active" data-severity="info" id="log-sev-info">
           <span class="log-sev-dot log-sev-dot-info"></span>INFO
         </button>
-        <button class="log-severity-btn status-chip log-severity-active" data-severity="debug" id="log-sev-debug">
+        <button class="log-severity-btn nav-tab nav-tab-active" data-severity="debug" id="log-sev-debug">
           <span class="log-sev-dot log-sev-dot-debug"></span>DEBUG
         </button>
-        <button class="log-severity-btn status-chip log-severity-active" data-severity="trace" id="log-sev-trace">
+        <button class="log-severity-btn nav-tab nav-tab-active" data-severity="trace" id="log-sev-trace">
           <span class="log-sev-dot log-sev-dot-trace"></span>TRACE
         </button>
       </div>
       <div class="log-toolbar-right flex-center">
         <input type="text" class="log-search-input form-input" id="log-search" placeholder="Filter..." spellcheck="false" autocomplete="off">
-        <button class="log-toolbar-action flex-center-all" id="log-pause" data-tooltip="Pause/resume live polling" aria-label="Pause/resume live polling">
-          <i data-lucide="pause" class="log-toolbar-action-icon" id="log-pause-icon"></i>
+        <button class="icon-button" id="log-pause" data-tooltip="Pause/resume live polling" aria-label="Pause/resume live polling">
+          <i data-lucide="pause" class="icon-button-glyph" id="log-pause-icon"></i>
         </button>
-        <button class="log-toolbar-action flex-center-all" id="log-clear" data-tooltip="Clear display" aria-label="Clear display">
-          <i data-lucide="trash-2" class="log-toolbar-action-icon"></i>
+        <button class="icon-button" id="log-clear" data-tooltip="Clear display" aria-label="Clear display">
+          <i data-lucide="trash-2" class="icon-button-glyph"></i>
         </button>
       </div>
     </div>
@@ -103,37 +103,20 @@
   margin-left: auto;
 }
 
-/* Compose .status-chip (size, padding, tracking come from the chip); keep the
-   toggle silhouette (border/fill/cursor) and the toggle-state rules below. */
 .log-filter-btn,
 .log-severity-btn {
-  border: var(--border-hair) solid var(--border);
-  background: transparent;
-  color: var(--text-muted);
+  padding: var(--chip-padding-y) var(--chip-padding-x);
+  font-size: var(--fs-mono);
+  letter-spacing: var(--chip-letter-spacing);
+  text-transform: uppercase;
+  white-space: nowrap;
   cursor: pointer;
-}
-
-.log-filter-btn:hover,
-.log-severity-btn:hover {
-  border-color: var(--interactive);
-  color: var(--text);
-}
-
-.log-filter-btn.log-filter-active {
-  border-color: var(--selected);
-  color: var(--selected);
-  background: var(--selected-wash);
-}
-
-.log-severity-btn.log-severity-active {
-  border-color: var(--text-muted);
-  color: var(--text);
 }
 
 .log-sev-dot {
   display: inline-block;
-  width: 6px;
-  height: 6px;
+  width: var(--space-2);
+  height: var(--space-2);
   margin-right: var(--space-1);
   vertical-align: middle;
 }
@@ -144,34 +127,10 @@
 .log-sev-dot-debug { background: var(--text-dim); }
 .log-sev-dot-trace { background: var(--text-muted); }
 
-/* Composes .form-input; keeps the caption size, tighter padding, and fixed width. */
 .log-search-input {
-  font-size: var(--fs-mono);
-  padding: var(--space-1) var(--space-3);
-  color: var(--text);
-  letter-spacing: var(--track-body);
   width: 160px;
-}
-
-/* Composes .flex-center-all; keeps the fixed square size + toggle silhouette. */
-.log-toolbar-action {
-  width: 28px;
-  height: 28px;
-  border: var(--border-hair) solid var(--border);
-  background: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: all var(--motion-fast) var(--ease);
-}
-
-.log-toolbar-action:hover {
-  border-color: var(--interactive);
-  color: var(--interactive);
-}
-
-.log-toolbar-action-icon {
-  width: var(--icon-md);
-  height: var(--icon-md);
+  padding: var(--space-1) var(--space-3);
+  letter-spacing: var(--track-body);
 }
 
 /* --- Log Panel --- */
@@ -592,7 +551,7 @@
     });
     SOURCES.forEach(function (s) {
       var btn = document.createElement("button");
-      btn.className = "log-filter-btn status-chip log-filter-active";
+      btn.className = "log-filter-btn nav-tab nav-tab-active";
       btn.setAttribute("data-source", s.key);
       btn.setAttribute("data-generated", "1");
       btn.id = "log-src-" + s.key;
@@ -606,7 +565,7 @@
     document.querySelectorAll(".log-filter-btn").forEach(function (btn) {
       var src = btn.getAttribute("data-source");
       btn.classList.toggle(
-        "log-filter-active",
+        "nav-tab-active",
         src === "all" ? allActive : !!activeSources[src]
       );
     });
@@ -617,7 +576,7 @@
     var sev = btn.getAttribute("data-severity");
     if (!Object.prototype.hasOwnProperty.call(activeSeverities, sev)) return;
     activeSeverities[sev] = !activeSeverities[sev];
-    btn.classList.toggle("log-severity-active", activeSeverities[sev]);
+    btn.classList.toggle("nav-tab-active", activeSeverities[sev]);
     renderAll(true);
   }
 

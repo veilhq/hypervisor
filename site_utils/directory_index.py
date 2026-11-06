@@ -3,15 +3,16 @@ Directory tree helpers and index page generators (home + subdirectory indexes).
 """
 
 import re
+from html import escape as html_escape
 from datetime import datetime, date
 from pathlib import PurePosixPath
 
 from .config import (
-    HYPERSPACE_ROOT, CATEGORY_DESCRIPTIONS, CATEGORY_ICONS, ASSETS_DIR,
+    HYPERSPACE_ROOT, CATEGORY_DESCRIPTIONS, CATEGORY_ICONS, ASSETS_DIR, humanize,
     hypervisor_logo_svg, eco_app_icon_svg,
 )
 from .file_utils import (
-    dir_label, nice_name, get_title, extract_dates, sort_date, display_date,
+    dir_label, nice_name, get_title, extract_dates, sort_date, display_date, pad2,
     href_for, count_docs_under, get_dir_snippet,
     get_dir_status, get_dir_type, get_dir_tags, infer_app_group,
     compute_badges, format_badge_html, read_md, _extract_assignee_from_text,
@@ -530,7 +531,6 @@ def _dir_has_recent_factory(recent_paths):
 def _render_dir_header(html, files, dir_prefix, title):
     """Render the directory page header with icon, title, stats, and last activity."""
     dir_name = PurePosixPath(dir_prefix).name
-    icon = CATEGORY_ICONS.get(dir_name, "folder")
     desc = CATEGORY_DESCRIPTIONS.get(dir_name, "")
     subdirs, _ = collect_dir_contents(files, dir_prefix)
     total_docs = count_docs_under(files, dir_prefix)
@@ -551,18 +551,21 @@ def _render_dir_header(html, files, dir_prefix, title):
 
     html.append('<div class="dir-head">')
     html.append('<div class="dir-headings">')
-    html.append('<div class="dir-title-row">')
-    html.append(f'<i data-lucide="{icon}" class="dir-title-icon"></i>')
-    html.append(f'<h1 class="dir-title">{title}</h1>')
-    html.append('</div>')
+    html.append(f'<h1 class="dir-title is-dir">{title}</h1>')
+    html.append('<div class="dir-subrow">')
     if desc:
         html.append(f'<div class="dir-desc">{desc}</div>')
-    html.append('</div>')
+    elif "/" in dir_prefix:
+        html.append(f'<div class="dir-desc dir-desc-path">/{html_escape(dir_prefix)}</div>')
+    else:
+        html.append('<div class="dir-desc"></div>')
     html.append('<div class="dir-stats">')
-    html.append(f'<span class="dir-stat"><i data-lucide="file-text" class="dir-stat-icon"></i><span class="dir-stat-val">{total_docs}</span><span class="dir-stat-label">docs</span></span>')
-    html.append(f'<span class="dir-stat"><i data-lucide="folder" class="dir-stat-icon"></i><span class="dir-stat-val">{len(subdirs)}</span><span class="dir-stat-label">dirs</span></span>')
+    html.append(f'<span class="dir-stat"><i data-lucide="file-text" class="dir-stat-icon"></i><span class="dir-stat-val">{pad2(total_docs)}</span><span class="dir-stat-label">docs</span></span>')
+    html.append(f'<span class="dir-stat"><i data-lucide="folder" class="dir-stat-icon"></i><span class="dir-stat-val">{pad2(len(subdirs))}</span><span class="dir-stat-label">dirs</span></span>')
     if last_activity and not last_activity.startswith("0000"):
-        html.append(f'<span class="dir-stat"><i data-lucide="clock" class="dir-stat-icon"></i><span class="dir-stat-val">{display_date(last_activity)}</span><span class="dir-stat-label">last activity</span></span>')
+        html.append(f'<span class="dir-stat"><i data-lucide="clock" class="dir-stat-icon"></i><span class="dir-stat-val">{display_date(last_activity)}</span><span class="dir-stat-label">updated</span></span>')
+    html.append('</div>')
+    html.append('</div>')
     html.append('</div>')
     html.append('</div>')
 
@@ -597,10 +600,10 @@ def _render_subdirs_single(html, files, dir_prefix, sd, recent_paths):
             gsd_icon = CATEGORY_ICONS.get(gsd, "folder")
             gsd_dock_cls = "dock-item dock-item-recent" if _dir_has_recent(gsd_path) else "dock-item"
             html.append(
-                f'<a href="{sd}/{gsd}/index.html" class="{gsd_dock_cls}" data-tooltip="{gsd_label} ({gsd_count})">'
+                f'<a href="{sd}/{gsd}/index.html" class="{gsd_dock_cls}" data-tooltip="{gsd_label} ({pad2(gsd_count)})">'
                 f'<i data-lucide="{gsd_icon}" class="dock-icon"></i>'
                 f'<span class="dock-label">{gsd_label}</span>'
-                f'<span class="dock-count">{gsd_count}</span>'
+                f'<span class="dock-count">{pad2(gsd_count)}</span>'
                 f'</a>'
             )
         html.append('</nav>')
@@ -744,8 +747,8 @@ def _render_subdirs_grouped(html, files, dir_prefix, subdirs, dir_has_recent_fn)
         html.append(f'<div class="app-shelf-header">')
         html.append(f'<span class="app-shelf-label">{gl}</span>')
         if shelf_recent_count:
-            html.append(f'<span class="app-shelf-recent-count">{shelf_recent_count}</span>')
-        html.append(f'<span class="app-shelf-count">{len(group_items)}</span>')
+            html.append(f'<span class="app-shelf-recent-count">{pad2(shelf_recent_count)}</span>')
+        html.append(f'<span class="app-shelf-count">{pad2(len(group_items))}</span>')
         html.append(f'</div>')
         html.append(f'<ul class="doc-list todo-list" data-app-group="{gk}">')
 
@@ -860,7 +863,7 @@ def _render_subdirs_dashboard(html, files, dir_prefix, subdirs, dir_has_recent_f
                     f'<span>{doc_title}</span></li>'
                 )
             html.append('</ul>')
-        html.append(f'<span class="card-count">{count} doc{"s" if count != 1 else ""}</span>')
+        html.append(f'<span class="card-count">{pad2(count)} doc{"s" if count != 1 else ""}</span>')
         html.append('</a>')
     html.append('</div>')
 
@@ -880,10 +883,10 @@ def _render_subdirs_dock(html, files, dir_prefix, subdirs, dir_has_recent_fn):
         sd_icon = CATEGORY_ICONS.get(sd, "folder")
         dock_cls = "dock-item dock-item-recent" if dir_has_recent_fn(sd_path) else "dock-item"
         html.append(
-            f'<a href="/{dir_prefix}/{sd}/index.html" class="{dock_cls}" data-tooltip="{sd_label} ({count})">'
+            f'<a href="/{dir_prefix}/{sd}/index.html" class="{dock_cls}" data-tooltip="{sd_label} ({pad2(count)})">'
             f'<i data-lucide="{sd_icon}" class="dock-icon"></i>'
             f'<span class="dock-label">{sd_label}</span>'
-            f'<span class="dock-count">{count}</span>'
+            f'<span class="dock-count">{pad2(count)}</span>'
             f'</a>'
         )
     html.append('</nav>')
@@ -1005,7 +1008,7 @@ def _render_work_items_list(html, files, dir_prefix, doc_entries, recent_paths, 
             html.append(f'<div class="app-shelf horizon-shelf" data-horizon-group="{hz_slug}">')
             html.append(f'<div class="app-shelf-header">')
             html.append(f'<span class="app-shelf-label">{hz}</span>')
-            html.append(f'<span class="app-shelf-count">{len(group_items)}</span>')
+            html.append(f'<span class="app-shelf-count">{pad2(len(group_items))}</span>')
             html.append(f'</div>')
             html.append('<ul class="doc-list todo-list">')
             for rel, doc_title, date_str, date_label, status, item_type, app_key, _al, desc, work_id, badges_html, _hz in group_items:
@@ -1216,7 +1219,7 @@ def _render_prototypes(html, dir_prefix):
     for hf in html_files:
         stem = hf.stem
         info = meta.get(stem, {})
-        title = stem.replace("-", " ").replace("_", " ").title()
+        title = humanize(stem)
         # Media frame: a bordered inner "screen" containing a lazy live iframe
         # of the prototype (loaded by hv-preview.js on scroll) over a quiet
         # glyph poster shown until it paints. The frame's overflow:hidden clips

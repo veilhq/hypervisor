@@ -9,7 +9,7 @@ import re
 import html
 from datetime import datetime
 
-from .config import HYPERSPACE_ROOT, OUTPUT_DIR, SKIP_DIRS
+from .config import HYPERSPACE_ROOT, OUTPUT_DIR, SKIP_DIRS, humanize
 from .file_utils import get_title, nice_name, read_md
 from .markdown_processing import render_markdown
 from .directory_index import generate_home_content
@@ -243,13 +243,20 @@ def _wrap_utility_scaffold(body_html, name, icon, description=""):
     body_html = re.sub(r"<h1\b[^>]*>.*?</h1>\s*", "", body_html, count=1,
                        flags=re.DOTALL)
 
+    # A page's intro paragraph (class utility-intro) moves up into the header
+    # strip as the description, keeping its inline markup. An explicit
+    # nav-meta description wins and the intro stays out of the surface.
+    intro = re.search(r'<p\s+class="utility-intro">(.*?)</p>\s*', body_html,
+                      flags=re.DOTALL)
+    if intro:
+        body_html = body_html[:intro.start()] + body_html[intro.end():]
+        if not description:
+            desc_html = f'<p class="utility-desc">{" ".join(intro.group(1).split())}</p>'
+
     return (
         '<div class="utility-page">'
         '<header class="utility-head">'
-        '<div class="utility-title-row">'
-        f'<i data-lucide="{safe_icon}" class="utility-title-icon"></i>'
         f'<h1 class="utility-title">{safe_name}</h1>'
-        '</div>'
         f'{desc_html}'
         '</header>'
         f'<div class="utility-surface">{body_html}</div>'
@@ -294,7 +301,7 @@ def build_utility_pages(build_id):
             except ValueError:
                 nav_meta = {}
 
-        default_name = util_file.stem.replace("-", " ").replace("_", " ").title()
+        default_name = humanize(util_file.stem)
         util_name = nav_meta.get("name", default_name)
         util_rel = f"_utils/{util_file.stem}"
         util_icon = nav_meta.get("icon", _DEFAULT_ICONS.get(util_file.stem, "square"))
@@ -443,10 +450,7 @@ def build_pinboard_page(build_id):
     content_html = """\
 <div class="dir-head">
   <div class="dir-headings">
-    <div class="dir-title-row">
-      <i data-lucide="pin" class="dir-title-icon"></i>
-      <h1 class="dir-title">Pinboard</h1>
-    </div>
+    <h1 class="dir-title">Pinboard</h1>
     <div class="dir-desc">Documents you've pinned for quick access. Pins are stored locally in your browser.</div>
   </div>
 </div>

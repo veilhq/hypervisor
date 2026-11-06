@@ -3,12 +3,13 @@
 // Zen mode is a focus view for the home page. It hides the persistent chrome
 // (topbar, site-nav, footer) and, instead of the full dashboard, composes an
 // ambient stage: a prose-face greeting, a live search input, and a minimal
-// in-progress strip - centered, quiet, keyboard-first - plus a collapsed
-// app-launcher dropdown pinned to the top-left corner.
+// in-progress strip - centered, quiet, keyboard-first. The `a` key swaps the
+// stage for the app launcher: the stage fades out and the launcher tiles
+// animate in at center; `a`, Esc, or a click on empty space brings the stage back.
 //
 // Composition strategy - one source of truth, no duplicated wiring:
 //   - The launcher row and the search input/results are MOVED (not cloned) into
-//     the launcher panel / stage. Their event listeners are bound to those exact nodes
+//     the launcher layer / stage. Their event listeners are bound to those exact nodes
 //     (launcher: per-node click in core; search: input listener in navigation),
 //     so moving carries the behavior intact. Cloning would copy the DOM but
 //     not the listeners (and would copy the __launcherWired expando, making the
@@ -63,30 +64,21 @@
     launcherEl = document.createElement("div");
     launcherEl.className = "zen-launcher";
 
-    var trigger = document.createElement("button");
-    trigger.className = "zen-launcher-trigger";
-    trigger.setAttribute("type", "button");
-    trigger.setAttribute("aria-label", "Launch an app");
-    trigger.setAttribute("aria-expanded", "false");
-    trigger.setAttribute("data-tooltip", "Apps");
-    trigger.innerHTML = '<i data-lucide="layout-grid"></i>';
-    launcherEl.appendChild(trigger);
+    launcherEl.setAttribute("aria-label", "Apps");
+    moveInto(row, launcherEl);
+    launcherEl.style.setProperty("--launcher-n", row.children.length);
+    var subtitle = document.createElement("div");
+    subtitle.className = "zen-launcher-subtitle";
+    subtitle.textContent = "Select an application.";
+    launcherEl.appendChild(subtitle);
 
-    var panel = document.createElement("div");
-    panel.className = "zen-launcher-panel";
-    launcherEl.appendChild(panel);
-    moveInto(row, panel);
-    panel.style.setProperty("--launcher-n", row.children.length);
-
+    // Opening fades the stage out (.launching); closing replays its entrance.
     function setOpen(open) {
       launcherEl.classList.toggle("open", open);
-      trigger.setAttribute("aria-expanded", open ? "true" : "false");
+      if (stageEl) stageEl.classList.toggle("launching", open);
     }
-    trigger.addEventListener("click", function () {
-      setOpen(!launcherEl.classList.contains("open"));
-    });
-    // Launching an app closes the panel; the tile's own handler does the launch.
-    panel.addEventListener("click", function (e) {
+    // Launching an app closes the view; the tile's own handler does the launch.
+    launcherEl.addEventListener("click", function (e) {
       if (e.target.closest(".launcher-box[data-launch]")) setOpen(false);
     });
     launcherEl.__setOpen = setOpen;
@@ -96,6 +88,11 @@
 
   function closeLauncher() {
     if (launcherEl && launcherEl.__setOpen) launcherEl.__setOpen(false);
+  }
+
+  function toggleLauncher() {
+    if (!launcherEl) return;
+    launcherEl.__setOpen(!launcherEl.classList.contains("open"));
   }
 
   function removeLauncher() {
@@ -160,7 +157,7 @@
     }
     stageEl.appendChild(greeting);
 
-    // Launcher - a collapsed grid dropdown pinned to the top-left corner.
+    // Launcher - a full-viewport layer shown in place of the stage on `a`.
     // Mounted on body (not in the stage): the stage's entrance animation holds
     // a transform, which would turn position:fixed into stage-relative.
     buildLauncher(dashboard);
@@ -329,15 +326,13 @@
     removeLauncher();
   }
 
-  // Esc, an outside click, or focusing the search input closes the launcher.
+  // Esc or a click on empty space (anywhere off a tile) closes the launcher.
   document.addEventListener("keydown", function (e) {
     if (e.key === "Escape") closeLauncher();
   });
   document.addEventListener("mousedown", function (e) {
-    if (launcherEl && !launcherEl.contains(e.target)) closeLauncher();
-  });
-  document.addEventListener("focusin", function (e) {
-    if (e.target.closest && e.target.closest(".zen-search")) closeLauncher();
+    if (launcherEl && launcherEl.classList.contains("open") &&
+        !e.target.closest(".launcher-box")) closeLauncher();
   });
 
   // --- Apply / persist -----------------------------------------------------
@@ -388,6 +383,15 @@
     if (typingInField()) return;
     e.preventDefault();
     toggleZen();
+  });
+
+  // --- a-key launcher ------------------------------------------------------
+  // Bare "a" swaps the stage for the launcher; only live while the stage is up.
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "a" || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (!launcherEl || typingInField()) return;
+    e.preventDefault();
+    toggleLauncher();
   });
 
   // --- Static-build restore fallback ---------------------------------------

@@ -7,7 +7,7 @@ Called by HypervisorAPI methods that handle rebuild/UI concerns.
 from datetime import datetime
 from pathlib import Path
 
-from site_utils.config import HYPERSPACE_ROOT
+from site_utils.config import HYPERSPACE_ROOT, humanize
 
 
 def has_metadata_header(text):

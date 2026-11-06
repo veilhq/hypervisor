@@ -6,10 +6,10 @@ import json
 import re
 from pathlib import Path, PurePosixPath
 
+from .file_utils import pad2, dir_label
 from .config import (
     OUTPUT_DIR,
     CATEGORY_ICONS,
-    CATEGORY_LABELS,
     list_js_modules,
     list_hyperkit_js_modules,
     hypervisor_logo_svg,
@@ -390,20 +390,20 @@ def _build_cyberdeck_nav(categories, recent_dirs):
         children = item[2] if len(item) > 2 else []
         if dir_name == "reference":
             continue
-        label = CATEGORY_LABELS.get(dir_name, dir_name.replace("-", " ").replace("_", " ").title())
+        label = dir_label(dir_name)
         icon = CATEGORY_ICONS.get(dir_name, "folder")
         recent_cls = " site-nav-item-recent" if dir_name in recent_dirs else ""
         html.append(
             f'<a href="/{dir_name}/index.html" class="site-nav-item{recent_cls}" data-category="{dir_name}">'
             f'<i data-lucide="{icon}" class="site-nav-icon"></i>'
             f'<span class="site-nav-label">{label}</span>'
-            f'<span class="site-nav-count">{count}</span>'
+            f'<span class="site-nav-count">{pad2(count)}</span>'
             f'</a>'
         )
         if children:
             html.append(f'<div class="site-nav-children" data-parent="{dir_name}">')
             for child_name, child_count in children:
-                child_label = CATEGORY_LABELS.get(child_name, child_name.replace("-", " ").replace("_", " ").title())
+                child_label = dir_label(child_name)
                 child_icon = CATEGORY_ICONS.get(child_name, "folder")
                 child_key = f"{dir_name}/{child_name}"
                 child_recent = " site-nav-child-recent" if child_key in recent_dirs else ""
@@ -411,7 +411,7 @@ def _build_cyberdeck_nav(categories, recent_dirs):
                     f'<a href="/{dir_name}/{child_name}/index.html" class="site-nav-child{child_recent}" data-category="{dir_name}/{child_name}">'
                     f'<i data-lucide="{child_icon}" class="site-nav-child-icon"></i>'
                     f'<span class="site-nav-label">{child_label}</span>'
-                    f'<span class="site-nav-count">{child_count}</span>'
+                    f'<span class="site-nav-count">{pad2(child_count)}</span>'
                     f'</a>'
                 )
             html.append('</div>')
@@ -519,6 +519,7 @@ body.export-mode .search-overlay, body.export-mode .search-wrap { display: none 
 body.export-mode .scroll-top { display: none !important; }
 body.export-mode .toc-flag-wrap, body.export-mode .toc-flag-hit, body.export-mode .toc-drawer { display: none !important; }
 body.export-mode .toc-sidebar { display: none !important; }
+body.export-mode .doc-meta-source { display: block !important; margin-bottom: 1.5rem; }
 body.export-mode .code-copy, body.export-mode .section-copy { display: none !important; }
 body.export-mode .page-footer { display: none !important; }
 
@@ -554,8 +555,9 @@ body.export-mode .doc-section-summary .section-icon { display: none !important; 
    flourish, not state/category encoding, so a standalone snapshot reads better
    in a restrained desaturated tone. Remapping the base accent family cascades
    through the semantic roles (--success/--warning/etc.) that resolve via var().
-   The grey ink scale and surfaces are left untouched. */
-body.export-mode {
+   The grey ink scale and surfaces are left untouched. Declared on <html> so the
+   :root alias tokens (--brand, --success, --interactive...) re-resolve against it. */
+html.export-mode {
   --accent:        #8a97a8;
   --accent-dim:    #6b7686;
   --accent-glow:   rgba(138, 151, 168, 0.06);
@@ -599,7 +601,10 @@ def build_export_page(content_html, title, rel_path_str, toc_html="", build_id="
     # removes it once the splash animation ends. A static export has no JS, so
     # the class would persist - and its `overflow: hidden` rule locks the page
     # from scrolling. Drop the class so the document scrolls normally.
-    page = page.replace('<html lang="en" class="splash-screen-active">', '<html lang="en">', 1)
+    page = page.replace('<html lang="en" class="splash-screen-active">', '<html lang="en" class="export-mode">', 1)
+
+    # A static file has no JS to expand sections, so open every one.
+    page = re.sub(r'<details class="doc-section"(?! open)', '<details class="doc-section" open', page)
 
     # The recessed reading surface is applied at runtime by the router
     # (page-doc-surface on <main>, animate-in on the article). A static export
@@ -632,7 +637,8 @@ def build_export_page(content_html, title, rel_path_str, toc_html="", build_id="
     style_block = "<style>\n" + css_text + "\n" + _EXPORT_OVERRIDES + "\n</style>"
     link_re = re.compile(r'<link rel="stylesheet" href="/style\.css[^"]*">')
     if link_re.search(page):
-        page = link_re.sub(style_block, page, count=1)
+        # Callable replacement so CSS escapes like '\27F3' are not read as group references.
+        page = link_re.sub(lambda _m: style_block, page, count=1)
     else:
         # Fallback: inject before </head> if the link shape ever changes.
         page = page.replace("</head>", style_block + "\n</head>", 1)
@@ -683,6 +689,15 @@ SHELL_TEMPLATE = """\
   <button class="toc-flag-hit" id="toc-flag-hit" tabindex="-1" aria-hidden="true"></button>
   <aside class="toc-drawer" id="toc-drawer" aria-hidden="true" aria-label="Table of contents">
     <div class="toc-body" id="toc-body"></div>
+  </aside>
+  <div class="toc-flag-wrap meta-flag-wrap" id="meta-flag-wrap">
+    <button class="toc-flag" id="meta-flag" aria-expanded="false" aria-controls="meta-drawer" aria-label="Open file info">
+      <i data-lucide="info" class="toc-icon"></i> Info
+    </button>
+  </div>
+  <button class="toc-flag-hit meta-flag-hit" id="meta-flag-hit" tabindex="-1" aria-hidden="true"></button>
+  <aside class="toc-drawer meta-drawer" id="meta-drawer" aria-hidden="true" aria-label="File info">
+    <div class="toc-body meta-body" id="meta-body"></div>
   </aside>
   <footer class="page-footer">
     <span class="source-path" id="source-path"></span>

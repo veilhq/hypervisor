@@ -6,7 +6,7 @@ import logging
 import re
 from pathlib import Path, PurePosixPath
 
-from .config import HYPERSPACE_ROOT, SKIP_DIRS, SKIP_FILES, CATEGORY_LABELS
+from .config import HYPERSPACE_ROOT, SKIP_DIRS, SKIP_FILES, CATEGORY_LABELS, humanize
 
 logger = logging.getLogger("hypervisor")
 
@@ -74,11 +74,11 @@ def nice_name(fname: str) -> str:
                 "_meta.md": "Meta", "_conventions.md": "Conventions"}
     if fname in specials:
         return specials[fname]
-    return fname.replace(".md", "").replace("-", " ").replace("_", " ").title()
+    return humanize(fname.replace(".md", ""))
 
 
 def dir_label(name: str) -> str:
-    return CATEGORY_LABELS.get(name, name.replace("-", " ").replace("_", " ").title())
+    return CATEGORY_LABELS.get(name, humanize(name))
 
 
 def get_title(md_text: str, fallback: str) -> str:
@@ -156,6 +156,11 @@ def sort_date(dates_dict: dict[str, str | None]) -> tuple[str, str | None]:
     if dates_dict["created"]:
         return (dates_dict["created"], "created")
     return ("0000-00-00T00:00", None)
+
+
+def pad2(n: int) -> str:
+    """Zero-pad a count readout to two digits: 1 -> '01', 12 -> '12'."""
+    return f"{n:02d}"
 
 
 def display_date(datetime_str: str) -> str:

@@ -708,6 +708,52 @@ def extract_metadata_block(html: str) -> str:
             f'{spans}</div>'
         )
 
+    def _build_panel(parsed, extras):
+        """Key/value rows for the Info drawer: tags first, then dates, PR
+        fields, and any non-standard keys."""
+        def row(label, value, stack=False):
+            cls = "meta-row meta-row-stack" if stack else "meta-row"
+            return f'<div class="{cls}"><dt>{label}</dt><dd>{value}</dd></div>'
+
+        rows = []
+        tags_val = parsed.get("tags") or ""
+        all_tags = [t.strip() for t in tags_val.split(",") if t.strip()]
+        if all_tags:
+            spans = "".join(f'<span class="doc-title-tag">{tag}</span>' for tag in all_tags)
+            rows.append(row("Tags", f'<span class="doc-meta-tags">{spans}</span>', stack=True))
+        for key, label in (("updated", "Updated"), ("created", "Created"),
+                           ("pr created", "PR Created")):
+            val = parsed.get(key)
+            if val:
+                rows.append(row(label, _display_date(val)))
+        for key, label in (("type", "Type"), ("assignee", "Assignee"),
+                           ("horizon", "Horizon"), ("pr author", "PR Author")):
+            val = parsed.get(key)
+            if val:
+                rows.append(row(label, val))
+        pr_link = parsed.get("pr link")
+        if pr_link:
+            m_num = re.search(r'/pullrequest/(\d+)', pr_link)
+            pr_label = f"PR {m_num.group(1)}" if m_num else "PR"
+            rows.append(row("PR Link", f'<a href="{pr_link}">{pr_label}</a>'))
+        for key, val in extras:
+            rows.append(row(key, linkify_md_paths(val)))
+        return f'<dl class="meta-list">{"".join(rows)}</dl>' if rows else ""
+
+    def _assemble_header(h1_full, subtitle, parsed, extras):
+        """Work items keep the title-row tags and the chip strip inline. Other
+        docs move their metadata into a hidden source block that toc-meta.js
+        mounts in the Info drawer, so the title flows straight into the body."""
+        if parsed.get("id") or parsed.get("status"):
+            strip = _build_strip(parsed, extras)
+            tags_html = _build_tags(parsed)
+            if tags_html:
+                title_row = f'<div class="doc-title-row">{h1_full}{tags_html}</div>'
+            else:
+                title_row = h1_full
+            return title_row + subtitle + strip
+        return h1_full + subtitle + f'<div class="doc-meta-source">{_build_panel(parsed, extras)}</div>'
+
     def replace_meta(m):
         h1_full = m.group(1)
         subtitle = m.group(2) or ""
@@ -716,12 +762,7 @@ def extract_metadata_block(html: str) -> str:
         parsed, extras = _parse_items(items)
         # Related is handled by the ## Related section - drop from header row
         parsed.pop("related", None)
-        tags_html = _build_tags(parsed)
-        if tags_html:
-            title_row = f'<div class="doc-title-row">{h1_full}{tags_html}</div>'
-        else:
-            title_row = h1_full
-        return title_row + subtitle + _build_strip(parsed, extras)
+        return _assemble_header(h1_full, subtitle, parsed, extras)
 
     result = pattern.sub(replace_meta, html, count=1)
 
@@ -742,12 +783,7 @@ def extract_metadata_block(html: str) -> str:
             return m.group(0)
         parsed, extras = _parse_items(raw_items)
         parsed.pop("related", None)
-        tags_html = _build_tags(parsed)
-        if tags_html:
-            title_row = f'<div class="doc-title-row">{h1_full}{tags_html}</div>'
-        else:
-            title_row = h1_full
-        return title_row + subtitle + _build_strip(parsed, extras)
+        return _assemble_header(h1_full, subtitle, parsed, extras)
 
     result = p_meta_pattern.sub(replace_p_meta, result, count=1)
 

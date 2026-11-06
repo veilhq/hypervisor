@@ -9,12 +9,6 @@
 /* Page intro sits above the grid, full width. Explicit subtitle sizing so it
    matches the other utilities' subtitles rather than inheriting the larger
    markdown-body paragraph size (this page is the only utility on .markdown-body). */
-.sg-intro {
-  margin: 0 0 var(--space-5);
-  font-size: var(--fs-mono);
-  color: var(--text-muted);
-  line-height: var(--lh-prose);
-}
 
 /* Sticky category filter bar - jump to a group without scrolling blind. */
 .sg-toolbar {
@@ -32,28 +26,12 @@
   border-bottom: var(--border-hair) solid var(--border);
 }
 
+/* Sizing on top of the shared .nav-tab primitive. */
 .sg-filter {
-  font-family: inherit;
   font-size: var(--fs-mono);
   letter-spacing: var(--track-body);
-  color: var(--text-muted);
-  background: transparent;
-  border: var(--border-hair) solid var(--border);
-  border-radius: var(--radius);
   padding: var(--space-1) var(--space-3);
   cursor: pointer;
-  transition: color var(--motion-fast) var(--ease),
-              border-color var(--motion-fast) var(--ease),
-              background var(--motion-fast) var(--ease);
-}
-.sg-filter:hover {
-  color: var(--text-bright);
-  border-color: var(--border-strong);
-}
-.sg-filter.active {
-  color: var(--bg);
-  background: var(--selected);
-  border-color: var(--selected);
 }
 
 /* Masonry container - column count adapts to width. */
@@ -80,7 +58,6 @@
 }
 .sg-card:hover {
   border-color: var(--border-strong);
-  box-shadow: var(--shadow-panel);
 }
 
 /* When filtering, hidden cards drop out of flow entirely. */
@@ -168,8 +145,8 @@
   margin-top: var(--space-1);
 }
 .sg-swatch-chip {
-  width: 24px;
-  height: 24px;
+  width: var(--icon-xl);
+  height: var(--icon-xl);
   border-radius: var(--radius);
   margin: 0 auto var(--space-2);
 }
@@ -232,4 +209,3 @@
   pointer-events: none;
 }
 .sg-launcher-stage .zen-launcher { position: static; }
-.sg-launcher-stage .zen-launcher-panel { position: static; margin-top: var(--space-2); }

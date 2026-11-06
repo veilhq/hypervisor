@@ -1,11 +1,5 @@
 /* ===== Screensaver Utility ===== */
 
-.ss-subtitle {
-  font-size: var(--fs-mono);
-  color: var(--text-muted);
-  margin: var(--space-1) 0 var(--space-5);
-  line-height: var(--lh-prose);
-}
 .ss-kbd {
   display: inline-block;
   font-family: var(--font);
@@ -18,10 +12,156 @@
   vertical-align: 1px;
 }
 
-/* ---- Mode cards grid (main column of the split) ---- */
+/* Section legend: dim uppercase mono; later groups get a hairline rule above. */
+.ss-group-label {
+  font-size: var(--fs-mono);
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: var(--track-label);
+  line-height: var(--lh-tight);
+}
+.ss-group-divided {
+  border-top: var(--border-hair) solid var(--border);
+  padding-top: var(--space-3);
+}
+
+/* ---- Top row: stage (selected mode) and settings, two equal columns ---- */
+.ss-top {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: stretch;
+}
+@media (max-width: 900px) {
+  .ss-top { grid-template-columns: 1fr; }
+}
+
+/* ---- Stage: large preview of the selected mode, name, description, launch ---- */
+.ss-stage {
+  display: flex;
+  flex-direction: column;
+  border: var(--border-hair) solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  overflow: hidden;
+}
+.ss-stage-media {
+  height: clamp(260px, 28vw, 420px);
+}
+.ss-stage .ss-card-frame {
+  border-color: var(--selected);
+}
+.ss-stage-foot {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3);
+  border-top: var(--border-hair) solid var(--border);
+}
+.ss-stage-info {
+  min-width: 0;
+}
+/* Composes .action-button.action-button-primary; keeps the tighter tracking. */
+.ss-launch {
+  flex-shrink: 0;
+  padding: var(--space-2) var(--space-5);
+  letter-spacing: var(--track-label);
+}
+.ss-launch-icon {
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+}
+
+/* ---- Settings panel: grouped rows filling the stage's height ---- */
+.ss-settings {
+  border: var(--border-hair) solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+/* One settings group: legend + rows. */
+.ss-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.ss-col + .ss-col {
+  border-top: var(--border-hair) solid var(--border);
+  padding-top: var(--space-3);
+}
+/* Composes .flex-between; keeps the wider inter-item gap. */
+.ss-setting-row {
+  --ss-row-h: calc(var(--fs-mono) + var(--space-4) + 2 * var(--border-hair));
+  gap: var(--space-4);
+  align-items: center;
+  min-height: var(--ss-row-h);
+}
+.ss-setting-row label {
+  font-size: var(--fs-mono);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: var(--track-body);
+}
+/* Selects share one column width so every control's left edge lines up. */
+.ss-setting-row .form-select {
+  box-sizing: border-box;
+  width: 9rem;
+  height: var(--ss-row-h);
+  line-height: var(--lh-tight);
+  flex-shrink: 0;
+}
+/* Checkbox drawn as a hairline cell that fills with --selected when on (the
+   dot-matrix lit-cell motif); same width as the selects' right edge. */
+.ss-setting-row .form-check {
+  appearance: none;
+  -webkit-appearance: none;
+  display: grid;
+  place-content: center;
+  box-sizing: border-box;
+  width: var(--icon-md);
+  height: var(--icon-md);
+  margin: 0;
+  flex-shrink: 0;
+  background: var(--bg);
+  border: var(--border-hair) solid var(--border-strong);
+  border-radius: var(--radius);
+  transition: border-color var(--motion-fast) var(--ease),
+              background var(--motion-fast) var(--ease);
+}
+.ss-setting-row .form-check::before {
+  content: "";
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+  border-radius: var(--radius);
+  background: var(--selected);
+  transform: scale(0);
+  transition: transform var(--motion-fast) var(--ease);
+}
+.ss-setting-row .form-check:checked {
+  border-color: var(--selected);
+}
+.ss-setting-row .form-check:checked::before {
+  transform: scale(1);
+}
+.ss-setting-row .form-check:hover {
+  border-color: var(--interactive);
+}
+.ss-setting-row .form-check:checked:hover {
+  border-color: var(--selected);
+}
+.ss-setting-row .form-check:focus-visible {
+  outline: var(--border-hair) solid var(--focus);
+  outline-offset: var(--space-1);
+}
+
+/* ---- Mode tiles grid (full width, below the top row) ---- */
 .ss-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: var(--space-3);
   align-content: start;
 }
@@ -45,20 +185,20 @@
 }
 
 /* ---- Preview media (framed "screen", mirrors .preview-card-media) ---- */
-/* A fixed responsive box holds a bordered inner frame; the canvas fills the
-   frame and is drawn at the frame's real pixel size (see markup) so the
-   preview keeps its aspect instead of stretching to the column width. */
+/* A fixed box holds a bordered inner frame; the canvas fills the frame and is
+   drawn at the frame's real pixel size (see markup) so the preview keeps its
+   aspect instead of stretching to the column width. */
 .ss-card-media {
   display: block;
   position: relative;
   width: 100%;
-  height: clamp(150px, 18vw, 220px);
+  height: clamp(100px, 10vw, 130px);
   background:
     radial-gradient(120% 100% at 0% 0%,
       color-mix(in srgb, var(--text-muted) 14%, var(--bg-card)) 0%,
       var(--bg-card) 60%),
     var(--bg-card);
-  padding: var(--space-3);
+  padding: var(--space-2);
   overflow: hidden;
 }
 /* Bordered inner frame - the screen. In-flow block filling the padded media
@@ -74,6 +214,9 @@
   overflow: hidden;
   transition: border-color var(--motion-slow) var(--ease),
               box-shadow var(--motion-slow) var(--ease);
+}
+.ss-stage-media {
+  padding: var(--space-3);
 }
 /* Hover "power-on": the screen frame lights up with an accent border + soft
    inner/outer glow, matching the prototype gallery card. */
@@ -96,9 +239,9 @@
   image-rendering: pixelated;
 }
 
-/* ---- Card body ---- */
+/* ---- Card / stage text ---- */
 .ss-card-body {
-  padding: var(--space-3) var(--space-3);
+  padding: var(--space-2) var(--space-3) var(--space-3);
 }
 .ss-card-header {
   display: flex;
@@ -106,73 +249,38 @@
   gap: var(--space-2);
   margin-bottom: var(--space-1);
 }
+.ss-card-body .ss-card-header {
+  margin-bottom: 0;
+}
 .ss-card-icon {
   width: var(--icon-md);
   height: var(--icon-md);
   color: var(--text-dim);
   flex-shrink: 0;
 }
-.ss-card.selected .ss-card-icon {
+.ss-card.selected .ss-card-icon,
+.ss-stage .ss-card-icon {
   color: var(--selected);
 }
+/* Mode names and descriptions are read text: prose face, titles one step above
+   descriptions; the stage title takes the larger card-title step. */
 .ss-card-name {
-  font-size: var(--fs-mono);
+  font-family: var(--font-body);
+  font-size: var(--fs-prose-ui);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-ui);
   color: var(--text-bright);
-  text-transform: uppercase;
-  letter-spacing: var(--track-label);
 }
-.ss-card.selected .ss-card-name {
+.ss-stage .ss-card-name {
+  font-size: var(--fs-prose-body);
+}
+.ss-card.selected .ss-card-name,
+.ss-stage .ss-card-name {
   color: var(--selected);
-}
-.ss-card-active {
-  margin-left: auto;
 }
 .ss-card-desc {
-  font-size: var(--fs-mono);
-  color: var(--text-dim);
-  line-height: var(--lh-body);
-}
-
-/* ---- Settings rail (aside of the split) ---- */
-/* Sticks below the topbar so the controls stay in view while the mode-card
-   grid scrolls in the main column. */
-.ss-panel {
-  position: sticky;
-  top: var(--space-4);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-.ss-settings {
-  border: var(--border-hair) solid var(--border);
-  border-radius: var(--radius);
-  background: var(--bg-card);
-  padding: var(--space-3);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-/* Composes .flex-between; keeps the wider inter-item gap. */
-.ss-setting-row {
-  gap: var(--space-4);
-}
-.ss-setting-row label {
-  font-size: var(--fs-mono);
+  font-family: var(--font-body);
+  font-size: var(--fs-prose-sm);
   color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: var(--track-body);
+  line-height: var(--lh-ui);
 }
-/* ss select + checkbox normalized to shared .form-select / .form-check (see markup). */
-
-/* ---- Actions (rail footer) ---- */
-/* Composes .flex-center; the launch button fills the rail width. */
-.ss-actions {
-}
-/* Composes .action-button.action-button-primary; keeps the wider launch
-   padding and the tighter tracking. Full-width in the rail. */
-.ss-launch {
-  width: 100%;
-  padding: var(--space-2) var(--space-5);
-  letter-spacing: var(--track-label);
-}
-

@@ -111,7 +111,7 @@
       if (!drawer.contains(e.target) && !onFlag && !onHit) {
         closeDrawer();
       }
-    });
+    }, true); // capture: clicks that stop propagation still dismiss
     // Escape closes the drawer and returns focus to the flag.
     document.addEventListener("keydown", function (e) {
       if (_drawerOpen && e.key === "Escape") {

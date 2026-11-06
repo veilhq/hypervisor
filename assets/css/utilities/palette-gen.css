@@ -1,16 +1,13 @@
 /* ===== Palette Generator ===== */
 
-.pg-subtitle {
-  font-size: var(--fs-mono);
-  color: var(--text-muted);
-  margin: var(--space-1) 0 var(--space-5);
-  line-height: var(--lh-prose);
-}
 
 /* ---- Section headers ---- */
 /* .pg-section-header composes .flex-center; local keeps the bottom margin. */
 .pg-section-header {
   margin-bottom: var(--space-3);
+}
+.pg-section-header-spaced {
+  margin-top: var(--space-6);
 }
 .pg-section-label {
   font-size: var(--fs-mono);

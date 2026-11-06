@@ -125,7 +125,7 @@
       var countEl = document.querySelector(".site-nav-pin-count");
       if (countEl) {
         var count = getPins().length;
-        countEl.textContent = count > 0 ? count : "";
+        countEl.textContent = count > 0 ? HvUtils.pad2(count) : "";
       }
     }
 
@@ -137,7 +137,7 @@
 
       // Update count in the panel header
       var countEl = document.querySelector("[data-pins-home-count]");
-      if (countEl) countEl.textContent = pins.length ? String(pins.length) : "";
+      if (countEl) countEl.textContent = pins.length ? HvUtils.pad2(pins.length) : "";
 
       if (!pins.length) {
         container.innerHTML =
