@@ -355,7 +355,11 @@ class _HypervisorBottleServer(webview.http.BottleServer):
 
     @classmethod
     def start_server(cls, urls, http_port, keyfile=None, certfile=None):
-        from webview import _settings
+        try:
+            from webview import settings as _settings
+        except ImportError:
+            from webview import _settings
+
         from webview.util import abspath, is_app, is_local_url
 
         apps = [u for u in urls if is_app(u)]
