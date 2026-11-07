@@ -504,7 +504,7 @@ class _HypervisorBottleServer(webview.http.BottleServer):
         server.thread = threading.Thread(
             target=lambda: bottle.run(
                 app=app, server=server_adapter, host='0.0.0.0', port=server.port,
-                quiet=not _settings['debug']
+                quiet=not _settings.get('debug', False)
             ),
             daemon=True,
         )
