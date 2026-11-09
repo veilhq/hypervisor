@@ -187,6 +187,7 @@ def generate_home_content(files, build_stats=None, recent_paths=None):
         ("hyperagent", "Hyperagent", "launch_hyperagent"),
         ("hypernote", "Hypernote", "launch_hypernote"),
         ("hypereye", "HyperEye", "launch_hypereye"),
+        ("hyperbridge", "Hyperbridge", "launch_hyperbridge"),
         ("hyperfield", "HyperField", "launch_dither_widget"),
         ("hyperline", "Hyperline", "launch_hyperline"),
         ("hypercycle", "Hypercycle", "launch_hypercycle"),

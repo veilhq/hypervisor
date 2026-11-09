@@ -866,6 +866,10 @@ class HypervisorAPI:
         """Launch HyperEye as a detached subprocess (see _launch_app)."""
         return _launch_app(".hypereye", "Hypereye.lnk", "hypereye.py")
 
+    def launch_hyperbridge(self):
+        """Launch Hyperbridge as a detached subprocess (see _launch_app)."""
+        return _launch_app(".hyperbridge", "Hyperbridge.lnk", "hyperbridge.py")
+
     def launch_dev(self, preset=None):
         """Launch the local dev environment.
 

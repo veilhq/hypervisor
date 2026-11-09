@@ -178,6 +178,7 @@ _ECO_APP_PATHS = {
     "hyperagent": HYPERSPACE_ROOT / ".hyperagent" / "assets" / "hyperagent.svg",
     "hypernote": HYPERSPACE_ROOT / ".hypernote" / "assets" / "hypernote.svg",
     "hypereye": HYPERSPACE_ROOT / ".hypereye" / "assets" / "hypereye.svg",
+    "hyperbridge": HYPERSPACE_ROOT / ".hyperbridge" / "assets" / "hyperbridge.svg",
     "hyperfield": HYPERSPACE_ROOT / ".hyperfield" / "assets" / "hyperfield.svg",
     "hyperline": ASSETS_DIR / "SVG" / "hyperline.svg",
     "hypercycle": HYPERSPACE_ROOT / ".hypercycle" / "assets" / "icons" / "hypercycle.svg",
@@ -206,7 +207,7 @@ def eco_app_icon_svg(app_name: str, css_class: str = "launcher-icon") -> str:
 SKIP_DIRS = {
     "__pycache__", "site", "learn", ".scratch", ".kb",
     ".hyperagent", ".hyperkit", ".hypereye", ".hypercycle",
-    ".hyperfield", ".hyperline", ".hypernote", ".events",
+    ".hyperfield", ".hyperline", ".hypernote", ".hyperbridge", ".events",
 }
 SKIP_FILES = {".gitkeep"}
 

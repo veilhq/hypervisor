@@ -135,6 +135,7 @@ EXCLUDE_DIR_PARTS = {
     ".hyperagent",
     ".hyperkit",
     ".hypereye",
+    ".hyperbridge",
     ".events",
     ".logs",
 }
