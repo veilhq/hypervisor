@@ -884,7 +884,7 @@
   </div>
 
   <div class="sg-card" data-cat="containers">
-    <div class="sg-card-head"><span class="sg-card-title">Preview Card</span><span class="sg-card-note">.preview-card / .preview-masonry</span></div>
+    <div class="sg-card-head"><span class="sg-card-title">Preview Card</span><span class="sg-card-note">.preview-card / .preview-masonry / .preview-card-media-fit / .preview-masonry-static</span></div>
     <div class="sg-card-body">
       <div class="preview-masonry sg-cols-1">
         <a href="#" class="preview-card sg-still" onclick="return false">
@@ -917,8 +917,18 @@
             </span>
           </span>
         </a>
+        <a href="#" class="preview-card sg-still" onclick="return false">
+          <span class="preview-card-media preview-card-media-fit">
+            <span class="preview-card-frame">
+              <img alt="" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='200'/%3E">
+            </span>
+          </span>
+          <span class="preview-card-body">
+            <span class="preview-card-title">Fit media (image at natural ratio)</span>
+          </span>
+        </a>
       </div>
-      <p class="sg-note">The framed screen contains a lazy, inert <code>&lt;iframe&gt;</code> of the prototype (loaded by <code>HvPreview</code> on scroll); the frame's <code>overflow:hidden</code> clips it so it can never overlap card content. Shown here in the glyph-poster state. Status chip + reference chip (WI or idea) surface the detail.</p>
+      <p class="sg-note">Columns are width-driven (about 18rem each), so the count follows the container. Add <code>.preview-masonry-static</code> to the container to skip the entrance animation on large or re-rendered sets. The framed screen contains a lazy, inert <code>&lt;iframe&gt;</code> of the prototype (loaded by <code>HvPreview</code> on scroll); the frame's <code>overflow:hidden</code> clips it so it can never overlap card content. Shown here in the glyph-poster state. Status chip + reference chip (WI or idea) surface the detail.</p>
     </div>
   </div>
 
