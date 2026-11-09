@@ -1,10 +1,12 @@
 # Hypervisor Desktop Application dependencies
 # Install with: pip install -r requirements-app.txt
-#
-# Base dependencies (markdown + pygments) are still needed — install those first:
-#   pip install markdown pygments
 
+# Site build (build.py)
+markdown>=3.5
+pymdown-extensions>=10.0
+pygments>=2.17
+
+# Desktop app
 pywebview>=5.0
 watchdog>=4.0
 requests>=2.31.0
-

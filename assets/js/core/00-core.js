@@ -130,6 +130,13 @@
       window.__router.onNavigate(null, wireLaunchers);
     }
 
+    // Delegated: "New document" button on templated directory pages.
+    document.addEventListener('click', function (e) {
+      var btn = e.target.closest && e.target.closest('[data-new-doc-dir]');
+      if (!btn || !api.new_document_from_template) return;
+      api.new_document_from_template(btn.getAttribute('data-new-doc-dir'), btn.getAttribute('data-new-doc-template'));
+    });
+
     if (saveThemeBtn) {
       saveThemeBtn.addEventListener("click", function () {
         // Theme state is already persisted to preferences.json on every change.

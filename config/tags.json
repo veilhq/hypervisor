@@ -171,6 +171,10 @@
     "category": "application",
     "description": "The Hyperline terminal emulator app (.hyperspace/.hyperline/)"
   },
+  "hyperbridge": {
+    "category": "application",
+    "description": "The Hyperbridge local visual bookmarking app (.hyperspace/.hyperbridge/)"
+  },
   "webgl": {
     "category": "technology",
     "description": "WebGL/WebGL2 GPU rendering and GLSL shaders"

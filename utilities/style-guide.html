@@ -131,14 +131,6 @@
   padding: var(--space-4);
 }
 .sg-modal-static { position: static; animation: none; max-width: 100%; }
-.sg-modal-title {
-  font-size: var(--fs-mono);
-  font-weight: var(--fw-bold);
-  color: var(--text-bright);
-  margin-bottom: var(--space-3);
-}
-.sg-modal-text { font-size: var(--fs-mono); color: var(--text); margin-bottom: var(--space-4); }
-.sg-modal-actions { display: flex; justify-content: flex-end; gap: var(--space-3); }
 .sg-cols-1 { column-count: 1; }
 .sg-pct-25 { width: 25%; }
 .sg-pct-50 { width: 50%; }
@@ -833,16 +825,36 @@
   </div>
 
   <div class="sg-card" data-cat="containers">
-    <div class="sg-card-head"><span class="sg-card-title">Modal Panel</span><span class="sg-card-note">.modal-panel</span></div>
+    <div class="sg-card-head"><span class="sg-card-title">Modal Panel</span><span class="sg-card-note">.modal-panel-stack</span></div>
     <div class="sg-card-body">
       <div class="sg-modal-stage">
-        <div class="modal-panel sg-modal-static">
-          <div class="sg-modal-title">Modal Title</div>
-          <p class="sg-modal-text">Confirm dialogs, command palette, and overlay UI.</p>
-          <div class="sg-modal-actions">
+        <div class="modal-panel modal-panel-stack sg-modal-static">
+          <div class="modal-head">
+            <div class="modal-title">Modal Title</div>
+            <p class="modal-hint">Hint one step below the title. Compose .modal-panel-stack with .modal-head, .modal-body and .modal-actions.</p>
+          </div>
+          <div class="modal-actions">
             <button class="action-button">Cancel</button>
             <button class="action-button action-button-primary">Confirm</button>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sg-card" data-cat="containers">
+    <div class="sg-card-head"><span class="sg-card-title">Option Row</span><span class="sg-card-note">.option-row</span></div>
+    <div class="sg-card-body">
+      <div class="modal-body">
+        <div class="option-row">
+          <span class="option-row-mark"></span>
+          <span class="option-row-body"><span class="option-row-title">Idea</span><span class="option-row-desc">Proposals, improvements, feature ideas</span></span>
+          <span class="option-row-meta">ideas/</span>
+        </div>
+        <div class="option-row selected">
+          <span class="option-row-mark"></span>
+          <span class="option-row-body"><span class="option-row-title">Work item</span><span class="option-row-desc">Story with acceptance criteria and tasks</span></span>
+          <span class="option-row-meta">work/to-do/</span>
         </div>
       </div>
     </div>

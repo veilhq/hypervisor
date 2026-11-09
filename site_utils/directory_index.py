@@ -448,6 +448,39 @@ def generate_home_content(files, build_stats=None, recent_paths=None):
 
 
 
+# Directory prefix -> template (in templates/) used by the "New document" link.
+DIR_TEMPLATES = {
+    "ideas": "idea-template.md",
+    "work/to-do": "work-item-template.md",
+    "analysis": "tracking-template.md",
+    "research": "hyperspace-document-template.md",
+    "context": "hyperspace-document-template.md",
+    "patterns": "hyperspace-document-template.md",
+}
+
+
+def _template_for_dir(dir_prefix):
+    """Return the template for the nearest templated ancestor of dir_prefix, or None."""
+    for prefix, template in DIR_TEMPLATES.items():
+        if dir_prefix == prefix or dir_prefix.startswith(prefix + "/"):
+            return template
+    return None
+
+
+def _render_new_doc_row(html, dir_prefix):
+    """Ghost row that opens Hypernote on this directory's template."""
+    template = _template_for_dir(dir_prefix)
+    if not template:
+        return
+    html.append(
+        f'<button type="button" class="new-doc-row" data-new-doc-dir="{html_escape(dir_prefix)}" '
+        f'data-new-doc-template="{template}">'
+        f'<i data-lucide="plus" class="new-doc-icon"></i>'
+        f'<span class="new-doc-label">New document</span>'
+        f'<span class="new-doc-meta">{template}</span></button>'
+    )
+
+
 def generate_dir_index_content(files, dir_prefix, recent_paths=None):
     """Generate an index page for a subdirectory."""
     if recent_paths is None:
@@ -498,12 +531,18 @@ def generate_dir_index_content(files, dir_prefix, recent_paths=None):
         if subdirs:
             html.append('<div class="dir-zone-label"><i data-lucide="file-text" class="dir-zone-icon"></i> Files</div>')
         if (is_work_dir or is_ideas_dir) and len(doc_entries) > 5:
+            # The filter bar is part of this list; it places the row beneath itself.
             _render_work_items_list(html, files, dir_prefix, doc_entries, recent_paths, is_ideas_dir)
         else:
+            _render_new_doc_row(html, dir_prefix)
             _render_doc_list_standard(html, files, dir_prefix, doc_entries, recent_paths)
         html.append('</div>')
 
-    if not subdirs and not doc_entries:
+    if not doc_entries and _template_for_dir(dir_prefix):
+        html.append('<div class="dir-zone">')
+        _render_new_doc_row(html, dir_prefix)
+        html.append('</div>')
+    elif not subdirs and not doc_entries:
         html.append('<p class="empty-msg">No documents in this directory.</p>')
 
     # --- Raw HTML prototypes: a "Prototypes" zone inside the drawer ---
@@ -985,6 +1024,7 @@ def _render_work_items_list(html, files, dir_prefix, doc_entries, recent_paths, 
             html.append(f'    <option value="{s.lower()}">{s}</option>')
         html.append('  </select>')
     html.append('</div>')
+    _render_new_doc_row(html, dir_prefix)
 
     # Sort within each group by work item ID (descending - newest first)
     def _wi_sort_key(e):

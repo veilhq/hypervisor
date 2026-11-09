@@ -842,6 +842,22 @@ class HypervisorAPI:
         """Launch Hypernote as a detached subprocess (see _launch_app)."""
         return _launch_app(".hypernote", "Hypernote.lnk", "hypernote.py")
 
+    def new_document_from_template(self, directory: str, template: str):
+        """Open Hypernote on a template, exporting into the given hyperspace directory."""
+        script = HYPERSPACE_ROOT / ".hypernote" / "hypernote.py"
+        if not script.exists():
+            return {"ok": False, "error": "hypernote.py not found"}
+        try:
+            subprocess.Popen(
+                ["pythonw", str(script), "--template", template, "--dir", directory],
+                cwd=str(script.parent),
+                creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NO_WINDOW,
+            )
+            logger.info("new document from %s in %s", template, directory)
+            return {"ok": True}
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+
     def launch_hypercycle(self):
         """Launch Hypercycle as a detached subprocess (see _launch_app)."""
         return _launch_app(".hypercycle", "Hypercycle.lnk", "hypercycle.py")

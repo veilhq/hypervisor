@@ -1,1 +1,24 @@
 /* Relocated to .hyperkit/css/cards.css - loaded via build.py Hyperkit cascade. */
+
+/* ---- New-document ghost row (heads the Files zone on templated directories) ---- */
+.new-doc-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  margin-bottom: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: transparent;
+  border: var(--border-hair) dashed var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-muted);
+  font-family: var(--font);
+  font-size: var(--fs-mono);
+  text-transform: uppercase;
+  letter-spacing: var(--track-label);
+  cursor: pointer;
+  transition: color var(--motion-fast) var(--ease), border-color var(--motion-fast) var(--ease);
+}
+.new-doc-row:hover { color: var(--interactive); border-color: var(--interactive-border); }
+.new-doc-icon { width: var(--icon-md); height: var(--icon-md); }
+.new-doc-meta { margin-left: auto; color: var(--text-dim); text-transform: none; letter-spacing: var(--track-body); }
