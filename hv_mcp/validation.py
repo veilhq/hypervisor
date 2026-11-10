@@ -115,6 +115,16 @@ def validate_single(rel_path: str) -> dict:
 
     md_text = read_md(full_path)
     violations = []
+
+    # Check: no UTF-8 BOM (it breaks the H1 at render time)
+    with open(full_path, "rb") as fh:
+        if fh.read(3) == b"\xef\xbb\xbf":
+            violations.append({
+                "rule": "encoding-bom",
+                "message": "File starts with a UTF-8 byte-order mark, which breaks the H1 when rendered. Re-save as UTF-8 without BOM.",
+                "line": 1,
+            })
+
     registry = load_tags()
     projects = load_projects()
 

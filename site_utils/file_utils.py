@@ -16,9 +16,10 @@ def read_md(path: Path, warn: bool = True) -> str:
 
     Uses UTF-8 with replacement characters for undecodable bytes.
     Logs a warning when replacement occurs (unless warn is False) so bad
-    files are discoverable without crashing the build.
+    files are discoverable without crashing the build. A leading UTF-8
+    byte-order mark is dropped so it never reaches the renderer or an edit.
     """
-    text = path.read_text(encoding="utf-8", errors="replace")
+    text = path.read_text(encoding="utf-8", errors="replace").lstrip("﻿")
     if warn and "\ufffd" in text:
         logger.warning("encoding issue (non-UTF-8 bytes replaced): %s", path)
     return text
