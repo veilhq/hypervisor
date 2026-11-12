@@ -392,6 +392,11 @@ def create_document_tool(
 ) -> dict:
     """Create a new hyperspace document with full convention enforcement.
 
+    For work-items, read the affected code in full before calling this: open each file,
+    its callers, and the nearest analogous feature, then choose the smallest change that
+    fits the existing architecture. Reuse existing mechanisms; every new model, service,
+    endpoint, or abstraction needs a stated reason the existing one cannot do the job.
+
     Args:
         type: Document type - work-item, idea, document, adr.
         title: Document title.
@@ -401,7 +406,8 @@ def create_document_tool(
         doc_type: Personal or Professional (default Professional).
         directory: Target subdirectory (required for type='document', e.g. 'research/rbac', 'context').
         overview: User story / overview text (required for work-items).
-        design: Technical design content (optional, work-items).
+        design: Technical design content (optional, work-items). State what the code does
+            today from what you read, then the change path; unread locations belong in open_questions.
         acceptance_criteria: Dict of {section_name: [criteria_list]} (optional, work-items).
         tasks: List of task descriptions (optional, work-items).
         open_questions: List of unresolved implementation questions - scoping ambiguities,

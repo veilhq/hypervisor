@@ -101,6 +101,8 @@
 .sg-motion-slow { transition: transform var(--motion-slow) var(--ease); }
 .sg-motion-fill { background: var(--magnitude); }
 .sg-static { position: static; }
+.sg-radial { display: flex; justify-content: center; }
+.sg-radial .radial-menu { position: relative; transform: none; }
 .sg-inline-field {
   display: flex;
   align-items: center;
@@ -463,6 +465,24 @@
   </div>
 
   <div class="sg-card" data-cat="controls">
+    <div class="sg-card-head"><span class="sg-card-title">Radial Menu</span><span class="sg-card-note">.radial-menu</span></div>
+    <div class="sg-card-body">
+      <div class="sg-radial"><div class="radial-menu open" role="menu">
+        <svg class="radial-menu-filter" aria-hidden="true"><filter id="radial-menu-goo" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB"><feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur"/><feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7"/></filter></svg>
+        <div class="radial-menu-goo" data-layer="edge"><span class="radial-menu-blob radial-menu-blob-hub"></span><span class="radial-menu-blob" style="--radial-x:0.0000;--radial-y:-1.0000;--radial-index:0"></span><span class="radial-menu-blob" style="--radial-x:0.9511;--radial-y:-0.3090;--radial-index:1"></span><span class="radial-menu-blob" style="--radial-x:0.5878;--radial-y:0.8090;--radial-index:2"></span><span class="radial-menu-blob" style="--radial-x:-0.5878;--radial-y:0.8090;--radial-index:3"></span><span class="radial-menu-blob" style="--radial-x:-0.9511;--radial-y:-0.3090;--radial-index:4"></span></div>
+        <div class="radial-menu-goo" data-layer="fill"><span class="radial-menu-blob radial-menu-blob-hub"></span><span class="radial-menu-blob" style="--radial-x:0.0000;--radial-y:-1.0000;--radial-index:0"></span><span class="radial-menu-blob" style="--radial-x:0.9511;--radial-y:-0.3090;--radial-index:1"></span><span class="radial-menu-blob" style="--radial-x:0.5878;--radial-y:0.8090;--radial-index:2"></span><span class="radial-menu-blob" style="--radial-x:-0.5878;--radial-y:0.8090;--radial-index:3"></span><span class="radial-menu-blob" style="--radial-x:-0.9511;--radial-y:-0.3090;--radial-index:4"></span></div>
+        <button class="radial-menu-hub" type="button" tabindex="-1">Find</button>
+        <button class="radial-menu-item" type="button" aria-label="Add" style="--radial-x:0.0000;--radial-y:-1.0000;--radial-index:0"><span class="radial-menu-icon"><i data-lucide="circle"></i></span></button>
+        <button class="radial-menu-item" type="button" aria-label="Find" style="--radial-x:0.9511;--radial-y:-0.3090;--radial-index:1"><span class="radial-menu-icon"><i data-lucide="circle"></i></span></button>
+        <button class="radial-menu-item" type="button" aria-label="View" style="--radial-x:0.5878;--radial-y:0.8090;--radial-index:2"><span class="radial-menu-icon"><i data-lucide="circle"></i></span></button>
+        <button class="radial-menu-item" type="button" aria-label="Sets" style="--radial-x:-0.5878;--radial-y:0.8090;--radial-index:3"><span class="radial-menu-icon"><i data-lucide="circle"></i></span></button>
+        <button class="radial-menu-item" type="button" aria-label="Settings" style="--radial-x:-0.9511;--radial-y:-0.3090;--radial-index:4"><span class="radial-menu-icon"><i data-lucide="circle"></i></span></button>
+      </div></div>
+      <p class="sg-card-note">Static example; the live ring opens on right-click, or Shift + right-click with { shift: true }, via HvRadialMenu.register(selector, itemsFn, options) or HvRadialMenu.open(x, y, items).</p>
+    </div>
+  </div>
+
+  <div class="sg-card" data-cat="controls">
     <div class="sg-card-head"><span class="sg-card-title">Suggest List</span><span class="sg-card-note">.suggest-panel</span></div>
     <div class="sg-card-body">
       <div class="floating-panel suggest-panel sg-static">
@@ -604,6 +624,24 @@
         <button class="nav-tab sg-tab" type="button">Hover me</button>
       </div>
       <p class="sg-note">--radius rect with a 1px hairline. Resting is muted ink on a transparent hairline; hover steps the ink up and shows the hairline; active takes the --selected role (ink, wash, hairline). Apps add only padding and type.</p>
+    </div>
+  </div>
+
+  <div class="sg-card" data-cat="controls">
+    <div class="sg-card-head"><span class="sg-card-title">Folder tabs</span><span class="sg-card-note">.nav-tab-folder</span></div>
+    <div class="sg-card-body">
+      <div class="tab-rail">
+        <button class="nav-tab nav-tab-folder nav-tab-active sg-tab" type="button">Active</button>
+        <button class="nav-tab nav-tab-folder sg-tab" type="button">Resting</button>
+        <button class="nav-tab nav-tab-folder sg-tab" type="button">Hover me</button>
+      </div>
+      <p class="sg-note">A trapezoid file-cabinet divider: sloped sides, big rounded shoulders. Compose .nav-tab and .nav-tab-folder inside a .tab-rail: resting tabs sit one step low on the rail hairline; the active tab rises, takes the surface color (--folder-surface) with a --selected top edge, and covers the rail so it joins the panel below. Apps pad the tab wide enough to clear the slope.</p>
+      <div class="tab-stack sg-tab-stack">
+        <button class="nav-tab nav-tab-folder sg-tab" type="button">Stacked</button>
+        <button class="nav-tab nav-tab-folder nav-tab-active sg-tab" type="button">Active, raised</button>
+        <button class="nav-tab nav-tab-folder sg-tab" type="button">Stacked</button>
+      </div>
+      <p class="sg-note">Compose inside a .tab-stack for a vertical drawer: the tabs overlap, and the active one takes a defined fill and is pulled up in front.</p>
     </div>
   </div>
 
