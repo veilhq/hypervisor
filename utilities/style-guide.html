@@ -118,6 +118,8 @@
   text-transform: uppercase;
   letter-spacing: var(--track-label);
 }
+.sg-poster-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: var(--space-3); }
+.sg-poster-fill { background: linear-gradient(160deg, var(--bg-raised), var(--bg)); }
 .sg-chip-identifier { color: var(--identifier); border-color: var(--identifier); }
 .sg-chip-info { color: var(--info); border-color: var(--info); }
 .sg-flush { padding: 0; }
@@ -465,6 +467,20 @@
   </div>
 
   <div class="sg-card" data-cat="controls">
+    <div class="sg-card-head"><span class="sg-card-title">Segmented control</span><span class="sg-card-note">.segmented</span></div>
+    <div class="sg-card-body">
+      <div class="sg-row">
+        <div class="segmented" id="sg-segmented" style="--segment-count:3;--segment-index:0" role="group" aria-label="Sort">
+          <button class="segmented-option" type="button" aria-pressed="true">Recent</button>
+          <button class="segmented-option" type="button" aria-pressed="false">Name</button>
+          <button class="segmented-option" type="button" aria-pressed="false">Size</button>
+        </div>
+      </div>
+      <p class="sg-note">Equal-width options in one hairline track; a single thumb slides to the pressed option. Set --segment-count on the track and --segment-index to the pressed position.</p>
+    </div>
+  </div>
+
+  <div class="sg-card" data-cat="controls">
     <div class="sg-card-head"><span class="sg-card-title">Radial Menu</span><span class="sg-card-note">.radial-menu</span></div>
     <div class="sg-card-body">
       <div class="sg-radial"><div class="radial-menu open" role="menu">
@@ -605,6 +621,16 @@
   </div>
 
   <div class="sg-card" data-cat="controls">
+    <div class="sg-card-head"><span class="sg-card-title">Switch</span><span class="sg-card-note">.switch</span></div>
+    <div class="sg-card-body">
+      <button class="switch sg-switch" type="button" role="switch" aria-checked="false" aria-label="Example setting"></button>
+      <button class="switch sg-switch" type="button" role="switch" aria-checked="true" aria-label="Example setting on"></button>
+      <button class="switch" type="button" role="switch" aria-checked="false" aria-label="Unavailable setting" disabled></button>
+      <p class="sg-note">On/off control for a persisted setting: a <code>button role="switch"</code> whose <code>aria-checked</code> drives the look. Off rests in grey ink; on takes <code>--selected</code> and slides the dot right. Label it with the setting row's name, not words inside the control.</p>
+    </div>
+  </div>
+
+  <div class="sg-card" data-cat="controls">
     <div class="sg-card-head"><span class="sg-card-title">Pill Card</span><span class="sg-card-note">.pill-card</span></div>
     <div class="sg-card-body">
       <div class="pill-card">
@@ -642,6 +668,42 @@
         <button class="nav-tab nav-tab-folder sg-tab" type="button">Stacked</button>
       </div>
       <p class="sg-note">Compose inside a .tab-stack for a vertical drawer: the tabs overlap, and the active one takes a defined fill and is pulled up in front.</p>
+    </div>
+  </div>
+
+  <div class="sg-card" data-cat="containers">
+    <div class="sg-card-head"><span class="sg-card-title">Poster card</span><span class="sg-card-note">.poster-card</span></div>
+    <div class="sg-card-body">
+      <div class="sg-poster-grid">
+        <div class="poster-card">
+          <div class="poster-card-image"><div class="poster-card-fill sg-poster-fill"></div></div>
+          <span class="poster-card-count">24 ENTRIES</span>
+          <button class="poster-card-open" type="button" aria-label="Open Brutalist type"></button>
+          <div class="poster-card-body">
+            <div class="poster-card-title">Brutalist type</div>
+            <div class="poster-card-desc"><span>Specimens and posters with heavy, unrefined letterforms.</span></div>
+            <span class="poster-card-palette" aria-hidden="true"><i style="background:var(--magnitude)"></i><i style="background:var(--border-strong)"></i><i style="background:var(--live)"></i><i style="background:var(--bg-raised)"></i><i style="background:var(--text-dim)"></i></span>
+          </div>
+          <div class="poster-card-meta">
+            <span class="poster-card-meter" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i></span>
+            <span class="poster-card-fresh">TODAY</span>
+          </div>
+          <span class="poster-card-tools"></span>
+        </div>
+        <button class="poster-card poster-card-add" type="button">
+          <div class="poster-card-image is-empty"><span class="poster-card-empty"><svg class="icon-glyph" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg></span></div>
+          <span class="poster-card-count">NEW</span>
+          <div class="poster-card-body">
+            <div class="poster-card-title">New set</div>
+            <div class="poster-card-desc"><span>Name it, add a description, then fill it from the library.</span></div>
+          </div>
+          <div class="poster-card-meta">
+            <span class="poster-card-meter" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+            <span>0</span>
+          </div>
+        </button>
+      </div>
+      <p class="sg-note">A collection as its cover image with the title on it. Compose .poster-card-image (cover img or fill), -count, -open (stretched button), -body with -title, -desc and -palette, then -meta with -meter and -fresh; -tools holds icon actions and shows on hover, or always with .keep. Hover thins the dither veil, scales the cover, and reveals the description. Add .poster-card-add and .is-empty on the image for the quiet new tile. Palette swatches are data and set inline. Radius is --radius-dir-surface.</p>
     </div>
   </div>
 
@@ -1355,6 +1417,28 @@
 
 </div>
 
+<script>
+document.querySelectorAll('.sg-switch').forEach(function(item) {
+  item.addEventListener('click', function() {
+    item.setAttribute('aria-checked', item.getAttribute('aria-checked') === 'true' ? 'false' : 'true');
+  });
+});
+</script>
+<script>
+(function() {
+  var track = document.getElementById('sg-segmented');
+  if (!track) return;
+  track.addEventListener('click', function(e) {
+    var option = e.target.closest('.segmented-option');
+    if (!option) return;
+    var options = Array.prototype.slice.call(track.children);
+    options.forEach(function(item, index) {
+      item.setAttribute('aria-pressed', item === option ? 'true' : 'false');
+      if (item === option) track.style.setProperty('--segment-index', index);
+    });
+  });
+})();
+</script>
 <script>
 (function() {
   var toolbar = document.getElementById('sg-toolbar');
