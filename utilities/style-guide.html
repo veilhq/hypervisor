@@ -623,10 +623,11 @@
   <div class="sg-card" data-cat="controls">
     <div class="sg-card-head"><span class="sg-card-title">Switch</span><span class="sg-card-note">.switch</span></div>
     <div class="sg-card-body">
-      <button class="switch sg-switch" type="button" role="switch" aria-checked="false" aria-label="Example setting"></button>
-      <button class="switch sg-switch" type="button" role="switch" aria-checked="true" aria-label="Example setting on"></button>
-      <button class="switch" type="button" role="switch" aria-checked="false" aria-label="Unavailable setting" disabled></button>
-      <p class="sg-note">On/off control for a persisted setting: a <code>button role="switch"</code> whose <code>aria-checked</code> drives the look. Off rests in grey ink; on takes <code>--selected</code> and slides the dot right. Label it with the setting row's name, not words inside the control.</p>
+      <button class="switch sg-switch" type="button" role="switch" aria-checked="false" aria-label="Example setting"><span class="switch-goo"></span></button>
+      <button class="switch sg-switch" type="button" role="switch" aria-checked="true" aria-label="Example setting on"><span class="switch-goo"></span></button>
+      <button class="switch" type="button" role="switch" aria-checked="false" aria-label="Unavailable setting" disabled><span class="switch-goo"></span></button>
+      <svg class="switch-filter" aria-hidden="true"><filter id="hk-switch-goo" x="-50%" y="-50%" width="200%" height="200%" color-interpolation-filters="sRGB"><feGaussianBlur in="SourceGraphic" stdDeviation="1.6" result="blur"/><feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 16 -6"/></filter></svg>
+      <p class="sg-note">On/off control for a persisted setting: a <code>button role="switch"</code> whose <code>aria-checked</code> drives the look. Off rests in grey ink; on takes <code>--selected</code>. Two dots in a goo-filtered layer stretch apart and merge as it flips (metaball); <code>switch.js</code> supplies the filter. Label it with the setting row's name, not words inside the control.</p>
     </div>
   </div>
 
