@@ -178,7 +178,7 @@ _ECO_APP_PATHS = {
     "hyperagent": HYPERSPACE_ROOT / ".hyperagent" / "assets" / "hyperagent.svg",
     "hypernote": HYPERSPACE_ROOT / ".hypernote" / "assets" / "hypernote.svg",
     "hypereye": HYPERSPACE_ROOT / ".hypereye" / "assets" / "hypereye.svg",
-    "hyperbridge": HYPERSPACE_ROOT / ".hyperbridge" / "assets" / "hyperbridge.svg",
+    "hyperbridge": ASSETS_DIR / "SVG" / "BRIDGE2.svg",
     "hyperfield": HYPERSPACE_ROOT / ".hyperfield" / "assets" / "hyperfield.svg",
     "hyperline": ASSETS_DIR / "SVG" / "hyperline.svg",
     "hypercycle": HYPERSPACE_ROOT / ".hypercycle" / "assets" / "icons" / "hypercycle.svg",

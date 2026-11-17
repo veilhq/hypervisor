@@ -118,6 +118,13 @@
   text-transform: uppercase;
   letter-spacing: var(--track-label);
 }
+.sg-tab-panel {
+  height: var(--space-6);
+  margin-bottom: var(--space-3);
+  background: var(--bg);
+  border: var(--border-hair) solid var(--border-strong);
+  border-top: 0;
+}
 .sg-poster-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: var(--space-3); }
 .sg-poster-fill { background: linear-gradient(160deg, var(--bg-raised), var(--bg)); }
 .sg-chip-identifier { color: var(--identifier); border-color: var(--identifier); }
@@ -662,7 +669,8 @@
         <button class="nav-tab nav-tab-folder sg-tab" type="button">Resting</button>
         <button class="nav-tab nav-tab-folder sg-tab" type="button">Hover me</button>
       </div>
-      <p class="sg-note">A trapezoid file-cabinet divider: sloped sides, big rounded shoulders. Compose .nav-tab and .nav-tab-folder inside a .tab-rail: resting tabs sit one step low on the rail hairline; the active tab rises, takes the surface color (--folder-surface) with a --selected top edge, and covers the rail so it joins the panel below. Apps pad the tab wide enough to clear the slope.</p>
+      <div class="sg-tab-panel"></div>
+      <p class="sg-note">A trapezoid file-cabinet divider: sloped sides, small rounded shoulders, feet that flare into the baseline. Compose .nav-tab and .nav-tab-folder inside a .tab-rail: tabs overlap their neighbors on the rail hairline; the active tab comes in front, takes the panel color (--tab-panel, default --bg) with a --selected top edge, and covers the rail so it opens into the panel below. Apps pad the tab wide enough to clear the slope.</p>
       <div class="tab-stack sg-tab-stack">
         <button class="nav-tab nav-tab-folder sg-tab" type="button">Stacked</button>
         <button class="nav-tab nav-tab-folder nav-tab-active sg-tab" type="button">Active, raised</button>

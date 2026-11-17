@@ -217,8 +217,11 @@
         '    float val = wall * falloff;'
       ].join('\n');
 
-      PATTERN_MAIN.inkfold = [
-        '    // Six-fold radial inkblot. Interference stack gives the organic,',
+      // Radial inkblot with N-fold mirror symmetry; the folded angle is
+      // rescaled to the six-fold wedge width so each wedge keeps the same texture.
+      function inkfoldMain(wedges) {
+        return [
+        '    // Radial inkblot. Interference stack gives the organic,',
         '    // non-repeating base (lattice-free); borrowed from the Rorschach',
         '    // mode: angular lobe harmonics for complex lobe shapes, and a hard',
         '    // threshold that turns the smooth field into solid ink masses with',
@@ -227,10 +230,12 @@
         '    p.x *= u_resolution.x / u_resolution.y;',
         '    float r = length(p);',
         '    float a = atan(p.y, p.x);',
-        '    // Mirror-fold the angle into 6 wedges (radial symmetry).',
-        '    float wedges = 6.0;',
+        '    // Mirror-fold the angle into N wedges, rotated so one wedge is',
+        '    // centered straight up and a mirror axis is vertical.',
+        '    float wedges = ' + wedges.toFixed(1) + ';',
         '    float seg = 6.2831853 / wedges;',
-        '    a = abs(mod(a, seg) - seg * 0.5);',
+        '    a -= 1.5707963 - seg * 0.5;',
+        '    a = abs(mod(a, seg) - seg * 0.5) * (wedges / 6.0);',
         '    // Depth scroll - texture streams down the tube toward the viewer.',
         '    float depth = 0.30 / (r + 0.08) + t * 0.6;',
         '    // Interference stack over (foldedAngle, depth) - the organic base.',
@@ -255,7 +260,11 @@
         '    // Depth falloff (#4): fade toward the central vanishing point.',
         '    float falloff = smoothstep(0.0, 0.12, r);',
         '    float val = wall * falloff;'
-      ].join('\n');
+        ].join('\n');
+      }
+
+      PATTERN_MAIN.inkfold = inkfoldMain(6);
+      PATTERN_MAIN.inkfold3 = inkfoldMain(3);
 
       PATTERN_MAIN.seamfold = [
         '    // Kaleidoscope tunnel walls textured with a shifting Voronoi; only',
