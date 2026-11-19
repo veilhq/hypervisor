@@ -32,6 +32,7 @@ import webview
 # ---------------------------------------------------------------------------
 sys.path.insert(0, str(Path(__file__).parent.parent.resolve() / ".hyperkit" / "python"))
 from hyper_logging import setup_logger  # noqa: E402
+from window_chrome import apply_window_chrome  # noqa: E402
 
 logger = setup_logger("hypervisor")
 
@@ -2332,32 +2333,6 @@ _window = None
 _api = None
 
 
-def _apply_window_chrome(title: str, icon_path: str):
-    """Force dark title bar and custom icon via Windows DWM API."""
-    import ctypes
-    hwnd = ctypes.windll.user32.FindWindowW(None, title)
-    if not hwnd:
-        return
-    # Dark title bar
-    DWMWA_USE_IMMERSIVE_DARK_MODE = 20
-    val = ctypes.c_int(1)
-    ctypes.windll.dwmapi.DwmSetWindowAttribute(
-        hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, ctypes.byref(val), ctypes.sizeof(val)
-    )
-    # Custom icon
-    IMAGE_ICON = 1
-    LR_LOADFROMFILE = 0x0010
-    WM_SETICON = 0x0080
-    ICON_BIG = 1
-    ICON_SMALL = 0
-    hicon = ctypes.windll.user32.LoadImageW(
-        0, icon_path, IMAGE_ICON, 0, 0, LR_LOADFROMFILE
-    )
-    if hicon:
-        ctypes.windll.user32.SendMessageW(hwnd, WM_SETICON, ICON_BIG, hicon)
-        ctypes.windll.user32.SendMessageW(hwnd, WM_SETICON, ICON_SMALL, hicon)
-
-
 def main():
     global _window, _api
 
@@ -2418,7 +2393,7 @@ def main():
         if lint_notice:
             import threading
             threading.Timer(2.0, lambda: window.evaluate_js(notice_js(lint_notice))).start()
-        _apply_window_chrome("Hypervisor", str((ASSETS_DIR / "hypervisor.ico").resolve()))
+        apply_window_chrome("Hypervisor", (ASSETS_DIR / "hypervisor.ico").resolve(), logger)
         start_watcher_thread(watcher)
         # Launch the shared MCP HTTP service (if not already running)
         _start_mcp_service()
