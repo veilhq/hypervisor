@@ -328,15 +328,15 @@
     var root = document.documentElement;
     var isBW = root.classList.contains("a11y-bw-theme");
 
-    // In light mode, force blue palette + primary-color semantics
+    // In light mode, force the primary palette: blue accent, yellow warm, red comp
     if (isBW) {
       root.style.setProperty("--accent", "#0000ff");
       root.style.setProperty("--accent-dim", "#0000cc");
       root.style.setProperty("--accent-glow", "rgba(0,0,255,0.15)");
       root.style.setProperty("--accent-border", "#0000ff");
-      root.style.setProperty("--warm", "#0000ff");
+      root.style.setProperty("--warm", "#ffd500");
       root.style.setProperty("--cool", "#0000ff");
-      root.style.setProperty("--comp", "#0000ff");
+      root.style.setProperty("--comp", "#ff0000");
       root.style.setProperty("--success", "#007a00");
       root.style.setProperty("--warning", "#b35900");
       root.style.setProperty("--error", "#cc0000");
@@ -350,7 +350,7 @@
       root.style.setProperty("--cursor-pointer", cursorPointer);
       root.style.setProperty("--cursor-text", cursorText);
 
-      updatePalettePreview({ accent: "#0000ff", warm: "#0000ff", cool: "#0000ff", comp: "#0000ff" });
+      updatePalettePreview({ accent: "#0000ff", warm: "#ffd500", cool: "#0000ff", comp: "#ff0000" });
       return;
     }
 

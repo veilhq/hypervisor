@@ -25,6 +25,7 @@
     var inputArea = null;
     var bodyEl = null;
     var timeLabel = null;
+    var HUE_COUNT = 3;
 
     // --- Helpers ---
     function now() {
@@ -53,23 +54,33 @@
 
     // --- Parse scratch file into entries ---
     function parseEntries(content) {
-      // Entries are `## HH:MM` headings (optionally suffixed with a ` (*)`
-      // moved-marker) followed by content. The marker records that a note was
-      // dragged out of chronological order; it is preserved across load/save.
+      // Entries are `## HH:MM` headings followed by content. Optional suffixes:
+      // ` (*)` marks a note dragged out of chronological order, and ` {cN}`
+      // records the user's tag hue (1-3). Both survive load/save.
       var lines = content.split('\n');
       var entries = [];
       var currentEntry = null;
 
       for (var i = 0; i < lines.length; i++) {
-        var match = lines[i].match(/^## (\d{2}:\d{2})( \(\*\))?$/);
+        var match = lines[i].match(/^## (\d{2}:\d{2})( \(\*\))?(?: \{c([1-3])\})?$/);
         if (match) {
           if (currentEntry) entries.push(currentEntry);
-          currentEntry = { time: match[1], moved: !!match[2], lines: [] };
+          currentEntry = {
+            time: match[1],
+            moved: !!match[2],
+            color: match[3] ? parseInt(match[3], 10) : null,
+            lines: []
+          };
         } else if (currentEntry) {
           currentEntry.lines.push(lines[i]);
         }
       }
       if (currentEntry) entries.push(currentEntry);
+      // Notes saved before hues were stored take their old position-cycle hue,
+      // so it travels with the note through later reorders and saves.
+      for (var k = 0; k < entries.length; k++) {
+        if (!entries[k].color) entries[k].color = (k % HUE_COUNT) + 1;
+      }
       return entries;
     }
 
@@ -80,7 +91,8 @@
       var out = '# Scratch \u2014 ' + dateStr + '\n\n';
       for (var i = 0; i < entries.length; i++) {
         var marker = entries[i].moved ? ' (*)' : '';
-        out += '## ' + entries[i].time + marker + '\n';
+        var hue = entries[i].color ? ' {c' + entries[i].color + '}' : '';
+        out += '## ' + entries[i].time + marker + hue + '\n';
         out += entries[i].lines.join('\n') + '\n\n';
       }
       return out;
@@ -139,6 +151,12 @@
         var card = buildCard(entries[i], i);
         colA.appendChild(card);
         cards.push(card);
+      }
+      if (window.lucide) {
+        window.lucide.createIcons({
+          nodes: colA.querySelectorAll('[data-lucide]'),
+          attrs: { 'stroke-width': 2 }
+        });
       }
       squareUpCards();
 
@@ -211,24 +229,42 @@
       }
     }
 
+    // --- Tag hue helpers: a note's hue is the user's pick, 1-3 ---
+    function nextHue(hue) {
+      return (hue % HUE_COUNT) + 1;
+    }
+
+    function iconButton(className, iconName, label) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'scratch-card-btn ' + className;
+      btn.setAttribute('aria-label', label);
+      btn.setAttribute('data-tooltip', label);
+      var icon = document.createElement('i');
+      icon.setAttribute('data-lucide', iconName);
+      btn.appendChild(icon);
+      return btn;
+    }
+
     // --- Build a single sticky-note card ---
     function buildCard(entry, index) {
       var card = document.createElement('div');
-      // Color cycles accent -> warm -> cool by position (comp is never used).
-      var colorClass = 'scratch-card-c' + ((index % 3) + 1);
-      card.className = 'scratch-card ' + colorClass;
+      var hue = entry.color;
+      card.className = 'scratch-card scratch-card-c' + hue;
       card.setAttribute('draggable', 'true');
       card.setAttribute('data-index', String(index));
       card.setAttribute('role', 'listitem');
 
-      // --- Header row: drag handle + timestamp + actions ---
+      // --- Cap strip: drag handle + timestamp + actions ---
       var head = document.createElement('div');
       head.className = 'scratch-card-head';
 
       var handle = document.createElement('span');
       handle.className = 'scratch-card-handle';
-      handle.textContent = '\u2237';  // grip glyph
       handle.setAttribute('aria-hidden', 'true');
+      var grip = document.createElement('i');
+      grip.setAttribute('data-lucide', 'grip-vertical');
+      handle.appendChild(grip);
       head.appendChild(handle);
 
       var time = document.createElement('span');
@@ -236,8 +272,7 @@
       time.textContent = entry.time;
       head.appendChild(time);
 
-      // Moved marker is its own element so it can carry the alert color
-      // independently of the timestamp's cycle color.
+      // Moved marker is its own element so it can carry the alert color.
       if (entry.moved) {
         var marker = document.createElement('span');
         marker.className = 'scratch-card-moved';
@@ -249,20 +284,21 @@
       var actions = document.createElement('div');
       actions.className = 'scratch-card-actions';
 
-      var editBtn = document.createElement('button');
-      editBtn.className = 'scratch-card-btn scratch-card-edit';
-      editBtn.textContent = 'edit';
-      editBtn.setAttribute('aria-label', 'Edit note from ' + entry.time);
+      var hueBtn = iconButton('scratch-card-hue', 'palette', 'Change note color');
+      hueBtn.addEventListener('click', function(clickEvent) {
+        clickEvent.stopPropagation();
+        setHue(index, nextHue(hue));
+      });
+      actions.appendChild(hueBtn);
+
+      var editBtn = iconButton('scratch-card-edit', 'pencil', 'Edit note from ' + entry.time);
       editBtn.addEventListener('click', function(clickEvent) {
         clickEvent.stopPropagation();
         beginEdit(card, index);
       });
       actions.appendChild(editBtn);
 
-      var delBtn = document.createElement('button');
-      delBtn.className = 'scratch-card-btn scratch-card-delete';
-      delBtn.textContent = '\u2715';  // multiplication X
-      delBtn.setAttribute('aria-label', 'Delete note from ' + entry.time);
+      var delBtn = iconButton('scratch-card-delete', 'x', 'Delete note from ' + entry.time);
       delBtn.addEventListener('click', function(clickEvent) {
         clickEvent.stopPropagation();
         deleteEntry(index);
@@ -282,6 +318,17 @@
       attachDragHandlers(card);
 
       return card;
+    }
+
+    // --- Set a note's tag hue and keep focus on its color button ---
+    function setHue(index, hue) {
+      var entries = parseEntries(currentContent);
+      if (index < 0 || index >= entries.length) return;
+      entries[index].color = hue;
+      persist(entries);
+      var btn = entriesContainer.querySelector(
+        '.scratch-card[data-index="' + index + '"] .scratch-card-hue');
+      if (btn) btn.focus();
     }
 
     // --- Delete a note immediately (no undo) ---
@@ -516,10 +563,11 @@
 
       if (newText) {
         // Prepend the new entry so newest sits at the top of both file and
-        // display. A fresh entry is chronological by definition, so it carries
-        // no moved-marker.
+        // display. It is chronological by definition (no moved-marker) and
+        // defaults to the hue after the current newest note.
         var entries = parseEntries(currentContent);
-        entries.unshift({ time: now(), moved: false, lines: newText.split('\n') });
+        var hue = entries.length ? nextHue(entries[0].color) : 1;
+        entries.unshift({ time: now(), moved: false, color: hue, lines: newText.split('\n') });
         currentContent = buildContent(currentDate, entries);
         textarea.value = '';
         autoResize();

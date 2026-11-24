@@ -37,6 +37,10 @@
 .sg-confirm-stage .confirm-dialog-box { animation: none; box-shadow: none; }
 .sg-tool-icon svg, .sg-tool-icon i { width: var(--icon-sm); height: var(--icon-sm); }
 .sg-icon-sm { width: var(--icon-sm); height: var(--icon-sm); }
+.sg-canvas { position: relative; display: flex; gap: var(--space-6); padding: var(--space-6); background: var(--bg); border: var(--border-hair) solid var(--border); border-radius: var(--radius); }
+.sg-canvas-item { width: calc(var(--space-6) * 2); height: calc(var(--space-6) * 2); background: var(--bg-card); border: var(--border-hair) solid var(--border); border-radius: var(--radius); }
+.sg-canvas .select-ring.sg-ring-hover { outline-color: var(--interactive-border); }
+.sg-canvas .marquee { left: calc(var(--space-6) * 3.5); top: var(--space-5); width: calc(var(--space-6) * 5.5); height: calc(var(--space-6) * 2.5); }
 .sg-icon-md { width: var(--icon-md); height: var(--icon-md); }
 .sg-icon-lg { width: var(--icon-lg); height: var(--icon-lg); }
 .sg-icon-xl { width: var(--icon-xl); height: var(--icon-xl); }
@@ -518,6 +522,28 @@
   </div>
 
   <div class="sg-card" data-cat="controls">
+    <div class="sg-card-head"><span class="sg-card-title">Path Fork</span><span class="sg-card-note">.path-fork</span></div>
+    <div class="sg-card-body">
+      <div class="path-fork" role="group" aria-label="Where this leads">
+        <div class="path-fork-branch">
+          <button class="path-fork-take" type="button" aria-pressed="true"><span class="path-fork-key">1</span><i data-lucide="layers"></i><span class="path-fork-label">brutalism</span><span class="path-fork-kind">Are.na channel</span><span class="path-fork-count">24</span></button>
+          <button class="icon-button" type="button" aria-label="Follow" data-tooltip="Follow"><i data-lucide="plus" class="icon-button-glyph"></i></button>
+        </div>
+        <div class="path-fork-branch">
+          <button class="path-fork-take" type="button" aria-pressed="false"><span class="path-fork-key">2</span><i data-lucide="tag"></i><span class="path-fork-label">concrete</span><span class="path-fork-kind">tag</span><span class="path-fork-count">07</span></button>
+        </div>
+        <div class="path-fork-branch" data-state="unknown">
+          <button class="path-fork-take" type="button" aria-pressed="false"><span class="path-fork-key">3</span><i data-lucide="rss"></i><span class="path-fork-label">field notes</span><span class="path-fork-kind">Tumblr blog</span><span class="path-fork-count">--</span></button>
+        </div>
+        <div class="path-fork-branch" data-state="resting">
+          <button class="path-fork-take" type="button" aria-pressed="false"><span class="path-fork-key">4</span><i data-lucide="hourglass"></i><span class="path-fork-label">example.org</span><span class="path-fork-kind">site</span><span class="path-fork-count"></span></button>
+        </div>
+      </div>
+      <p class="sg-card-note">Taken branch is pressed (selected); dashed elbow = not checked yet; resting = asked to slow down. Trailing action icons sit beside the take button, never inside it. Add .path-fork-columns to flow a long fork into up to three columns (18rem minimum each).</p>
+    </div>
+  </div>
+
+  <div class="sg-card" data-cat="controls">
     <div class="sg-card-head"><span class="sg-card-title">Icon Buttons</span><span class="sg-card-note">.icon-button</span></div>
     <div class="sg-card-body">
       <div class="sg-row">
@@ -646,6 +672,31 @@
         <button class="action-button action-button-ghost" type="button">Filter</button>
       </div>
       <p class="sg-note">A fully rounded floating bar: card fill, strong hairline, centered row, border brightens on hover. The capsule-ended sibling of the dock bar; compose with a feature class for placement and content.</p>
+    </div>
+  </div>
+
+  <div class="sg-card" data-cat="controls">
+    <div class="sg-card-head"><span class="sg-card-title">Canvas Selection</span><span class="sg-card-note">.select-ring / .resize-grip / .marquee / .select-count</span></div>
+    <div class="sg-card-body">
+      <div class="sg-canvas">
+        <div class="sg-canvas-item select-ring"></div>
+        <div class="sg-canvas-item select-ring sg-ring-hover"></div>
+        <div class="sg-canvas-item select-ring is-selected">
+          <button class="resize-grip" type="button" aria-label="Resize" data-tooltip="Resize"><i data-lucide="move-diagonal-2"></i></button>
+        </div>
+      </div>
+      <div class="sg-canvas">
+        <div class="sg-canvas-item select-ring"></div>
+        <div class="sg-canvas-item select-ring is-selected"></div>
+        <div class="sg-canvas-item select-ring is-selected"></div>
+        <span class="marquee"></span>
+      </div>
+      <div class="pill-card">
+        <span class="select-count">02</span>
+        <button class="icon-button" type="button" aria-label="Frame selection" data-tooltip="Frame selection"><i data-lucide="frame" class="icon-button-glyph"></i></button>
+        <button class="icon-button" type="button" aria-label="Delete" data-tooltip="Delete"><i data-lucide="trash-2" class="icon-button-glyph"></i></button>
+      </div>
+      <p class="sg-note">Marks for freely placed items on a pan/zoom canvas. Rest, hover (<code>--interactive-border</code> hairline) and selected (<code>--selected</code> hairline); a single selection gets an icon-only resize button off the corner. Drag on empty canvas draws the dashed marquee. Several selected items keep their own rings, and the zero-padded count joins the context bar. Set <code>--canvas-inv</code> to 1 / zoom on the scaled layer so the chrome holds its screen size.</p>
     </div>
   </div>
 
@@ -921,25 +972,40 @@
     <div class="sg-card-body">
       <div class="scratch-card scratch-card-c1">
         <div class="scratch-card-head">
-          <span class="scratch-card-handle" aria-hidden="true">&#8759;</span>
-          <span class="scratch-card-time">2m ago</span>
+          <span class="scratch-card-handle" aria-hidden="true"><i data-lucide="grip-vertical"></i></span>
+          <span class="scratch-card-time">14:02</span>
           <div class="scratch-card-actions">
-            <button class="scratch-card-btn scratch-card-edit" onclick="return false">edit</button>
-            <button class="scratch-card-btn scratch-card-delete" onclick="return false">&#10005;</button>
+            <button type="button" class="scratch-card-btn scratch-card-hue" aria-label="Change note color" data-tooltip="Change note color" onclick="return false"><i data-lucide="palette"></i></button>
+            <button type="button" class="scratch-card-btn scratch-card-edit" aria-label="Edit note" data-tooltip="Edit note" onclick="return false"><i data-lucide="pencil"></i></button>
+            <button type="button" class="scratch-card-btn scratch-card-delete" aria-label="Delete note" data-tooltip="Delete note" onclick="return false"><i data-lucide="x"></i></button>
           </div>
         </div>
-        <div class="scratch-card-body">Accent note (c1). Full-strength cycle color, ink switches for contrast.</div>
+        <div class="scratch-card-body">Cap note, hue 1. Neutral card, solid hue strip carrying the time and actions in knockout ink.</div>
       </div>
       <div class="scratch-card scratch-card-c2">
         <div class="scratch-card-head">
-          <span class="scratch-card-handle" aria-hidden="true">&#8759;</span>
-          <span class="scratch-card-time">yesterday</span>
+          <span class="scratch-card-handle" aria-hidden="true"><i data-lucide="grip-vertical"></i></span>
+          <span class="scratch-card-time">13:47</span>
+          <span class="scratch-card-moved" data-tooltip="Moved out of chronological order">(*)</span>
           <div class="scratch-card-actions">
-            <button class="scratch-card-btn scratch-card-edit" onclick="return false">edit</button>
-            <button class="scratch-card-btn scratch-card-delete" onclick="return false">&#10005;</button>
+            <button type="button" class="scratch-card-btn scratch-card-hue" aria-label="Change note color" data-tooltip="Change note color" onclick="return false"><i data-lucide="palette"></i></button>
+            <button type="button" class="scratch-card-btn scratch-card-edit" aria-label="Edit note" data-tooltip="Edit note" onclick="return false"><i data-lucide="pencil"></i></button>
+            <button type="button" class="scratch-card-btn scratch-card-delete" aria-label="Delete note" data-tooltip="Delete note" onclick="return false"><i data-lucide="x"></i></button>
           </div>
         </div>
-        <div class="scratch-card-body">Warm note (c2). Hover reveals actions and grows the corner peel.</div>
+        <div class="scratch-card-body">Hue 2. The hue is a user-picked tag; the palette action cycles it.</div>
+      </div>
+      <div class="scratch-card scratch-card-c3">
+        <div class="scratch-card-head">
+          <span class="scratch-card-handle" aria-hidden="true"><i data-lucide="grip-vertical"></i></span>
+          <span class="scratch-card-time">09:15</span>
+          <div class="scratch-card-actions">
+            <button type="button" class="scratch-card-btn scratch-card-hue" aria-label="Change note color" data-tooltip="Change note color" onclick="return false"><i data-lucide="palette"></i></button>
+            <button type="button" class="scratch-card-btn scratch-card-edit" aria-label="Edit note" data-tooltip="Edit note" onclick="return false"><i data-lucide="pencil"></i></button>
+            <button type="button" class="scratch-card-btn scratch-card-delete" aria-label="Delete note" data-tooltip="Delete note" onclick="return false"><i data-lucide="x"></i></button>
+          </div>
+        </div>
+        <div class="scratch-card-body">Hue 3. Body text is prose; the strip stays mono.</div>
       </div>
     </div>
   </div>
